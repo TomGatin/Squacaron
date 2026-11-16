@@ -6,15 +6,13 @@
 #include "scripting/WrenVM.hpp"
 
 #include <cstddef>
-#include <exception>
 #include <expected>
 #include <string>
 #include <string_view>
 #include <utility>
 
-#include "log/Logger.hpp"
-#include "scripting/detail/LogTag.hpp"
 #include "scripting/detail/WrenApi.hpp"
+#include "scripting/detail/WrenFwd.hpp"
 #include "scripting/detail/WrenTypes.hpp"
 
 namespace scripting {
@@ -36,19 +34,9 @@ std::string makeMethodSignature(std::string_view name, std::size_t arity) {
 
 }  // namespace detail
 
-WrenVM::WrenVM() {
-    WrenConfiguration config;
-    wrenInitConfiguration(&config);
+WrenVM::WrenVM() { createVm(); }
 
-    config.userData = this;
-    config.bindForeignMethodFn = &WrenVM::onBindForeignMethod;
-    config.bindForeignClassFn = &WrenVM::onBindForeignClass;
-    config.loadModuleFn = &WrenVM::onLoadModule;
-    config.writeFn = &WrenVM::onWrite;
-    config.errorFn = &WrenVM::onError;
-
-    _vm = wrenNewVM(&config);
-}
+NativeVm* detail::raw(WrenVM& vm) noexcept { return vm._vm; }
 
 WrenVM::~WrenVM() {
     if (_vm != nullptr) {
@@ -115,18 +103,7 @@ void WrenVM::reset() {
     _loadedSources.clear();
     _lastError.clear();
     _pendingOutput.clear();
-
-    WrenConfiguration config;
-    wrenInitConfiguration(&config);
-
-    config.userData = this;
-    config.bindForeignMethodFn = &WrenVM::onBindForeignMethod;
-    config.bindForeignClassFn = &WrenVM::onBindForeignClass;
-    config.loadModuleFn = &WrenVM::onLoadModule;
-    config.writeFn = &WrenVM::onWrite;
-    config.errorFn = &WrenVM::onError;
-
-    _vm = wrenNewVM(&config);
+    createVm();
 }
 
 void WrenVM::setWriteHandler(WriteHandler handler) { _writeHandler = std::move(handler); }
@@ -134,15 +111,14 @@ void WrenVM::setWriteHandler(WriteHandler handler) { _writeHandler = std::move(h
 void WrenVM::setErrorHandler(ErrorHandler handler) { _errorHandler = std::move(handler); }
 
 void WrenVM::registerForeignMethod(std::string_view module, std::string_view className, bool isStatic,
-                                   std::string_view signature, WrenForeignMethodFn fn) {
+                                   std::string_view signature, ForeignMethodFn fn) {
     _foreignMethods[detail::ForeignMethodKey{.module = std::string(module),
                                              .className = std::string(className),
                                              .isStatic = isStatic,
                                              .signature = std::string(signature)}] = fn;
 }
 
-void WrenVM::registerForeignClass(std::string_view module, std::string_view className,
-                                  WrenForeignClassMethods methods) {
+void WrenVM::registerForeignClass(std::string_view module, std::string_view className, ForeignClassMethods methods) {
     _foreignClasses[std::string(module) + "/" + std::string(className)] = methods;
 }
 
@@ -150,8 +126,7 @@ std::expected<void, std::string> WrenVM::interpret(std::string_view module, std:
     _lastError.clear();
     std::string const modStr(module);
     std::string const srcStr(source);
-    WrenInterpretResult const res = wrenInterpret(_vm, modStr.c_str(), srcStr.c_str());
-    if (res != WREN_RESULT_SUCCESS) {
+    if (wrenInterpret(_vm, modStr.c_str(), srcStr.c_str()) != WREN_RESULT_SUCCESS) {
         return std::unexpected(_lastError.empty() ? "Wren interpretation error" : _lastError);
     }
     return {};
@@ -159,22 +134,29 @@ std::expected<void, std::string> WrenVM::interpret(std::string_view module, std:
 
 detail::UniqueWrenHandle WrenVM::makeCallHandle(std::string_view signature) {
     std::string const sigStr(signature);
-    WrenHandle* handle = wrenMakeCallHandle(_vm, sigStr.c_str());
+    ScriptObject* handle = wrenMakeCallHandle(_vm, sigStr.c_str());
     return detail::UniqueWrenHandle(handle, detail::WrenHandleDeleter{.vm = _vm});
 }
 
-void WrenVM::releaseHandle(WrenHandle* handle) {
+void WrenVM::releaseHandle(ScriptObject* handle) {
     if (handle != nullptr && _vm != nullptr) {
         wrenReleaseHandle(_vm, handle);
     }
 }
 
-WrenInterpretResult WrenVM::call(WrenHandle* method) {
+CallResult WrenVM::call(ScriptObject* method) {
     _lastError.clear();
-    return wrenCall(_vm, method);
+    switch (wrenCall(_vm, method)) {
+        case WREN_RESULT_SUCCESS:
+            return CallResult::Success;
+        case WREN_RESULT_COMPILE_ERROR:
+            return CallResult::CompileError;
+        default:
+            return CallResult::RuntimeError;
+    }
 }
 
-WrenInterpretResult WrenVM::call(const detail::UniqueWrenHandle& method) { return call(method.get()); }
+CallResult WrenVM::call(const detail::UniqueWrenHandle& method) { return call(method.get()); }
 
 bool WrenVM::hasModule(std::string_view module) {
     if (_vm == nullptr) {
@@ -207,16 +189,6 @@ void WrenVM::collectGarbage() {
         wrenCollectGarbage(_vm);
     }
 }
-
-void WrenVM::setRegistry(void* registry) noexcept { _registry = registry; }
-
-void* WrenVM::getRegistry() const noexcept { return _registry; }
-
-void WrenVM::setUserContext(void* ctx) noexcept { _userContext = ctx; }
-
-void* WrenVM::getUserContext() const noexcept { return _userContext; }
-
-::WrenVM* WrenVM::raw() noexcept { return _vm; }
 
 void WrenVM::ensureSlots(int numSlots) { wrenEnsureSlots(_vm, numSlots); }
 

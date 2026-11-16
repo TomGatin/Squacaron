@@ -78,7 +78,8 @@ TEST(Scripting, ComponentBinderDirectAccess) {
     EXPECT_NE(scriptSystem.getScriptInstance(e1), nullptr);
 
     auto modifyHandle = scriptSystem.getVm().makeCallHandle("modifyPosition()");
-    EXPECT_EQ(scriptSystem.getVm().call(modifyHandle, scriptSystem.getScriptInstance(e1)), WREN_RESULT_SUCCESS);
+    EXPECT_EQ(scriptSystem.getVm().call(modifyHandle, scriptSystem.getScriptInstance(e1)),
+              scripting::CallResult::Success);
 
     auto& pos = registry.getComponents<Position>().get(e1);
     EXPECT_EQ(pos.x, 42.0F);
@@ -115,7 +116,7 @@ TEST(Scripting, DeferredCommandBufferDestruction) {
     scriptSystem.update(0.016F);
 
     auto dieHandle = scriptSystem.getVm().makeCallHandle("die()");
-    EXPECT_EQ(scriptSystem.getVm().call(dieHandle, scriptSystem.getScriptInstance(e1)), WREN_RESULT_SUCCESS);
+    EXPECT_EQ(scriptSystem.getVm().call(dieHandle, scriptSystem.getScriptInstance(e1)), scripting::CallResult::Success);
 
     // Entity is NOT destroyed immediately (deferred safely)
     EXPECT_FALSE(scriptSystem.getCommandBuffer().empty());
@@ -166,7 +167,8 @@ TEST(Scripting, EventForwardingMagicMethod) {
     bus.publish(CollisionEvent{.entityA = e1, .entityB = e2});
 
     auto getHitOther = scriptSystem.getVm().makeCallHandle("hitOther");
-    EXPECT_EQ(scriptSystem.getVm().call(getHitOther, scriptSystem.getScriptInstance(e1)), WREN_RESULT_SUCCESS);
+    EXPECT_EQ(scriptSystem.getVm().call(getHitOther, scriptSystem.getScriptInstance(e1)),
+              scripting::CallResult::Success);
     double const hit = scriptSystem.getVm().getSlot<double>(0);
 
     EXPECT_EQ(hit, static_cast<double>(e2));
@@ -206,11 +208,13 @@ TEST(Scripting, CoroutineFiberWait) {
     scriptSystem.update(0.016F);
 
     auto startHandle = scriptSystem.getVm().makeCallHandle("startSequence()");
-    EXPECT_EQ(scriptSystem.getVm().call(startHandle, scriptSystem.getScriptInstance(e1)), WREN_RESULT_SUCCESS);
+    EXPECT_EQ(scriptSystem.getVm().call(startHandle, scriptSystem.getScriptInstance(e1)),
+              scripting::CallResult::Success);
 
     auto stateHandle = scriptSystem.getVm().makeCallHandle("state");
     auto checkState = [&](double expected) {
-        EXPECT_EQ(scriptSystem.getVm().call(stateHandle, scriptSystem.getScriptInstance(e1)), WREN_RESULT_SUCCESS);
+        EXPECT_EQ(scriptSystem.getVm().call(stateHandle, scriptSystem.getScriptInstance(e1)),
+                  scripting::CallResult::Success);
         EXPECT_EQ(scriptSystem.getVm().getSlot<double>(0), expected);
     };
 
@@ -258,7 +262,8 @@ TEST(Scripting, HybridOptionalUpdateLoop) {
     auto ticksHandle = scriptSystem.getVm().makeCallHandle("ticks");
 
     auto getTicks = [&]() -> double {
-        EXPECT_EQ(scriptSystem.getVm().call(ticksHandle, scriptSystem.getScriptInstance(e1)), WREN_RESULT_SUCCESS);
+        EXPECT_EQ(scriptSystem.getVm().call(ticksHandle, scriptSystem.getScriptInstance(e1)),
+                  scripting::CallResult::Success);
         return scriptSystem.getVm().getSlot<double>(0);
     };
 
@@ -320,7 +325,8 @@ TEST(Scripting, HotReloadValidCode) {
 
     auto callApplyMove = [&]() {
         auto applyHandle = scriptSystem.getVm().makeCallHandle("applyMove()");
-        EXPECT_EQ(scriptSystem.getVm().call(applyHandle, scriptSystem.getScriptInstance(e1)), WREN_RESULT_SUCCESS);
+        EXPECT_EQ(scriptSystem.getVm().call(applyHandle, scriptSystem.getScriptInstance(e1)),
+                  scripting::CallResult::Success);
     };
 
     callApplyMove();
@@ -395,7 +401,8 @@ TEST(Scripting, HotReloadSyntaxErrorResilience) {
 
     auto getValue = [&]() -> double {
         auto valHandle = scriptSystem.getVm().makeCallHandle("value");
-        EXPECT_EQ(scriptSystem.getVm().call(valHandle, scriptSystem.getScriptInstance(e1)), WREN_RESULT_SUCCESS);
+        EXPECT_EQ(scriptSystem.getVm().call(valHandle, scriptSystem.getScriptInstance(e1)),
+                  scripting::CallResult::Success);
         return scriptSystem.getVm().getSlot<double>(0);
     };
 
@@ -464,7 +471,7 @@ TEST(Scripting, LifecycleOnDestroy) {
     scriptSystem.update(0.016F);
 
     auto dieHandle = scriptSystem.getVm().makeCallHandle("die()");
-    EXPECT_EQ(scriptSystem.getVm().call(dieHandle, scriptSystem.getScriptInstance(e1)), WREN_RESULT_SUCCESS);
+    EXPECT_EQ(scriptSystem.getVm().call(dieHandle, scriptSystem.getScriptInstance(e1)), scripting::CallResult::Success);
 
     // Destruction is deferred, onDestroy has NOT run yet
     EXPECT_EQ(g_destroyHookCallCount, 0);
@@ -671,11 +678,13 @@ TEST(Scripting, CoroutineChainedWait) {
     scriptSystem.update(0.016F);
 
     auto startHandle = scriptSystem.getVm().makeCallHandle("start()");
-    EXPECT_EQ(scriptSystem.getVm().call(startHandle, scriptSystem.getScriptInstance(e1)), WREN_RESULT_SUCCESS);
+    EXPECT_EQ(scriptSystem.getVm().call(startHandle, scriptSystem.getScriptInstance(e1)),
+              scripting::CallResult::Success);
 
     auto stepHandle = scriptSystem.getVm().makeCallHandle("step");
     auto checkStep = [&](double expected) {
-        EXPECT_EQ(scriptSystem.getVm().call(stepHandle, scriptSystem.getScriptInstance(e1)), WREN_RESULT_SUCCESS);
+        EXPECT_EQ(scriptSystem.getVm().call(stepHandle, scriptSystem.getScriptInstance(e1)),
+                  scripting::CallResult::Success);
         EXPECT_EQ(scriptSystem.getVm().getSlot<double>(0), expected);
     };
 
@@ -774,7 +783,8 @@ TEST(Scripting, InputModuleBindings) {
     EXPECT_NE(scriptSystem.getScriptInstance(e1), nullptr);
 
     auto pollHandle = scriptSystem.getVm().makeCallHandle("pollInput()");
-    EXPECT_EQ(scriptSystem.getVm().call(pollHandle, scriptSystem.getScriptInstance(e1)), WREN_RESULT_SUCCESS);
+    EXPECT_EQ(scriptSystem.getVm().call(pollHandle, scriptSystem.getScriptInstance(e1)),
+              scripting::CallResult::Success);
 
     auto& pos = registry.getComponents<Position>().get(e1);
     EXPECT_FLOAT_EQ(pos.x, 100.0F);
@@ -786,7 +796,7 @@ TEST(Scripting, InputModuleBindings) {
     scriptSystem.getVm().getVariable("core/Input", "Input", 0);
     scriptSystem.getVm().setSlot(1, 0.0);
     scriptSystem.getVm().setSlot(2, "shoot");
-    EXPECT_EQ(scriptSystem.getVm().call(isJustPressedHandle), WREN_RESULT_SUCCESS);
+    EXPECT_EQ(scriptSystem.getVm().call(isJustPressedHandle), scripting::CallResult::Success);
     EXPECT_TRUE(scriptSystem.getVm().getSlot<bool>(0));
 
     // Default wrapper query without player index
@@ -794,7 +804,7 @@ TEST(Scripting, InputModuleBindings) {
     scriptSystem.getVm().ensureSlots(2);
     scriptSystem.getVm().getVariable("core/Input", "Input", 0);
     scriptSystem.getVm().setSlot(1, "shoot");
-    EXPECT_EQ(scriptSystem.getVm().call(defaultIsJustPressedHandle), WREN_RESULT_SUCCESS);
+    EXPECT_EQ(scriptSystem.getVm().call(defaultIsJustPressedHandle), scripting::CallResult::Success);
     EXPECT_TRUE(scriptSystem.getVm().getSlot<bool>(0));
 
     auto isJustReleasedHandle = scriptSystem.getVm().makeCallHandle("isJustReleased(_,_)");
@@ -802,7 +812,7 @@ TEST(Scripting, InputModuleBindings) {
     scriptSystem.getVm().getVariable("core/Input", "Input", 0);
     scriptSystem.getVm().setSlot(1, 0.0);
     scriptSystem.getVm().setSlot(2, "shoot");
-    EXPECT_EQ(scriptSystem.getVm().call(isJustReleasedHandle), WREN_RESULT_SUCCESS);
+    EXPECT_EQ(scriptSystem.getVm().call(isJustReleasedHandle), scripting::CallResult::Success);
     EXPECT_FALSE(scriptSystem.getVm().getSlot<bool>(0));
 }
 
@@ -833,7 +843,7 @@ TEST(Scripting, InputExposesMouseState) {
         auto handle = scriptSystem.getVm().makeCallHandle(signature);
         scriptSystem.getVm().ensureSlots(1);
         scriptSystem.getVm().getVariable("test_mouse", "MouseQuery", 0);
-        EXPECT_EQ(scriptSystem.getVm().call(handle), WREN_RESULT_SUCCESS);
+        EXPECT_EQ(scriptSystem.getVm().call(handle), scripting::CallResult::Success);
         return scriptSystem.getVm().getSlot<double>(0);
     };
 
@@ -858,7 +868,7 @@ TEST(Scripting, RobustnessForeignCallTypeValidation) {
     std::string const wrenPositionClass = binder.generateWrenClass();
     EXPECT_TRUE(scriptSystem.getVm().interpret("core/Position", wrenPositionClass));
 
-    // Test 1: Engine.spawnPrefab(null, 0, 0) -> WREN_RESULT_RUNTIME_ERROR (not SIGSEGV)
+    // Test 1: Engine.spawnPrefab(null, 0, 0) -> scripting::CallResult::RuntimeError (not SIGSEGV)
     const char* badSpawnScript =
         "import \"core/Engine\" for Engine\n"
         "class BadSpawn {\n"
@@ -870,9 +880,9 @@ TEST(Scripting, RobustnessForeignCallTypeValidation) {
     auto badSpawnHandle = scriptSystem.getVm().makeCallHandle("test()");
     scriptSystem.getVm().ensureSlots(1);
     scriptSystem.getVm().getVariable("test_spawn", "BadSpawn", 0);
-    EXPECT_EQ(scriptSystem.getVm().call(badSpawnHandle), WREN_RESULT_RUNTIME_ERROR);
+    EXPECT_EQ(scriptSystem.getVm().call(badSpawnHandle), scripting::CallResult::RuntimeError);
 
-    // Test 2: Input.isDown(0, 5) -> WREN_RESULT_RUNTIME_ERROR (not SIGSEGV)
+    // Test 2: Input.isDown(0, 5) -> scripting::CallResult::RuntimeError (not SIGSEGV)
     const char* badInputScript =
         "import \"core/Input\" for Input\n"
         "class BadInput {\n"
@@ -884,9 +894,9 @@ TEST(Scripting, RobustnessForeignCallTypeValidation) {
     auto badInputHandle = scriptSystem.getVm().makeCallHandle("test()");
     scriptSystem.getVm().ensureSlots(1);
     scriptSystem.getVm().getVariable("test_input", "BadInput", 0);
-    EXPECT_EQ(scriptSystem.getVm().call(badInputHandle), WREN_RESULT_RUNTIME_ERROR);
+    EXPECT_EQ(scriptSystem.getVm().call(badInputHandle), scripting::CallResult::RuntimeError);
 
-    // Test 3: pos.x = "abc" -> WREN_RESULT_RUNTIME_ERROR (not SIGSEGV)
+    // Test 3: pos.x = "abc" -> scripting::CallResult::RuntimeError (not SIGSEGV)
     ecs::Entity const e1 = registry.spawnEntity();
     registry.addComponent<Position>(e1, Position{.x = 10.0F, .y = 20.0F});
     const char* badSetterScript =
@@ -902,9 +912,9 @@ TEST(Scripting, RobustnessForeignCallTypeValidation) {
     scriptSystem.getVm().ensureSlots(2);
     scriptSystem.getVm().getVariable("test_setter", "BadSetter", 0);
     scriptSystem.getVm().setSlot(1, static_cast<double>(e1));
-    EXPECT_EQ(scriptSystem.getVm().call(badSetterHandle), WREN_RESULT_RUNTIME_ERROR);
+    EXPECT_EQ(scriptSystem.getVm().call(badSetterHandle), scripting::CallResult::RuntimeError);
 
-    // Test 4: Position.new("abc") -> WREN_RESULT_RUNTIME_ERROR (not SIGSEGV)
+    // Test 4: Position.new("abc") -> scripting::CallResult::RuntimeError (not SIGSEGV)
     const char* badConstructorScript =
         "import \"core/Position\" for Position\n"
         "class BadConstructor {\n"
@@ -916,7 +926,7 @@ TEST(Scripting, RobustnessForeignCallTypeValidation) {
     auto badConstructorHandle = scriptSystem.getVm().makeCallHandle("test()");
     scriptSystem.getVm().ensureSlots(1);
     scriptSystem.getVm().getVariable("test_ctor", "BadConstructor", 0);
-    EXPECT_EQ(scriptSystem.getVm().call(badConstructorHandle), WREN_RESULT_RUNTIME_ERROR);
+    EXPECT_EQ(scriptSystem.getVm().call(badConstructorHandle), scripting::CallResult::RuntimeError);
 }
 
 TEST(Scripting, RobustnessForeignCallNumericConversions) {
@@ -960,13 +970,13 @@ TEST(Scripting, RobustnessForeignCallNumericConversions) {
         return scriptSystem.getVm().call(handle);
     };
 
-    EXPECT_EQ(callStatic("fractionalEntity()"), WREN_RESULT_RUNTIME_ERROR);
-    EXPECT_EQ(callStatic("tooLargeEntity()"), WREN_RESULT_RUNTIME_ERROR);
+    EXPECT_EQ(callStatic("fractionalEntity()"), scripting::CallResult::RuntimeError);
+    EXPECT_EQ(callStatic("tooLargeEntity()"), scripting::CallResult::RuntimeError);
 
-    EXPECT_EQ(callWithEntity("tooLargeFloat(_)"), WREN_RESULT_RUNTIME_ERROR);
+    EXPECT_EQ(callWithEntity("tooLargeFloat(_)"), scripting::CallResult::RuntimeError);
     EXPECT_FLOAT_EQ(registry.getComponents<Position>().get(entity).x, 10.0F);
 
-    EXPECT_EQ(callWithEntity("validFloat(_)"), WREN_RESULT_SUCCESS);
+    EXPECT_EQ(callWithEntity("validFloat(_)"), scripting::CallResult::Success);
     EXPECT_FLOAT_EQ(registry.getComponents<Position>().get(entity).x, 1.5F);
 }
 
@@ -1013,7 +1023,7 @@ ecs::Entity spawnScripted(ecs::Registry& registry, const char* className, bool h
 
 double readGetter(scripting::ScriptSystem& scriptSystem, ecs::Entity e, const char* getter) {
     auto handle = scriptSystem.getVm().makeCallHandle(getter);
-    EXPECT_EQ(scriptSystem.getVm().call(handle, scriptSystem.getScriptInstance(e)), WREN_RESULT_SUCCESS);
+    EXPECT_EQ(scriptSystem.getVm().call(handle, scriptSystem.getScriptInstance(e)), scripting::CallResult::Success);
     return scriptSystem.getVm().getSlot<double>(0);
 }
 
@@ -1134,7 +1144,7 @@ namespace {
  * @brief Runs `Engine.spawnPrefab(<prefabName>, 12, 34)` from a Wren static method.
  * @return The Wren call result.
  */
-WrenInterpretResult callSpawnPrefab(scripting::ScriptSystem& scriptSystem, std::string const& prefabName) {
+scripting::CallResult callSpawnPrefab(scripting::ScriptSystem& scriptSystem, std::string const& prefabName) {
     std::string const module = "spawn_" + prefabName;
     std::string const code =
         "import \"core/Engine\" for Engine\n"
@@ -1167,7 +1177,7 @@ TEST(Scripting, SpawnPrefabInstantiatesRegisteredPrefab) {
     scriptSystem.init(registry, bus);
     scriptSystem.setPrefabManager(&manager);
 
-    EXPECT_EQ(callSpawnPrefab(scriptSystem, "probe"), WREN_RESULT_SUCCESS);
+    EXPECT_EQ(callSpawnPrefab(scriptSystem, "probe"), scripting::CallResult::Success);
     EXPECT_FALSE(scriptSystem.getCommandBuffer().empty());
     EXPECT_TRUE(registry.getComponents<ecs::Transform>().getDense().empty());
 
@@ -1189,7 +1199,7 @@ TEST(Scripting, SpawnPrefabUnknownNameQueuesNothing) {
     scriptSystem.init(registry, bus);
     scriptSystem.setPrefabManager(&manager);
 
-    EXPECT_EQ(callSpawnPrefab(scriptSystem, "does_not_exist"), WREN_RESULT_SUCCESS);
+    EXPECT_EQ(callSpawnPrefab(scriptSystem, "does_not_exist"), scripting::CallResult::Success);
     EXPECT_TRUE(scriptSystem.getCommandBuffer().empty());
 }
 
@@ -1201,7 +1211,7 @@ TEST(Scripting, SpawnPrefabWithoutManagerQueuesNothing) {
     scripting::ScriptSystem scriptSystem;
     scriptSystem.init(registry, bus);
 
-    EXPECT_EQ(callSpawnPrefab(scriptSystem, "probe"), WREN_RESULT_SUCCESS);
+    EXPECT_EQ(callSpawnPrefab(scriptSystem, "probe"), scripting::CallResult::Success);
     EXPECT_TRUE(scriptSystem.getCommandBuffer().empty());
 }
 
@@ -1230,7 +1240,7 @@ struct ScriptFixture {
     /** @brief Reads the number returned by the getter `name` of the script of `e`. */
     double number(ecs::Entity e, const char* name) {
         auto handle = scripts.getVm().makeCallHandle(name);
-        EXPECT_EQ(scripts.getVm().call(handle, scripts.getScriptInstance(e)), WREN_RESULT_SUCCESS);
+        EXPECT_EQ(scripts.getVm().call(handle, scripts.getScriptInstance(e)), scripting::CallResult::Success);
         return scripts.getVm().getSlot<double>(0);
     }
 };
@@ -1291,7 +1301,7 @@ TEST(ScriptErrors, LastErrorStaysBoundedOnRepeatedFailures) {
 
     vm.ensureSlots(1);
     vm.getVariable("main", "Broken", 0);
-    ASSERT_EQ(vm.call(fail), WREN_RESULT_RUNTIME_ERROR);
+    ASSERT_EQ(vm.call(fail), scripting::CallResult::RuntimeError);
     std::size_t const oneError = vm.lastError().size();
     EXPECT_GT(oneError, 0U);
     EXPECT_NE(vm.lastError().find("boom"), std::string::npos);
@@ -1300,13 +1310,13 @@ TEST(ScriptErrors, LastErrorStaysBoundedOnRepeatedFailures) {
     for (int i = 0; i < 1000; ++i) {
         vm.ensureSlots(1);
         vm.getVariable("main", "Broken", 0);
-        ASSERT_EQ(vm.call(fail), WREN_RESULT_RUNTIME_ERROR);
+        ASSERT_EQ(vm.call(fail), scripting::CallResult::RuntimeError);
     }
     EXPECT_EQ(vm.lastError().size(), oneError);
 
     vm.ensureSlots(1);
     vm.getVariable("main", "Broken", 0);
-    ASSERT_EQ(vm.call(ok), WREN_RESULT_SUCCESS);
+    ASSERT_EQ(vm.call(ok), scripting::CallResult::Success);
     EXPECT_TRUE(vm.lastError().empty());
 }
 
@@ -1320,7 +1330,7 @@ TEST(ScriptErrors, LastErrorIsCappedForDeepStackTraces) {
     vm.ensureSlots(2);
     vm.getVariable("main", "Deep", 0);
     vm.setSlot(1, 2000.0);
-    ASSERT_EQ(vm.call(down), WREN_RESULT_RUNTIME_ERROR);
+    ASSERT_EQ(vm.call(down), scripting::CallResult::RuntimeError);
     EXPECT_LE(vm.lastError().size(), scripting::WrenVM::MAX_ERROR_LENGTH + 3);
 }
 

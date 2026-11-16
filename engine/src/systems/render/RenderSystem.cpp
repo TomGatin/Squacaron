@@ -12,13 +12,14 @@
 #include "components/Transform.hpp"
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
+#include "render/detail/RaylibStores.hpp"
 #include "render/texture/TextureStore.hpp"
 #include "systems/render/RenderSystemDefaults.hpp"
 #include "systems/render/RenderSystemSort.hpp"
 
 namespace render {
 
-RenderSystem::RenderSystem(const TextureStore& textures) : _textures(&textures), _camera(detail::neutralCamera()) {
+RenderSystem::RenderSystem(const TextureStore& textures) : _textures(&textures), _camera() {
     _queue.reserve(detail::INITIAL_QUEUE_CAPACITY);
 }
 
@@ -68,12 +69,12 @@ void RenderSystem::collect(ecs::Registry& registry) {
 
     std::ranges::sort(_queue, detail::drawsBefore);
 
-    _camera = detail::neutralCamera();
+    _camera = CameraView{};
     bool cameraFound = false;
     registry.runSystem<ecs::CameraComponent>(
         [this, &cameraFound](ecs::Entity /*entity*/, const ecs::CameraComponent& component) {
             if (!cameraFound && component.active) {
-                _camera = Camera2D{
+                _camera = CameraView{
                     .offset = {.x = component.offsetX, .y = component.offsetY},
                     .target = {.x = component.targetX, .y = component.targetY},
                     .rotation = component.rotation,
@@ -85,7 +86,12 @@ void RenderSystem::collect(ecs::Registry& registry) {
 }
 
 void RenderSystem::draw() const {
-    BeginMode2D(_camera);
+    BeginMode2D(Camera2D{
+        .offset = {.x = _camera.offset.x, .y = _camera.offset.y},
+        .target = {.x = _camera.target.x, .y = _camera.target.y},
+        .rotation = _camera.rotation,
+        .zoom = _camera.zoom,
+    });
     for (const DrawItem& item : _queue) {
         drawItem(item);
     }
@@ -110,7 +116,7 @@ void RenderSystem::drawItem(const DrawItem& item) const {
         return;
     }
 
-    const Texture2D* texture = _textures->get(item.textureId);
+    const Texture2D* texture = _textures->impl().get(item.textureId);
     if (texture == nullptr) {
         return;
     }

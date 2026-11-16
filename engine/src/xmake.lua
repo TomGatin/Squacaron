@@ -79,7 +79,7 @@ target("engine_scripting")
     add_files("scripting/**.cpp")
     add_includedirs(".", {public = true})
     add_deps("engine_core", "engine_events", "engine_input", "engine_prefabs", "engine_assets", "engine_log")
-    add_packages("wren", {public = true})
+    add_packages("wren")
 
 -- Network interfaces (transport, config) and replication building blocks (input queue, network id map).
 -- No socket library here: code that only talks to the interfaces never depends on asio.
@@ -174,7 +174,11 @@ target("engine_devconsole")
 target("engine_headers")
     set_kind("headeronly")
     add_includedirs(".", {public = true})
-    add_headerfiles("(**.hpp)", "(**.tpp)", {prefixdir = "squacaron"})
+    -- Private headers (they include asio, raylib, box2d or wren) are not installed: a game never sees those libraries.
+    -- scripts/check_public_headers.sh compiles every installed header without them.
+    local private = "|net/asio/*.hpp|audio/strategy/raylib/*.hpp|systems/physics/detail/*.hpp|render/detail/*.hpp" ..
+                    "|scripting/detail/WrenApi.hpp"
+    add_headerfiles("(**.hpp)" .. private, "(**.tpp)", {prefixdir = "squacaron"})
 
 target("engine_all")
     set_kind("phony")

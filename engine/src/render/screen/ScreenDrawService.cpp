@@ -9,6 +9,8 @@
 
 #include "components/Renderable.hpp"
 #include "core/services/IScreenDrawService.hpp"
+#include "render/detail/RaylibStores.hpp"
+#include "render/font/FontStore.hpp"
 
 namespace render {
 
@@ -32,20 +34,26 @@ Rectangle toRaylib(const engine::ScreenRect& rect) noexcept {
     return Rectangle{.x = rect.x, .y = rect.y, .width = rect.width, .height = rect.height};
 }
 
+/**
+ * @brief Gets the font to draw or measure with.
+ * @param fonts Loaded fonts.
+ * @param font Font identifier; `engine::NO_FONT` or an unknown id selects raylib's default font.
+ * @return The font.
+ */
+Font resolveFont(const FontStore& fonts, engine::FontId font) {
+    const Font* stored = fonts.impl().get(font);
+    return stored != nullptr ? *stored : GetFontDefault();
+}
+
 }  // namespace
 
 engine::FontId ScreenDrawService::loadFont(const std::string& path) { return _fonts.load(path); }
-
-Font ScreenDrawService::resolveFont(engine::FontId font) const {
-    const Font* stored = _fonts.get(font);
-    return stored != nullptr ? *stored : GetFontDefault();
-}
 
 engine::TextSize ScreenDrawService::measureText(std::string_view text, float fontSize, float spacing,
                                                 engine::FontId font) const {
     // MeasureTextEx needs a null-terminated string, which a string_view does not guarantee.
     const std::string terminated(text);
-    const Vector2 size = MeasureTextEx(resolveFont(font), terminated.c_str(), fontSize, spacing);
+    const Vector2 size = MeasureTextEx(resolveFont(_fonts, font), terminated.c_str(), fontSize, spacing);
     return {.width = size.x, .height = size.y};
 }
 
@@ -77,7 +85,7 @@ void ScreenDrawService::drawTexture(const ecs::TextureId texture, const ecs::Tex
 }
 
 void ScreenDrawService::drawQueued(const TextureCommand& command) const {
-    const Texture2D* texture = _textures != nullptr ? _textures->get(command.texture) : nullptr;
+    const Texture2D* texture = _textures != nullptr ? _textures->impl().get(command.texture) : nullptr;
     if (texture == nullptr) {
         return;
     }
@@ -111,8 +119,8 @@ void ScreenDrawService::flush() {
                 } else if constexpr (std::is_same_v<T, StrokeCommand>) {
                     DrawRectangleLinesEx(toRaylib(cmd.rect), cmd.thickness, toRaylib(cmd.color));
                 } else if constexpr (std::is_same_v<T, TextCommand>) {
-                    DrawTextEx(resolveFont(cmd.font), cmd.text.c_str(), Vector2{.x = cmd.x, .y = cmd.y}, cmd.fontSize,
-                               cmd.spacing, toRaylib(cmd.color));
+                    DrawTextEx(resolveFont(_fonts, cmd.font), cmd.text.c_str(), Vector2{.x = cmd.x, .y = cmd.y},
+                               cmd.fontSize, cmd.spacing, toRaylib(cmd.color));
                 } else if constexpr (std::is_same_v<T, TextureCommand>) {
                     drawQueued(cmd);
                 }

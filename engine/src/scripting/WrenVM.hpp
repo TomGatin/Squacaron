@@ -1,6 +1,6 @@
 /**
  * @file WrenVM.hpp
- * @brief High-level C++23 RAII wrapper and manager for the Wren Virtual Machine.
+ * @brief RAII wrapper of the Wren virtual machine: modules, foreign bindings, calls and slots. No `wren.h`.
  */
 
 #pragma once
@@ -12,392 +12,242 @@
 #include <string_view>
 #include <unordered_map>
 
-#include "scripting/detail/WrenApi.hpp"    // IWYU pragma: export
+#include "scripting/detail/WrenFwd.hpp"    // IWYU pragma: export
 #include "scripting/detail/WrenTypes.hpp"  // IWYU pragma: export
 
 namespace scripting {
 
 class ForeignCall;
+class WrenVM;
 
 namespace detail {
 
 /**
- * @brief Constructs a Wren method signature string.
+ * @brief Builds a Wren method signature.
  * @param name Method name.
- * @param arity Number of parameters expected.
- * @return Formatted signature string (e.g., "new(_,_)").
+ * @param arity Number of parameters.
+ * @return The signature, e.g. `new(_,_)`.
  */
 [[nodiscard]] std::string makeMethodSignature(std::string_view name, std::size_t arity);
+
+/**
+ * @brief Gets the Wren C VM of a wrapper, for code that includes `scripting/detail/WrenApi.hpp` (the scripting
+ * module, tests). Games use the `WrenVM` and `ForeignCall` API instead.
+ * @param vm Wrapper.
+ * @return The C VM.
+ */
+[[nodiscard]] NativeVm* raw(WrenVM& vm) noexcept;
+
+/** @brief The callbacks the Wren C VM calls into, defined in `WrenVMCallbacks.cpp`. */
+struct VmCallbacks;
 
 }  // namespace detail
 
 /**
- * @brief High-level C++23 RAII facade and manager for the Wren Virtual Machine.
+ * @brief Owns a Wren virtual machine.
  *
- * Wraps Wren's C API into a type-safe, ergonomic interface featuring:
- * - RAII handle management via `UniqueWrenHandle`.
- * - Modern C++23 template slot marshaling (`setSlot<T>`, `getSlot<T>`).
- * - Strong error handling with `std::expected<void, std::string>`.
- * - Foreign method and class registry maps.
- * - Integration with engine memory and module loading subsystems.
+ * - Modules: `interpret`, `hasModule`, `hasVariable`, and a `ModuleLoader` for `import`.
+ * - Foreign methods and classes: registered by name before the code that declares them runs; they survive `reset()`.
+ * - Calls: `makeCallHandle` then `call(method, receiver, args...)`, or `newInstance`; owned handles are
+ *   `detail::UniqueWrenHandle`.
+ * - Slots: `setSlot<T>` / `getSlot<T>` / `getSlotChecked<T>` for bool, numbers, strings and handles.
+ *
+ * Its header only declares the Wren C types: the scripting module is the only code that includes `wren.h`.
  */
 class WrenVM {
   public:
-    /**
-     * @brief Signature for module loading callbacks.
-     * Given a module name, returns the Wren source code as a string.
-     */
+    /** @brief Gives the source of an imported module, or an empty string if it does not exist. */
     using ModuleLoader = std::function<std::string(std::string_view moduleName)>;
-
-    /**
-     * @brief Signature for text output interception (e.g. System.print).
-     */
+    /** @brief Receives the text printed by `System.print`. */
     using WriteHandler = std::function<void(std::string_view text)>;
-
-    /**
-     * @brief Signature for error notifications (compile errors, runtime errors, stack traces).
-     */
+    /** @brief Receives each piece of an error: compile error, runtime error message, stack trace line. */
     using ErrorHandler =
-        std::function<void(WrenErrorType type, std::string_view module, int line, std::string_view message)>;
+        std::function<void(ScriptErrorKind kind, std::string_view module, int line, std::string_view message)>;
 
-    /**
-     * @brief Constructs a new WrenVM instance and initializes internal configuration.
-     */
+    /** @brief Creates a VM. */
     WrenVM();
-
-    /**
-     * @brief Destroys the WrenVM instance and releases all associated VM resources.
-     */
+    /** @brief Frees the VM; its handles must be released first. */
     ~WrenVM();
-
     /** @brief Deleted copy constructor. */
     WrenVM(const WrenVM&) = delete;
     /** @brief Deleted copy assignment operator. */
     WrenVM& operator=(const WrenVM&) = delete;
-
-    /**
-     * @brief Move constructor transferring VM ownership, handles, and callbacks.
-     * @param other Rvalue reference to the source WrenVM.
-     */
+    /** @brief Takes over the VM, its bindings and callbacks. @param other Source, left empty. */
     WrenVM(WrenVM&& other) noexcept;
-
-    /**
-     * @brief Move assignment operator transferring VM ownership, handles, and callbacks.
-     * @param other Rvalue reference to the source WrenVM.
-     * @return Reference to this instance.
-     */
+    /** @brief Frees this VM and takes over `other`. @param other Source, left empty. @return This. */
     WrenVM& operator=(WrenVM&& other) noexcept;
 
-    /**
-     * @brief Sets the custom module loader used when Wren encounters an `import` statement.
-     * @param loader Callable returning module source code given a module name.
-     */
+    /** @brief Sets the loader called on `import`. @param loader The loader. */
     void setModuleLoader(ModuleLoader loader);
-
-    /**
-     * @brief Retrieves the active module loader callback.
-     */
+    /** @brief Gets the loader called on `import`. @return The loader. */
     [[nodiscard]] const ModuleLoader& getModuleLoader() const noexcept;
-
-    /**
-     * @brief Recreates the internal Wren virtual machine while preserving foreign bindings and callbacks.
-     */
+    /** @brief Replaces the VM by a new one, keeping the foreign bindings and the callbacks. */
     void reset();
-
-    /**
-     * @brief Sets the text output handler intercepting `System.print`.
-     * @param handler Callable taking output text.
-     */
+    /** @brief Sets the handler of `System.print`. @param handler The handler; empty logs the text. */
     void setWriteHandler(WriteHandler handler);
-
-    /**
-     * @brief Sets the error handler invoked during compile or runtime errors.
-     * @param handler Callable receiving error type, module, line, and message.
-     */
+    /** @brief Sets the handler of the errors. @param handler The handler; empty logs them in verbose mode. */
     void setErrorHandler(ErrorHandler handler);
-
-    /**
-     * @brief Gets the text output handler, to restore it after replacing it for a while.
-     * @return The handler; empty when output goes to the standard output.
-     */
+    /** @brief Gets the handler of `System.print`, to restore it later. @return The handler. */
     [[nodiscard]] const WriteHandler& writeHandler() const noexcept { return _writeHandler; }
-
-    /**
-     * @brief Gets the error handler, to restore it after replacing it for a while.
-     * @return The handler; empty when errors go to the standard error output.
-     */
+    /** @brief Gets the handler of the errors, to restore it later. @return The handler. */
     [[nodiscard]] const ErrorHandler& errorHandler() const noexcept { return _errorHandler; }
 
     /**
-     * @brief Registers a foreign method callback with Wren using a raw C function pointer.
-     *
-     * @param module Wren module name containing the class.
-     * @param className Wren class name owning the foreign method.
-     * @param isStatic True if the method is static, false for instance methods.
-     * @param signature Wren method signature (e.g. "wait(_)" or "x=(_)").
-     * @param fn C callback function pointer matching WrenForeignMethodFn.
+     * @brief Registers a foreign method from a function Wren can call directly.
+     * @param module Module of the class.
+     * @param className Class.
+     * @param isStatic True for a static method.
+     * @param signature Wren signature (e.g. `wait(_)` or `x=(_)`).
+     * @param fn The function.
      */
     void registerForeignMethod(std::string_view module, std::string_view className, bool isStatic,
-                               std::string_view signature, WrenForeignMethodFn fn);
+                               std::string_view signature, ForeignMethodFn fn);
 
     /**
-     * @brief Registers a foreign method callback with Wren wrapped in an exception-safe noexcept trampoline.
-     *
-     * The callback Fn can accept `ForeignCall&` or `::WrenVM*`. Any thrown C++ exceptions are caught
-     * and translated to `wrenAbortFiber`.
-     *
-     * @tparam Fn Compile-time function pointer to invoke.
-     * @param module Wren module name.
-     * @param className Wren class name.
-     * @param isStatic True if static method.
-     * @param signature Method signature.
+     * @brief Registers a foreign method calling `Fn` through a noexcept trampoline: a C++ exception aborts the
+     * fiber with its message instead of crossing the C VM.
+     * @tparam Fn Function taking `ForeignCall&` (or `NativeVm*`).
+     * @param module Module of the class.
+     * @param className Class.
+     * @param isStatic True for a static method.
+     * @param signature Wren signature.
      */
     template <auto Fn>
     void registerForeignMethod(std::string_view module, std::string_view className, bool isStatic,
                                std::string_view signature);
 
     /**
-     * @brief Registers foreign class allocation and finalization callbacks.
-     *
-     * @param module Wren module name.
-     * @param className Wren class name.
-     * @param methods Struct containing `allocate` and `finalize` function pointers.
+     * @brief Registers the allocation and finalization of a foreign class.
+     * @param module Module of the class.
+     * @param className Class.
+     * @param methods The functions.
      */
-    void registerForeignClass(std::string_view module, std::string_view className, WrenForeignClassMethods methods);
+    void registerForeignClass(std::string_view module, std::string_view className, ForeignClassMethods methods);
 
     /**
-     * @brief Interprets and executes Wren source code within a given module scope.
-     *
-     * @param module Module name (e.g. "main" or "gameplay").
-     * @param source Wren source code string.
-     * @return `std::expected<void, std::string>` containing success or a formatted error message.
+     * @brief Runs Wren source in a module.
+     * @param module Module name.
+     * @param source Source.
+     * @return Nothing, or the error (`lastError()`).
      */
     std::expected<void, std::string> interpret(std::string_view module, std::string_view source);
 
-    /**
-     * @brief Creates a call handle for repeatedly invoking a method with minimal overhead.
-     *
-     * @param signature Method signature (e.g. "update(_)" or "onSpawn()").
-     * @return RAII `detail::UniqueWrenHandle` automatically released on destruction.
-     */
+    /** @brief Makes a handle to call methods of a signature. @param signature E.g. `update(_)`. @return It. */
     [[nodiscard]] detail::UniqueWrenHandle makeCallHandle(std::string_view signature);
+    /** @brief Releases a handle made by this VM. @param handle Handle; null is ignored. */
+    void releaseHandle(ScriptObject* handle);
+    /** @brief Calls a method; receiver and arguments are already in the slots. @param method Call handle. */
+    CallResult call(ScriptObject* method);
+    /** @brief Calls a method; receiver and arguments are already in the slots. @param method Call handle. */
+    CallResult call(const detail::UniqueWrenHandle& method);
 
     /**
-     * @brief Manually releases a raw Wren handle.
-     * @param handle Raw handle pointer to release.
+     * @brief Calls a method on a receiver with arguments, written to the slots first.
+     * @param method Call handle.
+     * @param receiver Receiver (a handle, or a value for static calls on a class in slot 0).
+     * @param args Arguments.
+     * @return The result.
      */
-    void releaseHandle(WrenHandle* handle);
+    template <typename Receiver, typename... Args>
+    CallResult call(ScriptObject* method, const Receiver& receiver, const Args&... args);
+    /** @copydoc call(ScriptObject*, const Receiver&, const Args&...) */
+    template <typename Receiver, typename... Args>
+    CallResult call(const detail::UniqueWrenHandle& method, const Receiver& receiver, const Args&... args);
 
-    /**
-     * @brief Invokes a method using a raw handle.
-     * @param method Raw Wren handle to invoke.
-     * @return Result status (success, runtime error).
-     */
-    WrenInterpretResult call(WrenHandle* method);
-
-    /**
-     * @brief Invokes a method using a RAII UniqueWrenHandle.
-     * @param method Owning handle reference.
-     * @return Result status.
-     */
-    WrenInterpretResult call(const detail::UniqueWrenHandle& method);
-
-    /**
-     * @brief Gets the error of the last failed `interpret()` or `call()`.
-     *
-     * Cleared at the start of each of them, so it only ever holds one error: the message followed by its stack trace,
-     * one line each, separated by `\n`. At most `MAX_ERROR_LENGTH` bytes.
-     * @return The error text, empty after a success.
-     */
+    /** @brief Error of the last failed `interpret()` or `call()`: message, then the stack trace, one per line. */
     [[nodiscard]] const std::string& lastError() const noexcept { return _lastError; }
-
-    /** @brief Longest error text kept by `lastError()`, in bytes: a deep stack trace is cut there. */
+    /** @brief Longest text kept by `lastError()`, in bytes: a deep stack trace is cut there. */
     static constexpr std::size_t MAX_ERROR_LENGTH = 4096;
 
     /**
-     * @brief High-level call API invoking a method on a receiver with variadic arguments.
-     *
-     * Ensures slots, writes the receiver into slot 0, writes args into slots 1+,
-     * executes the method, and returns the interpret result.
-     *
-     * @tparam Receiver Receiver type (e.g. WrenHandle*, detail::UniqueWrenHandle, double).
-     * @tparam Args Argument types.
-     * @param method Method call handle.
-     * @param receiver Target receiver object.
-     * @param args Arguments to pass to the method.
-     * @return Wren interpret result code.
-     */
-    template <typename Receiver, typename... Args>
-    WrenInterpretResult call(WrenHandle* method, const Receiver& receiver, const Args&... args);
-
-    /**
-     * @brief High-level call API taking a RAII UniqueWrenHandle method.
-     */
-    template <typename Receiver, typename... Args>
-    WrenInterpretResult call(const detail::UniqueWrenHandle& method, const Receiver& receiver, const Args&... args);
-
-    /**
-     * @brief Instantiates a Wren class with arguments and returns an owning handle to the instance.
-     *
-     * @tparam Args Argument types.
-     * @param module Module containing the class.
-     * @param className Name of the class to instantiate.
-     * @param args Arguments forwarded to constructor.
-     * @return Owning UniqueWrenHandle to the new instance, or null handle on failure.
+     * @brief Instantiates a class with `new(args...)`.
+     * @param module Module of the class.
+     * @param className Class.
+     * @param args Constructor arguments.
+     * @return Handle to the instance, or a null handle on failure.
      */
     template <typename... Args>
     [[nodiscard]] detail::UniqueWrenHandle newInstance(std::string_view module, std::string_view className,
                                                        const Args&... args);
-
     /**
-     * @brief Instantiates a Wren class using a pre-cached constructor call handle.
+     * @brief Instantiates a class with a cached constructor handle.
+     * @param newHandle Handle of the constructor signature.
+     * @param module Module of the class.
+     * @param className Class.
+     * @param args Constructor arguments.
+     * @return Handle to the instance, or a null handle on failure.
      */
     template <typename... Args>
     [[nodiscard]] detail::UniqueWrenHandle newInstanceWithHandle(const detail::UniqueWrenHandle& newHandle,
                                                                  std::string_view module, std::string_view className,
                                                                  const Args&... args);
 
-    /**
-     * @brief Checks if a module has been loaded/imported into the VM.
-     * @param module Module name.
-     * @return True if the module is loaded.
-     */
+    /** @brief Tells whether a module is loaded. @param module Module. @return True if loaded. */
     [[nodiscard]] bool hasModule(std::string_view module);
-
-    /**
-     * @brief Checks if a top-level variable exists in a given module.
-     * @param module Module name.
-     * @param variableName Variable / class identifier.
-     * @return True if the variable exists.
-     */
+    /** @brief Tells whether a module defines a variable. @param module Module. @param variableName Name. */
     bool hasVariable(std::string_view module, std::string_view variableName);
-
-    /**
-     * @brief Loads a module variable into a slot.
-     * @param module Module name.
-     * @param variableName Variable identifier.
-     * @param slot Target slot index.
-     */
+    /** @brief Loads a module variable into a slot. @param module Module. @param variableName Name. @param slot Slot. */
     void getVariable(std::string_view module, std::string_view variableName, int slot);
-
-    /**
-     * @brief Triggers a garbage collection cycle in the Wren VM.
-     */
+    /** @brief Runs a garbage collection. */
     void collectGarbage();
 
-    /**
-     * @brief Sets the ECS Registry pointer for component binding access.
-     * @param registry Opaque pointer to the ecs::Registry.
-     */
-    void setRegistry(void* registry) noexcept;
+    /** @brief Sets the ECS registry the component bindings read. @param registry `ecs::Registry*`. */
+    void setRegistry(void* registry) noexcept { _registry = registry; }
+    /** @brief Gets the ECS registry of the component bindings. @return `ecs::Registry*`, or null. */
+    [[nodiscard]] void* getRegistry() const noexcept { return _registry; }
+    /** @brief Sets the object foreign methods reach with `ForeignCall::userData`. @param ctx Context. */
+    void setUserContext(void* ctx) noexcept { _userContext = ctx; }
+    /** @brief Gets the object given to `setUserContext`. @return The context, or null. */
+    [[nodiscard]] void* getUserContext() const noexcept { return _userContext; }
 
-    /**
-     * @brief Retrieves the registered ECS Registry pointer.
-     * @return Opaque pointer to the ecs::Registry.
-     */
-    [[nodiscard]] void* getRegistry() const noexcept;
-
-    /**
-     * @brief Sets a custom user context pointer (e.g. ScriptSystem*).
-     * @param ctx Opaque pointer to the user context.
-     */
-    void setUserContext(void* ctx) noexcept;
-
-    /**
-     * @brief Retrieves the custom user context pointer.
-     * @return Opaque pointer to the user context.
-     */
-    [[nodiscard]] void* getUserContext() const noexcept;
-
-    /**
-     * @brief Provides direct access to the raw Wren C VM.
-     * @return Raw ::WrenVM pointer.
-     */
-    [[nodiscard]] ::WrenVM* raw() noexcept;
-
-    /**
-     * @brief Ensures at least `numSlots` are available in the slot array.
-     * @param numSlots Minimum slot count needed.
-     */
+    /** @brief Makes at least `numSlots` slots available. @param numSlots Count. */
     void ensureSlots(int numSlots);
-
-    /**
-     * @brief Sets a value into a Wren VM slot with compile-time type deduction.
-     */
+    /** @brief Writes a value (null, bool, number, string, handle) to a slot. @param slot Slot. @param value Value. */
     template <typename T>
     void setSlot(int slot, const T& value);
-
     /**
-     * @brief Safely extracts a value from a Wren slot with type checking.
-     * @tparam T Desired output type.
-     * @param slot Slot index.
-     * @return Extracted value, or std::nullopt if type mismatch or out of bounds.
+     * @brief Reads a slot as `T` (bool, number with range check, string, handle).
+     * @param slot Slot.
+     * @return The value, or nothing if the slot does not exist or holds another type.
      */
     template <typename T>
     [[nodiscard]] std::optional<T> getSlotChecked(int slot);
-
-    /**
-     * @brief Extracts a value of type T from a Wren VM slot, throwing if type does not match.
-     */
+    /** @brief Reads a slot as `T`. @param slot Slot. @return The value. @throws std::runtime_error On mismatch. */
     template <typename T>
     [[nodiscard]] T getSlot(int slot);
 
   private:
-    /**
-     * @brief Generic trampoline wrapping foreign methods in noexcept and try/catch.
-     */
+    friend struct detail::VmCallbacks;
+    friend NativeVm* detail::raw(WrenVM& vm) noexcept;
+
+    /** @brief Calls `Fn` for Wren, turning C++ exceptions into fiber aborts. @param rawVm The VM. */
     template <auto Fn>
-    static void foreignMethodTrampoline(::WrenVM* rawVm) noexcept;
+    static void foreignMethodTrampoline(NativeVm* rawVm) noexcept;
+    /** @brief Creates the C VM with the callbacks. */
+    void createVm();
 
-    /**
-     * @brief Wren VM callback binding foreign methods to C++ functions.
-     */
-    static WrenForeignMethodFn onBindForeignMethod(::WrenVM* vm, const char* module, const char* className,
-                                                   bool isStatic, const char* signature) noexcept;
-
-    /**
-     * @brief Wren VM callback binding foreign class allocation and finalization functions.
-     */
-    static WrenForeignClassMethods onBindForeignClass(::WrenVM* vm, const char* module, const char* className) noexcept;
-
-    /**
-     * @brief Wren VM callback for module import resolution.
-     */
-    static WrenLoadModuleResult onLoadModule(::WrenVM* vm, const char* name) noexcept;
-
-    /**
-     * @brief Wren VM callback redirecting standard output from `System.print`.
-     */
-    static void onWrite(::WrenVM* vm, const char* text) noexcept;
-
-    /**
-     * @brief Wren VM callback receiving compile and runtime error diagnostics.
-     */
-    static void onError(::WrenVM* vm, WrenErrorType type, const char* module, int line, const char* message) noexcept;
-
-    /** @brief Underlying raw pointer to the Wren VM C instance. */
-    ::WrenVM* _vm = nullptr;
-    /** @brief Opaque pointer to the ECS Registry for component lookups. */
+    /** @brief The C VM. */
+    NativeVm* _vm = nullptr;
+    /** @brief `ecs::Registry*` of the component bindings. */
     void* _registry = nullptr;
-    /** @brief Opaque pointer to user context (e.g. ScriptSystem). */
+    /** @brief Context of the foreign methods. */
     void* _userContext = nullptr;
-    /** @brief Registered module loader callback. */
+    /** @brief Loader called on `import`. */
     ModuleLoader _moduleLoader;
-    /** @brief Registered standard output callback. */
+    /** @brief Handler of `System.print`. */
     WriteHandler _writeHandler;
-    /** @brief Registered error diagnostic callback. */
+    /** @brief Handler of the errors. */
     ErrorHandler _errorHandler;
     /** @brief Error of the last failed `interpret()` or `call()`. */
     std::string _lastError;
-    /** @brief Text printed by `System.print` without its newline yet, logged once the line is complete. */
+    /** @brief Printed text without its newline yet, logged once the line is complete. */
     std::string _pendingOutput;
-
-    /** @brief Cache of loaded module source strings for inspection. */
+    /** @brief Sources of the imported modules, kept until the VM copied them. */
     std::unordered_map<std::string, std::string> _loadedSources;
-    /** @brief Registry of foreign method callbacks indexed by composite key. */
-    std::unordered_map<detail::ForeignMethodKey, WrenForeignMethodFn, detail::ForeignMethodKeyHash> _foreignMethods;
-    /** @brief Registry of foreign class lifecycle callback tables indexed by "module:class". */
-    std::unordered_map<std::string, WrenForeignClassMethods> _foreignClasses;
+    /** @brief Foreign methods, by module, class, staticness and signature. */
+    std::unordered_map<detail::ForeignMethodKey, ForeignMethodFn, detail::ForeignMethodKeyHash> _foreignMethods;
+    /** @brief Foreign classes, by "module/class". */
+    std::unordered_map<std::string, ForeignClassMethods> _foreignClasses;
 };
 
 }  // namespace scripting

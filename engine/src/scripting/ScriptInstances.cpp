@@ -19,7 +19,7 @@ namespace scripting {
 
 using detail::LOG_TAG;
 
-::WrenHandle* ScriptSystem::getScriptInstance(ecs::Entity e) const noexcept {
+ScriptObject* ScriptSystem::getScriptInstance(ecs::Entity e) const noexcept {
     auto it = _instanceHandles.find(e);
     return it != _instanceHandles.end() ? it->second.get() : nullptr;
 }
@@ -78,7 +78,7 @@ void ScriptSystem::triggerDestroyHook(ecs::Entity e) {
         _vm.ensureSlots(2);
         _vm.getVariable("_internal", "Dispatcher", 0);
         _vm.setSlot(1, it->second.get());
-        if (_vm.call(tryDestroyHandle.get()) != WREN_RESULT_SUCCESS) {
+        if (_vm.call(tryDestroyHandle.get()) != CallResult::Success) {
             engine::log::warning(LOG_TAG, "entity ", e,
                                  ": onDestroy() failed: ", detail::formatScriptError(_vm.lastError()));
         }

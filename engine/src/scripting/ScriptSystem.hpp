@@ -159,7 +159,7 @@ class ScriptSystem {
     }
 
     /** @brief Gets the script instance of an entity, or nullptr. */
-    [[nodiscard]] ::WrenHandle* getScriptInstance(ecs::Entity e) const noexcept;
+    [[nodiscard]] ScriptObject* getScriptInstance(ecs::Entity e) const noexcept;
     /** @brief Tells whether an entity has a script instance. */
     [[nodiscard]] bool hasScriptInstance(ecs::Entity e) const noexcept { return _instanceHandles.contains(e); }
 
@@ -232,7 +232,7 @@ class ScriptSystem {
 
     void invokeEntityMethod(ecs::Entity target, std::string const& signature, double arg);
     void forwardCollision(ecs::Entity target, ecs::Entity other);
-    void recordResult(ScriptOwner owner, WrenInterpretResult result, std::string_view hook);
+    void recordResult(ScriptOwner owner, CallResult result, std::string_view hook);
     void prepareVm(WrenVM& vm);
     void installModuleLoader();
     void makeCallHandles();

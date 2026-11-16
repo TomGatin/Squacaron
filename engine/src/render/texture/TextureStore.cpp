@@ -4,9 +4,11 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <memory>
 #include <string>
 
 #include "components/Renderable.hpp"
+#include "render/detail/RaylibStores.hpp"
 #include "utils/StableSlots.hpp"
 
 namespace render {
@@ -24,12 +26,14 @@ constexpr Color PLACEHOLDER_DARK = {.r = 0, .g = 0, .b = 0, .a = 255};
 
 }  // namespace
 
+TextureStore::TextureStore() : _impl(std::make_unique<Impl>()) {}
+
 TextureStore::~TextureStore() {
     if (!IsWindowReady()) {
         return;
     }
 
-    for (const Slot& slot : _textures) {
+    for (const Impl::Slot& slot : _impl->textures) {
         if (slot.loaded) {
             UnloadTexture(slot.texture);
         }
@@ -47,36 +51,30 @@ ecs::TextureId TextureStore::load(const std::string& path, const TextureFilter f
         // Clamped: the filter must not blend an edge with the opposite one (seams between tiled pictures).
         SetTextureWrap(texture, TEXTURE_WRAP_CLAMP);
     }
-    return ecs::placeInSlot(_textures, Slot{.texture = texture, .loaded = true}, preferred);
+    return ecs::placeInSlot(_impl->textures, Impl::Slot{.texture = texture, .loaded = true}, preferred);
 }
 
-void TextureStore::reserve(const ecs::TextureId last) { ecs::reserveSlots(_textures, last); }
+void TextureStore::reserve(const ecs::TextureId last) { ecs::reserveSlots(_impl->textures, last); }
 
-const Texture2D* TextureStore::get(ecs::TextureId id) const {
-    if (id == ecs::NO_TEXTURE || static_cast<std::size_t>(id) > _textures.size()) {
-        return nullptr;
-    }
-    const Slot& slot = _textures.at(id - 1);
-    return slot.loaded ? &slot.texture : nullptr;
-}
+bool TextureStore::contains(ecs::TextureId id) const { return _impl->get(id) != nullptr; }
 
 void TextureStore::unload(const ecs::TextureId id) {
-    if (id == ecs::NO_TEXTURE || id == _placeholder || static_cast<std::size_t>(id) > _textures.size()) {
+    if (id == ecs::NO_TEXTURE || id == _impl->placeholder || static_cast<std::size_t>(id) > _impl->textures.size()) {
         return;
     }
-    Slot& slot = _textures.at(id - 1);
+    Impl::Slot& slot = _impl->textures.at(id - 1);
     if (!slot.loaded) {
         return;
     }
     if (IsWindowReady()) {
         UnloadTexture(slot.texture);
     }
-    slot = Slot{};
+    slot = Impl::Slot{};
 }
 
 ecs::TextureId TextureStore::placeholder() {
-    if (_placeholder != ecs::NO_TEXTURE || !IsWindowReady()) {
-        return _placeholder;
+    if (_impl->placeholder != ecs::NO_TEXTURE || !IsWindowReady()) {
+        return _impl->placeholder;
     }
     const Image image = GenImageChecked(PLACEHOLDER_SIZE, PLACEHOLDER_SIZE, PLACEHOLDER_SQUARE, PLACEHOLDER_SQUARE,
                                         PLACEHOLDER_MAGENTA, PLACEHOLDER_DARK);
@@ -85,13 +83,14 @@ ecs::TextureId TextureStore::placeholder() {
     if (texture.id == 0) {
         return ecs::NO_TEXTURE;
     }
-    _textures.push_back(Slot{.texture = texture, .loaded = true});
-    _placeholder = static_cast<ecs::TextureId>(_textures.size());
-    return _placeholder;
+    _impl->textures.push_back(Impl::Slot{.texture = texture, .loaded = true});
+    _impl->placeholder = static_cast<ecs::TextureId>(_impl->textures.size());
+    return _impl->placeholder;
 }
 
 std::size_t TextureStore::loadedCount() const noexcept {
-    return static_cast<std::size_t>(std::ranges::count_if(_textures, [](const Slot& slot) { return slot.loaded; }));
+    return static_cast<std::size_t>(
+        std::ranges::count_if(_impl->textures, [](const Impl::Slot& slot) { return slot.loaded; }));
 }
 
 }  // namespace render

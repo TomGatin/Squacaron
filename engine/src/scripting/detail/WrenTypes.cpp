@@ -5,13 +5,13 @@
 
 #include "scripting/detail/WrenTypes.hpp"
 
-#include "scripting/detail/WrenApi.hpp"
+#include "scripting/detail/WrenFwd.hpp"
 
 namespace scripting::detail {
 
-void WrenHandleDeleter::operator()(::WrenHandle* handle) const noexcept {
+void WrenHandleDeleter::operator()(ScriptObject* handle) const noexcept {
     if (handle != nullptr && vm != nullptr) {
-        wrenReleaseHandle(vm, handle);
+        slots::releaseHandle(vm, handle);
     }
 }
 

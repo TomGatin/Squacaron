@@ -43,10 +43,37 @@ void appendErrorLine(std::string& error, std::string_view line) {
 
 }  // namespace
 
+/** @brief The callbacks given to the Wren C VM; a friend of `WrenVM`. */
+struct VmCallbacks {
+    /** @brief Finds a registered foreign method. */
+    static WrenForeignMethodFn onBindForeignMethod(::WrenVM* vm, const char* module, const char* className,
+                                                   bool isStatic, const char* signature) noexcept;
+    /** @brief Finds a registered foreign class. */
+    static WrenForeignClassMethods onBindForeignClass(::WrenVM* vm, const char* module, const char* className) noexcept;
+    /** @brief Resolves an `import` with the module loader. */
+    static WrenLoadModuleResult onLoadModule(::WrenVM* vm, const char* name) noexcept;
+    /** @brief Receives `System.print` output. */
+    static void onWrite(::WrenVM* vm, const char* text) noexcept;
+    /** @brief Receives compile errors, runtime errors and stack trace lines. */
+    static void onError(::WrenVM* vm, WrenErrorType type, const char* module, int line, const char* message) noexcept;
+};
+
 }  // namespace detail
 
-WrenForeignMethodFn WrenVM::onBindForeignMethod(::WrenVM* vm, const char* module, const char* className, bool isStatic,
-                                                const char* signature) noexcept {
+void WrenVM::createVm() {
+    WrenConfiguration config;
+    wrenInitConfiguration(&config);
+    config.userData = this;
+    config.bindForeignMethodFn = &detail::VmCallbacks::onBindForeignMethod;
+    config.bindForeignClassFn = &detail::VmCallbacks::onBindForeignClass;
+    config.loadModuleFn = &detail::VmCallbacks::onLoadModule;
+    config.writeFn = &detail::VmCallbacks::onWrite;
+    config.errorFn = &detail::VmCallbacks::onError;
+    _vm = wrenNewVM(&config);
+}
+
+WrenForeignMethodFn detail::VmCallbacks::onBindForeignMethod(::WrenVM* vm, const char* module, const char* className,
+                                                             bool isStatic, const char* signature) noexcept {
     try {
         auto* self = static_cast<WrenVM*>(wrenGetUserData(vm));
         if (self == nullptr) {
@@ -68,7 +95,8 @@ WrenForeignMethodFn WrenVM::onBindForeignMethod(::WrenVM* vm, const char* module
     }
 }
 
-WrenForeignClassMethods WrenVM::onBindForeignClass(::WrenVM* vm, const char* module, const char* className) noexcept {
+WrenForeignClassMethods detail::VmCallbacks::onBindForeignClass(::WrenVM* vm, const char* module,
+                                                                const char* className) noexcept {
     try {
         auto* self = static_cast<WrenVM*>(wrenGetUserData(vm));
         if (self == nullptr) {
@@ -79,7 +107,7 @@ WrenForeignClassMethods WrenVM::onBindForeignClass(::WrenVM* vm, const char* mod
             std::string(module != nullptr ? module : "") + "/" + (className != nullptr ? className : "");
         auto it = self->_foreignClasses.find(key);
         if (it != self->_foreignClasses.end()) {
-            return it->second;
+            return WrenForeignClassMethods{.allocate = it->second.allocate, .finalize = it->second.finalize};
         }
         return WrenForeignClassMethods{.allocate = nullptr, .finalize = nullptr};
     } catch (...) {
@@ -87,7 +115,7 @@ WrenForeignClassMethods WrenVM::onBindForeignClass(::WrenVM* vm, const char* mod
     }
 }
 
-WrenLoadModuleResult WrenVM::onLoadModule(::WrenVM* vm, const char* name) noexcept {
+WrenLoadModuleResult detail::VmCallbacks::onLoadModule(::WrenVM* vm, const char* name) noexcept {
     try {
         auto* self = static_cast<WrenVM*>(wrenGetUserData(vm));
         if (self == nullptr || !self->_moduleLoader) {
@@ -110,7 +138,7 @@ WrenLoadModuleResult WrenVM::onLoadModule(::WrenVM* vm, const char* name) noexce
     }
 }
 
-void WrenVM::onWrite(::WrenVM* vm, const char* text) noexcept {
+void detail::VmCallbacks::onWrite(::WrenVM* vm, const char* text) noexcept {
     try {
         auto* self = static_cast<WrenVM*>(wrenGetUserData(vm));
         std::string_view const chunk(text != nullptr ? text : "");
@@ -124,7 +152,7 @@ void WrenVM::onWrite(::WrenVM* vm, const char* text) noexcept {
         }
         // `System.print` writes the text, then "\n" on its own: one log line per complete line.
         self->_pendingOutput += chunk;
-        if (self->_pendingOutput.size() > MAX_ERROR_LENGTH) {
+        if (self->_pendingOutput.size() > WrenVM::MAX_ERROR_LENGTH) {
             engine::log::info(detail::LOG_TAG, self->_pendingOutput);
             self->_pendingOutput.clear();
             return;
@@ -142,7 +170,8 @@ void WrenVM::onWrite(::WrenVM* vm, const char* text) noexcept {
     }
 }
 
-void WrenVM::onError(::WrenVM* vm, WrenErrorType type, const char* module, int line, const char* message) noexcept {
+void detail::VmCallbacks::onError(::WrenVM* vm, WrenErrorType type, const char* module, int line,
+                                  const char* message) noexcept {
     try {
         auto* self = static_cast<WrenVM*>(wrenGetUserData(vm));
         if (self == nullptr) {
@@ -163,7 +192,13 @@ void WrenVM::onError(::WrenVM* vm, WrenErrorType type, const char* module, int l
         detail::appendErrorLine(self->_lastError, text);
 
         if (self->_errorHandler) {
-            self->_errorHandler(type, modStr, line, msgStr);
+            ScriptErrorKind kind = ScriptErrorKind::StackTrace;
+            if (type == WREN_ERROR_COMPILE) {
+                kind = ScriptErrorKind::Compile;
+            } else if (type == WREN_ERROR_RUNTIME) {
+                kind = ScriptErrorKind::Runtime;
+            }
+            self->_errorHandler(kind, modStr, line, msgStr);
         } else {
             // The caller logs `lastError()` once; the pieces are only shown in verbose mode.
             engine::log::debug(detail::LOG_TAG, text);

@@ -5,8 +5,6 @@
 
 #pragma once
 
-#include <raylib.h>
-
 #include <string>
 #include <string_view>
 #include <variant>
@@ -163,13 +161,6 @@ class ScreenDrawService final : public engine::IScreenDrawService {
      * @param command The quad.
      */
     void drawQueued(const TextureCommand& command) const;
-
-    /**
-     * @brief Resolves a font identifier, falling back to the default font.
-     * @param font Font identifier.
-     * @return Font to draw or measure with.
-     */
-    [[nodiscard]] Font resolveFont(engine::FontId font) const;
 
     /** @brief Fonts loaded through `loadFont`. */
     FontStore _fonts;

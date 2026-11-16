@@ -9,7 +9,7 @@
 #include <memory>
 #include <string>
 
-#include "scripting/detail/WrenApi.hpp"  // IWYU pragma: export
+#include "scripting/detail/WrenFwd.hpp"  // IWYU pragma: export
 
 namespace scripting::detail {
 
@@ -62,19 +62,19 @@ struct ForeignMethodKeyHash {
  * @brief Custom RAII deleter for WrenHandle pointers bound to a specific Wren VM.
  */
 struct WrenHandleDeleter {
-    /** @brief Pointer to the raw Wren VM that owns the handle. */
-    ::WrenVM* vm = nullptr;
+    /** @brief VM that owns the handle. */
+    NativeVm* vm = nullptr;
 
     /**
-     * @brief Releases the handle via `wrenReleaseHandle` if both handle and vm are valid.
-     * @param handle Raw handle to release.
+     * @brief Releases the handle if both handle and vm are valid.
+     * @param handle Handle to release.
      */
-    void operator()(::WrenHandle* handle) const noexcept;
+    void operator()(ScriptObject* handle) const noexcept;
 };
 
 /**
  * @brief Unique ownership RAII smart pointer for a WrenHandle.
  */
-using UniqueWrenHandle = std::unique_ptr<::WrenHandle, WrenHandleDeleter>;
+using UniqueWrenHandle = std::unique_ptr<ScriptObject, WrenHandleDeleter>;
 
 }  // namespace scripting::detail

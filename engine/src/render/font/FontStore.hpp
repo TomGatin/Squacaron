@@ -5,10 +5,8 @@
 
 #pragma once
 
-#include <raylib.h>
-
+#include <memory>
 #include <string>
-#include <vector>
 
 #include "core/services/IScreenDrawService.hpp"
 
@@ -23,7 +21,7 @@ namespace render {
 class FontStore {
   public:
     /** @brief Creates an empty store. */
-    FontStore() = default;
+    FontStore();
 
     /** @brief Unloads every font still held. */
     ~FontStore();
@@ -53,11 +51,20 @@ class FontStore {
     void reserve(engine::FontId last);
 
     /**
-     * @brief Looks a font up.
+     * @brief Tells whether an identifier names a loaded font.
      * @param id Identifier returned by `load`.
-     * @return The font, or nullptr for `engine::NO_FONT` or an unknown id.
+     * @return False for `engine::NO_FONT`, an unknown or an unloaded id.
      */
-    [[nodiscard]] const Font* get(engine::FontId id) const;
+    [[nodiscard]] bool contains(engine::FontId id) const;
+
+    /** @brief The fonts, defined in `render/detail/RaylibStores.hpp` for the render module only. */
+    struct Impl;
+
+    /**
+     * @brief Gets the fonts, for the render module.
+     * @return The storage.
+     */
+    [[nodiscard]] const Impl& impl() const noexcept { return *_impl; }
 
     /**
      * @brief Releases a font; its identifier is never given to another font, and now resolves to nothing.
@@ -68,16 +75,8 @@ class FontStore {
     void unload(engine::FontId id);
 
   private:
-    /** @brief One font. */
-    struct Slot {
-        /** @brief raylib font. */
-        Font font{};
-        /** @brief False once unloaded; the slot is kept so its identifier is never reused. */
-        bool loaded = false;
-    };
-
-    /** @brief Fonts; identifier `n` is stored at index `n - 1`. */
-    std::vector<Slot> _fonts;
+    /** @brief Fonts. */
+    std::unique_ptr<Impl> _impl;
 };
 
 }  // namespace render

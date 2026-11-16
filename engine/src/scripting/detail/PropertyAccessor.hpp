@@ -31,7 +31,7 @@ struct PropertyAccessor;
 /**
  * @brief Specialization for pointer-to-member fields (`FieldType ComponentType::*`).
  *
- * Provides static `getter` and `setter` functions matching `WrenForeignMethodFn`.
+ * Provides static `getter` and `setter` functions matching `ForeignMethodFn`.
  * Automatically deduces field types (arithmetic, boolean, string) and converts
  * them to/from Wren VM slots using C++23 `if constexpr`.
  *
@@ -49,7 +49,7 @@ struct PropertyAccessor<ComponentType, MemberPtr> {
      *
      * @param rawVm Raw pointer to the underlying Wren VM instance.
      */
-    static void getter(::WrenVM* rawVm) noexcept {
+    static void getter(NativeVm* rawVm) noexcept {
         try {
             ForeignCall const call(rawVm);
             auto* vmWrapper = call.vm();
@@ -88,7 +88,7 @@ struct PropertyAccessor<ComponentType, MemberPtr> {
      *
      * @param rawVm Raw pointer to the underlying Wren VM instance.
      */
-    static void setter(::WrenVM* rawVm) noexcept {
+    static void setter(NativeVm* rawVm) noexcept {
         try {
             ForeignCall const call(rawVm);
             auto* vmWrapper = call.vm();

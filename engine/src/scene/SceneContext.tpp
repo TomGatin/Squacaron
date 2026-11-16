@@ -9,18 +9,18 @@
 
 #include "scene/SceneContext.hpp"  // NOLINT(misc-header-include-cycle)
 
-namespace scene {
+namespace sq::scene {
 
 template <typename EventType>
-void SceneContext::subscribe(ecs::MoveOnlyFunction<void(const EventType&)> callback) {
-    ecs::EventBus& eventBus = bus();
-    const ecs::EventBus::EventToken token = eventBus.subscribe<EventType>(std::move(callback));
+void SceneContext::subscribe(sq::ecs::MoveOnlyFunction<void(const EventType&)> callback) {
+    sq::events::EventBus& eventBus = bus();
+    const sq::events::EventBus::EventToken token = eventBus.subscribe<EventType>(std::move(callback));
     _subscriptions.push_back(Subscription{.token = token, .unsubscribe = &unsubscribeFrom<EventType>});
 }
 
 template <typename EventType>
-void SceneContext::unsubscribeFrom(ecs::EventBus& bus, ecs::EventBus::EventToken token) {
+void SceneContext::unsubscribeFrom(sq::events::EventBus& bus, sq::events::EventBus::EventToken token) {
     bus.unsubscribe<EventType>(token);
 }
 
-}  // namespace scene
+}  // namespace sq::scene

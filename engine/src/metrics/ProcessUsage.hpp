@@ -8,7 +8,7 @@
 #include <cstdint>
 #include <optional>
 
-namespace metrics {
+namespace sq::metrics {
 
 /** @brief What the current process has used so far. */
 struct ProcessSample {
@@ -24,4 +24,4 @@ struct ProcessSample {
  */
 [[nodiscard]] std::optional<ProcessSample> sampleProcess();
 
-}  // namespace metrics
+}  // namespace sq::metrics

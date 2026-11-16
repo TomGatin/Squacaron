@@ -46,10 +46,12 @@ namespace {
  * @return What `shutdown()` needs to unsubscribe.
  */
 template <typename Event, typename Handler>
-std::pair<ecs::EventBus::EventToken, void (*)(ecs::EventBus&, ecs::EventBus::EventToken)> listen(ecs::EventBus& bus,
-                                                                                                 Handler handler) {
+std::pair<sq::events::EventBus::EventToken, void (*)(sq::events::EventBus&, sq::events::EventBus::EventToken)> listen(
+    sq::events::EventBus& bus, Handler handler) {
     return {bus.subscribe<Event>(std::move(handler)),
-            [](ecs::EventBus& owner, const ecs::EventBus::EventToken token) { owner.unsubscribe<Event>(token); }};
+            [](sq::events::EventBus& owner, const sq::events::EventBus::EventToken token) {
+                owner.unsubscribe<Event>(token);
+            }};
 }
 
 }  // namespace
@@ -57,7 +59,7 @@ std::pair<ecs::EventBus::EventToken, void (*)(ecs::EventBus&, ecs::EventBus::Eve
 LevelDirectorPlugin::LevelDirectorPlugin(std::shared_ptr<const level::Level> level)
     : _level(std::move(level)), _current(_level) {}
 
-void LevelDirectorPlugin::build(engine::PluginBuilder& builder) { builder.require<timeline::TimelinePlugin>(); }
+void LevelDirectorPlugin::build(sq::engine::PluginBuilder& builder) { builder.require<sq::timeline::TimelinePlugin>(); }
 
 std::optional<std::vector<std::string>> LevelDirectorPlugin::levelPrefab(const std::string_view type,
                                                                          const std::string_view prefab) {
@@ -78,13 +80,13 @@ std::optional<std::vector<std::string>> LevelDirectorPlugin::levelPrefab(const s
     return std::nullopt;
 }
 
-void LevelDirectorPlugin::init(engine::Engine& engine) {
+void LevelDirectorPlugin::init(sq::engine::Engine& engine) {
     _registry = &engine.registry();
     _bus = &engine.eventBus();
-    _timeline = &engine.getPlugin<timeline::TimelinePlugin>();
-    ecs::EventBus& bus = *_bus;
-    _tokens.push_back(listen<timeline::TimelineEventFired>(
-        bus, [this](const timeline::TimelineEventFired& fired) { play(fired.event); }));
+    _timeline = &engine.getPlugin<sq::timeline::TimelinePlugin>();
+    sq::events::EventBus& bus = *_bus;
+    _tokens.push_back(listen<sq::timeline::TimelineEventFired>(
+        bus, [this](const sq::timeline::TimelineEventFired& fired) { play(fired.event); }));
     _tokens.push_back(listen<BossFightStarted>(bus, [this](const BossFightStarted& /*started*/) {
         _bossFight = true;
         holdScroll();
@@ -104,7 +106,7 @@ void LevelDirectorPlugin::init(engine::Engine& engine) {
     startLevel();
 }
 
-void LevelDirectorPlugin::shutdown(engine::Engine& /*engine*/) {
+void LevelDirectorPlugin::shutdown(sq::engine::Engine& /*engine*/) {
     for (const auto& [token, unsubscribe] : _tokens) {
         unsubscribe(*_bus, token);
     }
@@ -127,7 +129,7 @@ void LevelDirectorPlugin::announceLevel() {
     });
 }
 
-void LevelDirectorPlugin::fixedUpdate(engine::Engine& /*engine*/, const ecs::time::Time& time) {
+void LevelDirectorPlugin::fixedUpdate(sq::engine::Engine& /*engine*/, const sq::time::Time& time) {
     if (_intermission <= 0.0F) {
         return;
     }
@@ -139,13 +141,14 @@ void LevelDirectorPlugin::fixedUpdate(engine::Engine& /*engine*/, const ecs::tim
 
 void LevelDirectorPlugin::nextLevel() {
     // The field is cleared for the new level: enemies, shots, power-ups and terrain go, the ships stay.
-    std::vector<ecs::Entity> leftovers;
-    _registry->runSystem<ecs::Replicated>([&leftovers](const ecs::Entity entity, const ecs::Replicated& replicated) {
-        if (replicated.kind != game::KIND_PLAYER_SHIP) {
-            leftovers.push_back(entity);
-        }
-    });
-    for (const ecs::Entity entity : leftovers) {
+    std::vector<sq::ecs::Entity> leftovers;
+    _registry->runSystem<sq::ecs::Replicated>(
+        [&leftovers](const sq::ecs::Entity entity, const sq::ecs::Replicated& replicated) {
+            if (replicated.kind != game::KIND_PLAYER_SHIP) {
+                leftovers.push_back(entity);
+            }
+        });
+    for (const sq::ecs::Entity entity : leftovers) {
         if (_registry->isAlive(entity)) {
             _registry->killEntity(entity);
         }
@@ -172,7 +175,7 @@ void LevelDirectorPlugin::startLevel() {
     _bus->publish(LevelStarted{});
 }
 
-void LevelDirectorPlugin::play(const timeline::TimelineEvent& event) {
+void LevelDirectorPlugin::play(const sq::timeline::TimelineEvent& event) {
     if (_finished) {
         return;
     }
@@ -187,7 +190,7 @@ void LevelDirectorPlugin::play(const timeline::TimelineEvent& event) {
         _timeline->setSpeed(event.params.get("speed", _timeline->speed()));
     } else if (event.type == level::EVENT_END && _gameStarted) {
         const bool last = _current == nullptr || _current->next == nullptr;
-        engine::log::info(LOG_TAG, "level '", _current != nullptr ? _current->name : "", "' complete");
+        sq::engine::log::info(LOG_TAG, "level '", _current != nullptr ? _current->name : "", "' complete");
         _finished = true;
         _timeline->setSpeed(0.0F);
         if (!last) {
@@ -198,32 +201,33 @@ void LevelDirectorPlugin::play(const timeline::TimelineEvent& event) {
             .lastLevel = last,
         });
     } else if (event.type == level::EVENT_END) {
-        engine::log::info(LOG_TAG, "level '", _current != nullptr ? _current->name : "", "' complete, restarting it");
+        sq::engine::log::info(LOG_TAG, "level '", _current != nullptr ? _current->name : "",
+                              "' complete, restarting it");
         startLevel();
     }
 }
 
-void LevelDirectorPlugin::spawnEnemy(const ::prefabs::PrefabParams& params) {
+void LevelDirectorPlugin::spawnEnemy(const sq::prefabs::PrefabParams& params) {
     // The loader only keeps the prefabs accepted by levelPrefab(), so the name is one of these.
     const auto prefab = params.get<std::string>("prefab", "");
-    ecs::Registry& registry = *_registry;
+    sq::ecs::Registry& registry = *_registry;
     if (prefab == ::prefabs::ALIEN_SCOUT_PREFAB) {
-        const ecs::Entity enemy = registry.spawnEntity();
+        const sq::ecs::Entity enemy = registry.spawnEntity();
         ::prefabs::buildAlienScout(enemy, registry, params);
         registry.addComponent(enemy, game::EntityNetState{});
-        ecs::net::replicate(registry, enemy, game::KIND_ALIEN_SCOUT);
+        sq::net::replicate(registry, enemy, game::KIND_ALIEN_SCOUT);
     } else if (prefab == ::prefabs::ALIEN_GUNNER_PREFAB) {
-        const ecs::Entity enemy = registry.spawnEntity();
+        const sq::ecs::Entity enemy = registry.spawnEntity();
         ::prefabs::buildAlienGunner(enemy, registry, params);
         registry.addComponent(enemy, game::EntityNetState{});
-        ecs::net::replicate(registry, enemy, game::KIND_ALIEN_GUNNER);
+        sq::net::replicate(registry, enemy, game::KIND_ALIEN_GUNNER);
     } else if (prefab == ::prefabs::ALIEN_ELITE_PREFAB) {
-        const ecs::Entity enemy = registry.spawnEntity();
+        const sq::ecs::Entity enemy = registry.spawnEntity();
         ::prefabs::buildAlienElite(enemy, registry, params);
         // Its hit points are replicated, so that the clients can show its hits.
         registry.addComponent(
             enemy, game::EntityNetState{.health = registry.getComponents<::prefabs::Health>().get(enemy).points});
-        ecs::net::replicate(registry, enemy, game::KIND_ALIEN_ELITE);
+        sq::net::replicate(registry, enemy, game::KIND_ALIEN_ELITE);
     }
 }
 
@@ -242,11 +246,11 @@ void LevelDirectorPlugin::releaseScroll() {
     }
     _scrollHeld = false;
     _timeline->setSpeed(_speedBeforeHold);
-    engine::log::info(LOG_TAG, "the level goes on");
+    sq::engine::log::info(LOG_TAG, "the level goes on");
     // Played in order; a new boss among them holds the scroll again and keeps the next ones waiting.
-    const std::vector<timeline::TimelineEvent> waiting = std::move(_heldEvents);
+    const std::vector<sq::timeline::TimelineEvent> waiting = std::move(_heldEvents);
     _heldEvents.clear();
-    for (const timeline::TimelineEvent& event : waiting) {
+    for (const sq::timeline::TimelineEvent& event : waiting) {
         play(event);
     }
 }

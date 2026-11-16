@@ -14,7 +14,7 @@
 #include "scripting/WrenVM.hpp"
 #include "scripting/detail/WrenTypes.hpp"
 
-namespace scene {
+namespace sq::scene {
 
 namespace {
 
@@ -24,7 +24,7 @@ constexpr std::string_view HOOKS_CLASS = "SceneHooks_";
 }  // namespace
 
 ScriptScene::ScriptScene(std::string name, std::string module, std::string className, ScriptSceneOptions options,
-                         scripting::ScriptSystem& scripts)
+                         sq::scripting::ScriptSystem& scripts)
     : _name(std::move(name)),
       _module(std::move(module)),
       _className(std::move(className)),
@@ -32,7 +32,7 @@ ScriptScene::ScriptScene(std::string name, std::string module, std::string class
       _scripts(&scripts) {}
 
 bool ScriptScene::build() {
-    scripting::WrenVM& vm = _scripts->getVm();
+    sq::scripting::WrenVM& vm = _scripts->getVm();
     if (!vm.hasModule(SCENE_MODULE_NAME)) {
         if (auto const loaded = vm.interpret(SCENE_MODULE_NAME, SCENE_MODULE_SOURCE); !loaded) {
             std::cerr << "[ScriptScene] Cannot load " << SCENE_MODULE_NAME << ": " << loaded.error() << "\n";
@@ -44,7 +44,7 @@ bool ScriptScene::build() {
     }
     {
         // The constructor may already spawn entities or wait: it runs as the scene.
-        const scripting::OwnerScope owner(*_scripts, sceneOwner(_id));
+        const sq::scripting::OwnerScope owner(*_scripts, sceneOwner(_id));
         _instance = vm.newInstance(_module, _className);
     }
     if (!_instance) {
@@ -71,12 +71,12 @@ void ScriptScene::onEnter(SceneContext& context) {
         return;
     }
     if (_options.hasUpdate) {
-        context.addSystem(SceneStage::Update, [this](engine::Engine& /*engine*/, const ecs::time::Time& time) {
+        context.addSystem(SceneStage::Update, [this](sq::engine::Engine& /*engine*/, const sq::time::Time& time) {
             callStep(_updateMethod, time.deltaTime);
         });
     }
     if (_options.hasFixedUpdate) {
-        context.addSystem(SceneStage::FixedUpdate, [this](engine::Engine& /*engine*/, const ecs::time::Time& time) {
+        context.addSystem(SceneStage::FixedUpdate, [this](sq::engine::Engine& /*engine*/, const sq::time::Time& time) {
             callStep(_fixedUpdateMethod, time.deltaTime);
         });
     }
@@ -110,28 +110,29 @@ void ScriptScene::rebuildAfterReload() {
     }
 }
 
-void ScriptScene::callHook(const scripting::detail::UniqueWrenHandle& hook) {
+void ScriptScene::callHook(const sq::scripting::detail::UniqueWrenHandle& hook) {
     if (!_instance || !hook) {
         return;
     }
-    scripting::WrenVM& vm = _scripts->getVm();
-    const scripting::OwnerScope owner(*_scripts, sceneOwner(_id));
+    sq::scripting::WrenVM& vm = _scripts->getVm();
+    const sq::scripting::OwnerScope owner(*_scripts, sceneOwner(_id));
     vm.ensureSlots(2);
     vm.getVariable(SCENE_MODULE_NAME, HOOKS_CLASS, 0);
     vm.setSlot(1, _instance.get());
-    if (vm.call(hook.get()) != scripting::CallResult::Success) {
+    if (vm.call(hook.get()) != sq::scripting::CallResult::Success) {
         std::cerr << "[ScriptScene] A hook of scene '" << _name << "' failed\n";
     }
 }
 
-void ScriptScene::callStep(const scripting::detail::UniqueWrenHandle& method, float dt) {
+void ScriptScene::callStep(const sq::scripting::detail::UniqueWrenHandle& method, float dt) {
     if (!_instance || !method) {
         return;
     }
-    const scripting::OwnerScope owner(*_scripts, sceneOwner(_id));
-    if (_scripts->getVm().call(method, _instance.get(), static_cast<double>(dt)) != scripting::CallResult::Success) {
+    const sq::scripting::OwnerScope owner(*_scripts, sceneOwner(_id));
+    if (_scripts->getVm().call(method, _instance.get(), static_cast<double>(dt)) !=
+        sq::scripting::CallResult::Success) {
         std::cerr << "[ScriptScene] update of scene '" << _name << "' failed\n";
     }
 }
 
-}  // namespace scene
+}  // namespace sq::scene

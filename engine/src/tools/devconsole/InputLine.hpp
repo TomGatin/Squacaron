@@ -9,7 +9,7 @@
 #include <string>
 #include <string_view>
 
-namespace tools {
+namespace sq::tools {
 
 /**
  * @brief Editable line of UTF-8 text with a cursor, as typed in the developer console.
@@ -74,4 +74,4 @@ class InputLine {
     std::size_t _cursor = 0;
 };
 
-}  // namespace tools
+}  // namespace sq::tools

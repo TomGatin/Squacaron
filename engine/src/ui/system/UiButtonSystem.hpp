@@ -13,7 +13,7 @@
 #include "ui/components/UiButton.hpp"
 #include "ui/system/UiLayout.hpp"
 
-namespace ui {
+namespace sq::ui {
 
 /** @brief State of the left mouse button relative to one button, for a single frame. */
 struct UiPointerSample {
@@ -72,8 +72,8 @@ class UiButtonSystem {
      * @param window   Window service providing mouse position and button state.
      * @param bus      Event bus used to publish click events.
      */
-    static void update(ecs::Registry& registry, std::span<const UiLayoutNode> layout,
-                       const engine::IWindowService& window, ecs::EventBus& bus);
+    static void update(sq::ecs::Registry& registry, std::span<const UiLayoutNode> layout,
+                       const sq::engine::IWindowService& window, sq::events::EventBus& bus);
 };
 
-}  // namespace ui
+}  // namespace sq::ui

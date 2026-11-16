@@ -43,8 +43,8 @@ target("my_game")
 The package brings the engine libraries and their dependencies (asio, wren, box2d, toml++ and raylib when
 `graphics` is on), for linking only: no public engine header includes them, so a game does not need
 `add_packages("wren")` or `add_packages("raylib")` to use the engine. Wren bindings are written with the engine's
-`scripting::WrenVM` and `scripting::ForeignCall` (results are `scripting::CallResult`), and the render module exposes
-engine types (`ecs::Rgba`, `ecs::TextureRect`, `render::CameraView`). `scripts/check_public_headers.sh` checks it. Headers are included as the engine modules name them: `core/Engine.hpp`, `ecs/Registry.hpp`,
+`sq::scripting::WrenVM` and `sq::scripting::ForeignCall` (results are `sq::scripting::CallResult`), and the render module exposes
+engine types (`sq::ecs::Rgba`, `sq::ecs::TextureRect`, `sq::render::CameraView`). `scripts/check_public_headers.sh` checks it. Headers are included as the engine modules name them: `core/Engine.hpp`, `ecs/Registry.hpp`,
 `events/EventBus.hpp`...
 
 ## A minimal game
@@ -53,11 +53,11 @@ engine types (`ecs::Rgba`, `ecs::TextureRect`, `render::CameraView`). `scripts/c
 #include "core/Engine.hpp"
 #include "core/IPlugin.hpp"
 
-class HelloPlugin : public engine::IPlugin {
+class HelloPlugin : public sq::engine::IPlugin {
   public:
     [[nodiscard]] std::string_view name() const noexcept override { return "Hello"; }
 
-    void update(engine::Engine& engine, const ecs::time::Time& time) override {
+    void update(sq::engine::Engine& engine, const sq::time::Time& time) override {
         (void)engine;
         (void)time;
         // Game logic: read and write components through the registry.
@@ -65,7 +65,7 @@ class HelloPlugin : public engine::IPlugin {
 };
 
 int main() {
-    engine::Engine engine;
+    sq::engine::Engine engine;
     engine.addPlugin<HelloPlugin>();
     engine.run();
 }
@@ -74,7 +74,7 @@ int main() {
 A headless program like this one has no window to vsync on: `run()` then sleeps between two frames (one per fixed step,
 60 per second by default), so it idles near 0 % CPU, and it stops on Ctrl+C or SIGTERM, or when `engine.stop()` is
 called. Add
-`render::RenderPlugin` to get a window, or build a server out of `engine_network` and `engine_network_asio` (see
+`sq::render::RenderPlugin` to get a window, or build a server out of `engine_network` and `engine_network_asio` (see
 [Add the Network to a Game](networked-game.md)).
 
 ## Package mode inside this repository

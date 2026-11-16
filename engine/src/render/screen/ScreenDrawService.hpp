@@ -15,7 +15,7 @@
 #include "render/font/FontStore.hpp"
 #include "render/texture/TextureStore.hpp"
 
-namespace render {
+namespace sq::render {
 
 /**
  * @brief Queues screen-space draw calls and draws them with raylib.
@@ -24,7 +24,7 @@ namespace render {
  * drawn on top of the world in the frame they were submitted. Owns the fonts it loads; must be destroyed before the
  * window.
  */
-class ScreenDrawService final : public engine::IScreenDrawService {
+class ScreenDrawService final : public sq::engine::IScreenDrawService {
   public:
     /**
      * @brief Creates an empty service.
@@ -35,9 +35,9 @@ class ScreenDrawService final : public engine::IScreenDrawService {
     /**
      * @brief Loads a font file.
      * @param path Path to the font file.
-     * @return Identifier of the font, or `engine::NO_FONT` on failure.
+     * @return Identifier of the font, or `sq::engine::NO_FONT` on failure.
      */
-    engine::FontId loadFont(const std::string& path) override;
+    sq::engine::FontId loadFont(const std::string& path) override;
 
     /**
      * @brief Gets the store of the fonts loaded through `loadFont`, for the asset manager's font loader.
@@ -50,18 +50,18 @@ class ScreenDrawService final : public engine::IScreenDrawService {
      * @param text Text to measure.
      * @param fontSize Font size in pixels.
      * @param spacing Extra space between characters in pixels.
-     * @param font Font to use; `engine::NO_FONT` or an unknown id selects the default font.
+     * @param font Font to use; `sq::engine::NO_FONT` or an unknown id selects the default font.
      * @return Size of the text in pixels.
      */
-    [[nodiscard]] engine::TextSize measureText(std::string_view text, float fontSize, float spacing,
-                                               engine::FontId font) const override;
+    [[nodiscard]] sq::engine::TextSize measureText(std::string_view text, float fontSize, float spacing,
+                                                   sq::engine::FontId font) const override;
 
     /**
      * @brief Queues a filled rectangle.
      * @param rect Rectangle in screen pixels.
      * @param color Fill color.
      */
-    void fillRect(const engine::ScreenRect& rect, const ecs::Rgba& color) override;
+    void fillRect(const sq::engine::ScreenRect& rect, const sq::ecs::Rgba& color) override;
 
     /**
      * @brief Queues a rectangle outline.
@@ -69,7 +69,7 @@ class ScreenDrawService final : public engine::IScreenDrawService {
      * @param thickness Line thickness in pixels.
      * @param color Line color.
      */
-    void strokeRect(const engine::ScreenRect& rect, float thickness, const ecs::Rgba& color) override;
+    void strokeRect(const sq::engine::ScreenRect& rect, float thickness, const sq::ecs::Rgba& color) override;
 
     /**
      * @brief Queues a piece of text.
@@ -79,10 +79,10 @@ class ScreenDrawService final : public engine::IScreenDrawService {
      * @param fontSize Font size in pixels.
      * @param spacing Extra space between characters in pixels.
      * @param color Text color.
-     * @param font Font to use; `engine::NO_FONT` or an unknown id selects the default font.
+     * @param font Font to use; `sq::engine::NO_FONT` or an unknown id selects the default font.
      */
-    void drawText(std::string_view text, float x, float y, float fontSize, float spacing, const ecs::Rgba& color,
-                  engine::FontId font) override;
+    void drawText(std::string_view text, float x, float y, float fontSize, float spacing, const sq::ecs::Rgba& color,
+                  sq::engine::FontId font) override;
 
     /**
      * @brief Queues a textured quad.
@@ -92,8 +92,8 @@ class ScreenDrawService final : public engine::IScreenDrawService {
      * @param rotation Rotation around the center of `dest`, in radians.
      * @param tint Color multiplied with the texture.
      */
-    void drawTexture(ecs::TextureId texture, const ecs::TextureRect& source, const engine::ScreenRect& dest,
-                     float rotation, const ecs::Rgba& tint) override;
+    void drawTexture(sq::ecs::TextureId texture, const sq::ecs::TextureRect& source, const sq::engine::ScreenRect& dest,
+                     float rotation, const sq::ecs::Rgba& tint) override;
 
     /**
      * @brief Draws every queued call in submission order, then empties the queue.
@@ -106,19 +106,19 @@ class ScreenDrawService final : public engine::IScreenDrawService {
     /** @brief Queued filled rectangle. */
     struct FillCommand {
         /** @brief Rectangle in screen pixels. */
-        engine::ScreenRect rect;
+        sq::engine::ScreenRect rect;
         /** @brief Fill color. */
-        ecs::Rgba color;
+        sq::ecs::Rgba color;
     };
 
     /** @brief Queued rectangle outline. */
     struct StrokeCommand {
         /** @brief Rectangle in screen pixels. */
-        engine::ScreenRect rect;
+        sq::engine::ScreenRect rect;
         /** @brief Line thickness in pixels. */
         float thickness = 0.0F;
         /** @brief Line color. */
-        ecs::Rgba color;
+        sq::ecs::Rgba color;
     };
 
     /** @brief Queued text. */
@@ -134,23 +134,23 @@ class ScreenDrawService final : public engine::IScreenDrawService {
         /** @brief Extra space between characters in pixels. */
         float spacing = 0.0F;
         /** @brief Text color. */
-        ecs::Rgba color;
+        sq::ecs::Rgba color;
         /** @brief Font identifier. */
-        engine::FontId font = engine::NO_FONT;
+        sq::engine::FontId font = sq::engine::NO_FONT;
     };
 
     /** @brief Queued textured quad. */
     struct TextureCommand {
         /** @brief Texture identifier. */
-        ecs::TextureId texture = ecs::NO_TEXTURE;
+        sq::ecs::TextureId texture = sq::ecs::NO_TEXTURE;
         /** @brief Region of the texture. */
-        ecs::TextureRect source;
+        sq::ecs::TextureRect source;
         /** @brief Rectangle in screen pixels. */
-        engine::ScreenRect dest;
+        sq::engine::ScreenRect dest;
         /** @brief Rotation around the center of `dest`, in radians. */
         float rotation = 0.0F;
         /** @brief Tint. */
-        ecs::Rgba tint;
+        sq::ecs::Rgba tint;
     };
 
     /** @brief Any queued draw call. */
@@ -170,4 +170,4 @@ class ScreenDrawService final : public engine::IScreenDrawService {
     std::vector<Command> _commands;
 };
 
-}  // namespace render
+}  // namespace sq::render

@@ -10,32 +10,32 @@ namespace {
 class LoggerTest : public ::testing::Test {
   protected:
     void TearDown() override {
-        engine::log::setVerbose(false);
-        engine::log::setColored(false);
+        sq::engine::log::setVerbose(false);
+        sq::engine::log::setColored(false);
     }
 };
 
 }  // namespace
 
-TEST_F(LoggerTest, VerboseIsOffByDefault) { EXPECT_FALSE(engine::log::isVerbose()); }
+TEST_F(LoggerTest, VerboseIsOffByDefault) { EXPECT_FALSE(sq::engine::log::isVerbose()); }
 
 TEST_F(LoggerTest, DebugIsHiddenWithoutVerbose) {
     testing::internal::CaptureStdout();
-    engine::log::debug("test", "hidden ", 42);
+    sq::engine::log::debug("test", "hidden ", 42);
     EXPECT_TRUE(testing::internal::GetCapturedStdout().empty());
 }
 
 TEST_F(LoggerTest, DebugIsPrintedWithVerbose) {
-    engine::log::setVerbose(true);
+    sq::engine::log::setVerbose(true);
     testing::internal::CaptureStdout();
-    engine::log::debug("test", "client ", 7, " joined");
+    sq::engine::log::debug("test", "client ", 7, " joined");
     const std::string output = testing::internal::GetCapturedStdout();
     EXPECT_NE(output.find("DEBUG [test] client 7 joined\n"), std::string::npos);
 }
 
 TEST_F(LoggerTest, InfoGoesToStdout) {
     testing::internal::CaptureStdout();
-    engine::log::info("server", "listening on port ", 4242);
+    sq::engine::log::info("server", "listening on port ", 4242);
     const std::string output = testing::internal::GetCapturedStdout();
     EXPECT_NE(output.find("INFO  [server] listening on port 4242\n"), std::string::npos);
 }
@@ -43,8 +43,8 @@ TEST_F(LoggerTest, InfoGoesToStdout) {
 TEST_F(LoggerTest, WarningsAndErrorsGoToStderr) {
     testing::internal::CaptureStdout();
     testing::internal::CaptureStderr();
-    engine::log::warning("network", "server full");
-    engine::log::error("network", "cannot start");
+    sq::engine::log::warning("network", "server full");
+    sq::engine::log::error("network", "cannot start");
     const std::string out = testing::internal::GetCapturedStdout();
     const std::string err = testing::internal::GetCapturedStderr();
     EXPECT_TRUE(out.empty());
@@ -54,7 +54,7 @@ TEST_F(LoggerTest, WarningsAndErrorsGoToStderr) {
 
 TEST_F(LoggerTest, LinesStartWithATimestamp) {
     testing::internal::CaptureStdout();
-    engine::log::info("test", "x");
+    sq::engine::log::info("test", "x");
     const std::string output = testing::internal::GetCapturedStdout();
     ASSERT_FALSE(output.empty());
     EXPECT_EQ(output.front(), '[');
@@ -63,14 +63,14 @@ TEST_F(LoggerTest, LinesStartWithATimestamp) {
 
 TEST_F(LoggerTest, NoAnsiCodesByDefault) {
     testing::internal::CaptureStdout();
-    engine::log::info("server", "plain");
+    sq::engine::log::info("server", "plain");
     EXPECT_EQ(testing::internal::GetCapturedStdout().find('\x1b'), std::string::npos);
 }
 
 TEST_F(LoggerTest, ColoredLinesUseAnsiCodesAndKeepTheText) {
-    engine::log::setColored(true);
+    sq::engine::log::setColored(true);
     testing::internal::CaptureStderr();
-    engine::log::error("network", "cannot start");
+    sq::engine::log::error("network", "cannot start");
     const std::string output = testing::internal::GetCapturedStderr();
     EXPECT_NE(output.find("\x1b[1;97;41mERROR\x1b[0m"), std::string::npos);
     EXPECT_NE(output.find("network"), std::string::npos);
@@ -78,8 +78,8 @@ TEST_F(LoggerTest, ColoredLinesUseAnsiCodesAndKeepTheText) {
 }
 
 TEST_F(LoggerTest, SameTagAlwaysGetsTheSameColor) {
-    EXPECT_EQ(engine::log::style::tag("server"), engine::log::style::tag("server"));
-    EXPECT_NE(engine::log::style::tag("server"), engine::log::style::tag("network"));
+    EXPECT_EQ(sq::engine::log::style::tag("server"), sq::engine::log::style::tag("server"));
+    EXPECT_NE(sq::engine::log::style::tag("server"), sq::engine::log::style::tag("network"));
 }
 
 int main(int argc, char** argv) {

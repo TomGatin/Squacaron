@@ -2,7 +2,7 @@
 
 #include "INetworkManager.hpp"
 
-namespace ecs::net {
+namespace sq::net {
 
 /**
  * @brief Abstract network service exposed through the Mediator, used by systems to send messages.
@@ -49,4 +49,4 @@ class INetworkService {
     virtual void kick(PeerId peer) = 0;
 };
 
-}  // namespace ecs::net
+}  // namespace sq::net

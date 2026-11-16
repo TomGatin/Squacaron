@@ -11,20 +11,22 @@
 #include "scripting/ScriptSystem.hpp"
 #include "systems/physics/PhysicsEvents.hpp"
 
-namespace systems {
+namespace sq::systems {
 
-void PhysicsScriptingPlugin::build(engine::PluginBuilder& builder) { builder.require<scripting::ScriptPlugin>(); }
-
-void PhysicsScriptingPlugin::init(engine::Engine& engine) {
-    _scripts = &engine.getPlugin<scripting::ScriptPlugin>().scriptSystem();
-    _scripts->forwardCollisions<events::CollisionBeginEvent>(engine.eventBus());
+void PhysicsScriptingPlugin::build(sq::engine::PluginBuilder& builder) {
+    builder.require<sq::scripting::ScriptPlugin>();
 }
 
-void PhysicsScriptingPlugin::shutdown(engine::Engine& /*engine*/) {
+void PhysicsScriptingPlugin::init(sq::engine::Engine& engine) {
+    _scripts = &engine.getPlugin<sq::scripting::ScriptPlugin>().scriptSystem();
+    _scripts->forwardCollisions<sq::events::CollisionBeginEvent>(engine.eventBus());
+}
+
+void PhysicsScriptingPlugin::shutdown(sq::engine::Engine& /*engine*/) {
     if (_scripts != nullptr) {
         _scripts->stopForwardingCollisions();
     }
     _scripts = nullptr;
 }
 
-}  // namespace systems
+}  // namespace sq::systems

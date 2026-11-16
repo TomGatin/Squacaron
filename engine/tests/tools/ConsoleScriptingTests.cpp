@@ -49,10 +49,10 @@ class ScriptDir {
 class ConsoleScriptingTest : public ::testing::Test {
   protected:
     explicit ConsoleScriptingTest(bool allowCheats = true) {
-        engine.addPlugin<tools::ConsolePlugin>(
-            tools::ConsoleConfig{.allowCheats = allowCheats, .scriptRoot = scripts.path()});
-        engine.addPlugin<scripting::ScriptPlugin>();
-        engine.addPlugin<tools::ConsoleScriptingPlugin>();
+        engine.addPlugin<sq::tools::ConsolePlugin>(
+            sq::tools::ConsoleConfig{.allowCheats = allowCheats, .scriptRoot = scripts.path()});
+        engine.addPlugin<sq::scripting::ScriptPlugin>();
+        engine.addPlugin<sq::tools::ConsoleScriptingPlugin>();
         engine.init();
     }
     ~ConsoleScriptingTest() override { engine.shutdown(); }
@@ -61,17 +61,19 @@ class ConsoleScriptingTest : public ::testing::Test {
     ConsoleScriptingTest(ConsoleScriptingTest&&) = delete;
     ConsoleScriptingTest& operator=(ConsoleScriptingTest&&) = delete;
 
-    [[nodiscard]] tools::Console& console() { return engine.service<tools::Console>(); }
+    [[nodiscard]] sq::tools::Console& console() { return engine.service<sq::tools::Console>(); }
 
-    [[nodiscard]] scripting::WrenVM& vm() { return engine.getPlugin<scripting::ScriptPlugin>().scriptSystem().getVm(); }
+    [[nodiscard]] sq::scripting::WrenVM& vm() {
+        return engine.getPlugin<sq::scripting::ScriptPlugin>().scriptSystem().getVm();
+    }
 
     [[nodiscard]] std::string last() { return console().output().back().text; }
 
-    [[nodiscard]] tools::OutputLevel lastLevel() { return console().output().back().level; }
+    [[nodiscard]] sq::tools::OutputLevel lastLevel() { return console().output().back().level; }
 
     /** @brief Whether some output line contains a text. */
     [[nodiscard]] bool printed(std::string_view text) {
-        for (const tools::OutputLine& line : console().output()) {
+        for (const sq::tools::OutputLine& line : console().output()) {
             if (line.text.find(text) != std::string::npos) {
                 return true;
             }
@@ -80,7 +82,7 @@ class ConsoleScriptingTest : public ::testing::Test {
     }
 
     ScriptDir scripts;
-    engine::Engine engine;
+    sq::engine::Engine engine;
 };
 
 class ConsoleScriptingWithoutCheatsTest : public ConsoleScriptingTest {
@@ -126,7 +128,7 @@ TEST_F(ConsoleScriptingTest, TheCodeReachesWrenUntouched) {
 
 TEST_F(ConsoleScriptingTest, CompileErrorsAreReported) {
     EXPECT_FALSE(console().execute("wren var = 3"));
-    EXPECT_EQ(lastLevel(), tools::OutputLevel::Error);
+    EXPECT_EQ(lastLevel(), sq::tools::OutputLevel::Error);
     EXPECT_TRUE(printed("console"));
 }
 
@@ -186,8 +188,8 @@ TEST_F(ConsoleScriptingWithoutCheatsTest, ExecOfAWrenFileIsACheat) {
 }
 
 TEST_F(ConsoleScriptingTest, ShutdownRemovesTheCommandAndTheRunner) {
-    tools::Console& kept = console();
-    engine.getPlugin<tools::ConsoleScriptingPlugin>().shutdown(engine);
+    sq::tools::Console& kept = console();
+    engine.getPlugin<sq::tools::ConsoleScriptingPlugin>().shutdown(engine);
     EXPECT_EQ(kept.findCommand("wren"), nullptr);
     EXPECT_FALSE(kept.removeScriptRunner(".wren"));
 }

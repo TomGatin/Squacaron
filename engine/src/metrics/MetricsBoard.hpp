@@ -11,7 +11,7 @@
 #include <string_view>
 #include <vector>
 
-namespace metrics {
+namespace sq::metrics {
 
 /** @brief Seconds between two refreshes of a metric: often enough to follow it, slowly enough to read it. */
 inline constexpr float REFRESH_PERIOD = 0.5F;
@@ -101,4 +101,4 @@ class RefreshTimer {
     float _elapsed = 0.0F;
 };
 
-}  // namespace metrics
+}  // namespace sq::metrics

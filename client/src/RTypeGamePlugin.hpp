@@ -33,7 +33,7 @@ namespace client {
  *
  * The game itself runs on the server: ships, enemies and bullets come from its snapshots through the network plugins.
  */
-class RTypeGamePlugin final : public engine::IPlugin {
+class RTypeGamePlugin final : public sq::engine::IPlugin {
   public:
     /** @brief Constructs RTypeGamePlugin. */
     RTypeGamePlugin() = default;
@@ -64,34 +64,34 @@ class RTypeGamePlugin final : public engine::IPlugin {
      * AnimationPlugin and UiPlugin.
      * @param builder Dependency builder.
      */
-    void build(engine::PluginBuilder& builder) override;
+    void build(sq::engine::PluginBuilder& builder) override;
 
     /**
      * @brief Loads the global asset group, configures action bindings, and spawns the starfield, the camera and the
      * local input.
      * @param engine Reference to host Engine.
      */
-    void init(engine::Engine& engine) override;
+    void init(sq::engine::Engine& engine) override;
 
     /**
      * @brief Makes the ships that just respawned blink.
      * @param engine Reference to host Engine.
      * @param time Frame time.
      */
-    void update(engine::Engine& engine, const ecs::time::Time& time) override;
+    void update(sq::engine::Engine& engine, const sq::time::Time& time) override;
 
     /**
      * @brief Turns the sprites that face their motion, once the interpolation has moved them.
      * @param engine Reference to host Engine.
      * @param time Frame time.
      */
-    void lateUpdate(engine::Engine& engine, const ecs::time::Time& time) override;
+    void lateUpdate(sq::engine::Engine& engine, const sq::time::Time& time) override;
 
     /**
      * @brief Unsubscribes from the replication events.
      * @param engine Reference to host Engine.
      */
-    void shutdown(engine::Engine& engine) override;
+    void shutdown(sq::engine::Engine& engine) override;
 
   private:
     /**
@@ -99,21 +99,21 @@ class RTypeGamePlugin final : public engine::IPlugin {
      * @param engine Reference to host Engine.
      * @param event The new entity.
      */
-    void onEntitySpawned(engine::Engine& engine, const ecs::net::ReplicatedEntitySpawned& event) const;
+    void onEntitySpawned(sq::engine::Engine& engine, const sq::net::ReplicatedEntitySpawned& event) const;
 
     /**
      * @brief Blows up a boss killed by the players when it leaves the snapshots; a turret gets a single burst.
      * @param engine Reference to host Engine.
      * @param event The entity about to be removed.
      */
-    void onEntityDespawned(engine::Engine& engine, const ecs::net::ReplicatedEntityDespawned& event) const;
+    void onEntityDespawned(sq::engine::Engine& engine, const sq::net::ReplicatedEntityDespawned& event) const;
 
     /**
      * @brief Spawns the bursts of an explosion, client-side only.
      * @param registry Client registry.
      * @param bursts Where and when each burst appears.
      */
-    void spawnExplosion(ecs::Registry& registry, const std::vector<gameplay::BurstSpec>& bursts) const;
+    void spawnExplosion(sq::ecs::Registry& registry, const std::vector<gameplay::BurstSpec>& bursts) const;
 
     /**
      * @brief Reads `client/config/looks.toml`, from the content root, and loads the textures it names.
@@ -123,7 +123,7 @@ class RTypeGamePlugin final : public engine::IPlugin {
      *
      * @param manager Asset manager, which loads and caches the textures.
      */
-    void loadLooks(assets::AssetManager& manager);
+    void loadLooks(sq::assets::AssetManager& manager);
 
     /**
      * @brief Draws a boss or a boss part with its configured look, or as a box without one.
@@ -134,8 +134,8 @@ class RTypeGamePlugin final : public engine::IPlugin {
      * @param color Color of the box.
      * @param layer Draw layer.
      */
-    void applyLook(ecs::Registry& registry, ecs::Entity entity, const looks::Look* look, std::pair<float, float> box,
-                   ecs::Rgba color, int layer) const;
+    void applyLook(sq::ecs::Registry& registry, sq::ecs::Entity entity, const looks::Look* look,
+                   std::pair<float, float> box, sq::ecs::Rgba color, int layer) const;
 
     /** @brief Looks of the boss variants and of the boss parts. */
     looks::Looks _looks;
@@ -146,13 +146,13 @@ class RTypeGamePlugin final : public engine::IPlugin {
      * @param entity The new entity.
      * @param part True for a boss part, false for a boss.
      */
-    void applyBossLook(ecs::Registry& registry, ecs::Entity entity, bool part) const;
+    void applyBossLook(sq::ecs::Registry& registry, sq::ecs::Entity entity, bool part) const;
 
     /**
      * @brief Switches the bosses and parts with damaged looks to the one matching their hit points.
      * @param registry Client registry.
      */
-    void updateLookStages(ecs::Registry& registry) const;
+    void updateLookStages(sq::ecs::Registry& registry) const;
 
     /**
      * @brief Finds the `[[entity]]` look of a kind: the entry for its subtype if any, else the entry for the kind.
@@ -167,26 +167,26 @@ class RTypeGamePlugin final : public engine::IPlugin {
     /** @brief `[[entity]]` looks by replicated kind and subtype, pointing into `_looks`. */
     std::map<std::pair<std::uint32_t, std::uint8_t>, const looks::Look*> _entitySubtypeLooks;
     /** @brief Textures of the looks, by path. */
-    std::map<std::string, ecs::TextureId, std::less<>> _lookTextures;
+    std::map<std::string, sq::ecs::TextureId, std::less<>> _lookTextures;
 
     /** @brief Seconds since the plugin started, the clock of the blinks. */
     float _elapsed = 0.0F;
     /** @brief Subscription to `ReplicatedEntitySpawned`, while initialized. */
-    std::optional<ecs::EventBus::EventToken> _spawned;
+    std::optional<sq::events::EventBus::EventToken> _spawned;
     /** @brief Subscription to `ReplicatedEntityDespawned`, while initialized. */
-    std::optional<ecs::EventBus::EventToken> _despawned;
+    std::optional<sq::events::EventBus::EventToken> _despawned;
     /** @brief Texture identifier for the player ship spritesheet. */
-    ecs::TextureId _shipTexId = ecs::NO_TEXTURE;
+    sq::ecs::TextureId _shipTexId = sq::ecs::NO_TEXTURE;
     /** @brief Texture identifier for the Bydos enemy spritesheet. */
-    ecs::TextureId _bydosTexId = ecs::NO_TEXTURE;
+    sq::ecs::TextureId _bydosTexId = sq::ecs::NO_TEXTURE;
     /** @brief Texture identifier for the bullet sprite. */
-    ecs::TextureId _bulletTexId = ecs::NO_TEXTURE;
+    sq::ecs::TextureId _bulletTexId = sq::ecs::NO_TEXTURE;
     /** @brief Texture identifier for small star sprites. */
-    ecs::TextureId _starSmallId = ecs::NO_TEXTURE;
+    sq::ecs::TextureId _starSmallId = sq::ecs::NO_TEXTURE;
     /** @brief Texture identifier for medium star sprites. */
-    ecs::TextureId _starMediumId = ecs::NO_TEXTURE;
+    sq::ecs::TextureId _starMediumId = sq::ecs::NO_TEXTURE;
     /** @brief Texture identifier for large star sprites. */
-    ecs::TextureId _starLargeId = ecs::NO_TEXTURE;
+    sq::ecs::TextureId _starLargeId = sq::ecs::NO_TEXTURE;
 };
 
 }  // namespace client

@@ -16,19 +16,19 @@
 
 namespace rtype::server::gameplay {
 
-std::optional<AimPoint> nearestShip(const ecs::Registry& registry, const float x, const float y) {
+std::optional<AimPoint> nearestShip(const sq::ecs::Registry& registry, const float x, const float y) {
     std::optional<AimPoint> nearest;
     float best = std::numeric_limits<float>::infinity();
-    const auto* replicated = registry.findComponents<ecs::Replicated>();
+    const auto* replicated = registry.findComponents<sq::ecs::Replicated>();
     if (replicated == nullptr) {
         return nearest;
     }
-    for (const ecs::Entity entity : replicated->getDenseEntities()) {
+    for (const sq::ecs::Entity entity : replicated->getDenseEntities()) {
         if (replicated->get(entity).kind != game::KIND_PLAYER_SHIP || registry.hasComponent<Respawning>(entity) ||
-            !registry.hasComponent<ecs::Transform>(entity)) {
+            !registry.hasComponent<sq::ecs::Transform>(entity)) {
             continue;
         }
-        const ecs::Transform& transform = registry.getComponents<ecs::Transform>().get(entity);
+        const sq::ecs::Transform& transform = registry.getComponents<sq::ecs::Transform>().get(entity);
         const float dx = transform.x - x;
         const float dy = transform.y - y;
         const float distance = (dx * dx) + (dy * dy);
@@ -50,12 +50,12 @@ Velocity aimAt(const float x, const float y, const AimPoint target, const float 
     return {.x = dx / length * speed, .y = dy / length * speed};
 }
 
-void spawnEnemyMissile(ecs::Registry& registry, const float x, const float y, const Velocity velocity,
+void spawnEnemyMissile(sq::ecs::Registry& registry, const float x, const float y, const Velocity velocity,
                        const std::uint8_t look) {
-    const ecs::Entity missile = registry.spawnEntity();
+    const sq::ecs::Entity missile = registry.spawnEntity();
     ::prefabs::buildMissile(missile, registry, {{"x", x}, {"y", y}, {"speed", velocity.x}, {"speed_y", velocity.y}});
     registry.addComponent(missile, game::EntityNetState{.subtype = look});
-    ecs::net::replicate(registry, missile, game::KIND_MISSILE);
+    sq::net::replicate(registry, missile, game::KIND_MISSILE);
 }
 
 }  // namespace rtype::server::gameplay

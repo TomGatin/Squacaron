@@ -23,7 +23,7 @@ namespace rlss::client {
  * applies and is saved), and a change from the options menu sets the cvar. The cvars are archived: the settings file
  * keeps them between sessions.
  */
-class VolumeCVarsPlugin final : public engine::IPlugin {
+class VolumeCVarsPlugin final : public sq::engine::IPlugin {
   public:
     /**
      * @brief Gets plugin name.
@@ -35,19 +35,19 @@ class VolumeCVarsPlugin final : public engine::IPlugin {
      * @brief Declares the settings, the console, and the menus that declare the volume settings.
      * @param builder Dependency builder.
      */
-    void build(engine::PluginBuilder& builder) override;
+    void build(sq::engine::PluginBuilder& builder) override;
 
     /**
      * @brief Registers the cvars at the current setting values and subscribes to both change events.
      * @param engine Host engine.
      */
-    void init(engine::Engine& engine) override;
+    void init(sq::engine::Engine& engine) override;
 
     /**
      * @brief Unsubscribes from the change events.
      * @param engine Host engine.
      */
-    void shutdown(engine::Engine& engine) override;
+    void shutdown(sq::engine::Engine& engine) override;
 
   private:
     /** @brief One volume: its cvar and its setting. */
@@ -59,7 +59,7 @@ class VolumeCVarsPlugin final : public engine::IPlugin {
         /** @brief Help text of the cvar. */
         std::string_view description;
         /** @brief Handle on the cvar, once registered. */
-        tools::CVarRef<float> ref;
+        sq::tools::CVarRef<float> ref;
     };
 
     /** @brief The three volumes. */
@@ -71,9 +71,9 @@ class VolumeCVarsPlugin final : public engine::IPlugin {
         },
     };
     /** @brief Subscription to the cvar changes. */
-    std::optional<ecs::EventBus::EventToken> _cvarChanged;
+    std::optional<sq::events::EventBus::EventToken> _cvarChanged;
     /** @brief Subscription to the setting changes. */
-    std::optional<ecs::EventBus::EventToken> _settingChanged;
+    std::optional<sq::events::EventBus::EventToken> _settingChanged;
 };
 
 }  // namespace rlss::client

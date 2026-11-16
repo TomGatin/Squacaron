@@ -5,11 +5,13 @@
 
 #pragma once
 
-namespace ecs {
-class Registry;
-}
+namespace sq::ecs {
 
-namespace engine {
+class Registry;
+
+}  // namespace sq::ecs
+
+namespace sq::engine {
 
 /**
  * @brief Abstract rendering service exposed through the Mediator.
@@ -38,7 +40,7 @@ class IRenderService {
      * @brief Collects renderable entities from the ECS registry without drawing.
      * @param registry Target registry holding transforms and renderables.
      */
-    virtual void collect(ecs::Registry& registry) = 0;
+    virtual void collect(sq::ecs::Registry& registry) = 0;
 
     /**
      * @brief Draws the collected entities through the camera.
@@ -49,7 +51,7 @@ class IRenderService {
      * @brief Performs collection and drawing in a single pass.
      * @param registry Target registry.
      */
-    virtual void update(ecs::Registry& registry) = 0;
+    virtual void update(sq::ecs::Registry& registry) = 0;
 };
 
-}  // namespace engine
+}  // namespace sq::engine

@@ -15,13 +15,13 @@
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
 
-namespace hierarchy {
+namespace sq::hierarchy {
 
 /**
  * @brief Makes `child` a child of `parent`, keeping the child's current world position.
  *
  * The child is detached from its previous parent first, then appended at the end of the parent's `Children`. Its
- * `LocalTransform` is computed from both current world transforms (a missing `ecs::Transform` counts as identity),
+ * `LocalTransform` is computed from both current world transforms (a missing `sq::ecs::Transform` counts as identity),
  * so attaching never makes it jump. Set the `LocalTransform` afterwards to place it at a given offset instead.
  *
  * @note A parent axis with a collapsed (zero) scale cannot be inverted: the link is still made, but the child is
@@ -34,18 +34,19 @@ namespace hierarchy {
  * @return False, without changing anything, if either entity is not alive, if `child == parent`, or if `child` is an
  *         ancestor of `parent` (the link would create a cycle). True otherwise, including when already linked.
  */
-bool setParent(ecs::Registry& registry, ecs::Entity child, ecs::Entity parent);
+bool setParent(sq::ecs::Registry& registry, sq::ecs::Entity child, sq::ecs::Entity parent);
 
 /**
  * @brief Detaches `child` from its parent; it becomes a root.
  *
  * Removes `Parent` and `LocalTransform` from the child and the child from the parent's `Children` (the component is
- * removed once empty). The child's world `ecs::Transform` keeps its last value. Does nothing if `child` has no parent.
+ * removed once empty). The child's world `sq::ecs::Transform` keeps its last value. Does nothing if `child` has no
+ * parent.
  *
  * @param registry Registry owning the entity.
  * @param child Entity to detach.
  */
-void removeParent(ecs::Registry& registry, ecs::Entity child);
+void removeParent(sq::ecs::Registry& registry, sq::ecs::Entity child);
 
 /**
  * @brief Gets the parent of an entity.
@@ -53,7 +54,7 @@ void removeParent(ecs::Registry& registry, ecs::Entity child);
  * @param e Entity to query.
  * @return Parent handle, or `std::nullopt` if `e` has no parent.
  */
-[[nodiscard]] std::optional<ecs::Entity> parentOf(const ecs::Registry& registry, ecs::Entity e);
+[[nodiscard]] std::optional<sq::ecs::Entity> parentOf(const sq::ecs::Registry& registry, sq::ecs::Entity e);
 
 /**
  * @brief Gets the direct children of an entity, in insertion order.
@@ -64,7 +65,7 @@ void removeParent(ecs::Registry& registry, ecs::Entity child);
  * @param e Entity to query.
  * @return Children of `e`, empty if it has none.
  */
-[[nodiscard]] std::span<const ecs::Entity> childrenOf(const ecs::Registry& registry, ecs::Entity e);
+[[nodiscard]] std::span<const sq::ecs::Entity> childrenOf(const sq::ecs::Registry& registry, sq::ecs::Entity e);
 
 /**
  * @brief Checks whether `ancestor` is a (direct or indirect) parent of `e`.
@@ -73,7 +74,7 @@ void removeParent(ecs::Registry& registry, ecs::Entity child);
  * @param e Entity whose parent chain is walked.
  * @return True if `ancestor` appears in the parent chain of `e`. An entity is not its own ancestor.
  */
-[[nodiscard]] bool isAncestorOf(const ecs::Registry& registry, ecs::Entity ancestor, ecs::Entity e);
+[[nodiscard]] bool isAncestorOf(const sq::ecs::Registry& registry, sq::ecs::Entity ancestor, sq::ecs::Entity e);
 
 /**
  * @brief Gets the root of the tree an entity belongs to.
@@ -81,6 +82,6 @@ void removeParent(ecs::Registry& registry, ecs::Entity child);
  * @param e Entity to query.
  * @return Topmost ancestor of `e`, or `e` itself if it has no parent.
  */
-[[nodiscard]] ecs::Entity rootOf(const ecs::Registry& registry, ecs::Entity e);
+[[nodiscard]] sq::ecs::Entity rootOf(const sq::ecs::Registry& registry, sq::ecs::Entity e);
 
-}  // namespace hierarchy
+}  // namespace sq::hierarchy

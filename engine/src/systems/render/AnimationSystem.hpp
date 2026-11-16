@@ -9,7 +9,7 @@
 
 #include "ecs/Registry.hpp"
 
-namespace systems {
+namespace sq::systems {
 
 /**
  * @brief Updates every entity that has AnimationComponent + Renderable.
@@ -26,7 +26,7 @@ class AnimationSystem {
      * @param registry Registry containing the scene.
      * @param deltaTime Elapsed time since the last frame in seconds.
      */
-    static void update(ecs::Registry& registry, float deltaTime);
+    static void update(sq::ecs::Registry& registry, float deltaTime);
 };
 
-}  // namespace systems
+}  // namespace sq::systems

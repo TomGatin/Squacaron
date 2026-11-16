@@ -47,7 +47,7 @@ a disability. Every feature below can be shown in game; each one says where to f
 
 ## Where it lives in the code
 
-- Rebinding, engine side: `input::ActionMapping` (`engine/src/input/ActionMapping.hpp`) and the key names and AZERTY
+- Rebinding, engine side: `sq::input::ActionMapping` (`engine/src/input/ActionMapping.hpp`) and the key names and AZERTY
   labels of `engine/src/input/KeyNames.hpp` (`keyId`, `keyFromId`, `keyLabel`), shared by both games.
 - Rebinding in R-Type: `client/src/input/RTypeBindings.cpp` (`setupBindings`, `assignKey`), screen in `ControlsScene`
   (`client/src/scenes/MenuScenes.cpp`).
@@ -56,4 +56,4 @@ a disability. Every feature below can be shown in game; each one says where to f
 - Auto-fire: `client::AutoFireLatch` (`client/src/gameplay/AutoFire.hpp`), used by `PlayerControlPlugin`.
 - Text size: `menu::setScale` / `menu::MenuScale` (`client/src/scenes/MenuKit.hpp`).
 - Settings keys: `client/src/scenes/ClientSettings.hpp`, applied by `ClientScenesPlugin`.
-- Menu navigation: `ui::UiNavigation` (`engine/src/ui/components/UiNavigation.hpp`).
+- Menu navigation: `sq::ui::UiNavigation` (`engine/src/ui/components/UiNavigation.hpp`).

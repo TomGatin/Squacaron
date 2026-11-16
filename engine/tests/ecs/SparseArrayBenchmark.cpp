@@ -93,10 +93,10 @@ OopWorld makeOopWorld(std::size_t count) {
 }
 
 /** @brief Builds a registry of `count` entities that all have a Position and a Velocity. */
-std::unique_ptr<ecs::Registry> makeRegistry(std::size_t count) {
-    auto registry = std::make_unique<ecs::Registry>();
+std::unique_ptr<sq::ecs::Registry> makeRegistry(std::size_t count) {
+    auto registry = std::make_unique<sq::ecs::Registry>();
     for (std::size_t i = 0; i < count; ++i) {
-        ecs::Entity const e = registry->spawnEntity();
+        sq::ecs::Entity const e = registry->spawnEntity();
         registry->addComponent<Position>(e, Position{.x = static_cast<float>(i), .y = 0.0F});
         registry->addComponent<Velocity>(e, Velocity{.dx = 1.0F, .dy = 2.0F});
     }
@@ -104,10 +104,10 @@ std::unique_ptr<ecs::Registry> makeRegistry(std::size_t count) {
 }
 
 /** @brief Returns `count` entities with consecutive slot indices, in a shuffled order. */
-std::vector<ecs::Entity> shuffledEntities(std::size_t count) {
-    std::vector<ecs::Entity> entities(count);
+std::vector<sq::ecs::Entity> shuffledEntities(std::size_t count) {
+    std::vector<sq::ecs::Entity> entities(count);
     for (std::size_t i = 0; i < count; ++i) {
-        entities[i] = ecs::makeEntity(static_cast<std::uint32_t>(i), 0U);
+        entities[i] = sq::ecs::makeEntity(static_cast<std::uint32_t>(i), 0U);
     }
     std::mt19937 rng(SEED);
     std::ranges::shuffle(entities, rng);
@@ -122,7 +122,7 @@ std::size_t sizeOf(benchmark::State const& state) { return static_cast<std::size
 void iterateSparseSet(benchmark::State& state) {
     auto const registry = makeRegistry(sizeOf(state));
     for (auto _ : state) {
-        registry->runSystem<Position, Velocity>([](ecs::Entity /*e*/, Position& pos, Velocity const& vel) {
+        registry->runSystem<Position, Velocity>([](sq::ecs::Entity /*e*/, Position& pos, Velocity const& vel) {
             pos.x += vel.dx;
             pos.y += vel.dy;
         });
@@ -137,14 +137,14 @@ void iterateSparseSetOneComponent(benchmark::State& state) {
         Position position;
         Velocity velocity;
     };
-    ecs::Registry registry;
+    sq::ecs::Registry registry;
     for (std::size_t i = 0; i < sizeOf(state); ++i) {
         registry.addComponent<Motion>(
             registry.spawnEntity(),
             Motion{.position = {.x = static_cast<float>(i), .y = 0.0F}, .velocity = {.dx = 1.0F, .dy = 2.0F}});
     }
     for (auto _ : state) {
-        registry.runSystem<Motion>([](ecs::Entity /*e*/, Motion& motion) {
+        registry.runSystem<Motion>([](sq::ecs::Entity /*e*/, Motion& motion) {
             motion.position.x += motion.velocity.dx;
             motion.position.y += motion.velocity.dy;
         });
@@ -154,10 +154,10 @@ void iterateSparseSetOneComponent(benchmark::State& state) {
 }
 
 void iterateUnorderedMap(benchmark::State& state) {
-    std::unordered_map<ecs::Entity, Position> positions;
-    std::unordered_map<ecs::Entity, Velocity> velocities;
-    for (ecs::Entity const e : shuffledEntities(sizeOf(state))) {
-        positions.emplace(e, Position{.x = static_cast<float>(ecs::entityIndex(e)), .y = 0.0F});
+    std::unordered_map<sq::ecs::Entity, Position> positions;
+    std::unordered_map<sq::ecs::Entity, Velocity> velocities;
+    for (sq::ecs::Entity const e : shuffledEntities(sizeOf(state))) {
+        positions.emplace(e, Position{.x = static_cast<float>(sq::ecs::entityIndex(e)), .y = 0.0F});
         velocities.emplace(e, Velocity{.dx = 1.0F, .dy = 2.0F});
     }
     for (auto _ : state) {
@@ -188,9 +188,9 @@ void iterateOop(benchmark::State& state) {
 // does not grow with the container size.
 
 void eraseSparseSet(benchmark::State& state) {
-    std::vector<ecs::Entity> const order = shuffledEntities(sizeOf(state));
-    ecs::SparseArray<Position> array;
-    for (ecs::Entity const e : order) {
+    std::vector<sq::ecs::Entity> const order = shuffledEntities(sizeOf(state));
+    sq::ecs::SparseArray<Position> array;
+    for (sq::ecs::Entity const e : order) {
         array.insertAt(e, Position{.x = 0.0F, .y = 0.0F});
     }
     for (auto _ : state) {
@@ -208,9 +208,9 @@ void eraseSparseSet(benchmark::State& state) {
 }
 
 void eraseUnorderedMap(benchmark::State& state) {
-    std::vector<ecs::Entity> const order = shuffledEntities(sizeOf(state));
-    std::unordered_map<ecs::Entity, Position> map;
-    for (ecs::Entity const e : order) {
+    std::vector<sq::ecs::Entity> const order = shuffledEntities(sizeOf(state));
+    std::unordered_map<sq::ecs::Entity, Position> map;
+    for (sq::ecs::Entity const e : order) {
         map.emplace(e, Position{.x = 0.0F, .y = 0.0F});
     }
     for (auto _ : state) {
@@ -253,10 +253,10 @@ void eraseOop(benchmark::State& state) {
 // --- Insertion: fill an empty container ---------------------------------------------------------------------------
 
 void insertSparseSet(benchmark::State& state) {
-    std::vector<ecs::Entity> const order = shuffledEntities(sizeOf(state));
+    std::vector<sq::ecs::Entity> const order = shuffledEntities(sizeOf(state));
     for (auto _ : state) {
-        ecs::SparseArray<Position> array;
-        for (ecs::Entity const e : order) {
+        sq::ecs::SparseArray<Position> array;
+        for (sq::ecs::Entity const e : order) {
             array.insertAt(e, Position{.x = 0.0F, .y = 0.0F});
         }
         benchmark::DoNotOptimize(array.getDense().data());
@@ -265,10 +265,10 @@ void insertSparseSet(benchmark::State& state) {
 }
 
 void insertUnorderedMap(benchmark::State& state) {
-    std::vector<ecs::Entity> const order = shuffledEntities(sizeOf(state));
+    std::vector<sq::ecs::Entity> const order = shuffledEntities(sizeOf(state));
     for (auto _ : state) {
-        std::unordered_map<ecs::Entity, Position> map;
-        for (ecs::Entity const e : order) {
+        std::unordered_map<sq::ecs::Entity, Position> map;
+        for (sq::ecs::Entity const e : order) {
             map.emplace(e, Position{.x = 0.0F, .y = 0.0F});
         }
         benchmark::DoNotOptimize(map.size());

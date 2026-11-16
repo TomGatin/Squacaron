@@ -28,12 +28,12 @@ constexpr const char* LOG_TAG = "match";
 
 }  // namespace
 
-MatchRoom::MatchRoom(ecs::net::INetworkServer& transport, const std::uint16_t id,
+MatchRoom::MatchRoom(sq::net::INetworkServer& transport, const std::uint16_t id,
                      const std::filesystem::path& scriptRoot)
-    : _id(id), _connection(std::make_shared<ecs::net::PeerGroupConnection>(transport)) {
-    _engine.addPlugin<ecs::net::NetworkPlugin>(_connection, _connection)
-        .addPlugin<ecs::net::ServerReplicationPlugin>(std::make_shared<game::ReplicationCodec>(id))
-        .addPlugin<scripting::ScriptPlugin>(scripting::ScriptTick::EveryFrame, scriptRoot)
+    : _id(id), _connection(std::make_shared<sq::net::PeerGroupConnection>(transport)) {
+    _engine.addPlugin<sq::net::NetworkPlugin>(_connection, _connection)
+        .addPlugin<sq::net::ServerReplicationPlugin>(std::make_shared<game::ReplicationCodec>(id))
+        .addPlugin<sq::scripting::ScriptPlugin>(sq::scripting::ScriptTick::EveryFrame, scriptRoot)
         .addPlugin<CarSimulationPlugin>()
         .addPlugin<RosterPlugin>();
     _engine.init();
@@ -47,17 +47,17 @@ MatchRoom::~MatchRoom() {
     _engine.shutdown();
 }
 
-bool MatchRoom::addPlayer(const ecs::net::PeerId peer) {
+bool MatchRoom::addPlayer(const sq::net::PeerId peer) {
     if (isFull() || std::ranges::contains(_players, peer)) {
         return false;
     }
     _players.push_back(peer);
     _connection->addPeer(peer);
-    _connection->push({.type = ecs::net::EventType::Connected, .peer = peer, .data = {}, .channel = {}});
+    _connection->push({.type = sq::net::EventType::Connected, .peer = peer, .data = {}, .channel = {}});
     return true;
 }
 
-bool MatchRoom::removePlayer(const ecs::net::PeerId peer) {
+bool MatchRoom::removePlayer(const sq::net::PeerId peer) {
     const auto it = std::ranges::find(_players, peer);
     if (it == _players.end()) {
         return false;
@@ -65,13 +65,13 @@ bool MatchRoom::removePlayer(const ecs::net::PeerId peer) {
     _players.erase(it);
     // Pushed while the peer is still in the group (events of other peers are dropped), then the group forgets it: the
     // match can no longer reach it, but still gets the event.
-    _connection->push({.type = ecs::net::EventType::Disconnected, .peer = peer, .data = {}, .channel = {}});
+    _connection->push({.type = sq::net::EventType::Disconnected, .peer = peer, .data = {}, .channel = {}});
     _connection->removePeer(peer);
     return true;
 }
 
-void MatchRoom::deliver(const ecs::net::PeerId peer, const ecs::net::Bytes& data, const ecs::net::Channel channel) {
-    _connection->push({.type = ecs::net::EventType::Data, .peer = peer, .data = data, .channel = channel});
+void MatchRoom::deliver(const sq::net::PeerId peer, const sq::net::Bytes& data, const sq::net::Channel channel) {
+    _connection->push({.type = sq::net::EventType::Data, .peer = peer, .data = data, .channel = channel});
 }
 
 void MatchRoom::advance() {
@@ -92,7 +92,7 @@ void MatchRoom::runInBackground() {
         try {
             _loop.run([this] { advance(); });
         } catch (const std::exception& error) {
-            engine::log::error(LOG_TAG, "match ", _id, " stopped by an error in its simulation: ", error.what());
+            sq::engine::log::error(LOG_TAG, "match ", _id, " stopped by an error in its simulation: ", error.what());
             fail();
         }
     });
@@ -106,7 +106,7 @@ void MatchRoom::fail() {
         status = _summary.status;
     }
     // The engine no longer runs: tell the players directly, their end screen takes them back to the menu.
-    _connection->broadcast(protocol::encode(status), ecs::net::Channel::Reliable);
+    _connection->broadcast(protocol::encode(status), sq::net::Channel::Reliable);
 }
 
 MatchSummary MatchRoom::summary() const {

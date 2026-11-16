@@ -17,7 +17,7 @@
 #include "scripting/ForeignCall.hpp"
 #include "scripting/WrenVM.hpp"
 
-namespace scripting {
+namespace sq::scripting {
 
 template <auto Fn>
 void WrenVM::foreignMethodTrampoline(NativeVm* rawVm) noexcept {
@@ -149,7 +149,7 @@ std::optional<T> WrenVM::getSlotChecked(int slot) {
             return std::nullopt;
         }
         // The upper limit is exclusive: max() may round up to 2^digits once converted to double (e.g. for 64-bit
-        // types such as ecs::Entity), and converting 2^digits back to the integer type is undefined behaviour.
+        // types such as sq::ecs::Entity), and converting 2^digits back to the integer type is undefined behaviour.
         if (d < static_cast<double>(std::numeric_limits<DecayedT>::lowest()) ||
             d >= std::ldexp(1.0, std::numeric_limits<DecayedT>::digits)) {
             return std::nullopt;
@@ -184,4 +184,4 @@ T WrenVM::getSlot(int slot) {
     return std::move(*opt);
 }
 
-}  // namespace scripting
+}  // namespace sq::scripting

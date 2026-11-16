@@ -18,7 +18,7 @@
 #include "ui/components/UiToggle.hpp"
 #include "ui/system/UiLayout.hpp"
 
-namespace ui {
+namespace sq::ui {
 
 /**
  * @brief Draws the HUD in screen space.
@@ -51,14 +51,14 @@ class UiRenderSystem {
      * @param screen Screen rectangle.
      * @param measure Text measuring function.
      */
-    void collect(ecs::Registry& registry, const UiScreenRect& screen, const UiTextMeasure& measure);
+    void collect(sq::ecs::Registry& registry, const UiScreenRect& screen, const UiTextMeasure& measure);
 
     /**
      * @brief Draws the nodes laid out by the last `collect`.
      * @param registry Registry holding the HUD.
      * @param draw Screen-draw service.
      */
-    void submit(const ecs::Registry& registry, engine::IScreenDrawService& draw) const;
+    void submit(const sq::ecs::Registry& registry, sq::engine::IScreenDrawService& draw) const;
 
     /**
      * @brief Lays out then draws the HUD.
@@ -66,14 +66,14 @@ class UiRenderSystem {
      * @param screen Screen rectangle.
      * @param draw Screen-draw service, also used to measure text.
      */
-    void update(ecs::Registry& registry, const UiScreenRect& screen, engine::IScreenDrawService& draw);
+    void update(sq::ecs::Registry& registry, const UiScreenRect& screen, sq::engine::IScreenDrawService& draw);
 
     /**
      * @brief Builds a text measuring function backed by the draw service.
      * @param draw Screen-draw service; must outlive the returned function.
      * @return Function measuring a `UiText` with the HUD's spacing.
      */
-    [[nodiscard]] static UiTextMeasure measureWith(const engine::IScreenDrawService& draw);
+    [[nodiscard]] static UiTextMeasure measureWith(const sq::engine::IScreenDrawService& draw);
 
     /**
      * @brief Gets the layout of the last `collect`.
@@ -88,42 +88,43 @@ class UiRenderSystem {
      * @param area Where to draw.
      * @param rect Component.
      */
-    static void drawRect(engine::IScreenDrawService& draw, const UiScreenRect& area, const UiRect& rect);
+    static void drawRect(sq::engine::IScreenDrawService& draw, const UiScreenRect& area, const UiRect& rect);
     /**
      * @brief Draws a text.
      * @param draw Screen-draw service.
      * @param area Where to draw.
      * @param text Component.
      */
-    static void drawText(engine::IScreenDrawService& draw, const UiScreenRect& area, const UiText& text);
+    static void drawText(sq::engine::IScreenDrawService& draw, const UiScreenRect& area, const UiText& text);
     /**
      * @brief Draws a progress bar.
      * @param draw Screen-draw service.
      * @param area Where to draw.
      * @param bar Component.
      */
-    static void drawProgressBar(engine::IScreenDrawService& draw, const UiScreenRect& area, const UiProgressBar& bar);
+    static void drawProgressBar(sq::engine::IScreenDrawService& draw, const UiScreenRect& area,
+                                const UiProgressBar& bar);
     /**
      * @brief Draws a button and its centred label.
      * @param draw Screen-draw service.
      * @param area Where to draw.
      * @param btn Component.
      */
-    static void drawButton(engine::IScreenDrawService& draw, const UiScreenRect& area, const UiButton& btn);
+    static void drawButton(sq::engine::IScreenDrawService& draw, const UiScreenRect& area, const UiButton& btn);
     /**
      * @brief Draws a toggle box, with its mark while on.
      * @param draw Screen-draw service.
      * @param area Where to draw.
      * @param toggle Component.
      */
-    static void drawToggle(engine::IScreenDrawService& draw, const UiScreenRect& area, const UiToggle& toggle);
+    static void drawToggle(sq::engine::IScreenDrawService& draw, const UiScreenRect& area, const UiToggle& toggle);
     /**
      * @brief Draws a slider track, its filled part and its knob.
      * @param draw Screen-draw service.
      * @param area Where to draw.
      * @param slider Component.
      */
-    static void drawSlider(engine::IScreenDrawService& draw, const UiScreenRect& area, const UiSlider& slider);
+    static void drawSlider(sq::engine::IScreenDrawService& draw, const UiScreenRect& area, const UiSlider& slider);
     /**
      * @brief Draws a text input, its text or placeholder, and its caret.
      * @param draw Screen-draw service.
@@ -131,11 +132,11 @@ class UiRenderSystem {
      * @param input Component.
      * @param caret `true` to draw the caret.
      */
-    static void drawTextInput(engine::IScreenDrawService& draw, const UiScreenRect& area, const UiTextInput& input,
+    static void drawTextInput(sq::engine::IScreenDrawService& draw, const UiScreenRect& area, const UiTextInput& input,
                               bool caret);
 
     /** @brief Layout of the current frame; capacity kept between frames. */
     std::vector<UiLayoutNode> _layout;
 };
 
-}  // namespace ui
+}  // namespace sq::ui

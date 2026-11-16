@@ -8,7 +8,7 @@
 #include <string>
 #include <string_view>
 
-namespace utils {
+namespace sq::utils {
 
 std::optional<std::string> normalizePath(const std::string_view path) {
     if (path.empty() || path.size() > MAX_PATH_LENGTH || path.contains('\0')) {
@@ -53,4 +53,4 @@ std::string quoteForLog(const std::string_view text, const std::size_t limit) {
     return "'" + std::string(text.substr(0, limit)) + "...'";
 }
 
-}  // namespace utils
+}  // namespace sq::utils

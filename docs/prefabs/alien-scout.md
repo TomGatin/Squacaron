@@ -1,6 +1,6 @@
 # Alien Scout
 
-**Name:** `alien_scout` (`prefabs::ALIEN_SCOUT_PREFAB`)
+**Name:** `alien_scout` (`sq::prefabs::ALIEN_SCOUT_PREFAB`)
 **Source:** `server/src/prefabs/alien_scout/`
 
 ## Purpose
@@ -42,10 +42,10 @@ Every transform key read by `makeTransform` (`x`, `y`, `z`, `rotation`, `scaleX`
 ## API
 
 ```cpp
-void buildAlienScout(ecs::Entity e, ecs::Registry& registry, PrefabParams const& params);
+void buildAlienScout(sq::ecs::Entity e, sq::ecs::Registry& registry, PrefabParams const& params);
 ```
 
 ```cpp
-manager.registerPrefab(prefabs::ALIEN_SCOUT_PREFAB, prefabs::buildAlienScout);
-manager.spawn(prefabs::ALIEN_SCOUT_PREFAB, buffer, {{"x", 800.0F}, {"y", 300.0F}, {"speed", -400.0F}});
+manager.registerPrefab(sq::prefabs::ALIEN_SCOUT_PREFAB, sq::prefabs::buildAlienScout);
+manager.spawn(sq::prefabs::ALIEN_SCOUT_PREFAB, buffer, {{"x", 800.0F}, {"y", 300.0F}, {"speed", -400.0F}});
 ```

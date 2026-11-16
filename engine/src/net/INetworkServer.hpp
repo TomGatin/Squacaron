@@ -4,7 +4,7 @@
 
 #include "net/INetworkManager.hpp"
 
-namespace ecs::net {
+namespace sq::net {
 
 /** @brief Server side of the transport: accepts peers and exchanges messages with them. */
 class INetworkServer : public INetworkManager {
@@ -45,4 +45,4 @@ class INetworkServer : public INetworkManager {
     virtual void refuse(const PeerId peer, DisconnectReason /*reason*/) { kick(peer); }
 };
 
-}  // namespace ecs::net
+}  // namespace sq::net

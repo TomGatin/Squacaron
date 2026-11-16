@@ -37,12 +37,12 @@
 
 namespace {
 
-using ecs::net::Bytes;
-using ecs::net::Channel;
-using ecs::net::DisconnectReason;
-using ecs::net::EventType;
-using ecs::net::NetworkConfig;
-using ecs::net::NetworkEvent;
+using sq::net::Bytes;
+using sq::net::Channel;
+using sq::net::DisconnectReason;
+using sq::net::EventType;
+using sq::net::NetworkConfig;
+using sq::net::NetworkEvent;
 
 constexpr std::uint32_t GAME_A = 0xA;
 constexpr std::uint32_t GAME_B = 0xB;
@@ -55,7 +55,7 @@ constexpr auto WAIT = std::chrono::seconds(10);
 constexpr auto PROMPTLY = std::chrono::seconds(2);
 
 /** @brief Polls a transport until `done` holds or `WAIT` elapses; returns every event seen. */
-std::vector<NetworkEvent> pollUntil(ecs::net::INetworkManager& net,
+std::vector<NetworkEvent> pollUntil(sq::net::INetworkManager& net,
                                     const std::function<bool(const std::vector<NetworkEvent>&)>& done) {
     std::vector<NetworkEvent> seen;
     const auto deadline = std::chrono::steady_clock::now() + WAIT;
@@ -103,7 +103,7 @@ bool serverClosesRawConnection(const std::uint16_t port, const Bytes& firstBytes
  * @brief Returns whether `stop()` ends within `WAIT`. A stop that hangs leaves its thread and the server behind, on
  * purpose: nothing could join them, and the failure must be reported instead of hanging the whole test binary.
  */
-bool stopsInTime(std::shared_ptr<ecs::net::INetworkServer> server) {
+bool stopsInTime(std::shared_ptr<sq::net::INetworkServer> server) {
     auto stopped = std::make_shared<std::promise<void>>();
     auto future = stopped->get_future();
     std::thread([server = std::move(server), stopped] {
@@ -115,30 +115,30 @@ bool stopsInTime(std::shared_ptr<ecs::net::INetworkServer> server) {
 
 }  // namespace
 
-TEST(NetworkConfig, DefaultIsValid) { EXPECT_TRUE(ecs::net::isValid(NetworkConfig{})); }
+TEST(NetworkConfig, DefaultIsValid) { EXPECT_TRUE(sq::net::isValid(NetworkConfig{})); }
 
 TEST(NetworkConfig, InvalidConfigIsRefusedByTheFactory) {
-    EXPECT_FALSE(ecs::net::isValid(NetworkConfig{.maxPeers = 0}));
-    EXPECT_FALSE(ecs::net::isValid(NetworkConfig{.maxQueuedMessages = 0}));
-    EXPECT_FALSE(ecs::net::isValid(NetworkConfig{.acceptRetryDelay = std::chrono::milliseconds(0)}));
-    EXPECT_FALSE(ecs::net::isValid(NetworkConfig{.keepaliveInterval = std::chrono::seconds(10)}));  // >= udpTimeout
-    EXPECT_THROW((void)ecs::net::createServer(NetworkConfig{.maxPeers = 0}), std::invalid_argument);
-    EXPECT_THROW((void)ecs::net::createClient(NetworkConfig{.udpTick = std::chrono::milliseconds(0)}),
+    EXPECT_FALSE(sq::net::isValid(NetworkConfig{.maxPeers = 0}));
+    EXPECT_FALSE(sq::net::isValid(NetworkConfig{.maxQueuedMessages = 0}));
+    EXPECT_FALSE(sq::net::isValid(NetworkConfig{.acceptRetryDelay = std::chrono::milliseconds(0)}));
+    EXPECT_FALSE(sq::net::isValid(NetworkConfig{.keepaliveInterval = std::chrono::seconds(10)}));  // >= udpTimeout
+    EXPECT_THROW((void)sq::net::createServer(NetworkConfig{.maxPeers = 0}), std::invalid_argument);
+    EXPECT_THROW((void)sq::net::createClient(NetworkConfig{.udpTick = std::chrono::milliseconds(0)}),
                  std::invalid_argument);
 }
 
 TEST(Transport, SameProtocolConnectsAndExchangesData) {
     constexpr std::uint16_t PORT = 21311;
-    const auto server = ecs::net::createServer({.protocolId = GAME_A});
+    const auto server = sq::net::createServer({.protocolId = GAME_A});
     ASSERT_TRUE(server->start(PORT));
-    const auto client = ecs::net::createClient({.protocolId = GAME_A});
+    const auto client = sq::net::createClient({.protocolId = GAME_A});
     ASSERT_TRUE(client->connect("127.0.0.1", PORT));
 
     const auto clientEvents = pollUntil(*client, [](const auto& e) { return has(e, EventType::Connected); });
     ASSERT_TRUE(has(clientEvents, EventType::Connected));
     const auto serverEvents = pollUntil(*server, [](const auto& e) { return has(e, EventType::Connected); });
     ASSERT_TRUE(has(serverEvents, EventType::Connected));
-    const ecs::net::PeerId peer = serverEvents.front().peer;
+    const sq::net::PeerId peer = serverEvents.front().peer;
     EXPECT_NE(peer, 0U);
 
     client->send(Bytes{1, 2, 3}, Channel::Reliable);
@@ -150,9 +150,9 @@ TEST(Transport, SameProtocolConnectsAndExchangesData) {
 
 TEST(Transport, OtherProtocolIsRefusedBeforeTheGameSeesIt) {
     constexpr std::uint16_t PORT = 21312;
-    const auto server = ecs::net::createServer({.protocolId = GAME_A});
+    const auto server = sq::net::createServer({.protocolId = GAME_A});
     ASSERT_TRUE(server->start(PORT));
-    const auto client = ecs::net::createClient({.protocolId = GAME_B});
+    const auto client = sq::net::createClient({.protocolId = GAME_B});
     ASSERT_TRUE(client->connect("127.0.0.1", PORT));
 
     const auto clientEvents = pollUntil(*client, [](const auto& e) { return has(e, EventType::Disconnected); });
@@ -167,7 +167,7 @@ TEST(Transport, OtherProtocolIsRefusedBeforeTheGameSeesIt) {
 
 TEST(Transport, FrameBeforeHandshakeClosesTheConnection) {
     constexpr std::uint16_t PORT = 21313;
-    const auto server = ecs::net::createServer({.protocolId = GAME_A});
+    const auto server = sq::net::createServer({.protocolId = GAME_A});
     ASSERT_TRUE(server->start(PORT));
 
     // A Data frame (kind 0) with an empty payload: `[length u32 = 0][kind u8 = 0]`.
@@ -177,9 +177,9 @@ TEST(Transport, FrameBeforeHandshakeClosesTheConnection) {
 
 TEST(Transport, SilentConnectionIsClosedAfterHandshakeTimeout) {
     constexpr std::uint16_t PORT = 21314;
-    const auto server = ecs::net::createServer({.protocolId = GAME_A,
-                                                .udpTick = std::chrono::milliseconds(20),
-                                                .handshakeTimeout = std::chrono::milliseconds(100)});
+    const auto server = sq::net::createServer({.protocolId = GAME_A,
+                                               .udpTick = std::chrono::milliseconds(20),
+                                               .handshakeTimeout = std::chrono::milliseconds(100)});
     ASSERT_TRUE(server->start(PORT));
 
     EXPECT_TRUE(serverClosesRawConnection(PORT, {}));
@@ -188,14 +188,14 @@ TEST(Transport, SilentConnectionIsClosedAfterHandshakeTimeout) {
 
 TEST(Transport, FullServerTellsTheClientWhy) {
     constexpr std::uint16_t PORT = 21315;
-    const auto server = ecs::net::createServer({.protocolId = GAME_A, .maxPeers = 1});
+    const auto server = sq::net::createServer({.protocolId = GAME_A, .maxPeers = 1});
     ASSERT_TRUE(server->start(PORT));
-    const auto first = ecs::net::createClient({.protocolId = GAME_A});
+    const auto first = sq::net::createClient({.protocolId = GAME_A});
     ASSERT_TRUE(first->connect("127.0.0.1", PORT));
     ASSERT_TRUE(
         has(pollUntil(*first, [](const auto& e) { return has(e, EventType::Connected); }), EventType::Connected));
 
-    const auto second = ecs::net::createClient({.protocolId = GAME_A});
+    const auto second = sq::net::createClient({.protocolId = GAME_A});
     ASSERT_TRUE(second->connect("127.0.0.1", PORT));
 
     const auto events = pollUntil(*second, [](const auto& e) { return has(e, EventType::Disconnected); });
@@ -206,7 +206,7 @@ TEST(Transport, FullServerTellsTheClientWhy) {
 
 TEST(Transport, RefusedPeerThatStaysConnectedIsClosedAnyway) {
     constexpr std::uint16_t PORT = 21322;
-    const auto server = ecs::net::createServer({.protocolId = GAME_A});
+    const auto server = sq::net::createServer({.protocolId = GAME_A});
     ASSERT_TRUE(server->start(PORT));
     asio::io_context io;
     asio::ip::tcp::socket socket(io);
@@ -231,9 +231,9 @@ TEST(Transport, RefusedPeerThatStaysConnectedIsClosedAnyway) {
 
 TEST(Transport, RefusedPeerLearnsTheReasonAfterConnecting) {
     constexpr std::uint16_t PORT = 21316;
-    const auto server = ecs::net::createServer({.protocolId = GAME_A});
+    const auto server = sq::net::createServer({.protocolId = GAME_A});
     ASSERT_TRUE(server->start(PORT));
-    const auto client = ecs::net::createClient({.protocolId = GAME_A});
+    const auto client = sq::net::createClient({.protocolId = GAME_A});
     ASSERT_TRUE(client->connect("127.0.0.1", PORT));
     const auto serverEvents = pollUntil(*server, [](const auto& e) { return has(e, EventType::Connected); });
     ASSERT_TRUE(has(serverEvents, EventType::Connected));
@@ -247,9 +247,9 @@ TEST(Transport, RefusedPeerLearnsTheReasonAfterConnecting) {
 
 TEST(Transport, LostConnectionHasNoSpecialReason) {
     constexpr std::uint16_t PORT = 21317;
-    const auto server = ecs::net::createServer({.protocolId = GAME_A});
+    const auto server = sq::net::createServer({.protocolId = GAME_A});
     ASSERT_TRUE(server->start(PORT));
-    const auto client = ecs::net::createClient({.protocolId = GAME_A});
+    const auto client = sq::net::createClient({.protocolId = GAME_A});
     ASSERT_TRUE(client->connect("127.0.0.1", PORT));
     const auto serverEvents = pollUntil(*server, [](const auto& e) { return has(e, EventType::Connected); });
     ASSERT_TRUE(has(serverEvents, EventType::Connected));
@@ -263,7 +263,7 @@ TEST(Transport, LostConnectionHasNoSpecialReason) {
 
 TEST(Transport, UnreachableServerIsReportedByAnEvent) {
     constexpr std::uint16_t CLOSED_PORT = 21318;
-    const auto client = ecs::net::createClient({.protocolId = GAME_A});
+    const auto client = sq::net::createClient({.protocolId = GAME_A});
 
     ASSERT_TRUE(client->connect("127.0.0.1", CLOSED_PORT));
 
@@ -277,7 +277,7 @@ TEST(Transport, UnreachableServerIsReportedByAnEvent) {
 TEST(Transport, ConnectDoesNotBlockAndCanBeCancelled) {
     // Reserved for documentation (RFC 5737): nothing answers there, so the attempt stays pending or fails on its own.
     const std::string blackHole = "192.0.2.1";
-    const auto client = ecs::net::createClient({.protocolId = GAME_A});
+    const auto client = sq::net::createClient({.protocolId = GAME_A});
 
     const auto before = std::chrono::steady_clock::now();
     ASSERT_TRUE(client->connect(blackHole, 21319));
@@ -290,13 +290,13 @@ TEST(Transport, ConnectDoesNotBlockAndCanBeCancelled) {
 TEST(Transport, StopRightAfterConnectNeverHangs) {
     constexpr std::uint16_t PORT = 21321;
     constexpr int ATTEMPTS = 200;
-    const auto server = ecs::net::createServer({.protocolId = GAME_A});
+    const auto server = sq::net::createServer({.protocolId = GAME_A});
     ASSERT_TRUE(server->start(PORT));
 
     // stop() can run before, during or after the resolution and the connection: every order must let it join.
     auto stopped = std::async(std::launch::async, [] {
         for (int attempt = 0; attempt < ATTEMPTS; ++attempt) {
-            const auto client = ecs::net::createClient({.protocolId = GAME_A});
+            const auto client = sq::net::createClient({.protocolId = GAME_A});
             client->connect("127.0.0.1", PORT);
             if (attempt % 2 == 0) {
                 std::this_thread::yield();
@@ -336,7 +336,7 @@ TEST(Transport, ServerStopDuringAConnectionBurstNeverHangs) {
     int started = 0;
     bool stopped = true;
     for (int attempt = 0; attempt < ATTEMPTS && stopped; ++attempt) {
-        std::shared_ptr server = ecs::net::createServer({.protocolId = GAME_A});
+        std::shared_ptr server = sq::net::createServer({.protocolId = GAME_A});
         if (server->start(PORT)) {
             ++started;
             std::this_thread::sleep_for(std::chrono::microseconds(200));
@@ -356,8 +356,7 @@ TEST(Transport, ServerStopOnATimerTickNeverHangs) {
     // A timer that has just expired cannot be cancelled anymore: stop() must also hold when its handler runs
     // afterwards. The delays go across the 1 ms tick, to stop as close to its expiry as possible.
     for (int attempt = 0; attempt < ATTEMPTS; ++attempt) {
-        std::shared_ptr server =
-            ecs::net::createServer({.protocolId = GAME_A, .udpTick = std::chrono::milliseconds(1)});
+        std::shared_ptr server = sq::net::createServer({.protocolId = GAME_A, .udpTick = std::chrono::milliseconds(1)});
         ASSERT_TRUE(server->start(PORT));
         std::this_thread::sleep_for(std::chrono::microseconds(900 + (attempt * 3)));
         ASSERT_TRUE(stopsInTime(std::move(server)));
@@ -366,9 +365,9 @@ TEST(Transport, ServerStopOnATimerTickNeverHangs) {
 
 TEST(Transport, ConnectingTwiceIsRefused) {
     constexpr std::uint16_t PORT = 21320;
-    const auto server = ecs::net::createServer({.protocolId = GAME_A});
+    const auto server = sq::net::createServer({.protocolId = GAME_A});
     ASSERT_TRUE(server->start(PORT));
-    const auto client = ecs::net::createClient({.protocolId = GAME_A});
+    const auto client = sq::net::createClient({.protocolId = GAME_A});
 
     EXPECT_TRUE(client->connect("127.0.0.1", PORT));
     EXPECT_FALSE(client->connect("127.0.0.1", PORT));
@@ -376,9 +375,9 @@ TEST(Transport, ConnectingTwiceIsRefused) {
 
 TEST(Transport, StatsCountTheTrafficOnBothSides) {
     constexpr std::uint16_t PORT = 21390;
-    const auto server = ecs::net::createServer({.protocolId = GAME_A});
+    const auto server = sq::net::createServer({.protocolId = GAME_A});
     ASSERT_TRUE(server->start(PORT));
-    const auto client = ecs::net::createClient({.protocolId = GAME_A});
+    const auto client = sq::net::createClient({.protocolId = GAME_A});
     EXPECT_EQ(client->stats().bytesSent, 0U);
     ASSERT_TRUE(client->connect("127.0.0.1", PORT));
     ASSERT_TRUE(
@@ -406,9 +405,9 @@ TEST(Transport, StatsCountTheTrafficOnBothSides) {
 
 TEST(Transport, StatsCountTheDatagrams) {
     constexpr std::uint16_t PORT = 21391;
-    const auto server = ecs::net::createServer({.protocolId = GAME_A});
+    const auto server = sq::net::createServer({.protocolId = GAME_A});
     ASSERT_TRUE(server->start(PORT));
-    const auto client = ecs::net::createClient({.protocolId = GAME_A});
+    const auto client = sq::net::createClient({.protocolId = GAME_A});
     ASSERT_TRUE(client->connect("127.0.0.1", PORT));
     ASSERT_TRUE(
         has(pollUntil(*client, [](const auto& e) { return has(e, EventType::Connected); }), EventType::Connected));
@@ -436,7 +435,7 @@ TEST(Transport, FailingAcceptRetriesWithADelay) {
     constexpr std::uint16_t PORT = 21325;
     constexpr auto RETRY = std::chrono::milliseconds(50);
     constexpr auto STARVED = std::chrono::milliseconds(500);
-    const auto server = ecs::net::createServer({.protocolId = GAME_A, .acceptRetryDelay = RETRY});
+    const auto server = sq::net::createServer({.protocolId = GAME_A, .acceptRetryDelay = RETRY});
     ASSERT_TRUE(server->start(PORT));
 
     // The socket is opened before the limit is lowered; connecting needs no new descriptor.
@@ -466,7 +465,7 @@ TEST(Transport, FailingAcceptRetriesWithADelay) {
     EXPECT_LE(errors, 2 * (STARVED / RETRY) + 2);
 
     // Descriptors are back: the server accepts connections again.
-    const auto client = ecs::net::createClient({.protocolId = GAME_A});
+    const auto client = sq::net::createClient({.protocolId = GAME_A});
     ASSERT_TRUE(client->connect("127.0.0.1", PORT));
     EXPECT_TRUE(
         has(pollUntil(*client, [](const auto& e) { return has(e, EventType::Connected); }), EventType::Connected));

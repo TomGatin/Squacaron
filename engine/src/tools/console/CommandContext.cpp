@@ -6,7 +6,7 @@
 #include "tools/console/ConsoleTypes.hpp"
 #include "tools/cvars/CVarManager.hpp"
 
-namespace tools {
+namespace sq::tools {
 
 CVarManager& CommandContext::cvars() const noexcept { return _console->cvars(); }
 
@@ -17,4 +17,4 @@ void CommandContext::error(std::string_view text) {
     _console->print(OutputLevel::Error, text);
 }
 
-}  // namespace tools
+}  // namespace sq::tools

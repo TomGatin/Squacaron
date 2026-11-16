@@ -7,7 +7,7 @@
 
 #include <cstdint>
 
-namespace engine {
+namespace sq::engine {
 
 /**
  * @brief Keyboard key, identified by its physical position on a US-layout keyboard.
@@ -184,4 +184,4 @@ struct MousePosition {
     float y = 0.0F;
 };
 
-}  // namespace engine
+}  // namespace sq::engine

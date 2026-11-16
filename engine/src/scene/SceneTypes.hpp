@@ -8,7 +8,7 @@
 #include <cstdint>
 #include <limits>
 
-namespace scene {
+namespace sq::scene {
 
 /** @brief Dense identifier of a registered scene, assigned by `SceneManager::registerScene` in registration order. */
 using SceneId = std::uint16_t;
@@ -48,4 +48,4 @@ struct SceneMember {
     SceneId id = INVALID_SCENE;
 };
 
-}  // namespace scene
+}  // namespace sq::scene

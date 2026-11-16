@@ -4,17 +4,17 @@
 #include <chrono>
 #include <functional>
 
-namespace engine {
+namespace sq::engine {
 
 /**
  * @brief Calls a function at a target rate until it is stopped: the loop of a headless program.
  *
  * Without a vsynced window nothing slows a `while (running) advance();` loop down, so it takes a whole core. This
  * loop sleeps until the next tick is due instead (with a 1 ms system timer on Windows, see
- * `ecs::time::PreciseSleepScope`), and can stop on Ctrl+C / SIGTERM.
+ * `sq::time::PreciseSleepScope`), and can stop on Ctrl+C / SIGTERM.
  *
  * @code
- * engine::FixedRateLoop loop(60.0);
+ * sq::engine::FixedRateLoop loop(60.0);
  * loop.stopOnSignals(true);
  * loop.run([&] { server.update(); });
  * @endcode
@@ -74,4 +74,4 @@ class FixedRateLoop {
     bool _stopOnSignals = false;
 };
 
-}  // namespace engine
+}  // namespace sq::engine

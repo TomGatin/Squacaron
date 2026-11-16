@@ -13,16 +13,16 @@
 
 #include "ecs/Entity.hpp"
 
-namespace hierarchy {
+namespace sq::hierarchy {
 
 /**
  * @brief Parent of an entity in a hierarchy.
  *
- * Its world `ecs::Transform` is driven by its `LocalTransform` composed with the parent's world transform.
+ * Its world `sq::ecs::Transform` is driven by its `LocalTransform` composed with the parent's world transform.
  */
 struct Parent {
     /** @brief Parent entity handle. */
-    ecs::Entity entity = ecs::NULL_ENTITY;
+    sq::ecs::Entity entity = sq::ecs::NULL_ENTITY;
 };
 
 /**
@@ -32,13 +32,13 @@ struct Parent {
  */
 struct Children {
     /** @brief Direct children, in insertion order. */
-    std::vector<ecs::Entity> entities;
+    std::vector<sq::ecs::Entity> entities;
 };
 
 /**
  * @brief Transform of an entity relative to its parent.
  *
- * Same fields and defaults as `ecs::Transform`. The world `ecs::Transform` of a child is written from it by
+ * Same fields and defaults as `sq::ecs::Transform`. The world `sq::ecs::Transform` of a child is written from it by
  * `propagateTransforms`, so a child is moved by editing its `LocalTransform`, not its `Transform`.
  */
 struct LocalTransform {
@@ -61,4 +61,4 @@ struct LocalTransform {
     float scaleY = 1.0F;
 };
 
-}  // namespace hierarchy
+}  // namespace sq::hierarchy

@@ -2,7 +2,7 @@
 
 #include <string>
 
-namespace render {
+namespace sq::render {
 
 /**
  * @brief Settings used to open the game window.
@@ -34,4 +34,4 @@ struct WindowConfig {
     bool escapeClosesWindow = true;
 };
 
-}  // namespace render
+}  // namespace sq::render

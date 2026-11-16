@@ -39,7 +39,7 @@ inline constexpr float ALIEN_GUNNER_HALF_SIZE = 20.0F;
  * Like the alien scout, it dies on the first hit; its `EnemyGun` fires a missile at the nearest ship every
  * `fire_interval` seconds once it is on the screen, the first one half an interval after it appears.
  *
- * Parameters: the transform keys (see `makeTransform`), `speed` (`DEFAULT_ALIEN_GUNNER_SPEED` by default),
+ * Parameters: the transform keys (see `sq::prefabs::makeTransform`), `speed` (`DEFAULT_ALIEN_GUNNER_SPEED` by default),
  * `fire_interval` (clamped to 0.3–10 s, `DEFAULT_ALIEN_GUNNER_FIRE_INTERVAL` by default) and `shot_speed` (clamped to
  * 50–900 px/s, `DEFAULT_ALIEN_GUNNER_SHOT_SPEED` by default).
  *
@@ -47,6 +47,6 @@ inline constexpr float ALIEN_GUNNER_HALF_SIZE = 20.0F;
  * @param registry Registry owning the entity.
  * @param params Spawn parameters.
  */
-void buildAlienGunner(ecs::Entity e, ecs::Registry& registry, PrefabParams const& params);
+void buildAlienGunner(sq::ecs::Entity e, sq::ecs::Registry& registry, sq::prefabs::PrefabParams const& params);
 
 }  // namespace prefabs

@@ -12,7 +12,7 @@
 
 #include "timeline/TimelineEvent.hpp"
 
-namespace timeline {
+namespace sq::timeline {
 
 /**
  * @brief Events sorted by position, fired once each as a cursor moves forward.
@@ -25,9 +25,9 @@ namespace timeline {
  * copy that changes its events (`add`, `addAll`, `rewind` after late additions) gets its own list first.
  *
  * @code
- * timeline::Timeline level;
+ * sq::timeline::Timeline level;
  * level.add({.position = 400.0F, .type = "spawn", .params = {{"prefab", "alien_scout"}}});
- * for (const timeline::TimelineEvent& event : level.advance(scrollSpeed * dt)) {
+ * for (const sq::timeline::TimelineEvent& event : level.advance(scrollSpeed * dt)) {
  *     handle(event);
  * }
  * @endcode
@@ -128,4 +128,4 @@ class Timeline {
     double _cursor = 0.0;
 };
 
-}  // namespace timeline
+}  // namespace sq::timeline

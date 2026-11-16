@@ -20,7 +20,7 @@ namespace {
  * @param transform Position.
  * @return True inside the scene.
  */
-bool onScreen(const ecs::Transform& transform) noexcept {
+bool onScreen(const sq::ecs::Transform& transform) noexcept {
     return transform.x > 0.0F && transform.x < SCENE_WIDTH && transform.y > 0.0F && transform.y < SCENE_HEIGHT;
 }
 
@@ -38,12 +38,13 @@ Velocity rotated(const Velocity velocity, const float angle) noexcept {
 
 }  // namespace
 
-void EnemyFirePlugin::fixedUpdate(engine::Engine& engine, const ecs::time::Time& time) {
-    ecs::Registry& registry = engine.registry();
+void EnemyFirePlugin::fixedUpdate(sq::engine::Engine& engine, const sq::time::Time& time) {
+    sq::ecs::Registry& registry = engine.registry();
     _shots.clear();
-    registry.runSystem<::prefabs::EnemyGun, ecs::Transform>([this, &registry, &time](ecs::Entity /*entity*/,
-                                                                                     ::prefabs::EnemyGun& gun,
-                                                                                     const ecs::Transform& transform) {
+    registry.runSystem<::prefabs::EnemyGun, sq::ecs::Transform>([this, &registry, &time](
+                                                                    sq::ecs::Entity /*entity*/,
+                                                                    ::prefabs::EnemyGun& gun,
+                                                                    const sq::ecs::Transform& transform) {
         if (!onScreen(transform)) {
             return;
         }

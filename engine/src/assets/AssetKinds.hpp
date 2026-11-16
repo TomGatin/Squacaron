@@ -21,7 +21,7 @@
 #include "render/api/components/Renderable.hpp"
 #include "utils/MoveOnlyFunction.hpp"
 
-namespace assets {
+namespace sq::assets {
 
 /** @brief How a texture is sampled when drawn bigger or smaller than its pixel size. */
 enum class TextureFilter : std::uint8_t {
@@ -45,12 +45,12 @@ struct LoadOptions {
     bool operator==(const LoadOptions&) const = default;
 };
 
-/** @brief Image drawn by the rendering module, referenced by `ecs::Renderable::textureId`. */
+/** @brief Image drawn by the rendering module, referenced by `sq::ecs::Renderable::textureId`. */
 struct Texture {
     /** @brief Handle type. */
-    using Id = ecs::TextureId;
+    using Id = sq::ecs::TextureId;
     /** @brief Handle of no texture. */
-    static constexpr Id NONE = ecs::NO_TEXTURE;
+    static constexpr Id NONE = sq::ecs::NO_TEXTURE;
     /** @brief Name used in logs and by scripts (`Assets.declare("texture", ...)`). */
     static constexpr std::string_view NAME = "texture";
     /** @brief File extensions picked by `AssetManager::preloadDirectory`. */
@@ -62,9 +62,9 @@ struct Texture {
 /** @brief Font drawn by the screen draw service. */
 struct Font {
     /** @brief Handle type. */
-    using Id = engine::FontId;
+    using Id = sq::engine::FontId;
     /** @brief Handle of no font: the backend's default font is used. */
-    static constexpr Id NONE = engine::NO_FONT;
+    static constexpr Id NONE = sq::engine::NO_FONT;
     /** @brief Name used in logs and by scripts. */
     static constexpr std::string_view NAME = "font";
     /** @brief File extensions picked by `AssetManager::preloadDirectory`. */
@@ -74,12 +74,12 @@ struct Font {
     };
 };
 
-/** @brief Sound effect, fully loaded in memory, referenced by `ecs::AudioEmitter::sound` and `PlaySoundEvent`. */
+/** @brief Sound effect, fully loaded in memory, referenced by `sq::ecs::AudioEmitter::sound` and `PlaySoundEvent`. */
 struct Sound {
     /** @brief Handle type. */
-    using Id = audio::SoundId;
+    using Id = sq::audio::SoundId;
     /** @brief Handle of no sound: playing it does nothing. */
-    static constexpr Id NONE = audio::NO_SOUND;
+    static constexpr Id NONE = sq::audio::NO_SOUND;
     /** @brief Name used in logs and by scripts. */
     static constexpr std::string_view NAME = "sound";
     /** @brief File extensions picked by `AssetManager::preloadDirectory`. */
@@ -94,9 +94,9 @@ struct Sound {
 /** @brief Music stream, decoded while it plays, referenced by `PlayMusicEvent`. */
 struct Music {
     /** @brief Handle type. */
-    using Id = audio::MusicId;
+    using Id = sq::audio::MusicId;
     /** @brief Handle of no music: playing it does nothing. */
-    static constexpr Id NONE = audio::NO_MUSIC;
+    static constexpr Id NONE = sq::audio::NO_MUSIC;
     /** @brief Name used in logs and by scripts. */
     static constexpr std::string_view NAME = "music";
     /** @brief File extensions picked by `AssetManager::preloadDirectory`. */
@@ -137,21 +137,21 @@ struct AssetLoader {
      * @brief Loads a file: its normalised path (`/` separators), resolved against the manager's root; returns
      * `Kind::NONE` when it cannot be loaded.
      */
-    ecs::MoveOnlyFunction<typename Kind::Id(const std::string& path, const LoadOptions& options,
-                                            typename Kind::Id preferred)>
+    sq::ecs::MoveOnlyFunction<typename Kind::Id(const std::string& path, const LoadOptions& options,
+                                                typename Kind::Id preferred)>
         load;
     /** @brief Releases a handle returned by `load`. */
-    ecs::MoveOnlyFunction<void(typename Kind::Id id)> unload;
+    sq::ecs::MoveOnlyFunction<void(typename Kind::Id id)> unload;
     /**
      * @brief Optional: handle served instead of an asset that failed to load (the missing texture checkerboard).
      * Owned by the backend: the manager never passes it to `unload`.
      */
-    ecs::MoveOnlyFunction<typename Kind::Id()> fallback;
+    sq::ecs::MoveOnlyFunction<typename Kind::Id()> fallback;
     /**
      * @brief Optional: keeps every handle up to `last` out of the backend's fresh allocations, so the handles the
      * manager will ask for again as `preferred` are still free when it does. Called when the loader is installed.
      */
-    ecs::MoveOnlyFunction<void(typename Kind::Id last)> reserve;
+    sq::ecs::MoveOnlyFunction<void(typename Kind::Id last)> reserve;
 };
 
 /** @brief Where an asset stands in the manager. */
@@ -193,4 +193,4 @@ struct GroupProgress {
     }
 };
 
-}  // namespace assets
+}  // namespace sq::assets

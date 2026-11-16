@@ -9,7 +9,7 @@
 
 #include "ecs/Entity.hpp"
 
-namespace events {
+namespace sq::events {
 
 /**
  * @brief Two colliders started touching (or overlapping, when one of them is a sensor).
@@ -20,10 +20,10 @@ namespace events {
  */
 struct CollisionBeginEvent {
     /** @brief First entity of the contact. */
-    ecs::Entity entityA = 0;
+    sq::ecs::Entity entityA = 0;
 
     /** @brief Second entity of the contact. */
-    ecs::Entity entityB = 0;
+    sq::ecs::Entity entityB = 0;
 
     /** @brief `Collider2D::categoryBits` of the first entity. */
     std::uint16_t categoryA = 0;
@@ -63,10 +63,10 @@ struct CollisionBeginEvent {
  */
 struct CollisionEndEvent {
     /** @brief First entity of the contact. */
-    ecs::Entity entityA = 0;
+    sq::ecs::Entity entityA = 0;
 
     /** @brief Second entity of the contact. */
-    ecs::Entity entityB = 0;
+    sq::ecs::Entity entityB = 0;
 
     /** @brief `Collider2D::categoryBits` of the first entity. */
     std::uint16_t categoryA = 0;
@@ -78,4 +78,4 @@ struct CollisionEndEvent {
     bool isSensor = false;
 };
 
-}  // namespace events
+}  // namespace sq::events

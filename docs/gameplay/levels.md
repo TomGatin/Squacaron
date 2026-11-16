@@ -18,7 +18,7 @@ The shipped campaign:
 | `level_02.toml` | Sector 2 - Gunline | Scouts and gunners, which fire at the ships. |
 | `level_03.toml` | Sector 3 - Bastion | Scouts, gunners and three rare elites, then the [Bastion](bosses.md#bastion-scriptsbossesbastionwren-variant-2). |
 
-The engine only provides generic building blocks, the TOML arrays of `config::ConfigFile` and the
+The engine only provides generic building blocks, the TOML arrays of `sq::config::ConfigFile` and the
 [Timeline](../architecture/timeline.md). The format below and its loader (`server/src/level/`, target `rtype_level`)
 belong to R-Type.
 

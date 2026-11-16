@@ -13,7 +13,7 @@
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
 
-namespace ecs {
+namespace sq::ecs {
 
 /**
  * @brief Largest radius accepted by `entitiesInRadius`, in world units; bigger values are clamped to it.
@@ -55,4 +55,4 @@ void entitiesWithTag(Registry const& registry, std::string_view tag, std::vector
  */
 void entitiesInRadius(Registry const& registry, float x, float y, float radius, std::vector<Entity>& out);
 
-}  // namespace ecs
+}  // namespace sq::ecs

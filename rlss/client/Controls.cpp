@@ -26,35 +26,35 @@ constexpr std::size_t slot(Control control) noexcept { return static_cast<std::s
 /**
  * @brief Gets the second key of a control.
  * @param control Control.
- * @return The key, or `engine::Key::Unknown` if it has none.
+ * @return The key, or `sq::engine::Key::Unknown` if it has none.
  */
-constexpr engine::Key secondaryKey(Control control) noexcept {
+constexpr sq::engine::Key secondaryKey(Control control) noexcept {
     switch (control) {
         case Control::SteerLeft:
-            return engine::Key::Left;
+            return sq::engine::Key::Left;
         case Control::SteerRight:
-            return engine::Key::Right;
+            return sq::engine::Key::Right;
         case Control::NoseUp:
-            return engine::Key::Up;
+            return sq::engine::Key::Up;
         case Control::NoseDown:
-            return engine::Key::Down;
+            return sq::engine::Key::Down;
         case Control::Jump:
-            return engine::Key::Unknown;
+            return sq::engine::Key::Unknown;
         case Control::Boost:
-            return engine::Key::RightShift;
+            return sq::engine::Key::RightShift;
     }
-    return engine::Key::Unknown;
+    return sq::engine::Key::Unknown;
 }
 
 /**
  * @brief Gets the second key of a control, unless a main key already uses it.
  * @param keys Main keys.
  * @param control Control.
- * @return The key, or `engine::Key::Unknown`.
+ * @return The key, or `sq::engine::Key::Unknown`.
  */
-engine::Key freeSecondaryKey(const ControlKeys& keys, Control control) noexcept {
-    const engine::Key key = secondaryKey(control);
-    return std::ranges::contains(keys, key) ? engine::Key::Unknown : key;
+sq::engine::Key freeSecondaryKey(const ControlKeys& keys, Control control) noexcept {
+    const sq::engine::Key key = secondaryKey(control);
+    return std::ranges::contains(keys, key) ? sq::engine::Key::Unknown : key;
 }
 
 /**
@@ -64,10 +64,11 @@ engine::Key freeSecondaryKey(const ControlKeys& keys, Control control) noexcept 
  * @param control Control of the action.
  * @param action Action name.
  */
-void bindButtonKeys(input::ActionMapping& mapping, const ControlKeys& keys, Control control, std::string_view action) {
-    mapping.registerAction(action, input::ActionType::Button);
+void bindButtonKeys(sq::input::ActionMapping& mapping, const ControlKeys& keys, Control control,
+                    std::string_view action) {
+    mapping.registerAction(action, sq::input::ActionType::Button);
     mapping.bindKey(action, keys.at(slot(control)));
-    if (const engine::Key extra = freeSecondaryKey(keys, control); extra != engine::Key::Unknown) {
+    if (const sq::engine::Key extra = freeSecondaryKey(keys, control); extra != sq::engine::Key::Unknown) {
         mapping.bindKey(action, extra);
     }
 }
@@ -80,9 +81,9 @@ void bindButtonKeys(input::ActionMapping& mapping, const ControlKeys& keys, Cont
  * @param positive Control of the positive side.
  * @param action Action name.
  */
-void bindAxisKeys(input::ActionMapping& mapping, const ControlKeys& keys, Control negative, Control positive,
+void bindAxisKeys(sq::input::ActionMapping& mapping, const ControlKeys& keys, Control negative, Control positive,
                   std::string_view action) {
-    mapping.registerAction(action, input::ActionType::Axis);
+    mapping.registerAction(action, sq::input::ActionType::Axis);
     mapping.bindAxisComposite(action, keys.at(slot(negative)), keys.at(slot(positive)));
     mapping.bindAxisComposite(action, freeSecondaryKey(keys, negative), freeSecondaryKey(keys, positive));
 }
@@ -129,17 +130,17 @@ std::string controlSetting(Control control) { return std::string(CONTROLS_PREFIX
 
 ControlKeys defaultControlKeys() noexcept {
     ControlKeys keys{};
-    keys.at(slot(Control::SteerLeft)) = engine::Key::A;
-    keys.at(slot(Control::SteerRight)) = engine::Key::D;
-    keys.at(slot(Control::NoseUp)) = engine::Key::W;
-    keys.at(slot(Control::NoseDown)) = engine::Key::S;
-    keys.at(slot(Control::Jump)) = engine::Key::Space;
-    keys.at(slot(Control::Boost)) = engine::Key::LeftShift;
+    keys.at(slot(Control::SteerLeft)) = sq::engine::Key::A;
+    keys.at(slot(Control::SteerRight)) = sq::engine::Key::D;
+    keys.at(slot(Control::NoseUp)) = sq::engine::Key::W;
+    keys.at(slot(Control::NoseDown)) = sq::engine::Key::S;
+    keys.at(slot(Control::Jump)) = sq::engine::Key::Space;
+    keys.at(slot(Control::Boost)) = sq::engine::Key::LeftShift;
     return keys;
 }
 
-void assignKey(ControlKeys& keys, Control control, engine::Key key) noexcept {
-    engine::Key& target = keys.at(slot(control));
+void assignKey(ControlKeys& keys, Control control, sq::engine::Key key) noexcept {
+    sq::engine::Key& target = keys.at(slot(control));
     // NOLINTNEXTLINE(readability-qualified-auto): std::array iterator is not a pointer on MSVC.
     if (auto other = std::ranges::find(keys, key); other != keys.end()) {
         *other = target;
@@ -147,51 +148,51 @@ void assignKey(ControlKeys& keys, Control control, engine::Key key) noexcept {
     target = key;
 }
 
-void defineControlSettings(config::Settings& settings) {
+void defineControlSettings(sq::config::Settings& settings) {
     const ControlKeys defaults = defaultControlKeys();
     for (const Control control : CONTROLS) {
-        settings.define(controlSetting(control), std::string(input::keyId(defaults.at(slot(control)))));
+        settings.define(controlSetting(control), std::string(sq::input::keyId(defaults.at(slot(control)))));
     }
 }
 
-ControlKeys readControlKeys(const config::Settings& settings) {
+ControlKeys readControlKeys(const sq::config::Settings& settings) {
     ControlKeys keys = defaultControlKeys();
     for (const Control control : CONTROLS) {
         const std::string key = controlSetting(control);
         if (!settings.has(key)) {
             continue;
         }
-        if (const auto saved = input::keyFromId(settings.getString(key))) {
+        if (const auto saved = sq::input::keyFromId(settings.getString(key))) {
             keys.at(slot(control)) = *saved;
         }
     }
     return keys;
 }
 
-void writeControlKeys(config::Settings& settings, const ControlKeys& keys) {
+void writeControlKeys(sq::config::Settings& settings, const ControlKeys& keys) {
     for (const Control control : CONTROLS) {
-        (void)settings.set(controlSetting(control), std::string(input::keyId(keys.at(slot(control)))));
+        (void)settings.set(controlSetting(control), std::string(sq::input::keyId(keys.at(slot(control)))));
     }
 }
 
-void setupBindings(input::ActionMapping& mapping, const ControlKeys& keys) {
+void setupBindings(sq::input::ActionMapping& mapping, const ControlKeys& keys) {
     mapping.clear();
     bindAxisKeys(mapping, keys, Control::SteerLeft, Control::SteerRight, game::ACTION_STEER);
-    mapping.bindGamepadAxis(game::ACTION_STEER, engine::GamepadAxis::LeftX, 1.0F);
+    mapping.bindGamepadAxis(game::ACTION_STEER, sq::engine::GamepadAxis::LeftX, 1.0F);
 
     bindAxisKeys(mapping, keys, Control::NoseDown, Control::NoseUp, game::ACTION_PITCH);
-    mapping.bindGamepadAxis(game::ACTION_PITCH, engine::GamepadAxis::LeftY, -1.0F);  // the stick is negative up
+    mapping.bindGamepadAxis(game::ACTION_PITCH, sq::engine::GamepadAxis::LeftY, -1.0F);  // the stick is negative up
 
     bindButtonKeys(mapping, keys, Control::Jump, game::ACTION_JUMP);
-    mapping.bindGamepadButton(game::ACTION_JUMP, engine::GamepadButton::RightFaceDown);
+    mapping.bindGamepadButton(game::ACTION_JUMP, sq::engine::GamepadButton::RightFaceDown);
 
     bindButtonKeys(mapping, keys, Control::Boost, game::ACTION_BOOST);
-    mapping.bindGamepadButton(game::ACTION_BOOST, engine::GamepadButton::RightFaceRight);
-    mapping.bindGamepadButton(game::ACTION_BOOST, engine::GamepadButton::RightTrigger2);
+    mapping.bindGamepadButton(game::ACTION_BOOST, sq::engine::GamepadButton::RightFaceRight);
+    mapping.bindGamepadButton(game::ACTION_BOOST, sq::engine::GamepadButton::RightTrigger2);
 }
 
-input::ActionMapping makeControls() {
-    input::ActionMapping mapping;
+sq::input::ActionMapping makeControls() {
+    sq::input::ActionMapping mapping;
     setupBindings(mapping, defaultControlKeys());
     return mapping;
 }

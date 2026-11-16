@@ -40,13 +40,13 @@ constexpr std::string_view LEVEL_PREFIX = "level_";
 constexpr std::string_view LEVEL_EXTENSION = ".toml";
 
 /**
- * @brief Finds the directory holding the server data (`server/levels/`, `scripts/`): `engine::contentRoot()`, the
+ * @brief Finds the directory holding the server data (`server/levels/`, `scripts/`): `sq::engine::contentRoot()`, the
  * directory of the executable (which the build puts at the project root) unless `ENGINE_CONTENT_ROOT` names another.
  *
  * @return The data directory; the current directory if the platform cannot tell where the executable is.
  */
 std::filesystem::path dataRoot() {
-    std::filesystem::path root = engine::contentRoot();
+    std::filesystem::path root = sq::engine::contentRoot();
     if (root.empty()) {
         std::error_code error;
         root = std::filesystem::current_path(error);
@@ -66,15 +66,15 @@ std::optional<rtype::server::level::Level> loadLevelFile(const std::filesystem::
     auto level =
         rtype::server::level::loadLevel(path, rtype::server::gameplay::LevelDirectorPlugin::levelPrefab, warnings);
     for (const std::string& warning : warnings) {
-        engine::log::warning(rtype::server::LOG_TAG, "level: ", warning);
+        sq::engine::log::warning(rtype::server::LOG_TAG, "level: ", warning);
     }
     if (!level) {
-        engine::log::warning(rtype::server::LOG_TAG, "cannot load the level ", path.string(), ": ", level.error());
+        sq::engine::log::warning(rtype::server::LOG_TAG, "cannot load the level ", path.string(), ": ", level.error());
         return std::nullopt;
     }
     level->dataRoot = root;
-    engine::log::info(rtype::server::LOG_TAG, "level '", level->name, "' loaded: ", level->timeline.events().size(),
-                      " events");
+    sq::engine::log::info(rtype::server::LOG_TAG, "level '", level->name, "' loaded: ", level->timeline.events().size(),
+                          " events");
     return std::move(*level);
 }
 
@@ -111,11 +111,11 @@ std::shared_ptr<const rtype::server::level::Level> loadCampaign(const std::files
         next = std::make_shared<const rtype::server::level::Level>(std::move(level));
     }
     if (next == nullptr) {
-        engine::log::warning(rtype::server::LOG_TAG, "no level found in ", (root / LEVELS_DIRECTORY).string(),
-                             ": the rooms play without a level");
+        sq::engine::log::warning(rtype::server::LOG_TAG, "no level found in ", (root / LEVELS_DIRECTORY).string(),
+                                 ": the rooms play without a level");
     } else {
-        engine::log::info(rtype::server::LOG_TAG, "campaign of ", rtype::server::level::campaignLength(next.get()),
-                          " level(s)");
+        sq::engine::log::info(rtype::server::LOG_TAG, "campaign of ", rtype::server::level::campaignLength(next.get()),
+                              " level(s)");
     }
     return next;
 }
@@ -129,8 +129,8 @@ int main(int ac, char** av) {
         std::cerr << rtype::server::usage(args.front()) << '\n';
         return EXIT_ERROR;
     }
-    engine::log::setVerbose(options->logs);
-    engine::log::setColored(options->colors);
+    sq::engine::log::setVerbose(options->logs);
+    sq::engine::log::setColored(options->colors);
 
     const std::filesystem::path root = dataRoot();
     // A level asked for on the command line is played alone, and must load: playing another one would be misleading.
@@ -143,11 +143,11 @@ int main(int ac, char** av) {
         level = loadCampaign(root);
     }
     if (options->level && level == nullptr) {
-        engine::log::error(rtype::server::LOG_TAG, "the level given with ", rtype::server::LEVEL_OPTION,
-                           " cannot be played");
+        sq::engine::log::error(rtype::server::LOG_TAG, "the level given with ", rtype::server::LEVEL_OPTION,
+                               " cannot be played");
         return EXIT_ERROR;
     }
-    rtype::server::ServerManager server(ecs::net::createServer({.protocolId = rtype::protocol::TRANSPORT_PROTOCOL_ID}),
+    rtype::server::ServerManager server(sq::net::createServer({.protocolId = rtype::protocol::TRANSPORT_PROTOCOL_ID}),
                                         rtype::server::HANDSHAKE_TIMEOUT, level);
 
     server.stopOnSignals();

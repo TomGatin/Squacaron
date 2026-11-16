@@ -11,7 +11,7 @@
 #include "render/api/InputCodes.hpp"
 #include "render/api/components/Renderable.hpp"
 
-namespace tools {
+namespace sq::tools {
 
 /** @brief Editing action of the developer console, triggered by a key. */
 enum class EditAction : std::uint8_t {
@@ -46,7 +46,7 @@ enum class EditAction : std::uint8_t {
 /** @brief Key triggering an editing action. */
 struct KeyBinding {
     /** @brief Engine key. */
-    engine::Key key;
+    sq::engine::Key key;
     /** @brief Action it triggers. */
     EditAction action;
     /** @brief Whether holding the key repeats the action. */
@@ -58,7 +58,7 @@ struct KeyBinding {
  */
 struct DevConsoleConfig {
     /** @brief Key opening and closing the console: the key left of `1`, `~` on QWERTY and `²` on AZERTY. */
-    engine::Key toggleKey = engine::Key::Grave;
+    sq::engine::Key toggleKey = sq::engine::Key::Grave;
     /** @brief Height of the console, as a fraction of the window height. */
     float heightRatio = 0.5F;
     /** @brief Font size in pixels. */
@@ -78,17 +78,17 @@ struct DevConsoleConfig {
     /** @brief Seconds between two blinks of the cursor. */
     float caretBlink = 0.5F;
     /** @brief Background of the window. */
-    ecs::Rgba background = {.r = 12, .g = 14, .b = 20, .a = 225};
+    sq::ecs::Rgba background = {.r = 12, .g = 14, .b = 20, .a = 225};
     /** @brief Line under the window and above the input line. */
-    ecs::Rgba border = {.r = 90, .g = 110, .b = 140, .a = 255};
+    sq::ecs::Rgba border = {.r = 90, .g = 110, .b = 140, .a = 255};
     /** @brief Normal output and typed text. */
-    ecs::Rgba textColor = {.r = 225, .g = 225, .b = 225, .a = 255};
+    sq::ecs::Rgba textColor = {.r = 225, .g = 225, .b = 225, .a = 255};
     /** @brief Echoed input lines. */
-    ecs::Rgba echoColor = {.r = 130, .g = 170, .b = 230, .a = 255};
+    sq::ecs::Rgba echoColor = {.r = 130, .g = 170, .b = 230, .a = 255};
     /** @brief Error lines. */
-    ecs::Rgba errorColor = {.r = 240, .g = 100, .b = 90, .a = 255};
+    sq::ecs::Rgba errorColor = {.r = 240, .g = 100, .b = 90, .a = 255};
     /** @brief Scroll indicator. */
-    ecs::Rgba hintColor = {.r = 150, .g = 150, .b = 150, .a = 255};
+    sq::ecs::Rgba hintColor = {.r = 150, .g = 150, .b = 150, .a = 255};
 };
 
-}  // namespace tools
+}  // namespace sq::tools

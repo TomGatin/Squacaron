@@ -59,35 +59,35 @@ inline constexpr float RAPID_FIRE_COOLDOWN = 0.08F;
  *   after the last level, and `protocol::GameOver{AllDead}` on `AllShipsEliminated`. The room sends them to its
  *   players: the plugin itself knows nothing about the network. An eliminated ship cannot shoot nor be hit.
  */
-class CombatPlugin final : public engine::IPlugin {
+class CombatPlugin final : public sq::engine::IPlugin {
   public:
     /** @brief Plugin name. */
     [[nodiscard]] std::string_view name() const noexcept override { return "RTypeCombatPlugin"; }
 
     /**
-     * @brief Requires `systems::PhysicsPlugin`, which publishes the contacts.
+     * @brief Requires `sq::systems::PhysicsPlugin`, which publishes the contacts.
      * @param builder Dependency builder.
      */
-    void build(engine::PluginBuilder& builder) override;
+    void build(sq::engine::PluginBuilder& builder) override;
 
     /**
      * @brief Subscribes to the inputs and to the collision events, and creates the collision router.
      * @param engine Host engine.
      */
-    void init(engine::Engine& engine) override;
+    void init(sq::engine::Engine& engine) override;
 
     /**
      * @brief Fires the pending shots, counts the cooldowns down and logs the scores when due.
      * @param engine Host engine.
      * @param time Fixed step time.
      */
-    void fixedUpdate(engine::Engine& engine, const ecs::time::Time& time) override;
+    void fixedUpdate(sq::engine::Engine& engine, const sq::time::Time& time) override;
 
     /**
      * @brief Unsubscribes from the bus before the engine tears it down.
      * @param engine Host engine.
      */
-    void shutdown(engine::Engine& engine) override;
+    void shutdown(sq::engine::Engine& engine) override;
 
     /**
      * @brief Sets how many players the game has, so that their scores are logged. Called when the room starts.
@@ -122,7 +122,7 @@ class CombatPlugin final : public engine::IPlugin {
     };
 
     /** @brief Queues a shot if the input holds the shoot action and the player's cooldown is over. */
-    void onInput(const ecs::net::InputApplied& event);
+    void onInput(const sq::net::InputApplied& event);
     /** @brief Applies a shot: a player shot hurts the enemy it hit, an enemy shot destroys the ship it hit. */
     void onShotHit(const collision::ShotHitEvent& hit);
     /** @brief Destroys a ship touching an enemy or an obstacle. */
@@ -134,7 +134,7 @@ class CombatPlugin final : public engine::IPlugin {
      * @param ship Player ship.
      * @return True if a hit destroys it.
      */
-    [[nodiscard]] bool isVulnerable(ecs::Entity ship) const;
+    [[nodiscard]] bool isVulnerable(sq::ecs::Entity ship) const;
     /**
      * @brief Finds what a player shot on an enemy damages.
      *
@@ -144,13 +144,13 @@ class CombatPlugin final : public engine::IPlugin {
      * @param target Enemy hit.
      * @return The entity that takes the hit, or nothing if the shot is absorbed.
      */
-    [[nodiscard]] std::optional<ecs::Entity> damagedBy(ecs::Entity target) const;
+    [[nodiscard]] std::optional<sq::ecs::Entity> damagedBy(sq::ecs::Entity target) const;
     /**
      * @brief Applies a player shot to an enemy.
      * @param target Enemy hit.
      * @return True if the enemy dies: no `prefabs::Health`, or its last point.
      */
-    bool takeHit(ecs::Entity target);
+    bool takeHit(sq::ecs::Entity target);
     /** @brief Spawns a replicated player bullet. */
     void fire(const PendingShot& shot);
     /** @brief Publishes the protocol messages of a finished level, with the scores. */
@@ -161,23 +161,23 @@ class CombatPlugin final : public engine::IPlugin {
     void logScores() const;
 
     /** @brief Registry of the room, set by `init()`. */
-    ecs::Registry* _registry = nullptr;
+    sq::ecs::Registry* _registry = nullptr;
     /** @brief Event bus of the room, set by `init()`. */
-    ecs::EventBus* _bus = nullptr;
+    sq::events::EventBus* _bus = nullptr;
     /** @brief Turns the physics contacts into R-Type events. */
     std::unique_ptr<collision::CollisionRouter> _router;
     /** @brief Subscription to the applied inputs. */
-    std::optional<ecs::EventBus::EventToken> _inputToken;
+    std::optional<sq::events::EventBus::EventToken> _inputToken;
     /** @brief Subscription to the shot hits. */
-    std::optional<ecs::EventBus::EventToken> _hitToken;
+    std::optional<sq::events::EventBus::EventToken> _hitToken;
     /** @brief Subscription to the ship contacts. */
-    std::optional<ecs::EventBus::EventToken> _contactToken;
+    std::optional<sq::events::EventBus::EventToken> _contactToken;
     /** @brief Subscription to the power-ups touched. */
-    std::optional<ecs::EventBus::EventToken> _powerUpToken;
+    std::optional<sq::events::EventBus::EventToken> _powerUpToken;
     /** @brief Subscription to the finished levels. */
-    std::optional<ecs::EventBus::EventToken> _levelToken;
+    std::optional<sq::events::EventBus::EventToken> _levelToken;
     /** @brief Subscription to the end of the last ship with lives. */
-    std::optional<ecs::EventBus::EventToken> _lostToken;
+    std::optional<sq::events::EventBus::EventToken> _lostToken;
     /** @brief Shots requested since the last fixed step. */
     std::vector<PendingShot> _pendingShots;
     /** @brief Power-ups to drop at the next fixed step. */

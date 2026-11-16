@@ -22,7 +22,7 @@ flowchart TB
     S -->|"world = compose(ship, local)"| H
 ```
 
-`ecs::Transform` stays the **world** transform, so render, physics, audio and networking keep reading it unchanged.
+`sq::ecs::Transform` stays the **world** transform, so render, physics, audio and networking keep reading it unchanged.
 For a child, it is an output: it is rewritten every frame from the parent's world transform and the child's
 `LocalTransform`. Move a child by editing its `LocalTransform`.
 
@@ -38,16 +38,16 @@ For a child, it is an output: it is rewritten every frame from the parent's worl
 #include "hierarchy/Hierarchy.hpp"
 #include "hierarchy/HierarchyComponents.hpp"
 
-const ecs::Entity panel = registry.spawnEntity();
-const ecs::Entity button = registry.spawnEntity();
-registry.addComponent<ecs::Transform>(panel, ecs::Transform{.x = 100.0F, .y = 50.0F});
+const sq::ecs::Entity panel = registry.spawnEntity();
+const sq::ecs::Entity button = registry.spawnEntity();
+registry.addComponent<sq::ecs::Transform>(panel, sq::ecs::Transform{.x = 100.0F, .y = 50.0F});
 
-hierarchy::setParent(registry, button, panel);  // keeps the button's current world position
-registry.getComponents<hierarchy::LocalTransform>().get(button) = {.x = 10.0F, .y = 20.0F, .z = 1.0F};
+sq::hierarchy::setParent(registry, button, panel);  // keeps the button's current world position
+registry.getComponents<sq::hierarchy::LocalTransform>().get(button) = {.x = 10.0F, .y = 20.0F, .z = 1.0F};
 
-hierarchy::parentOf(registry, button);    // std::optional<ecs::Entity>{panel}
-hierarchy::childrenOf(registry, panel);   // std::span{button}
-hierarchy::removeParent(registry, button);  // detach, world transform kept
+sq::hierarchy::parentOf(registry, button);    // std::optional<sq::ecs::Entity>{panel}
+sq::hierarchy::childrenOf(registry, panel);   // std::span{button}
+sq::hierarchy::removeParent(registry, button);  // detach, world transform kept
 ```
 
 | Function                              | Behaviour                                                                                    |
@@ -69,7 +69,7 @@ world.scale    = parent.scale * local.scale
 world.z        = parent.z + local.z
 ```
 
-- A parent without `ecs::Transform` counts as identity; a missing child `ecs::Transform` is created.
+- A parent without `sq::ecs::Transform` counts as identity; a missing child `sq::ecs::Transform` is created.
 - A child without `LocalTransform` keeps its world transform, and its own children are placed from it.
 - A 2D transform has no shear term: with a non-uniform parent scale and a rotated child, the child's own position
   stays exact, but its shape and its descendants' positions can differ from full affine composition.
@@ -91,9 +91,9 @@ flowchart LR
 ```
 
 ```cpp
-engine.addPlugin<systems::PhysicsPlugin>()
-      .addPlugin<scripting::ScriptPlugin>()
-      .addPlugin<hierarchy::HierarchyPlugin>();
+engine.addPlugin<sq::systems::PhysicsPlugin>()
+      .addPlugin<sq::scripting::ScriptPlugin>()
+      .addPlugin<sq::hierarchy::HierarchyPlugin>();
 ```
 
 !!! note "Physics bodies on children"
@@ -115,26 +115,26 @@ Entity handles are generational, so a handle to a destroyed child kept somewhere
 
 ## HUD elements
 
-The UI module (`engine_ui`) uses the same links to nest HUD elements. HUD elements are placed by `ui::UiAnchor`, not
-by `ecs::Transform`, so `LocalTransform` plays no role there:
+The UI module (`engine_ui`) uses the same links to nest HUD elements. HUD elements are placed by `sq::ui::UiAnchor`, not
+by `sq::ecs::Transform`, so `LocalTransform` plays no role there:
 
 - An element whose `Parent` is also a HUD element (has a `UiAnchor`) is anchored **inside its parent's rectangle**:
   `anchorX/anchorY` are fractions of the parent's size and the offset is relative to its top-left corner.
 - An element without a parent, or whose parent is not a HUD element (a ship, an enemy), is anchored against the screen.
-- `ui::computeLayout` walks each tree depth-first: a parent is drawn before (below) its children, and siblings follow
+- `sq::ui::computeLayout` walks each tree depth-first: a parent is drawn before (below) its children, and siblings follow
   the order of `Children`. Buttons are hit-tested with the same rectangles.
 - An entity without a `UiAnchor` is not laid out; HUD elements below it start new screen-anchored trees.
 
 ```cpp
-const ecs::Entity panel = registry.spawnEntity();
-registry.addComponent<ui::UiAnchor>(panel, ui::UiAnchor{.anchorX = 0.5F, .anchorY = 0.5F, .pivotX = 0.5F, .pivotY = 0.5F});
-registry.addComponent<ui::UiRect>(panel, ui::UiRect{.width = 400.0F, .height = 200.0F});
+const sq::ecs::Entity panel = registry.spawnEntity();
+registry.addComponent<sq::ui::UiAnchor>(panel, sq::ui::UiAnchor{.anchorX = 0.5F, .anchorY = 0.5F, .pivotX = 0.5F, .pivotY = 0.5F});
+registry.addComponent<sq::ui::UiRect>(panel, sq::ui::UiRect{.width = 400.0F, .height = 200.0F});
 
-const ecs::Entity quit = registry.spawnEntity();
-registry.addComponent<ui::UiAnchor>(quit, ui::UiAnchor{.anchorX = 0.5F, .anchorY = 1.0F, .offsetY = -16.0F,
+const sq::ecs::Entity quit = registry.spawnEntity();
+registry.addComponent<sq::ui::UiAnchor>(quit, sq::ui::UiAnchor{.anchorX = 0.5F, .anchorY = 1.0F, .offsetY = -16.0F,
                                                        .pivotX = 0.5F, .pivotY = 1.0F});
-registry.addComponent<ui::UiButton>(quit, ui::UiButton{.label = "Quit", .action = "quit"});
-hierarchy::setParent(registry, quit, panel);  // bottom-centre of the panel; destroying the panel destroys it
+registry.addComponent<sq::ui::UiButton>(quit, sq::ui::UiButton{.label = "Quit", .action = "quit"});
+sq::hierarchy::setParent(registry, quit, panel);  // bottom-centre of the panel; destroying the panel destroys it
 ```
 
 ## Not done yet

@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 
-namespace ecs::net {
+namespace sq::net {
 
 /** @brief Largest UDP datagram sent or accepted, header included: stays below the usual MTU to avoid fragmentation. */
 inline constexpr std::size_t MAX_DATAGRAM = 1200;
@@ -62,4 +62,4 @@ struct NetworkConfig {
            config.acceptRetryDelay > milliseconds::zero();
 }
 
-}  // namespace ecs::net
+}  // namespace sq::net

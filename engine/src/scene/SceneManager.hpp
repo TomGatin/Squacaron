@@ -20,15 +20,19 @@
 #include "scene/SceneContext.hpp"
 #include "scene/SceneTypes.hpp"
 
-namespace engine {
+namespace sq::engine {
+
 class Engine;
-}
 
-namespace ecs::time {
+}  // namespace sq::engine
+
+namespace sq::time {
+
 struct Time;
-}
 
-namespace scene {
+}  // namespace sq::time
+
+namespace sq::scene {
 
 /**
  * @brief Owns the scenes of a game and the stack of the active ones.
@@ -42,7 +46,7 @@ namespace scene {
  * - an exclusive scene hides and pauses everything under it;
  * - an overlay keeps what is under it visible, and running unless its `pausesBelow()` is `true`.
  *
- * Entities of a hidden scene carry `ecs::Hidden` (reason `Scene`), so the UI and the world renderer skip them.
+ * Entities of a hidden scene carry `sq::ecs::Hidden` (reason `Scene`), so the UI and the world renderer skip them.
  *
  * Queries (`top`, `isActive`, `isRunning`, `isVisible`) are flag lookups, cheap enough to be called by any plugin every
  * frame.
@@ -232,7 +236,7 @@ class SceneManager {
      * @brief Binds the manager to the engine its scenes run in; done by `ScenePlugin::init`.
      * @param engine Host engine.
      */
-    void attach(engine::Engine& engine) noexcept { _engine = &engine; }
+    void attach(sq::engine::Engine& engine) noexcept { _engine = &engine; }
 
     /** @brief Unbinds the engine; done by `ScenePlugin::shutdown`. */
     void detach() noexcept { _engine = nullptr; }
@@ -241,7 +245,7 @@ class SceneManager {
      * @brief Gets the engine the manager is bound to.
      * @return Host engine, or null before `attach`.
      */
-    [[nodiscard]] engine::Engine* engine() const noexcept { return _engine; }
+    [[nodiscard]] sq::engine::Engine* engine() const noexcept { return _engine; }
 
     /**
      * @brief Applies the queued transitions, in order, with the transitions their hooks queue.
@@ -258,7 +262,7 @@ class SceneManager {
      * @param engine Host engine.
      * @param time Time of the stage.
      */
-    void runStage(SceneStage stage, engine::Engine& engine, const ecs::time::Time& time);
+    void runStage(SceneStage stage, sq::engine::Engine& engine, const sq::time::Time& time);
 
     /**
      * @brief Exits every scene now (top first) and drops the queued transitions.
@@ -346,7 +350,7 @@ class SceneManager {
     bool destroyMembers(SceneId id);
 
     /**
-     * @brief Hides or shows every entity owned by a scene (`ecs::HiddenReason::Scene`).
+     * @brief Hides or shows every entity owned by a scene (`sq::ecs::HiddenReason::Scene`).
      * @param id Scene whose entities change.
      * @param hidden `true` to hide them, `false` to show them.
      */
@@ -364,7 +368,7 @@ class SceneManager {
      * Not owning: the engine owns `ScenePlugin`, which owns the manager, so the engine always outlives it. Every
      * path that reaches the engine is only taken between `attach` and `detach`.
      */
-    engine::Engine* _engine = nullptr;
+    sq::engine::Engine* _engine = nullptr;
     /** @brief Registered scenes, by id; boxed so contexts keep their address when more scenes are added. */
     std::vector<std::unique_ptr<Slot>> _slots;
     /** @brief Active scenes, bottom first. */
@@ -374,13 +378,13 @@ class SceneManager {
     /** @brief Transitions taken from the queue by the running `applyTransitions`; capacity kept between frames. */
     std::vector<Request> _applying;
     /** @brief Entities of an exiting scene; capacity kept between exits. */
-    std::vector<ecs::Entity> _scratch;
+    std::vector<sq::ecs::Entity> _scratch;
     /** @brief `true` while `applyTransitions` runs, so a hook's transitions join the current batch. */
     bool _applyingTransitions = false;
     /** @brief `true` while `runStage` runs systems, which must not be destroyed under it. */
     bool _runningStage = false;
 };
 
-}  // namespace scene
+}  // namespace sq::scene
 
 #include "scene/SceneManager.tpp"  // IWYU pragma: export

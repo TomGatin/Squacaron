@@ -15,7 +15,7 @@
 
 #include "core/IPlugin.hpp"
 
-namespace engine {
+namespace sq::engine {
 
 /**
  * @brief Exception thrown when plugin dependency resolution fails (missing dependency or cycle).
@@ -173,4 +173,4 @@ class PluginGraph {
     bool _resolved = false;
 };
 
-}  // namespace engine
+}  // namespace sq::engine

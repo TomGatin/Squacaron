@@ -11,7 +11,7 @@
 #include "ecs/time/Time.hpp"
 #include "timeline/Timeline.hpp"
 
-namespace timeline {
+namespace sq::timeline {
 
 /**
  * @brief Plays a Timeline: moves its cursor by `speed * dt` every fixed step and publishes what it reaches.
@@ -23,12 +23,12 @@ namespace timeline {
  * runs in `fixedUpdate`, so playback depends only on simulated time, never on the frame rate. Headless.
  *
  * @code
- * auto& player = engine.getPlugin<timeline::TimelinePlugin>();
+ * auto& player = engine.getPlugin<sq::timeline::TimelinePlugin>();
  * player.timeline().add({.position = 400.0F, .type = "spawn", .params = {{"prefab", std::string("enemy")}}});
  * player.setSpeed(60.0F);  // cursor units per second, e.g. scroll pixels
  * @endcode
  */
-class TimelinePlugin final : public engine::IPlugin {
+class TimelinePlugin final : public sq::engine::IPlugin {
   public:
     /** @brief Constructs the plugin with an empty timeline, stopped. */
     TimelinePlugin() = default;
@@ -56,7 +56,7 @@ class TimelinePlugin final : public engine::IPlugin {
      * @param engine Reference to host Engine.
      * @param time Fixed step timing.
      */
-    void fixedUpdate(engine::Engine& engine, const ecs::time::Time& time) override;
+    void fixedUpdate(sq::engine::Engine& engine, const sq::time::Time& time) override;
 
     /**
      * @brief Moves the cursor by a given distance right now and publishes the events reached.
@@ -66,7 +66,7 @@ class TimelinePlugin final : public engine::IPlugin {
      * @param engine Reference to host Engine.
      * @param delta Distance to move by.
      */
-    void step(engine::Engine& engine, float delta);
+    void step(sq::engine::Engine& engine, float delta);
 
     /**
      * @brief Sets how fast the cursor moves.
@@ -99,4 +99,4 @@ class TimelinePlugin final : public engine::IPlugin {
     float _speed = 0.0F;
 };
 
-}  // namespace timeline
+}  // namespace sq::timeline

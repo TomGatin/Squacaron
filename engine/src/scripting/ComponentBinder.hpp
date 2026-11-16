@@ -10,7 +10,7 @@
 #include "scripting/WrenVM.hpp"
 #include "scripting/detail/WrenFwd.hpp"
 
-namespace scripting {
+namespace sq::scripting {
 
 /**
  * @brief Non-template base class for ComponentBinder managing foreign class registration and code generation.
@@ -135,6 +135,6 @@ class ComponentBinder : public ComponentBinderBase {
     ComponentBinder& property(const std::string& propName);
 };
 
-}  // namespace scripting
+}  // namespace sq::scripting
 
 #include "ComponentBinder.tpp"  // IWYU pragma: export

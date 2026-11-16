@@ -77,8 +77,8 @@ transport without depending on R-Type code:
 ```
 engine/src/net/                      # target "engine_network": must not include Asio
 ├── INetworkManager.hpp              # PeerId, Bytes, Channel, EventType, State, NetworkEvent, INetworkManager
-├── INetworkServer.hpp               # ecs::net::INetworkServer
-├── INetworkClient.hpp               # ecs::net::INetworkClient
+├── INetworkServer.hpp               # sq::net::INetworkServer
+├── INetworkClient.hpp               # sq::net::INetworkClient
 ├── NetworkConfig.hpp                # NetworkConfig, isValid(), MAX_UNRELIABLE_PAYLOAD
 ├── NetworkFactory.hpp               # createServer() / createClient(), defined in engine_network_asio
 ├── NetworkPlugin.hpp/.cpp            # transport events -> EventBus, registers INetworkService
@@ -97,7 +97,7 @@ engine/src/net/                      # target "engine_network": must not include
 └── NetworkEntityMap.hpp/.cpp         # network id <-> local entity
 engine/src/net/metrics/              # target "engine_network_metrics"
 └── NetworkMetricsPlugin.hpp/.cpp     # Down, Up, Packets, RTT, Missed on the metrics board
-engine/src/net/asio/                 # target "engine_network_asio": Asio is used only here (namespace ecs::net::detail)
+engine/src/net/asio/                 # target "engine_network_asio": Asio is used only here (namespace sq::net::detail)
 ├── NetworkServer.hpp/.cpp
 ├── NetworkClient.hpp/.cpp
 ├── TcpSession.hpp/.cpp              # shared by NetworkServer and NetworkClient
@@ -134,7 +134,7 @@ The transport takes everything that depends on the game from a `NetworkConfig` g
 reuses it as is:
 
 ```cpp
-auto server = ecs::net::createServer({.protocolId = MY_GAME_PROTOCOL_ID, .maxPeers = 16});
+auto server = sq::net::createServer({.protocolId = MY_GAME_PROTOCOL_ID, .maxPeers = 16});
 ```
 
 | Field                   | Default | Meaning                                                                     |
@@ -178,7 +178,7 @@ it.
 Declared in `engine/src/net/INetworkManager.hpp`, next to `INetworkManager`.
 
 ```cpp
-namespace ecs::net {
+namespace sq::ecs::net {
 
 using PeerId   = uint32_t;
 using Bytes    = std::vector<uint8_t>;
@@ -266,8 +266,8 @@ public:
 ### Factory
 
 ```cpp
-std::unique_ptr<INetworkServer> ecs::net::createServer(const NetworkConfig& config = {});
-std::unique_ptr<INetworkClient> ecs::net::createClient(const NetworkConfig& config = {});
+std::unique_ptr<INetworkServer> sq::net::createServer(const NetworkConfig& config = {});
+std::unique_ptr<INetworkClient> sq::net::createClient(const NetworkConfig& config = {});
 ```
 
 Game code never includes an implementation header, so it never includes Asio. The factory is declared in
@@ -416,8 +416,8 @@ works with a fake in tests:
 
 | Interface                       | Role                                                       | Used by                                |
 |---------------------------------|------------------------------------------------------------|----------------------------------------|
-| `ecs::net::INetworkEventSource` | `poll()`: the events received since the last frame         | `NetworkPlugin::preUpdate`             |
-| `ecs::net::INetworkService`       | `send()`, `broadcast()`, `kick()`, resolved in the Mediator | Any system, without knowing the plugin |
+| `sq::net::INetworkEventSource` | `poll()`: the events received since the last frame         | `NetworkPlugin::preUpdate`             |
+| `sq::net::INetworkService`       | `send()`, `broadcast()`, `kick()`, resolved in the Mediator | Any system, without knowing the plugin |
 
 | Stage       | What the plugin does                                                                                       |
 |-------------|------------------------------------------------------------------------------------------------------------|
@@ -536,26 +536,26 @@ The plugins above are the normal way to use the network. The transport can also 
 ```cpp
 class GameServer {
 public:
-    explicit GameServer(ecs::net::INetworkServer& network) : network_(network) {}
+    explicit GameServer(sq::net::INetworkServer& network) : network_(network) {}
 
     void tick() {
         for (auto& e : network_.poll()) {
             switch (e.type) {
-                case ecs::net::EventType::Connected:    onJoin(e.peer);  break;
-                case ecs::net::EventType::Disconnected: onLeave(e.peer); break;
-                case ecs::net::EventType::Data:         onPacket(e.peer, e.channel, e.data); break;
+                case sq::net::EventType::Connected:    onJoin(e.peer);  break;
+                case sq::net::EventType::Disconnected: onLeave(e.peer); break;
+                case sq::net::EventType::Data:         onPacket(e.peer, e.channel, e.data); break;
             }
         }
         simulate();
-        network_.broadcast(serializeWorldState(), ecs::net::Channel::Unreliable);
+        network_.broadcast(serializeWorldState(), sq::net::Channel::Unreliable);
     }
 
 private:
-    ecs::net::INetworkServer& network_;
+    sq::net::INetworkServer& network_;
 };
 
 int main() {
-    auto network = ecs::net::createServer({.protocolId = MY_GAME_PROTOCOL_ID});
+    auto network = sq::net::createServer({.protocolId = MY_GAME_PROTOCOL_ID});
     if (!network->start(4242))
         return 1;
     GameServer server(*network);
@@ -566,15 +566,15 @@ int main() {
 ### Client
 
 ```cpp
-auto network = ecs::net::createClient({.protocolId = MY_GAME_PROTOCOL_ID});
+auto network = sq::net::createClient({.protocolId = MY_GAME_PROTOCOL_ID});
 network->connect("127.0.0.1", 4242);  // returns at once: wait for Connected, or Disconnected if it fails
 
 // each tick
-network->send(serializeInput(sequence, keys), ecs::net::Channel::Unreliable);
+network->send(serializeInput(sequence, keys), sq::net::Channel::Unreliable);
 for (auto& e : network->poll()) {
-    if (e.type == ecs::net::EventType::Data)
+    if (e.type == sq::net::EventType::Data)
         handlePacket(e.channel, e.data);
-    else if (e.type == ecs::net::EventType::Disconnected)
+    else if (e.type == sq::net::EventType::Disconnected)
         showConnectionLost();
 }
 ```

@@ -5,14 +5,15 @@
 
 #include "events/EventBus.hpp"
 
-namespace ecs {
+namespace sq::events {
 
 template <typename EventType>
-EventBus::EventToken EventBus::subscribe(MoveOnlyFunction<void(const EventType&)> callback) {
+EventBus::EventToken EventBus::subscribe(ecs::MoveOnlyFunction<void(const EventType&)> callback) {
     const auto type = std::type_index(typeid(EventType));
     const EventToken token = _nextToken++;
 
-    MoveOnlyFunction<void(const void*)> erasedCallback = [callback = std::move(callback)](const void* event) mutable {
+    ecs::MoveOnlyFunction<void(const void*)> erasedCallback = [callback =
+                                                                   std::move(callback)](const void* event) mutable {
         callback(*static_cast<const EventType*>(event));
     };
 
@@ -72,4 +73,4 @@ void EventBus::publish(const EventType& event) {
     }
 }
 
-}  // namespace ecs
+}  // namespace sq::events

@@ -26,7 +26,7 @@ inline constexpr float MUZZLE_OFFSET = 24.0F;
  * missile towards the nearest ship that can be hit (`nearestShip()`), or straight ahead without one; a
  * `prefabs::GunPattern::Spread` gun adds two shots, `prefabs::SPREAD_ANGLE` on each side.
  */
-class EnemyFirePlugin final : public engine::IPlugin {
+class EnemyFirePlugin final : public sq::engine::IPlugin {
   public:
     /** @brief Plugin name. */
     [[nodiscard]] std::string_view name() const noexcept override { return "RTypeEnemyFirePlugin"; }
@@ -36,7 +36,7 @@ class EnemyFirePlugin final : public engine::IPlugin {
      * @param engine Host engine.
      * @param time Fixed step time.
      */
-    void fixedUpdate(engine::Engine& engine, const ecs::time::Time& time) override;
+    void fixedUpdate(sq::engine::Engine& engine, const sq::time::Time& time) override;
 
   private:
     /** @brief A shot decided while walking the guns, fired once the walk is over. */

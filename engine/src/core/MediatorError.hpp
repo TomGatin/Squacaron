@@ -10,7 +10,7 @@
 #include <ostream>
 #include <string_view>
 
-namespace engine {
+namespace sq::engine {
 
 /**
  * @brief Error and exception type representing Mediator service resolution and registration failures.
@@ -103,4 +103,4 @@ class MediatorError : public std::exception {
  */
 [[nodiscard]] inline std::string_view toString(const MediatorError& err) noexcept { return err.what(); }
 
-}  // namespace engine
+}  // namespace sq::engine

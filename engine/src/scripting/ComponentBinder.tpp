@@ -7,7 +7,7 @@
 #include "scripting/ComponentBinder.hpp"
 #include "scripting/detail/PropertyAccessor.hpp"
 
-namespace scripting {
+namespace sq::scripting {
 
 template <typename ComponentType>
 ComponentBinder<ComponentType>::ComponentBinder(WrenVM& vm, std::string moduleName, std::string className)
@@ -21,4 +21,4 @@ ComponentBinder<ComponentType>& ComponentBinder<ComponentType>::property(const s
     return *this;
 }
 
-}  // namespace scripting
+}  // namespace sq::scripting

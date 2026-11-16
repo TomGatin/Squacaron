@@ -31,7 +31,7 @@ float Typeface::width(const std::string_view text, const float capHeight) const 
 }
 
 void Typeface::draw(const std::string_view text, const float x, const float capTop, const float capHeight,
-                    const ecs::Rgba color, const Align align) const {
+                    const sq::ecs::Rgba color, const Align align) const {
     if (_draw == nullptr || text.empty()) {
         return;
     }
@@ -44,23 +44,23 @@ void Typeface::draw(const std::string_view text, const float x, const float capT
     _draw->drawText(text, left, capTop - (size * CAP_TOP_RATIO), size, size * SPACING_RATIO, color, _font);
 }
 
-UiHandle UiCanvas::rect(const ScreenRect& rect, const ecs::Rgba color) {
+UiHandle UiCanvas::rect(const ScreenRect& rect, const sq::ecs::Rgba color) {
     _items.push_back({.shape = Fill{.rect = rect}, .color = color});
     return _items.size() - 1;
 }
 
-UiHandle UiCanvas::outline(const ScreenRect& rect, const float thickness, const ecs::Rgba color) {
+UiHandle UiCanvas::outline(const ScreenRect& rect, const float thickness, const sq::ecs::Rgba color) {
     _items.push_back({.shape = Outline{.rect = rect, .thickness = thickness}, .color = color});
     return _items.size() - 1;
 }
 
-UiHandle UiCanvas::image(const ecs::TextureId texture, const ScreenRect& rect, const ecs::Rgba tint) {
+UiHandle UiCanvas::image(const sq::ecs::TextureId texture, const ScreenRect& rect, const sq::ecs::Rgba tint) {
     _items.push_back({.shape = Image{.texture = texture, .rect = rect}, .color = tint});
     return _items.size() - 1;
 }
 
 UiHandle UiCanvas::text(const std::string_view text, const float x, const float capTop, const float capHeight,
-                        const ecs::Rgba color, const Align align) {
+                        const sq::ecs::Rgba color, const Align align) {
     _items.push_back({
         .shape = Text{.text = std::string(text), .x = x, .capTop = capTop, .capHeight = capHeight, .align = align},
         .color = color,
@@ -68,19 +68,19 @@ UiHandle UiCanvas::text(const std::string_view text, const float x, const float 
     return _items.size() - 1;
 }
 
-void UiCanvas::setColor(const UiHandle handle, const ecs::Rgba color) {
+void UiCanvas::setColor(const UiHandle handle, const sq::ecs::Rgba color) {
     if (handle < _items.size()) {
         _items.at(handle).color = color;
     }
 }
 
 void UiCanvas::draw(const Typeface& typeface, const float shiftX, const float shiftY) const {
-    engine::IScreenDrawService* service = typeface.service();
+    sq::engine::IScreenDrawService* service = typeface.service();
     if (service == nullptr) {
         return;
     }
     const auto moved = [shiftX, shiftY](const ScreenRect& rect) {
-        return engine::ScreenRect{
+        return sq::engine::ScreenRect{
             .x = rect.x + shiftX,
             .y = rect.y + shiftY,
             .width = rect.width,
@@ -99,7 +99,7 @@ void UiCanvas::draw(const Typeface& typeface, const float shiftX, const float sh
                 } else if constexpr (std::is_same_v<T, Outline>) {
                     service->strokeRect(moved(shape.rect), shape.thickness, item.color);
                 } else if constexpr (std::is_same_v<T, Image>) {
-                    if (shape.texture != ecs::NO_TEXTURE) {
+                    if (shape.texture != sq::ecs::NO_TEXTURE) {
                         service->drawTexture(shape.texture, {}, moved(shape.rect), 0.0F, item.color);
                     }
                 } else {

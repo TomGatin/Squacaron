@@ -46,14 +46,14 @@ constexpr float SHOT_OFFSET_X = 40.0F;
 
 }  // namespace
 
-void CombatPlugin::build(engine::PluginBuilder& builder) { builder.require<systems::PhysicsPlugin>(); }
+void CombatPlugin::build(sq::engine::PluginBuilder& builder) { builder.require<sq::systems::PhysicsPlugin>(); }
 
-void CombatPlugin::init(engine::Engine& engine) {
+void CombatPlugin::init(sq::engine::Engine& engine) {
     _registry = &engine.registry();
     _bus = &engine.eventBus();
     _router = std::make_unique<collision::CollisionRouter>(*_bus);
     _inputToken =
-        _bus->subscribe<ecs::net::InputApplied>([this](const ecs::net::InputApplied& event) { onInput(event); });
+        _bus->subscribe<sq::net::InputApplied>([this](const sq::net::InputApplied& event) { onInput(event); });
     _hitToken =
         _bus->subscribe<collision::ShotHitEvent>([this](const collision::ShotHitEvent& hit) { onShotHit(hit); });
     _contactToken = _bus->subscribe<collision::ShipContactEvent>(
@@ -69,7 +69,7 @@ void CombatPlugin::init(engine::Engine& engine) {
     });
 }
 
-void CombatPlugin::shutdown(engine::Engine& /*engine*/) {
+void CombatPlugin::shutdown(sq::engine::Engine& /*engine*/) {
     if (_hitToken) {
         _bus->unsubscribe<collision::ShotHitEvent>(*_hitToken);
         _hitToken.reset();
@@ -83,7 +83,7 @@ void CombatPlugin::shutdown(engine::Engine& /*engine*/) {
         _powerUpToken.reset();
     }
     if (_inputToken) {
-        _bus->unsubscribe<ecs::net::InputApplied>(*_inputToken);
+        _bus->unsubscribe<sq::net::InputApplied>(*_inputToken);
         _inputToken.reset();
     }
     if (_levelToken) {
@@ -115,19 +115,19 @@ void CombatPlugin::onLevelFinished(const LevelFinished& finished) {
     const std::uint32_t total = std::accumulate(scores.begin(), scores.end(), std::uint32_t{0});
     _bus->publish(protocol::LevelComplete{.levelIndex = finished.levelIndex, .score = total, .playerScores = scores});
     if (finished.lastLevel) {
-        engine::log::info(LOG_TAG, "game won, score ", total);
+        sq::engine::log::info(LOG_TAG, "game won, score ", total);
         _bus->publish(
             protocol::GameOver{.reason = protocol::GameOverReason::Victory, .score = total, .playerScores = scores});
     }
 }
 
-void CombatPlugin::onInput(const ecs::net::InputApplied& event) {
+void CombatPlugin::onInput(const sq::net::InputApplied& event) {
     if (!std::ranges::contains(event.input.held, game::ACTION_SHOOT)) {
         return;
     }
-    const ecs::Registry& registry = *_registry;
+    const sq::ecs::Registry& registry = *_registry;
     if (!registry.hasComponent<game::EntityNetState>(event.entity) ||
-        !registry.hasComponent<ecs::Transform>(event.entity) || registry.hasComponent<Eliminated>(event.entity)) {
+        !registry.hasComponent<sq::ecs::Transform>(event.entity) || registry.hasComponent<Eliminated>(event.entity)) {
         // An eliminated ship is out of the game: its player only watches.
         return;
     }
@@ -136,13 +136,13 @@ void CombatPlugin::onInput(const ecs::net::InputApplied& event) {
         return;
     }
     _shotCooldowns.at(index) = _rapidFire.at(index) > 0.0F ? RAPID_FIRE_COOLDOWN : SHOT_COOLDOWN;
-    const auto& transform = registry.getComponents<ecs::Transform>().get(event.entity);
+    const auto& transform = registry.getComponents<sq::ecs::Transform>().get(event.entity);
     // Fired at the next fixed step: the inputs are applied while the replication plugin walks the input buffers.
     _pendingShots.push_back({.playerIndex = index, .x = transform.x, .y = transform.y});
 }
 
 void CombatPlugin::onShotHit(const collision::ShotHitEvent& hit) {
-    ecs::Registry& registry = *_registry;
+    sq::ecs::Registry& registry = *_registry;
     if (!registry.isAlive(hit.shot)) {
         return;
     }
@@ -152,14 +152,14 @@ void CombatPlugin::onShotHit(const collision::ShotHitEvent& hit) {
             if (!isVulnerable(hit.target)) {
                 return;
             }
-            engine::log::info(LOG_TAG, "a ship was shot down");
+            sq::engine::log::info(LOG_TAG, "a ship was shot down");
             _bus->publish(ShipDestroyed{.ship = hit.target});
         }
         registry.killEntity(hit.shot);
         return;
     }
     // The contacts are published after the physics step: a shot touching two enemies in the same step only gets one.
-    const std::optional<ecs::Entity> damaged =
+    const std::optional<sq::ecs::Entity> damaged =
         (hit.targetCategory & ::prefabs::collision::ENEMY) != 0 && registry.isAlive(hit.target) ? damagedBy(hit.target)
                                                                                                 : std::nullopt;
     if (damaged.has_value() && takeHit(*damaged)) {
@@ -172,8 +172,8 @@ void CombatPlugin::onShotHit(const collision::ShotHitEvent& hit) {
         }
         // An enemy carrying loot leaves it where it died; spawned at the next step, outside of the contact callbacks.
         if (registry.hasComponent<::prefabs::DropsPowerUp>(*damaged) &&
-            registry.hasComponent<ecs::Transform>(*damaged)) {
-            const auto& at = registry.getComponents<ecs::Transform>().get(*damaged);
+            registry.hasComponent<sq::ecs::Transform>(*damaged)) {
+            const auto& at = registry.getComponents<sq::ecs::Transform>().get(*damaged);
             _pendingDrops.push_back({.x = at.x, .y = at.y});
         }
         // Destroying a boss destroys its parts too: they are its children in the hierarchy.
@@ -187,12 +187,12 @@ void CombatPlugin::onShipContact(const collision::ShipContactEvent& contact) {
         return;
     }
     const bool terrain = (contact.otherCategory & ::prefabs::collision::OBSTACLE) != 0;
-    engine::log::info(LOG_TAG, terrain ? "a ship crashed into the terrain" : "a ship crashed into an enemy");
+    sq::engine::log::info(LOG_TAG, terrain ? "a ship crashed into the terrain" : "a ship crashed into an enemy");
     _bus->publish(ShipDestroyed{.ship = contact.ship});
 }
 
 void CombatPlugin::onPowerUpTouched(const collision::PowerUpTouchedEvent& touch) {
-    ecs::Registry& registry = *_registry;
+    sq::ecs::Registry& registry = *_registry;
     if (!registry.isAlive(touch.powerUp) || !registry.isAlive(touch.ship)) {
         return;
     }
@@ -203,21 +203,21 @@ void CombatPlugin::onPowerUpTouched(const collision::PowerUpTouchedEvent& touch)
     const std::uint8_t index = registry.getComponents<game::EntityNetState>().get(touch.ship).subtype;
     if (index < _rapidFire.size()) {
         _rapidFire.at(index) = RAPID_FIRE_DURATION;
-        engine::log::info(LOG_TAG, "player ", static_cast<int>(index) + 1, " picked up a power-up: rapid fire");
+        sq::engine::log::info(LOG_TAG, "player ", static_cast<int>(index) + 1, " picked up a power-up: rapid fire");
     }
 }
 
-bool CombatPlugin::isVulnerable(const ecs::Entity ship) const {
+bool CombatPlugin::isVulnerable(const sq::ecs::Entity ship) const {
     return _registry->isAlive(ship) && !_registry->hasComponent<Respawning>(ship) &&
            !_registry->hasComponent<Eliminated>(ship);
 }
 
-std::optional<ecs::Entity> CombatPlugin::damagedBy(const ecs::Entity target) const {
-    const ecs::Registry& registry = *_registry;
+std::optional<sq::ecs::Entity> CombatPlugin::damagedBy(const sq::ecs::Entity target) const {
+    const sq::ecs::Registry& registry = *_registry;
     if (registry.hasComponent<::prefabs::BossPart>(target)) {
         switch (registry.getComponents<::prefabs::BossPart>().get(target).role) {
             case ::prefabs::BossPartRole::WeakPoint:
-                return hierarchy::parentOf(registry, target);
+                return sq::hierarchy::parentOf(registry, target);
             case ::prefabs::BossPartRole::Turret:
                 return target;
             case ::prefabs::BossPartRole::Armor:
@@ -225,8 +225,8 @@ std::optional<ecs::Entity> CombatPlugin::damagedBy(const ecs::Entity target) con
         }
     }
     if (registry.hasComponent<::prefabs::BossCore>(target)) {
-        const auto children = hierarchy::childrenOf(registry, target);
-        const bool shielded = std::ranges::any_of(children, [&registry](const ecs::Entity child) {
+        const auto children = sq::hierarchy::childrenOf(registry, target);
+        const bool shielded = std::ranges::any_of(children, [&registry](const sq::ecs::Entity child) {
             return registry.hasComponent<::prefabs::BossPart>(child) &&
                    registry.getComponents<::prefabs::BossPart>().get(child).role == ::prefabs::BossPartRole::WeakPoint;
         });
@@ -237,8 +237,8 @@ std::optional<ecs::Entity> CombatPlugin::damagedBy(const ecs::Entity target) con
     return target;
 }
 
-bool CombatPlugin::takeHit(const ecs::Entity target) {
-    ecs::Registry& registry = *_registry;
+bool CombatPlugin::takeHit(const sq::ecs::Entity target) {
+    sq::ecs::Registry& registry = *_registry;
     if (!registry.hasComponent<::prefabs::Health>(target)) {
         return true;
     }
@@ -252,7 +252,7 @@ bool CombatPlugin::takeHit(const ecs::Entity target) {
     return health.points == 0;
 }
 
-void CombatPlugin::fixedUpdate(engine::Engine& /*engine*/, const ecs::time::Time& time) {
+void CombatPlugin::fixedUpdate(sq::engine::Engine& /*engine*/, const sq::time::Time& time) {
     for (float& cooldown : _shotCooldowns) {
         cooldown = std::max(cooldown - time.deltaTime, 0.0F);
     }
@@ -264,10 +264,10 @@ void CombatPlugin::fixedUpdate(engine::Engine& /*engine*/, const ecs::time::Time
     }
     _pendingShots.clear();
     for (const PendingDrop& drop : _pendingDrops) {
-        const ecs::Entity powerUp = _registry->spawnEntity();
+        const sq::ecs::Entity powerUp = _registry->spawnEntity();
         ::prefabs::buildPowerUp(powerUp, *_registry, {{"x", drop.x}, {"y", drop.y}});
         _registry->addComponent(powerUp, game::EntityNetState{});
-        ecs::net::replicate(*_registry, powerUp, game::KIND_POWER_UP);
+        sq::net::replicate(*_registry, powerUp, game::KIND_POWER_UP);
     }
     _pendingDrops.clear();
 
@@ -290,11 +290,11 @@ void CombatPlugin::fixedUpdate(engine::Engine& /*engine*/, const ecs::time::Time
 }
 
 void CombatPlugin::fire(const PendingShot& shot) {
-    ecs::Registry& registry = *_registry;
-    const ecs::Entity bullet = registry.spawnEntity();
+    sq::ecs::Registry& registry = *_registry;
+    const sq::ecs::Entity bullet = registry.spawnEntity();
     ::prefabs::buildPlayerBullet(bullet, registry, {{"x", shot.x + SHOT_OFFSET_X}, {"y", shot.y}});
     registry.addComponent(bullet, game::EntityNetState{.subtype = shot.playerIndex});
-    ecs::net::replicate(registry, bullet, game::KIND_PLAYER_BULLET);
+    sq::net::replicate(registry, bullet, game::KIND_PLAYER_BULLET);
 }
 
 void CombatPlugin::logScores() const {
@@ -303,7 +303,7 @@ void CombatPlugin::logScores() const {
     for (std::size_t index = 0; index < _playerCount; ++index) {
         line << " P" << (index + 1) << '=' << _scores.at(index);
     }
-    engine::log::info(LOG_TAG, line.str());
+    sq::engine::log::info(LOG_TAG, line.str());
 }
 
 }  // namespace rtype::server::gameplay

@@ -14,13 +14,13 @@ TOML file in the user's configuration directory. They are split across two modul
 #include "config/Settings.hpp"
 #include "settings/SettingsPlugin.hpp"
 
-engine.addPlugin<settings::SettingsPlugin>(config::userConfigDirectory("rtype") / "settings.toml");
-config::Settings& prefs = engine.getPlugin<settings::SettingsPlugin>().settings();
+engine.addPlugin<sq::settings::SettingsPlugin>(sq::config::userConfigDirectory("rtype") / "settings.toml");
+sq::config::Settings& prefs = engine.getPlugin<sq::settings::SettingsPlugin>().settings();
 prefs.define("audio.master", 1.0);           // the default fixes the type
 prefs.define("debug.metrics", false);
 prefs.define("net.last_host", std::string("127.0.0.1"));
 
-// later, anywhere: engine.service<config::Settings>()
+// later, anywhere: engine.service<sq::config::Settings>()
 prefs.set("audio.master", 0.4);               // false if unchanged, undeclared or of the wrong type
 const double volume = prefs.getNumber("audio.master");
 ```
@@ -35,8 +35,8 @@ const double volume = prefs.getNumber("audio.master");
 
 ## SettingsPlugin
 
-- `init` loads the file and registers `config::Settings` in the Mediator.
-- Every changed key is published once as `settings::SettingChanged{key}` at the next `update`. That includes values
+- `init` loads the file and registers `sq::config::Settings` in the Mediator.
+- Every changed key is published once as `sq::settings::SettingChanged{key}` at the next `update`. That includes values
   loaded from the file that differ from their defaults, so a plugin listening to the event (audio volume, metrics
   overlay) applies the saved values on the first frame without special start-up code.
 - **Debounced saves.** The file is written once no setting changed for `saveDelay` seconds (1 s by default). A volume
@@ -47,7 +47,7 @@ const double volume = prefs.getNumber("audio.master");
 ```mermaid
 sequenceDiagram
     participant G as Game / menu
-    participant S as config::Settings
+    participant S as sq::config::Settings
     participant P as SettingsPlugin
     participant B as EventBus
     participant F as settings.toml
@@ -62,7 +62,7 @@ sequenceDiagram
 
 ## Where the file lives
 
-`config::userConfigDirectory(app)` returns:
+`sq::config::userConfigDirectory(app)` returns:
 
 | Platform | Directory                                                        |
 |----------|------------------------------------------------------------------|

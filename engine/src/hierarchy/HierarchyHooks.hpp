@@ -11,7 +11,7 @@
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
 
-namespace hierarchy {
+namespace sq::hierarchy {
 
 /**
  * @brief Installs, for its lifetime, the registry listeners that maintain the hierarchy.
@@ -31,7 +31,7 @@ class HierarchyHooks {
      * @brief Registers the listeners on a registry.
      * @param registry Registry to maintain; must outlive this object.
      */
-    explicit HierarchyHooks(ecs::Registry& registry);
+    explicit HierarchyHooks(sq::ecs::Registry& registry);
 
     /** @brief Unregisters the listeners. */
     ~HierarchyHooks();
@@ -50,21 +50,21 @@ class HierarchyHooks {
      * @brief Destroy listener: cascades to descendants and unlinks the entity from its parent.
      * @param e Entity being destroyed (already dead, components still present).
      */
-    void onDestroy(ecs::Entity e);
+    void onDestroy(sq::ecs::Entity e);
 
     /**
      * @brief Component-remove listener: repairs links after a `Parent` or `Children` was removed by hand.
      * @param e Entity that lost a component.
      * @param type Type of the removed component.
      */
-    void onComponentRemoved(ecs::Entity e, ecs::ComponentTypeId type);
+    void onComponentRemoved(sq::ecs::Entity e, sq::ecs::ComponentTypeId type);
 
     /** @brief Registry being maintained. */
-    ecs::Registry* _registry;
+    sq::ecs::Registry* _registry;
     /** @brief Id of the destroy listener. */
     std::size_t _destroyListenerId;
     /** @brief Id of the component-remove listener. */
     std::size_t _removeListenerId;
 };
 
-}  // namespace hierarchy
+}  // namespace sq::hierarchy

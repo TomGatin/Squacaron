@@ -15,7 +15,7 @@
 #include "scripting/ForeignCall.hpp"
 #include "scripting/WrenVM.hpp"
 
-namespace scripting {
+namespace sq::scripting {
 
 inline WrenVM* ForeignCall::vm() const noexcept { return static_cast<WrenVM*>(detail::slots::userData(_vm)); }
 
@@ -127,4 +127,4 @@ void ForeignCall::ret(const T& value) const noexcept {
     }
 }
 
-}  // namespace scripting
+}  // namespace sq::scripting

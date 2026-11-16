@@ -5,7 +5,7 @@
 
 #include "net/INetworkManager.hpp"
 
-namespace ecs::net {
+namespace sq::net {
 
 /** @brief Client side of the transport: one connection to a server. */
 class INetworkClient : public INetworkManager {
@@ -43,4 +43,4 @@ class INetworkClient : public INetworkManager {
     virtual void send(const Bytes& data, Channel channel) = 0;
 };
 
-}  // namespace ecs::net
+}  // namespace sq::net

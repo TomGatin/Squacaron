@@ -10,20 +10,20 @@
 
 namespace client::gameplay {
 
-ecs::TextureRect idleShipFrame(const ShipIconSheet& sheet, const std::uint8_t playerIndex) noexcept {
+sq::ecs::TextureRect idleShipFrame(const ShipIconSheet& sheet, const std::uint8_t playerIndex) noexcept {
     return {.x = (sheet.frames / 2) * sheet.frameWidth,
             .y = static_cast<int>(playerIndex) * sheet.frameHeight,
             .width = sheet.frameWidth,
             .height = sheet.frameHeight};
 }
 
-OwnShipStatus ownShipStatus(const ecs::Registry& registry, const std::uint8_t playerIndex) {
+OwnShipStatus ownShipStatus(const sq::ecs::Registry& registry, const std::uint8_t playerIndex) {
     OwnShipStatus status;
-    const auto* replicated = registry.findComponents<ecs::Replicated>();
+    const auto* replicated = registry.findComponents<sq::ecs::Replicated>();
     if (replicated == nullptr) {
         return status;
     }
-    for (const ecs::Entity entity : replicated->getDenseEntities()) {
+    for (const sq::ecs::Entity entity : replicated->getDenseEntities()) {
         if (replicated->get(entity).kind != rtype::game::KIND_PLAYER_SHIP ||
             !registry.hasComponent<rtype::game::EntityNetState>(entity)) {
             continue;

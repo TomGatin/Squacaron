@@ -9,7 +9,7 @@
 
 #include "core/PluginBuilder.hpp"  // NOLINT(misc-header-include-cycle)
 
-namespace engine {
+namespace sq::engine {
 
 template <typename PluginType>
 PluginBuilder& PluginBuilder::require() {
@@ -47,4 +47,4 @@ PluginBuilder& PluginBuilder::requireService() {
     return *this;
 }
 
-}  // namespace engine
+}  // namespace sq::engine

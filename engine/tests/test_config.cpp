@@ -22,7 +22,7 @@ std::filesystem::path writeTempFile(const std::string& name, const std::string& 
 }  // namespace
 
 TEST(ConfigFile, ReadsScalarValuesByDottedKey) {
-    const config::ConfigFile file = config::ConfigFile::parse(R"(
+    const sq::config::ConfigFile file = sq::config::ConfigFile::parse(R"(
         title = "R-Type"
         [audio]
         voices = 4
@@ -39,7 +39,7 @@ TEST(ConfigFile, ReadsScalarValuesByDottedKey) {
 }
 
 TEST(ConfigFile, MissingKeysAndWrongTypesGiveNothing) {
-    const config::ConfigFile file = config::ConfigFile::parse("volume = \"loud\"");
+    const sq::config::ConfigFile file = sq::config::ConfigFile::parse("volume = \"loud\"");
 
     EXPECT_FALSE(file.contains("missing"));
     EXPECT_FALSE(file.getNumber("missing").has_value());
@@ -49,14 +49,14 @@ TEST(ConfigFile, MissingKeysAndWrongTypesGiveNothing) {
 }
 
 TEST(ConfigFile, IntegersAreAcceptedAsNumbers) {
-    const config::ConfigFile file = config::ConfigFile::parse("volume = 1");
+    const sq::config::ConfigFile file = sq::config::ConfigFile::parse("volume = 1");
 
     EXPECT_DOUBLE_EQ(file.getNumber("volume").value_or(0.0), 1.0);
     EXPECT_EQ(file.getInteger("volume"), std::int64_t{1});
 }
 
 TEST(ConfigFile, ListsTheKeysOfATable) {
-    const config::ConfigFile file = config::ConfigFile::parse(R"(
+    const sq::config::ConfigFile file = sq::config::ConfigFile::parse(R"(
         [audio]
         backend = "auto"
         [audio.volume]
@@ -71,7 +71,7 @@ TEST(ConfigFile, ListsTheKeysOfATable) {
 }
 
 TEST(ConfigFile, ArrayElementsAreKeyedByIndex) {
-    const config::ConfigFile file = config::ConfigFile::parse(R"(
+    const sq::config::ConfigFile file = sq::config::ConfigFile::parse(R"(
         heights = [160.0, 420.0, 280.0]
         names = ["a", "b"]
     )");
@@ -87,7 +87,7 @@ TEST(ConfigFile, ArrayElementsAreKeyedByIndex) {
 }
 
 TEST(ConfigFile, ArraysOfTablesAreKeyedByIndex) {
-    const config::ConfigFile file = config::ConfigFile::parse(R"(
+    const sq::config::ConfigFile file = sq::config::ConfigFile::parse(R"(
         [[events]]
         at = 400.0
         prefab = "alien_scout"
@@ -106,7 +106,7 @@ TEST(ConfigFile, ArraysOfTablesAreKeyedByIndex) {
 }
 
 TEST(ConfigFile, ArraysInsideTablesUseTheFullDottedKey) {
-    const config::ConfigFile file = config::ConfigFile::parse(R"(
+    const sq::config::ConfigFile file = sq::config::ConfigFile::parse(R"(
         [level]
         name = "Sector 1"
 
@@ -120,7 +120,7 @@ TEST(ConfigFile, ArraysInsideTablesUseTheFullDottedKey) {
 }
 
 TEST(ConfigFile, NestedArraysAreFlattened) {
-    const config::ConfigFile file = config::ConfigFile::parse(R"(
+    const sq::config::ConfigFile file = sq::config::ConfigFile::parse(R"(
         path = [[0.0, 100.0], [50.0, 200.0, 300.0]]
 
         [[events]]
@@ -136,7 +136,7 @@ TEST(ConfigFile, NestedArraysAreFlattened) {
 }
 
 TEST(ConfigFile, EmptyArrayHasSizeZero) {
-    const config::ConfigFile file = config::ConfigFile::parse("events = []");
+    const sq::config::ConfigFile file = sq::config::ConfigFile::parse("events = []");
 
     ASSERT_FALSE(file.error().has_value());
     EXPECT_EQ(file.arraySize("events"), 0U);
@@ -144,7 +144,7 @@ TEST(ConfigFile, EmptyArrayHasSizeZero) {
 }
 
 TEST(ConfigFile, ArraySizeIsZeroForMissingKeysAndScalars) {
-    const config::ConfigFile file = config::ConfigFile::parse(R"(
+    const sq::config::ConfigFile file = sq::config::ConfigFile::parse(R"(
         volume = 1.0
         [audio]
         backend = "auto"
@@ -156,14 +156,14 @@ TEST(ConfigFile, ArraySizeIsZeroForMissingKeysAndScalars) {
 }
 
 TEST(ConfigFile, ArraysAreNotScalarValues) {
-    const config::ConfigFile file = config::ConfigFile::parse("keys = [1, 2]");
+    const sq::config::ConfigFile file = sq::config::ConfigFile::parse("keys = [1, 2]");
 
     EXPECT_FALSE(file.contains("keys"));
     EXPECT_FALSE(file.getInteger("keys").has_value());
 }
 
 TEST(ConfigFile, MixedTypeArrayKeepsEachElementType) {
-    const config::ConfigFile file = config::ConfigFile::parse(R"(mixed = [1, "two", true, 4.5])");
+    const sq::config::ConfigFile file = sq::config::ConfigFile::parse(R"(mixed = [1, "two", true, 4.5])");
 
     EXPECT_EQ(file.arraySize("mixed"), 4U);
     EXPECT_EQ(file.getInteger("mixed.0"), 1);
@@ -173,7 +173,7 @@ TEST(ConfigFile, MixedTypeArrayKeepsEachElementType) {
 }
 
 TEST(ConfigFile, UnsupportedValuesInsideArraysAreReportedWithTheirIndex) {
-    const config::ConfigFile file = config::ConfigFile::parse("dates = [1, 1987-07-01]");
+    const sq::config::ConfigFile file = sq::config::ConfigFile::parse("dates = [1, 1987-07-01]");
 
     EXPECT_EQ(file.arraySize("dates"), 2U);
     EXPECT_EQ(file.getInteger("dates.0"), 1);
@@ -183,7 +183,7 @@ TEST(ConfigFile, UnsupportedValuesInsideArraysAreReportedWithTheirIndex) {
 }
 
 TEST(ConfigFile, ArrayElementsAreListedUnderTheirTable) {
-    const config::ConfigFile file = config::ConfigFile::parse(R"(
+    const sq::config::ConfigFile file = sq::config::ConfigFile::parse(R"(
         [[events]]
         at = 1.0
         [[events]]
@@ -195,13 +195,13 @@ TEST(ConfigFile, ArrayElementsAreListedUnderTheirTable) {
 }
 
 TEST(ConfigReader, ReadsValuesInsideArraysOfTables) {
-    const config::ConfigFile file = config::ConfigFile::parse(R"(
+    const sq::config::ConfigFile file = sq::config::ConfigFile::parse(R"(
         [[events]]
         at = 400.0
         count = 500
     )");
     std::vector<std::string> warnings;
-    config::ConfigReader reader(file, warnings);
+    sq::config::ConfigReader reader(file, warnings);
 
     EXPECT_FLOAT_EQ(reader.number("events.0.at", 0.0F, 0.0F, 100000.0F), 400.0F);
     EXPECT_EQ(reader.count("events.0.count", 1, 1, 64), 64U);
@@ -209,7 +209,7 @@ TEST(ConfigReader, ReadsValuesInsideArraysOfTables) {
 }
 
 TEST(ConfigFile, UnsupportedValuesAreReported) {
-    const config::ConfigFile file = config::ConfigFile::parse("released = 1987-07-01");
+    const sq::config::ConfigFile file = sq::config::ConfigFile::parse("released = 1987-07-01");
 
     EXPECT_FALSE(file.error().has_value());
     EXPECT_FALSE(file.contains("released"));
@@ -218,7 +218,7 @@ TEST(ConfigFile, UnsupportedValuesAreReported) {
 }
 
 TEST(ConfigFile, SyntaxErrorGivesAnEmptyConfigurationWithItsLocation) {
-    const config::ConfigFile file = config::ConfigFile::parse("[audio]\nvolume = = 2\n", "client.toml");
+    const sq::config::ConfigFile file = sq::config::ConfigFile::parse("[audio]\nvolume = = 2\n", "client.toml");
 
     ASSERT_TRUE(file.error().has_value());
     EXPECT_NE(file.error()->find("client.toml:2"), std::string::npos) << *file.error();
@@ -226,37 +226,38 @@ TEST(ConfigFile, SyntaxErrorGivesAnEmptyConfigurationWithItsLocation) {
 }
 
 TEST(ConfigFile, LoadsAFile) {
-    const config::ConfigFile file = config::ConfigFile::load(writeTempFile("squacaron_config.toml", "speed = 2.5"));
+    const sq::config::ConfigFile file =
+        sq::config::ConfigFile::load(writeTempFile("squacaron_config.toml", "speed = 2.5"));
 
     ASSERT_FALSE(file.error().has_value());
     EXPECT_DOUBLE_EQ(file.getNumber("speed").value_or(0.0), 2.5);
 }
 
 TEST(ConfigFile, EmptyFileIsValid) {
-    const config::ConfigFile file = config::ConfigFile::load(writeTempFile("squacaron_empty.toml", ""));
+    const sq::config::ConfigFile file = sq::config::ConfigFile::load(writeTempFile("squacaron_empty.toml", ""));
 
     EXPECT_FALSE(file.error().has_value());
 }
 
 TEST(ConfigFile, MissingFileIsReported) {
-    const config::ConfigFile file = config::ConfigFile::load("does/not/exist.toml");
+    const sq::config::ConfigFile file = sq::config::ConfigFile::load("does/not/exist.toml");
 
     ASSERT_TRUE(file.error().has_value());
     EXPECT_FALSE(file.contains("anything"));
 }
 
 TEST(ConfigFile, OversizedFileIsRejected) {
-    const std::string comment(config::MAX_CONFIG_FILE_SIZE + 1, '#');
-    const config::ConfigFile file = config::ConfigFile::load(writeTempFile("squacaron_huge.toml", comment));
+    const std::string comment(sq::config::MAX_CONFIG_FILE_SIZE + 1, '#');
+    const sq::config::ConfigFile file = sq::config::ConfigFile::load(writeTempFile("squacaron_huge.toml", comment));
 
     ASSERT_TRUE(file.error().has_value());
     EXPECT_NE(file.error()->find("too large"), std::string::npos) << *file.error();
 }
 
 TEST(ConfigReader, MissingKeysGiveTheFallbackSilently) {
-    const config::ConfigFile file = config::ConfigFile::parse("");
+    const sq::config::ConfigFile file = sq::config::ConfigFile::parse("");
     std::vector<std::string> warnings;
-    config::ConfigReader reader(file, warnings);
+    sq::config::ConfigReader reader(file, warnings);
 
     EXPECT_FLOAT_EQ(reader.number("game.speed", 2.0F, 0.0F, 10.0F), 2.0F);
     EXPECT_EQ(reader.count("game.lives", 3, 1, 9), 3U);
@@ -266,7 +267,7 @@ TEST(ConfigReader, MissingKeysGiveTheFallbackSilently) {
 }
 
 TEST(ConfigFile, KeysFlattenedTwiceAreReported) {
-    const config::ConfigFile file = config::ConfigFile::parse(R"(
+    const sq::config::ConfigFile file = sq::config::ConfigFile::parse(R"(
         keys = [10]
         "keys.0" = 20
     )");
@@ -277,10 +278,10 @@ TEST(ConfigFile, KeysFlattenedTwiceAreReported) {
 }
 
 TEST(ConfigReader, ReadsValidValues) {
-    const config::ConfigFile file =
-        config::ConfigFile::parse("[game]\nspeed = 4\nlives = 5\nvsync = false\nname = \"Demo\"\n");
+    const sq::config::ConfigFile file =
+        sq::config::ConfigFile::parse("[game]\nspeed = 4\nlives = 5\nvsync = false\nname = \"Demo\"\n");
     std::vector<std::string> warnings;
-    config::ConfigReader reader(file, warnings);
+    sq::config::ConfigReader reader(file, warnings);
 
     EXPECT_FLOAT_EQ(reader.number("game.speed", 2.0F, 0.0F, 10.0F), 4.0F);
     EXPECT_EQ(reader.count("game.lives", 3, 1, 9), 5U);
@@ -290,10 +291,10 @@ TEST(ConfigReader, ReadsValidValues) {
 }
 
 TEST(ConfigReader, InvalidValuesAreCorrectedAndReported) {
-    const config::ConfigFile file =
-        config::ConfigFile::parse("[game]\nspeed = 99.0\nlives = -4\nvsync = \"yes\"\nname = 7\ngain = nan\n");
+    const sq::config::ConfigFile file =
+        sq::config::ConfigFile::parse("[game]\nspeed = 99.0\nlives = -4\nvsync = \"yes\"\nname = 7\ngain = nan\n");
     std::vector<std::string> warnings;
-    config::ConfigReader reader(file, warnings);
+    sq::config::ConfigReader reader(file, warnings);
 
     EXPECT_FLOAT_EQ(reader.number("game.speed", 2.0F, 0.0F, 10.0F), 10.0F);
     EXPECT_EQ(reader.count("game.lives", 3, 1, 9), 1U);
@@ -304,9 +305,10 @@ TEST(ConfigReader, InvalidValuesAreCorrectedAndReported) {
 }
 
 TEST(ConfigReader, ReportsKeysThatWereNeverRead) {
-    const config::ConfigFile file = config::ConfigFile::parse("[game]\nspeed = 4\nsped = 5\n[other]\nkey = 1\n");
+    const sq::config::ConfigFile file =
+        sq::config::ConfigFile::parse("[game]\nspeed = 4\nsped = 5\n[other]\nkey = 1\n");
     std::vector<std::string> warnings;
-    config::ConfigReader reader(file, warnings);
+    sq::config::ConfigReader reader(file, warnings);
 
     (void)reader.number("game.speed", 2.0F, 0.0F, 10.0F);
     reader.reportUnknownKeys("game");

@@ -8,7 +8,7 @@
 #include "hierarchy/HierarchyComponents.hpp"
 #include "hierarchy/TransformMath.hpp"
 
-namespace hierarchy {
+namespace sq::hierarchy {
 
 namespace {
 
@@ -18,7 +18,7 @@ namespace {
  * @param e Entity owning a `Children` component.
  * @return True if `e` has no parent, or a parent that is not alive.
  */
-bool isRoot(const ecs::Registry& registry, ecs::Entity e) {
+bool isRoot(const sq::ecs::Registry& registry, sq::ecs::Entity e) {
     if (!registry.hasComponent<Parent>(e)) {
         return true;
     }
@@ -27,37 +27,38 @@ bool isRoot(const ecs::Registry& registry, ecs::Entity e) {
 
 }  // namespace
 
-void propagateTransforms(ecs::Registry& registry) {
+void propagateTransforms(sq::ecs::Registry& registry) {
     auto& childrenArray = registry.getComponents<Children>();
     if (childrenArray.getDense().empty()) {
         return;
     }
-    auto& transforms = registry.getComponents<ecs::Transform>();
+    auto& transforms = registry.getComponents<sq::ecs::Transform>();
     auto& locals = registry.getComponents<LocalTransform>();
 
     // Parents are pushed only after their own world transform was written, so children always read an up-to-date one.
-    std::vector<ecs::Entity> stack;
-    for (const ecs::Entity e : childrenArray.getDenseEntities()) {
+    std::vector<sq::ecs::Entity> stack;
+    for (const sq::ecs::Entity e : childrenArray.getDenseEntities()) {
         if (isRoot(registry, e)) {
             stack.push_back(e);
         }
     }
 
     while (!stack.empty()) {
-        const ecs::Entity parent = stack.back();
+        const sq::ecs::Entity parent = stack.back();
         stack.pop_back();
-        const ecs::Transform parentWorld = transforms.contains(parent) ? transforms.get(parent) : ecs::Transform{};
+        const sq::ecs::Transform parentWorld =
+            transforms.contains(parent) ? transforms.get(parent) : sq::ecs::Transform{};
 
         if (!childrenArray.contains(parent)) {
             continue;
         }
-        for (const ecs::Entity child : childrenArray.get(parent).entities) {
+        for (const sq::ecs::Entity child : childrenArray.get(parent).entities) {
             if (locals.contains(child)) {
-                const ecs::Transform world = compose(parentWorld, locals.get(child));
+                const sq::ecs::Transform world = compose(parentWorld, locals.get(child));
                 if (transforms.contains(child)) {
                     transforms.get(child) = world;
                 } else {
-                    registry.addComponent<ecs::Transform>(child, world);
+                    registry.addComponent<sq::ecs::Transform>(child, world);
                 }
             }
             if (childrenArray.contains(child)) {
@@ -67,4 +68,4 @@ void propagateTransforms(ecs::Registry& registry) {
     }
 }
 
-}  // namespace hierarchy
+}  // namespace sq::hierarchy

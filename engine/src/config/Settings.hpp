@@ -17,7 +17,7 @@
 
 #include "config/ConfigFile.hpp"
 
-namespace config {
+namespace sq::config {
 
 /**
  * @brief User settings: each key is declared with a default value that fixes its type, then read and changed.
@@ -198,4 +198,4 @@ class Settings {
  */
 [[nodiscard]] std::filesystem::path userConfigDirectory(std::string_view appName);
 
-}  // namespace config
+}  // namespace sq::config

@@ -12,7 +12,7 @@
 #include "core/Engine.hpp"  // NOLINT(misc-header-include-cycle)
 #include "core/IPlugin.hpp"
 
-namespace engine {
+namespace sq::engine {
 
 template <typename Plugin, typename... Args>
 Engine& Engine::addPlugin(Args&&... args) {
@@ -35,4 +35,4 @@ Plugin& Engine::getPlugin() {
     return static_cast<Plugin&>(_pluginGraph.getPlugin(typeId));
 }
 
-}  // namespace engine
+}  // namespace sq::engine

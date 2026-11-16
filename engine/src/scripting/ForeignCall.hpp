@@ -9,7 +9,7 @@
 
 #include "scripting/detail/WrenFwd.hpp"  // IWYU pragma: export
 
-namespace scripting {
+namespace sq::scripting {
 
 class WrenVM;
 
@@ -142,6 +142,6 @@ class ForeignCall {
     NativeVm* _vm = nullptr;
 };
 
-}  // namespace scripting
+}  // namespace sq::scripting
 
 #include "scripting/ForeignCall.tpp"  // IWYU pragma: export

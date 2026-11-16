@@ -14,7 +14,7 @@
 #include "net/asio/TransportCounters.hpp"
 #include "net/asio/Wire.hpp"
 
-namespace ecs::net::detail {
+namespace sq::net::detail {
 
 /**
  * @brief One framed TCP connection: `[length u32][kind u8][payload]`.
@@ -105,4 +105,4 @@ class TcpSession : public std::enable_shared_from_this<TcpSession> {
     asio::steady_timer _lingerTimer;
 };
 
-}  // namespace ecs::net::detail
+}  // namespace sq::net::detail

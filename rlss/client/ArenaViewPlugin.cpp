@@ -35,7 +35,7 @@ constexpr float STADIUM_FOLLOW = 0.6F;
 constexpr float STADIUM_DROP = 60.0F;
 /** @brief Fills whatever the stadium does not cover, far away. */
 constexpr float BACKDROP_SIZE = 12000.0F;
-constexpr ecs::Rgba BACKDROP{.r = 8, .g = 10, .b = 22, .a = 255};
+constexpr sq::ecs::Rgba BACKDROP{.r = 8, .g = 10, .b = 22, .a = 255};
 
 constexpr int LAYER_BACKDROP = 0;
 constexpr int LAYER_STADIUM = 1;
@@ -44,8 +44,8 @@ constexpr int LAYER_ARENA = 2;
 constexpr float CENTER_X = (arena::LEFT + arena::RIGHT) / 2.0F;
 constexpr float CENTER_Y = ((arena::TOP + arena::BOTTOM) / 2.0F) + STADIUM_DROP;
 
-ecs::Renderable textured(const ecs::TextureId texture, const int layer, const ecs::RenderOrigin origin) {
-    ecs::Renderable renderable;
+sq::ecs::Renderable textured(const sq::ecs::TextureId texture, const int layer, const sq::ecs::RenderOrigin origin) {
+    sq::ecs::Renderable renderable;
     renderable.textureId = texture;
     renderable.layer = layer;
     renderable.origin = origin;
@@ -54,19 +54,19 @@ ecs::Renderable textured(const ecs::TextureId texture, const int layer, const ec
 
 }  // namespace
 
-void ArenaViewPlugin::build(engine::PluginBuilder& builder) { builder.require<AssetsPlugin>(); }
+void ArenaViewPlugin::build(sq::engine::PluginBuilder& builder) { builder.require<AssetsPlugin>(); }
 
-void ArenaViewPlugin::init(engine::Engine& engine) {
-    ecs::Registry& registry = engine.registry();
+void ArenaViewPlugin::init(sq::engine::Engine& engine) {
+    sq::ecs::Registry& registry = engine.registry();
     const GameAssets& assets = registry.getResource<GameAssets>();
     const float half = BACKDROP_SIZE / 2.0F;
     spawnRect(registry,
               {.left = CENTER_X - half, .top = CENTER_Y - half, .right = CENTER_X + half, .bottom = CENTER_Y + half},
               BACKDROP, LAYER_BACKDROP);
 
-    if (assets.stadium != ecs::NO_TEXTURE) {
+    if (assets.stadium != sq::ecs::NO_TEXTURE) {
         _stadium = registry.spawnEntity();
-        registry.addComponent(_stadium, ecs::Transform{
+        registry.addComponent(_stadium, sq::ecs::Transform{
                                             .x = CENTER_X,
                                             .y = CENTER_Y,
                                             .scaleX = 1.0F / STADIUM_SCALE,
@@ -80,11 +80,11 @@ void ArenaViewPlugin::init(engine::Engine& engine) {
     const float top = arena::TOP - ARENA_WALL - ARENA_MARGIN;
     const float tileSize = TILE / ARENA_SCALE;
     for (const ArenaTile& tile : assets.arena) {
-        if (tile.texture == ecs::NO_TEXTURE) {
+        if (tile.texture == sq::ecs::NO_TEXTURE) {
             continue;
         }
-        const ecs::Entity entity = registry.spawnEntity();
-        registry.addComponent(entity, ecs::Transform{
+        const sq::ecs::Entity entity = registry.spawnEntity();
+        registry.addComponent(entity, sq::ecs::Transform{
                                           .x = left + (static_cast<float>(tile.column) * tileSize),
                                           .y = top + (static_cast<float>(tile.row) * tileSize),
                                           .scaleX = 1.0F / ARENA_SCALE,
@@ -94,22 +94,23 @@ void ArenaViewPlugin::init(engine::Engine& engine) {
     }
 }
 
-void ArenaViewPlugin::lateUpdate(engine::Engine& engine, const ecs::time::Time& /*time*/) {
-    ecs::Registry& registry = engine.registry();
-    auto& transforms = registry.getComponents<ecs::Transform>();
+void ArenaViewPlugin::lateUpdate(sq::engine::Engine& engine, const sq::time::Time& /*time*/) {
+    sq::ecs::Registry& registry = engine.registry();
+    auto& transforms = registry.getComponents<sq::ecs::Transform>();
     if (_stadium == 0 || !transforms.contains(_stadium)) {
         return;
     }
-    const ecs::CameraComponent* camera = nullptr;
-    registry.runSystem<ecs::CameraComponent>([&camera](ecs::Entity /*entity*/, const ecs::CameraComponent& component) {
-        if (camera == nullptr && component.active) {
-            camera = &component;
-        }
-    });
+    const sq::ecs::CameraComponent* camera = nullptr;
+    registry.runSystem<sq::ecs::CameraComponent>(
+        [&camera](sq::ecs::Entity /*entity*/, const sq::ecs::CameraComponent& component) {
+            if (camera == nullptr && component.active) {
+                camera = &component;
+            }
+        });
     if (camera == nullptr) {
         return;
     }
-    ecs::Transform& stadium = transforms.get(_stadium);
+    sq::ecs::Transform& stadium = transforms.get(_stadium);
     stadium.x = CENTER_X + ((camera->targetX - CENTER_X) * STADIUM_FOLLOW);
     stadium.y = CENTER_Y + ((camera->targetY - CENTER_Y) * STADIUM_FOLLOW);
 }

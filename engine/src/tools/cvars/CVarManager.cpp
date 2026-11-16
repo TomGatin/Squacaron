@@ -20,7 +20,7 @@
 #include "tools/cvars/CVarRef.hpp"
 #include "tools/cvars/CVarTypes.hpp"
 
-namespace tools {
+namespace sq::tools {
 
 namespace {
 
@@ -272,4 +272,4 @@ std::string CVarManager::format(const CVarValue& value) {
         value);
 }
 
-}  // namespace tools
+}  // namespace sq::tools

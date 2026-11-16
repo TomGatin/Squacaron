@@ -9,11 +9,13 @@
 #include <string>
 #include <string_view>
 
-namespace scripting {
-class WrenVM;
-}
+namespace sq::scripting {
 
-namespace tools {
+class WrenVM;
+
+}  // namespace sq::scripting
+
+namespace sq::tools {
 
 class CommandContext;
 
@@ -37,7 +39,7 @@ class WrenConsole {
      * @brief Creates the console runner.
      * @param vm Script VM; must outlive this object.
      */
-    explicit WrenConsole(scripting::WrenVM& vm) noexcept : _vm(&vm) {}
+    explicit WrenConsole(sq::scripting::WrenVM& vm) noexcept : _vm(&vm) {}
 
     /**
      * @brief Runs a line of Wren code; an expression prints its value.
@@ -86,9 +88,9 @@ class WrenConsole {
     static bool report(const Outcome& outcome, CommandContext& context);
 
     /** @brief Script VM, never null. */
-    scripting::WrenVM* _vm;
+    sq::scripting::WrenVM* _vm;
     /** @brief Files run so far, numbering their modules (a module cannot be defined twice). */
     std::size_t _files = 0;
 };
 
-}  // namespace tools
+}  // namespace sq::tools

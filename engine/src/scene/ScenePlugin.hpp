@@ -12,7 +12,7 @@
 #include "core/PluginBuilder.hpp"
 #include "scene/SceneManager.hpp"
 
-namespace scene {
+namespace sq::scene {
 
 /**
  * @brief Runs the scenes of a game.
@@ -21,14 +21,14 @@ namespace scene {
  * - `fixedUpdate`, `update`, `lateUpdate`: run the systems of the running scenes, bottom of the stack first.
  * - `shutdown`: exits every scene, running their `onExit` hooks.
  *
- * The manager is also registered in the Mediator (`engine.service<scene::SceneManager>()`), so any plugin can query or
- * change the stack without knowing this plugin. It has no dependency on rendering, networking or scripting: a headless
- * server can use it too.
+ * The manager is also registered in the Mediator (`engine.service<sq::scene::SceneManager>()`), so any plugin can query
+ * or change the stack without knowing this plugin. It has no dependency on rendering, networking or scripting: a
+ * headless server can use it too.
  *
  * Scenes are usually registered before `Engine::init`, through `manager()`; a first `switchTo` queued then is applied
  * on the first frame.
  */
-class ScenePlugin final : public engine::IPlugin {
+class ScenePlugin final : public sq::engine::IPlugin {
   public:
     /** @brief Creates the plugin and its empty manager. */
     ScenePlugin() : _manager(std::make_shared<SceneManager>()) {}
@@ -58,46 +58,46 @@ class ScenePlugin final : public engine::IPlugin {
      * @brief Declares the core plugin as a dependency and the scene manager as a provided service.
      * @param builder Dependency builder.
      */
-    void build(engine::PluginBuilder& builder) override;
+    void build(sq::engine::PluginBuilder& builder) override;
 
     /**
      * @brief Binds the manager to the engine and registers it in the Mediator.
      * @param engine Host engine.
      */
-    void init(engine::Engine& engine) override;
+    void init(sq::engine::Engine& engine) override;
 
     /**
      * @brief Applies the queued scene transitions.
      * @param engine Host engine (unused).
      */
-    void preUpdate(engine::Engine& engine) override;
+    void preUpdate(sq::engine::Engine& engine) override;
 
     /**
      * @brief Runs the fixed-step systems of the running scenes.
      * @param engine Host engine.
      * @param time Fixed time.
      */
-    void fixedUpdate(engine::Engine& engine, const ecs::time::Time& time) override;
+    void fixedUpdate(sq::engine::Engine& engine, const sq::time::Time& time) override;
 
     /**
      * @brief Runs the per-frame systems of the running scenes.
      * @param engine Host engine.
      * @param time Frame time.
      */
-    void update(engine::Engine& engine, const ecs::time::Time& time) override;
+    void update(sq::engine::Engine& engine, const sq::time::Time& time) override;
 
     /**
      * @brief Runs the late per-frame systems of the running scenes.
      * @param engine Host engine.
      * @param time Frame time.
      */
-    void lateUpdate(engine::Engine& engine, const ecs::time::Time& time) override;
+    void lateUpdate(sq::engine::Engine& engine, const sq::time::Time& time) override;
 
     /**
      * @brief Exits every scene and removes the manager from the Mediator.
      * @param engine Host engine.
      */
-    void shutdown(engine::Engine& engine) override;
+    void shutdown(sq::engine::Engine& engine) override;
 
     /**
      * @brief Gets the scene manager.
@@ -110,4 +110,4 @@ class ScenePlugin final : public engine::IPlugin {
     std::shared_ptr<SceneManager> _manager;
 };
 
-}  // namespace scene
+}  // namespace sq::scene

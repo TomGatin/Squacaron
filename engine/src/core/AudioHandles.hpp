@@ -10,7 +10,7 @@
 
 #include <cstdint>
 
-namespace audio {
+namespace sq::audio {
 
 /** @brief Handle of a loaded sound effect; `NO_SOUND` marks an invalid one. */
 using SoundId = std::uint32_t;
@@ -30,4 +30,4 @@ inline constexpr MusicId NO_MUSIC = 0;
 /** @brief Value returned when a sound could not be started; updating or stopping it does nothing. */
 inline constexpr VoiceId NO_VOICE = 0;
 
-}  // namespace audio
+}  // namespace sq::audio

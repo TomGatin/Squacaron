@@ -9,7 +9,7 @@ code.
 
 ## 1. Write a codec
 
-`ecs::net::IReplicationCodec` translates between the ECS and bytes. It is the only code that knows your protocol.
+`sq::net::IReplicationCodec` translates between the ECS and bytes. It is the only code that knows your protocol.
 
 | Side   | Method                                 | Does                                                                 |
 |--------|----------------------------------------|----------------------------------------------------------------------|
@@ -22,12 +22,12 @@ code.
 | Client | `applySnapshot(applier)`               | Writes each entity through the `SnapshotApplier`                     |
 
 ```cpp
-void MyCodec::applySnapshot(ecs::net::SnapshotApplier& applier) {
+void MyCodec::applySnapshot(sq::net::SnapshotApplier& applier) {
     for (const MyEntity& state : _received) {
         // Finds the local entity of this network id, or creates it. Entities that no part of a snapshot passes here are
         // removed.
         if (const auto entity = applier.entity(state.id, state.kind)) {
-            applier.setTransform(*entity, ecs::Transform{.x = state.x, .y = state.y});
+            applier.setTransform(*entity, sq::ecs::Transform{.x = state.x, .y = state.y});
         }
     }
 }
@@ -51,11 +51,11 @@ Pick a `protocolId` for your game: a peer announcing another one is refused duri
 ### Client
 
 ```cpp
-const std::shared_ptr<ecs::net::INetworkClient> transport = ecs::net::createClient({.protocolId = MY_GAME_ID});
-const auto connection = std::make_shared<ecs::net::ClientConnection>(transport);
+const std::shared_ptr<sq::net::INetworkClient> transport = sq::net::createClient({.protocolId = MY_GAME_ID});
+const auto connection = std::make_shared<sq::net::ClientConnection>(transport);
 
-engine.addPlugin<ecs::net::NetworkPlugin>(connection, connection)
-    .addPlugin<ecs::net::ClientReplicationPlugin>(std::make_shared<MyCodec>());
+engine.addPlugin<sq::net::NetworkPlugin>(connection, connection)
+    .addPlugin<sq::net::ClientReplicationPlugin>(std::make_shared<MyCodec>());
 
 transport->connect(host, port);  // returns at once: PeerConnected follows, or PeerDisconnected if it fails
 ```
@@ -70,17 +70,17 @@ A transport has one event queue for all its peers. A server with several worlds 
 world gets a `PeerGroupConnection`, which also stops it from reaching the peers of another world.
 
 ```cpp
-auto connection = std::make_shared<ecs::net::PeerGroupConnection>(*server);  // the transport must outlive it
+auto connection = std::make_shared<sq::net::PeerGroupConnection>(*server);  // the transport must outlive it
 
-engine.addPlugin<ecs::net::NetworkPlugin>(connection, connection)
-    .addPlugin<ecs::net::ServerReplicationPlugin>(std::make_shared<MyCodec>());
+engine.addPlugin<sq::net::NetworkPlugin>(connection, connection)
+    .addPlugin<sq::net::ServerReplicationPlugin>(std::make_shared<MyCodec>());
 engine.init();
 
 // In your own loop:
 for (auto& event : server->poll()) {
-    if (event.type == ecs::net::EventType::Connected) {
+    if (event.type == sq::net::EventType::Connected) {
         connection->addPeer(event.peer);
-    } else if (event.type == ecs::net::EventType::Disconnected) {
+    } else if (event.type == sq::net::EventType::Disconnected) {
         connection->removePeer(event.peer);
     } else {
         connection->push(std::move(event));
@@ -96,11 +96,11 @@ engine.advance();  // runs the steps that are due, then sends one snapshot if an
 ### Server: what clients see, and who controls what
 
 ```cpp
-const ecs::Entity ship = registry.spawnEntity();
-ecs::net::replicate(registry, ship, MY_SHIP_KIND);   // network id + Replicated: it is now in the snapshots
-registry.addComponent(ship, ecs::NetworkOwner{peer});  // this peer receives snapshots and controls the entity
-registry.addComponent(ship, ecs::InputBuffer{});       // its inputs are queued here
-registry.addComponent(ship, ecs::Transform{});
+const sq::ecs::Entity ship = registry.spawnEntity();
+sq::net::replicate(registry, ship, MY_SHIP_KIND);   // network id + Replicated: it is now in the snapshots
+registry.addComponent(ship, sq::ecs::NetworkOwner{peer});  // this peer receives snapshots and controls the entity
+registry.addComponent(ship, sq::ecs::InputBuffer{});       // its inputs are queued here
+registry.addComponent(ship, sq::ecs::Transform{});
 ```
 
 `kind` is yours: it tells the client what the entity is. Only peers owning an entity receive snapshots.
@@ -112,8 +112,8 @@ buffer, on the client when an input is predicted and again when it is replayed. 
 sides, or the prediction will not match the server.
 
 ```cpp
-engine.eventBus().subscribe<ecs::net::InputApplied>([&](const ecs::net::InputApplied& event) {
-    moveShip(registry.getComponents<ecs::Transform>().get(event.entity), event.input, event.deltaTime);
+engine.eventBus().subscribe<sq::net::InputApplied>([&](const sq::net::InputApplied& event) {
+    moveShip(registry.getComponents<sq::ecs::Transform>().get(event.entity), event.input, event.deltaTime);
 });
 ```
 
@@ -123,14 +123,14 @@ engine.eventBus().subscribe<ecs::net::InputApplied>([&](const ecs::net::InputApp
 
 ```cpp
 // Once per fixed step, with a sequence that always increases:
-engine.eventBus().publish(ecs::net::LocalInput{.input = {.sequence = ++sequence, .held = held, .axes = axes}});
+engine.eventBus().publish(sq::net::LocalInput{.input = {.sequence = ++sequence, .held = held, .axes = axes}});
 
 // The local entity predicts, the others are smoothed between snapshots:
-engine.eventBus().subscribe<ecs::net::ReplicatedEntitySpawned>([&](const ecs::net::ReplicatedEntitySpawned& event) {
+engine.eventBus().subscribe<sq::net::ReplicatedEntitySpawned>([&](const sq::net::ReplicatedEntitySpawned& event) {
     if (isLocal(event)) {
-        registry.addComponent(event.entity, ecs::Predicted{});
+        registry.addComponent(event.entity, sq::ecs::Predicted{});
     } else {
-        registry.addComponent(event.entity, ecs::Interpolated{});
+        registry.addComponent(event.entity, sq::ecs::Interpolated{});
     }
     addSprite(event.entity, event.kind);
 });

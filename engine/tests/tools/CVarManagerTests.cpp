@@ -14,10 +14,10 @@
 
 namespace {
 
-using tools::CVarFlag;
-using tools::CVarManager;
-using tools::CVarOptions;
-using tools::CVarRange;
+using sq::tools::CVarFlag;
+using sq::tools::CVarManager;
+using sq::tools::CVarOptions;
+using sq::tools::CVarRange;
 
 [[nodiscard]] std::vector<std::string> drain(CVarManager& cvars) {
     std::vector<std::string> names;
@@ -188,7 +188,7 @@ TEST(CVarManager, CheatVariablesNeedCheatsAndAreResetWhenTheyGetDisabled) {
     CVarManager cvars;
     EXPECT_FALSE(cvars.cheatsAllowed());
     const auto gravity = cvars.add("sv_gravity", 9.8F, "", CVarOptions{.flags = CVarFlag::Cheat | CVarFlag::Archived});
-    EXPECT_TRUE(tools::hasFlag(gravity.cvar().flags(), CVarFlag::Archived));
+    EXPECT_TRUE(sq::tools::hasFlag(gravity.cvar().flags(), CVarFlag::Archived));
 
     const auto refused = cvars.setFromString("sv_gravity", "1");
     ASSERT_FALSE(refused);
@@ -226,7 +226,7 @@ TEST(CVarManager, ListsByPrefixInNameOrder) {
     (void)cvars.add("r_draw_colliders", false);
 
     std::vector<std::string> names;
-    for (const tools::CVar* cvar : cvars.list("r_")) {
+    for (const sq::tools::CVar* cvar : cvars.list("r_")) {
         names.push_back(cvar->name());
     }
     EXPECT_EQ(names, (std::vector<std::string>{"r_draw_colliders", "r_wireframe"}));
@@ -244,32 +244,32 @@ TEST(CVarManager, FormatsValuesAsTheConsoleShowsThem) {
 // --- In the engine ----------------------------------------------------------------------------------------------
 
 TEST(ConsolePlugin, AConsoleCommandChangesTheValueReadByASystemImmediately) {
-    engine::Engine engine;
-    engine.addPlugin<tools::ConsolePlugin>(tools::ConsoleConfig{.allowCheats = true});
+    sq::engine::Engine engine;
+    engine.addPlugin<sq::tools::ConsolePlugin>(sq::tools::ConsoleConfig{.allowCheats = true});
     std::vector<std::string> events;
-    (void)engine.eventBus().subscribe<tools::CVarChanged>(
-        [&events](const tools::CVarChanged& e) { events.push_back(e.name); });
+    (void)engine.eventBus().subscribe<sq::tools::CVarChanged>(
+        [&events](const sq::tools::CVarChanged& e) { events.push_back(e.name); });
     engine.init();
 
     auto& cvars = engine.service<CVarManager>();
-    auto& console = engine.service<tools::Console>();
-    EXPECT_EQ(&cvars, &engine.getPlugin<tools::ConsolePlugin>().cvars());
+    auto& console = engine.service<sq::tools::Console>();
+    EXPECT_EQ(&cvars, &engine.getPlugin<sq::tools::ConsolePlugin>().cvars());
     const auto gravity = cvars.add("sv_gravity", 9.8F, "World gravity", CVarOptions{.flags = CVarFlag::Cheat});
 
     EXPECT_TRUE(console.execute("set sv_gravity 12"));
     EXPECT_FLOAT_EQ(gravity.get(), 12.0F);  // what a physics system reads at its next step
     EXPECT_TRUE(events.empty());
 
-    engine.getPlugin<tools::ConsolePlugin>().preUpdate(engine);
+    engine.getPlugin<sq::tools::ConsolePlugin>().preUpdate(engine);
     EXPECT_EQ(events, std::vector<std::string>{"sv_gravity"});
 
     engine.shutdown();
     EXPECT_FALSE(engine.mediator().hasService<CVarManager>());
-    EXPECT_FALSE(engine.mediator().hasService<tools::Console>());
+    EXPECT_FALSE(engine.mediator().hasService<sq::tools::Console>());
 }
 
 TEST(ConsolePlugin, DisallowsCheatsByDefault) {
-    tools::ConsolePlugin plugin;
+    sq::tools::ConsolePlugin plugin;
     const auto gravity = plugin.cvars().add("sv_gravity", 9.8F, "", CVarOptions{.flags = CVarFlag::Cheat});
     EXPECT_FALSE(plugin.console().execute("sv_gravity 0"));
     EXPECT_FLOAT_EQ(gravity.get(), 9.8F);

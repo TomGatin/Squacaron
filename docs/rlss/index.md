@@ -67,7 +67,7 @@ boost to fly up.
 
 ## How it plugs into the engine
 
-Both executables are an `engine::Engine` plus plugins; game plugins never call each other, they communicate through
+Both executables are an `sq::engine::Engine` plus plugins; game plugins never call each other, they communicate through
 the `EventBus` and the ECS.
 
 ```mermaid
@@ -86,7 +86,7 @@ flowchart LR
 ```
 
 - **Server** (`rlss/server/main.cpp`): a `MatchServer` owns the transport and runs the menu side (see
-  [Matches and menus](#matches-and-menus)). Each match is a `MatchRoom`: its own `engine::Engine` on its own thread,
+  [Matches and menus](#matches-and-menus)). Each match is a `MatchRoom`: its own `sq::engine::Engine` on its own thread,
   with `NetworkPlugin` fed by an engine `PeerGroupConnection` (it only reaches the players of this match),
   `ServerReplicationPlugin` with the RLSS `ReplicationCodec` (which writes the match id in every snapshot),
   `ScriptPlugin` (one Wren VM per match), then:
@@ -215,7 +215,7 @@ sequenceDiagram
 - **Client side, the menus are engine scenes** (`rlss/client/menu/`, see [Scenes](../architecture/scene.md)), built
   with the engine UI widgets (see [User Interface](../architecture/ui.md)) through a small RLSS `MenuKit`. The kit
   keeps the game's look: Russo One sized by the height of its capitals, team-coloured accents, the glow band behind
-  the titles (`ui::UiImage`).
+  the titles (`sq::ui::UiImage`).
 
   | Scene      | Mode      | Content                                                                         |
   |------------|-----------|---------------------------------------------------------------------------------|
@@ -242,14 +242,14 @@ sequenceDiagram
   - **Leaving a match.** It calls `ClientReplicationPlugin::reset()`, which removes the replicated entities (each with
     its `ReplicatedEntityDespawned`) and forgets the last tick, so the next match counts its steps from 0. It then
     publishes `MatchLeft`.
-  - **Settings.** The player name, the volumes and the keys (`controls.<control>`, holding an `input::keyId` such as
-    `Space`) are user settings (`settings::SettingsPlugin`, file `rlss/settings.toml` in the user's configuration
-    directory). On a change of a key, `MenuScenesPlugin` rebuilds the `input::ActionMapping` with `setupBindings`
+  - **Settings.** The player name, the volumes and the keys (`controls.<control>`, holding an `sq::input::keyId` such as
+    `Space`) are user settings (`sq::settings::SettingsPlugin`, file `rlss/settings.toml` in the user's configuration
+    directory). On a change of a key, `MenuScenesPlugin` rebuilds the `sq::input::ActionMapping` with `setupBindings`
     (`rlss/client/Controls.cpp`).
 
 ## Player names
 
-1. **Name entry.** The `Name` scene is a `ui::UiTextInput`.
+1. **Name entry.** The `Name` scene is a `sq::ui::UiTextInput`.
    - It reads the typed characters through the engine's `IWindowService::nextTypedCharacter()`, which follows the
      keyboard layout: an AZERTY keyboard types what its keys say.
    - It makes letters capitals (`uppercase`) and only keeps the characters names may hold (`allowed`).

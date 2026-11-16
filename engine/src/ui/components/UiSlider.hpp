@@ -9,7 +9,7 @@
 
 #include "render/api/components/Renderable.hpp"
 
-namespace ui {
+namespace sq::ui {
 
 /**
  * @brief Horizontal slider: drag it with the mouse, or move it by `step` with left/right while it has the focus.
@@ -37,11 +37,11 @@ struct UiSlider {
     /** @brief Height in pixels. */
     float height = DEFAULT_HEIGHT;
     /** @brief Track colour. */
-    ecs::Rgba track = {.r = 60, .g = 60, .b = 60, .a = 255};
+    sq::ecs::Rgba track = {.r = 60, .g = 60, .b = 60, .a = 255};
     /** @brief Filled part colour. */
-    ecs::Rgba fill = {.r = 70, .g = 150, .b = 255, .a = 255};
+    sq::ecs::Rgba fill = {.r = 70, .g = 150, .b = 255, .a = 255};
     /** @brief Knob colour. */
-    ecs::Rgba knob = {.r = 240, .g = 240, .b = 240, .a = 255};
+    sq::ecs::Rgba knob = {.r = 240, .g = 240, .b = 240, .a = 255};
 };
 
-}  // namespace ui
+}  // namespace sq::ui

@@ -21,6 +21,6 @@ namespace rtype::server::gameplay {
  *
  * @param manager Prefab registry handed to the scripting plugin.
  */
-void registerScriptPrefabs(prefabs::PrefabManager& manager);
+void registerScriptPrefabs(sq::prefabs::PrefabManager& manager);
 
 }  // namespace rtype::server::gameplay

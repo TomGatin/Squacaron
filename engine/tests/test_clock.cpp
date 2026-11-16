@@ -13,11 +13,11 @@
 
 namespace {
 
-constexpr float FIXED_DT = ecs::time::DEFAULT_FIXED_DT;
+constexpr float FIXED_DT = sq::time::DEFAULT_FIXED_DT;
 
 struct FakeTime {
     double now = 0.0;
-    ecs::time::Clock::TimeSource source() {
+    sq::time::Clock::TimeSource source() {
         return [this] { return now; };
     }
 };
@@ -26,43 +26,43 @@ struct FakeTime {
 
 TEST(Clock, NoStepBeforeOneFixedDt) {
     FakeTime fake;
-    ecs::time::Clock clock(fake.source());
+    sq::time::Clock clock(fake.source());
 
     fake.now = 0.010;
     std::size_t calls = 0;
-    EXPECT_EQ(clock.tick(FIXED_DT, [&](const ecs::time::Time&) { ++calls; }), 0U);
+    EXPECT_EQ(clock.tick(FIXED_DT, [&](const sq::time::Time&) { ++calls; }), 0U);
     EXPECT_EQ(calls, 0U);
 }
 
 TEST(Clock, DeltaTimeIsConstant) {
     FakeTime fake;
-    ecs::time::Clock clock(fake.source());
+    sq::time::Clock clock(fake.source());
 
     fake.now = 0.05;
     bool allConstant = true;
-    clock.tick(FIXED_DT, [&](const ecs::time::Time& tick) { allConstant = allConstant && tick.deltaTime == FIXED_DT; });
+    clock.tick(FIXED_DT, [&](const sq::time::Time& tick) { allConstant = allConstant && tick.deltaTime == FIXED_DT; });
     EXPECT_TRUE(allConstant);
 }
 
 TEST(Clock, ResidualTimeIsCarriedOver) {
     FakeTime fake;
-    ecs::time::Clock clock(fake.source());
+    sq::time::Clock clock(fake.source());
 
     // Two ticks of 10 ms each: neither alone reaches 16.6 ms, together they do.
     fake.now = 0.010;
-    EXPECT_EQ(clock.tick(FIXED_DT, [](const ecs::time::Time&) {}), 0U);
+    EXPECT_EQ(clock.tick(FIXED_DT, [](const sq::time::Time&) {}), 0U);
     fake.now = 0.020;
-    EXPECT_EQ(clock.tick(FIXED_DT, [](const ecs::time::Time&) {}), 1U);
+    EXPECT_EQ(clock.tick(FIXED_DT, [](const sq::time::Time&) {}), 1U);
 }
 
 TEST(Clock, NoDriftOverTenThousandTicks) {
     FakeTime fake;
-    ecs::time::Clock clock(fake.source());
+    sq::time::Clock clock(fake.source());
 
     constexpr std::size_t TICKS = 10000;
     for (std::size_t i = 1; i <= TICKS; ++i) {
         fake.now = static_cast<double>(i) * static_cast<double>(FIXED_DT);
-        EXPECT_EQ(clock.tick(FIXED_DT, [](const ecs::time::Time&) {}), 1U);
+        EXPECT_EQ(clock.tick(FIXED_DT, [](const sq::time::Time&) {}), 1U);
     }
 
     EXPECT_EQ(clock.time().tickCount, TICKS);
@@ -74,11 +74,11 @@ TEST(Clock, SimulationIsIndependentOfFramerate) {
 
     auto simulate = [&](double frameDuration) {
         FakeTime fake;
-        ecs::time::Clock clock(fake.source(), 1000);
+        sq::time::Clock clock(fake.source(), 1000);
         std::uint64_t ticks = 0;
         for (double t = frameDuration; t <= DURATION + 1e-9; t += frameDuration) {
             fake.now = t;
-            clock.tick(FIXED_DT, [&](const ecs::time::Time&) { ++ticks; });
+            clock.tick(FIXED_DT, [&](const sq::time::Time&) { ++ticks; });
         }
         return ticks;
     };
@@ -90,26 +90,26 @@ TEST(Clock, SimulationIsIndependentOfFramerate) {
 
 TEST(Clock, SpiralOfDeathIsCapped) {
     FakeTime fake;
-    ecs::time::Clock clock(fake.source(), 5);
+    sq::time::Clock clock(fake.source(), 5);
 
     fake.now = 10.0;  // simulated multi-second freeze
     std::size_t calls = 0;
-    EXPECT_EQ(clock.tick(FIXED_DT, [&](const ecs::time::Time&) { ++calls; }), 5U);
+    EXPECT_EQ(clock.tick(FIXED_DT, [&](const sq::time::Time&) { ++calls; }), 5U);
     EXPECT_EQ(calls, 5U);
 
     // The backlog was dropped: only a remainder below one step is kept, so no time passing means no step
     // and one more step of real time yields at most two steps instead of a burst.
-    EXPECT_EQ(clock.tick(FIXED_DT, [](const ecs::time::Time&) {}), 0U);
+    EXPECT_EQ(clock.tick(FIXED_DT, [](const sq::time::Time&) {}), 0U);
     fake.now = 10.0 + static_cast<double>(FIXED_DT);
-    EXPECT_LE(clock.tick(FIXED_DT, [](const ecs::time::Time&) {}), 2U);
+    EXPECT_LE(clock.tick(FIXED_DT, [](const sq::time::Time&) {}), 2U);
 }
 
 TEST(Clock, ResetClearsCounters) {
     FakeTime fake;
-    ecs::time::Clock clock(fake.source());
+    sq::time::Clock clock(fake.source());
 
     fake.now = 0.1;
-    clock.tick(FIXED_DT, [](const ecs::time::Time&) {});
+    clock.tick(FIXED_DT, [](const sq::time::Time&) {});
     ASSERT_GT(clock.time().tickCount, 0U);
 
     clock.reset();
@@ -119,50 +119,50 @@ TEST(Clock, ResetClearsCounters) {
 
 TEST(Clock, InvalidFixedDtRunsNothing) {
     FakeTime fake;
-    ecs::time::Clock clock(fake.source());
+    sq::time::Clock clock(fake.source());
 
     fake.now = 1.0;
-    EXPECT_EQ(clock.tick(0.0F, [](const ecs::time::Time&) {}), 0U);
-    EXPECT_EQ(clock.tick(-1.0F, [](const ecs::time::Time&) {}), 0U);
+    EXPECT_EQ(clock.tick(0.0F, [](const sq::time::Time&) {}), 0U);
+    EXPECT_EQ(clock.tick(-1.0F, [](const sq::time::Time&) {}), 0U);
 }
 
 TEST(Clock, DefaultSourceUsesRealTime) {
-    ecs::time::Clock clock;
+    sq::time::Clock clock;
     std::size_t calls = 0;
-    clock.tick(FIXED_DT, [&](const ecs::time::Time&) { ++calls; });
-    EXPECT_LE(calls, ecs::time::Clock::DEFAULT_MAX_STEPS_PER_TICK);
+    clock.tick(FIXED_DT, [&](const sq::time::Time&) { ++calls; });
+    EXPECT_LE(calls, sq::time::Clock::DEFAULT_MAX_STEPS_PER_TICK);
 }
 
 TEST(Clock, SyncsTimeResourceInRegistry) {
     FakeTime fake;
-    ecs::time::Clock clock(fake.source());
-    ecs::Registry registry;
+    sq::time::Clock clock(fake.source());
+    sq::ecs::Registry registry;
 
-    EXPECT_FALSE(registry.hasResource<ecs::time::Time>());
+    EXPECT_FALSE(registry.hasResource<sq::time::Time>());
 
     fake.now = static_cast<double>(FIXED_DT);
     std::size_t steps = 0;
-    ecs::time::tick(clock, FIXED_DT, registry, [&](ecs::Registry& reg) {
+    sq::time::tick(clock, FIXED_DT, registry, [&](sq::ecs::Registry& reg) {
         ++steps;
-        EXPECT_TRUE(reg.hasResource<ecs::time::Time>());
-        const auto& time = reg.getResource<ecs::time::Time>();
+        EXPECT_TRUE(reg.hasResource<sq::time::Time>());
+        const auto& time = reg.getResource<sq::time::Time>();
         EXPECT_FLOAT_EQ(time.deltaTime, FIXED_DT);
         EXPECT_EQ(time.tickCount, 1U);
         EXPECT_NEAR(time.totalElapsedTime, FIXED_DT, 0.001F);
     });
 
     EXPECT_EQ(steps, 1U);
-    EXPECT_TRUE(registry.hasResource<ecs::time::Time>());
-    EXPECT_EQ(registry.getResource<ecs::time::Time>().tickCount, 1U);
+    EXPECT_TRUE(registry.hasResource<sq::time::Time>());
+    EXPECT_EQ(registry.getResource<sq::time::Time>().tickCount, 1U);
 }
 
 TEST(Clock, FrameTimeUsesProvidedDeltaAndCurrentProgress) {
     FakeTime fake;
-    ecs::time::Clock clock(fake.source());
+    sq::time::Clock clock(fake.source());
     fake.now = 0.5;
-    ASSERT_EQ(clock.tick(0.5F, [](const ecs::time::Time&) {}), 1U);
+    ASSERT_EQ(clock.tick(0.5F, [](const sq::time::Time&) {}), 1U);
 
-    const ecs::time::Time frame = clock.frameTime(0.25F);
+    const sq::time::Time frame = clock.frameTime(0.25F);
 
     EXPECT_FLOAT_EQ(frame.deltaTime, 0.25F);
     EXPECT_FLOAT_EQ(frame.totalElapsedTime, 0.5F);
@@ -171,23 +171,23 @@ TEST(Clock, FrameTimeUsesProvidedDeltaAndCurrentProgress) {
 
 TEST(Clock, LastFrameDeltaTracksRealElapsed) {
     FakeTime fake;
-    ecs::time::Clock clock(fake.source());
+    sq::time::Clock clock(fake.source());
 
     // Frame 1: 5 ms elapsed (less than FIXED_DT, 0 steps run)
     fake.now = 0.005;
-    EXPECT_EQ(clock.tick(FIXED_DT, [](const ecs::time::Time&) {}), 0U);
+    EXPECT_EQ(clock.tick(FIXED_DT, [](const sq::time::Time&) {}), 0U);
     EXPECT_FLOAT_EQ(clock.lastFrameDelta(), 0.005F);
     EXPECT_FLOAT_EQ(clock.frameTime().deltaTime, 0.005F);
 
     // Frame 2: 30 ms elapsed (more than FIXED_DT, 2 steps run)
     fake.now = 0.035;
-    EXPECT_EQ(clock.tick(FIXED_DT, [](const ecs::time::Time&) {}), 2U);
+    EXPECT_EQ(clock.tick(FIXED_DT, [](const sq::time::Time&) {}), 2U);
     EXPECT_FLOAT_EQ(clock.lastFrameDelta(), 0.030F);
     EXPECT_FLOAT_EQ(clock.frameTime().deltaTime, 0.030F);
 }
 
 TEST(PreciseSleepScope, RaisesTheTimerPeriodOnWindowsOnly) {
-    const ecs::time::PreciseSleepScope scope;
+    const sq::time::PreciseSleepScope scope;
 #ifdef _WIN32
     EXPECT_TRUE(scope.raised());
 #else
@@ -196,12 +196,12 @@ TEST(PreciseSleepScope, RaisesTheTimerPeriodOnWindowsOnly) {
 }
 
 TEST(PreciseSleepScope, ScopesCanBeNested) {
-    const ecs::time::PreciseSleepScope outer;
+    const sq::time::PreciseSleepScope outer;
     {
-        const ecs::time::PreciseSleepScope inner;
+        const sq::time::PreciseSleepScope inner;
         EXPECT_EQ(inner.raised(), outer.raised());
     }
-    EXPECT_EQ(ecs::time::PreciseSleepScope().raised(), outer.raised());
+    EXPECT_EQ(sq::time::PreciseSleepScope().raised(), outer.raised());
 }
 
 TEST(PreciseSleepScope, OneMillisecondSleepsStayShort) {
@@ -214,7 +214,7 @@ TEST(PreciseSleepScope, OneMillisecondSleepsStayShort) {
     // Half the default Windows timer period (15.6 ms): without the scope, every sleep there lasts a whole period.
     constexpr auto MAX_AVERAGE = std::chrono::milliseconds(8);
 
-    const ecs::time::PreciseSleepScope scope;
+    const sq::time::PreciseSleepScope scope;
     const auto start = std::chrono::steady_clock::now();
     for (int i = 0; i < SLEEPS; ++i) {
         std::this_thread::sleep_for(std::chrono::milliseconds(1));

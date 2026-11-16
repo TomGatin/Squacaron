@@ -15,46 +15,46 @@
 #include "render/screen/ScreenDrawService.hpp"
 #include "render/texture/TextureStore.hpp"
 
-namespace assets {
+namespace sq::assets {
 
-void RenderAssetsPlugin::build(engine::PluginBuilder& builder) {
-    builder.require<render::RenderPlugin>();
+void RenderAssetsPlugin::build(sq::engine::PluginBuilder& builder) {
+    builder.require<sq::render::RenderPlugin>();
     builder.require<AssetPlugin>();
 }
 
-void RenderAssetsPlugin::init(engine::Engine& engine) {
-    auto& renderPlugin = engine.getPlugin<render::RenderPlugin>();
-    render::TextureStore* textures = renderPlugin.textures();
-    render::ScreenDrawService* screen = renderPlugin.screenDraw();
+void RenderAssetsPlugin::init(sq::engine::Engine& engine) {
+    auto& renderPlugin = engine.getPlugin<sq::render::RenderPlugin>();
+    sq::render::TextureStore* textures = renderPlugin.textures();
+    sq::render::ScreenDrawService* screen = renderPlugin.screenDraw();
     if (textures == nullptr || screen == nullptr) {
         return;
     }
     auto& manager = engine.registry().getResource<AssetManager>();
     manager.setLoader<Texture>(AssetLoader<Texture>{
         .load =
-            [textures](const std::string& path, const LoadOptions& options, const ecs::TextureId preferred) {
-                const render::TextureFilter filter = options.filter == TextureFilter::Smooth
-                                                         ? render::TextureFilter::Smooth
-                                                         : render::TextureFilter::Nearest;
+            [textures](const std::string& path, const LoadOptions& options, const sq::ecs::TextureId preferred) {
+                const sq::render::TextureFilter filter = options.filter == TextureFilter::Smooth
+                                                             ? sq::render::TextureFilter::Smooth
+                                                             : sq::render::TextureFilter::Nearest;
                 return textures->load(path, filter, preferred);
             },
-        .unload = [textures](const ecs::TextureId id) { textures->unload(id); },
+        .unload = [textures](const sq::ecs::TextureId id) { textures->unload(id); },
         .fallback = [textures]() { return textures->placeholder(); },
-        .reserve = [textures](const ecs::TextureId last) { textures->reserve(last); },
+        .reserve = [textures](const sq::ecs::TextureId last) { textures->reserve(last); },
     });
-    render::FontStore* fonts = &screen->fonts();
+    sq::render::FontStore* fonts = &screen->fonts();
     manager.setLoader<Font>(AssetLoader<Font>{
         .load = [fonts](const std::string& path, const LoadOptions& /*options*/,
-                        const engine::FontId preferred) { return fonts->load(path, preferred); },
-        .unload = [fonts](const engine::FontId id) { fonts->unload(id); },
+                        const sq::engine::FontId preferred) { return fonts->load(path, preferred); },
+        .unload = [fonts](const sq::engine::FontId id) { fonts->unload(id); },
         // No fallback: `NO_FONT` already draws with the backend's default font.
         .fallback = {},
-        .reserve = [fonts](const engine::FontId last) { fonts->reserve(last); },
+        .reserve = [fonts](const sq::engine::FontId last) { fonts->reserve(last); },
     });
     _attached = true;
 }
 
-void RenderAssetsPlugin::shutdown(engine::Engine& engine) {
+void RenderAssetsPlugin::shutdown(sq::engine::Engine& engine) {
     if (!_attached) {
         return;
     }
@@ -67,4 +67,4 @@ void RenderAssetsPlugin::shutdown(engine::Engine& engine) {
     manager.detachLoader<Font>();
 }
 
-}  // namespace assets
+}  // namespace sq::assets

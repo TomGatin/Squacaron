@@ -13,7 +13,7 @@
 #include "core/PluginBuilder.hpp"
 #include "systems/render/ParallaxSystem.hpp"
 
-namespace systems {
+namespace sq::systems {
 
 /**
  * @brief Engine plugin driving frame-based sprite animation and parallax scrolling.
@@ -21,7 +21,7 @@ namespace systems {
  * Runs AnimationSystem and ParallaxSystem on every fixed-timestep tick, after physics.
  * Requires IRenderService (window + texture store must be alive).
  */
-class AnimationPlugin final : public engine::IPlugin {
+class AnimationPlugin final : public sq::engine::IPlugin {
   public:
     /** @brief Constructs AnimationPlugin. */
     AnimationPlugin() = default;
@@ -51,18 +51,18 @@ class AnimationPlugin final : public engine::IPlugin {
      * @brief Declares service dependency on IRenderService.
      * @param builder Dependency builder.
      */
-    void build(engine::PluginBuilder& builder) override;
+    void build(sq::engine::PluginBuilder& builder) override;
 
     /**
      * @brief Advances animations and parallax scrolling each fixed tick.
      * @param engine Reference to host Engine.
      * @param time Fixed simulation timing.
      */
-    void fixedUpdate(engine::Engine& engine, const ecs::time::Time& time) override;
+    void fixedUpdate(sq::engine::Engine& engine, const sq::time::Time& time) override;
 
   private:
     /** @brief Stateful parallax scroll system tracking camera displacement. */
     ParallaxSystem _parallaxSystem;
 };
 
-}  // namespace systems
+}  // namespace sq::systems

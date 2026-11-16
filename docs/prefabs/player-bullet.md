@@ -1,6 +1,6 @@
 # Player Bullet
 
-**Name:** `player_bullet` (`prefabs::PLAYER_BULLET_PREFAB`)
+**Name:** `player_bullet` (`sq::prefabs::PLAYER_BULLET_PREFAB`)
 **Source:** `server/src/prefabs/player_bullet/`
 
 ## Purpose
@@ -38,10 +38,10 @@ Every transform key read by `makeTransform` (`x`, `y`, `z`, `rotation`, `scaleX`
 ## API
 
 ```cpp
-void buildPlayerBullet(ecs::Entity e, ecs::Registry& registry, PrefabParams const& params);
+void buildPlayerBullet(sq::ecs::Entity e, sq::ecs::Registry& registry, PrefabParams const& params);
 ```
 
 ```cpp
-manager.registerPrefab(prefabs::PLAYER_BULLET_PREFAB, prefabs::buildPlayerBullet);
-manager.spawn(prefabs::PLAYER_BULLET_PREFAB, buffer, {{"x", 800.0F}, {"y", 300.0F}, {"speed", -400.0F}});
+manager.registerPrefab(sq::prefabs::PLAYER_BULLET_PREFAB, sq::prefabs::buildPlayerBullet);
+manager.spawn(sq::prefabs::PLAYER_BULLET_PREFAB, buffer, {{"x", 800.0F}, {"y", 300.0F}, {"speed", -400.0F}});
 ```

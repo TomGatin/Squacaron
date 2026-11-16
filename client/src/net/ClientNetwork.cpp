@@ -15,17 +15,17 @@
 
 namespace client {
 
-void addNetworkPlugins(engine::Engine& engine) {
-    const auto connection = std::make_shared<ecs::net::ClientConnection>(nullptr);
+void addNetworkPlugins(sq::engine::Engine& engine) {
+    const auto connection = std::make_shared<sq::net::ClientConnection>(nullptr);
     const RTypeNetworkPlugin::TransportFactory factory = [] {
-        return ecs::net::createClient({.protocolId = rtype::protocol::TRANSPORT_PROTOCOL_ID});
+        return sq::net::createClient({.protocolId = rtype::protocol::TRANSPORT_PROTOCOL_ID});
     };
 
-    engine.addPlugin<ecs::net::NetworkPlugin>(connection, connection)
-        .addPlugin<ecs::net::ClientReplicationPlugin>(std::make_shared<rtype::game::ReplicationCodec>())
+    engine.addPlugin<sq::net::NetworkPlugin>(connection, connection)
+        .addPlugin<sq::net::ClientReplicationPlugin>(std::make_shared<rtype::game::ReplicationCodec>())
         .addPlugin<RTypeNetworkPlugin>(connection, factory)
         .addPlugin<PlayerControlPlugin>()
-        .addPlugin<ecs::net::NetworkMetricsPlugin>([connection] { return connection->stats(); });
+        .addPlugin<sq::net::NetworkMetricsPlugin>([connection] { return connection->stats(); });
 }
 
 }  // namespace client

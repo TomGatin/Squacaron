@@ -7,7 +7,7 @@
 
 #include "ecs/Entity.hpp"
 
-namespace ecs::net {
+namespace sq::net {
 
 /**
  * @brief Registry resource mapping network ids to local entities, both ways.
@@ -23,7 +23,7 @@ class NetworkEntityMap {
      * @param entity Local entity.
      * @return The new id, or the entity's current id if it already has one.
      */
-    std::uint32_t assign(ecs::Entity entity);
+    std::uint32_t assign(sq::ecs::Entity entity);
 
     /**
      * @brief Maps an id received from the server to a local entity (client side).
@@ -34,27 +34,27 @@ class NetworkEntityMap {
      * @param entity Local entity.
      * @return False if `id` is 0.
      */
-    bool bind(std::uint32_t id, ecs::Entity entity);
+    bool bind(std::uint32_t id, sq::ecs::Entity entity);
 
     /** @brief Removes the mapping of a network id. Does nothing if it is unknown. */
     void unbind(std::uint32_t id);
     /** @brief Removes the mapping of a local entity. Does nothing if it is unknown. */
-    void unbindEntity(ecs::Entity entity);
+    void unbindEntity(sq::ecs::Entity entity);
 
     /** @brief Local entity of a network id, or nothing if unknown. */
-    [[nodiscard]] std::optional<ecs::Entity> entityOf(std::uint32_t id) const;
+    [[nodiscard]] std::optional<sq::ecs::Entity> entityOf(std::uint32_t id) const;
     /** @brief Network id of a local entity, or nothing if unknown. */
-    [[nodiscard]] std::optional<std::uint32_t> idOf(ecs::Entity entity) const;
+    [[nodiscard]] std::optional<std::uint32_t> idOf(sq::ecs::Entity entity) const;
     /** @brief Number of mapped entities. */
     [[nodiscard]] std::size_t size() const noexcept { return _entities.size(); }
 
   private:
     /** @brief Local entity of each network id. */
-    std::unordered_map<std::uint32_t, ecs::Entity> _entities;
+    std::unordered_map<std::uint32_t, sq::ecs::Entity> _entities;
     /** @brief Network id of each local entity. */
-    std::unordered_map<ecs::Entity, std::uint32_t> _ids;
+    std::unordered_map<sq::ecs::Entity, std::uint32_t> _ids;
     /** @brief Id given by the next `assign()`. */
     std::uint32_t _nextId = 1;
 };
 
-}  // namespace ecs::net
+}  // namespace sq::net

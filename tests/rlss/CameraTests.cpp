@@ -43,7 +43,7 @@ class CameraDirector : public ::testing::Test {
         _car = spawnAt(arena::LEFT + 600.0F, arena::BOTTOM - 18.0F);
         _ball = spawnAt((arena::LEFT + arena::RIGHT) / 2.0F, arena::BOTTOM - 92.0F);
         _camera = _registry.spawnEntity();
-        _registry.addComponent(_camera, ecs::CameraComponent{});
+        _registry.addComponent(_camera, sq::ecs::CameraComponent{});
         _registry.addComponent(_camera, game::CameraRig{
                                             .car = static_cast<std::int64_t>(_car),
                                             .ball = static_cast<std::int64_t>(_ball),
@@ -54,21 +54,21 @@ class CameraDirector : public ::testing::Test {
                                             .boundsRight = BOUNDS_RIGHT,
                                             .boundsBottom = BOUNDS_BOTTOM,
                                         });
-        _registry.addComponent(_camera, scripting::ScriptComponent{
+        _registry.addComponent(_camera, sq::scripting::ScriptComponent{
                                             .moduleName = std::string(game::CAMERA_SCRIPT_MODULE),
                                             .className = "CameraDirector",
                                             .hasUpdate = true,
                                         });
     }
 
-    ecs::Entity spawnAt(const float x, const float y) {
-        const ecs::Entity entity = _registry.spawnEntity();
-        _registry.addComponent(entity, ecs::Transform{.x = x, .y = y});
+    sq::ecs::Entity spawnAt(const float x, const float y) {
+        const sq::ecs::Entity entity = _registry.spawnEntity();
+        _registry.addComponent(entity, sq::ecs::Transform{.x = x, .y = y});
         return entity;
     }
 
-    void moveTo(const ecs::Entity entity, const float x, const float y) {
-        auto& transform = _registry.getComponents<ecs::Transform>().get(entity);
+    void moveTo(const sq::ecs::Entity entity, const float x, const float y) {
+        auto& transform = _registry.getComponents<sq::ecs::Transform>().get(entity);
         transform.x = x;
         transform.y = y;
     }
@@ -80,8 +80,8 @@ class CameraDirector : public ::testing::Test {
         }
     }
 
-    [[nodiscard]] const ecs::CameraComponent& camera() {
-        return _registry.getComponents<ecs::CameraComponent>().get(_camera);
+    [[nodiscard]] const sq::ecs::CameraComponent& camera() {
+        return _registry.getComponents<sq::ecs::CameraComponent>().get(_camera);
     }
     [[nodiscard]] float viewLeft() { return camera().targetX - (VIEW_WIDTH / 2.0F / camera().zoom); }
     [[nodiscard]] float viewRight() { return camera().targetX + (VIEW_WIDTH / 2.0F / camera().zoom); }
@@ -94,21 +94,21 @@ class CameraDirector : public ::testing::Test {
                viewTop() >= BOUNDS_TOP - TOLERANCE && viewBottom() <= BOUNDS_BOTTOM + TOLERANCE;
     }
 
-    [[nodiscard]] const ecs::Transform& transformOf(const ecs::Entity entity) {
-        return _registry.getComponents<ecs::Transform>().get(entity);
+    [[nodiscard]] const sq::ecs::Transform& transformOf(const sq::ecs::Entity entity) {
+        return _registry.getComponents<sq::ecs::Transform>().get(entity);
     }
 
-    [[nodiscard]] bool onScreen(const ecs::Entity entity) {
-        const auto& t = _registry.getComponents<ecs::Transform>().get(entity);
+    [[nodiscard]] bool onScreen(const sq::ecs::Entity entity) {
+        const auto& t = _registry.getComponents<sq::ecs::Transform>().get(entity);
         return t.x >= viewLeft() && t.x <= viewRight() && t.y >= viewTop() && t.y <= viewBottom();
     }
 
-    ecs::Registry _registry;
-    ecs::EventBus _bus;
-    scripting::ScriptSystem _scripts;
-    ecs::Entity _car = 0;
-    ecs::Entity _ball = 0;
-    ecs::Entity _camera = 0;
+    sq::ecs::Registry _registry;
+    sq::events::EventBus _bus;
+    sq::scripting::ScriptSystem _scripts;
+    sq::ecs::Entity _car = 0;
+    sq::ecs::Entity _ball = 0;
+    sq::ecs::Entity _camera = 0;
 };
 
 TEST_F(CameraDirector, FramesTheCarAndTheBallWithoutRotating) {
@@ -221,7 +221,7 @@ TEST_F(CameraDirector, FollowsACarWhoseEntitySlotWasReused) {
     // must carry the whole handle to the script, or the camera would look for a dead entity and lose the car.
     _registry.killEntity(_car);
     _car = spawnAt(arena::RIGHT - 600.0F, arena::BOTTOM - 18.0F);
-    ASSERT_GT(ecs::entityGeneration(_car), 0U);
+    ASSERT_GT(sq::ecs::entityGeneration(_car), 0U);
     _registry.getComponents<game::CameraRig>().get(_camera).car = static_cast<std::int64_t>(_car);
     run(3.0F);
     EXPECT_TRUE(onScreen(_car));

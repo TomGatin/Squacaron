@@ -77,8 +77,8 @@ constexpr float CONTROL_BUTTON_HEIGHT = menu::BUTTON_HEIGHT * 0.7F;
  * @param context Scene context.
  * @return The settings, or `nullptr`.
  */
-config::Settings* settingsOf(scene::SceneContext& context) {
-    auto service = context.engine().mediator().getService<config::Settings>();
+sq::config::Settings* settingsOf(sq::scene::SceneContext& context) {
+    auto service = context.engine().mediator().getService<sq::config::Settings>();
     return service ? &service->get() : nullptr;
 }
 
@@ -87,14 +87,14 @@ config::Settings* settingsOf(scene::SceneContext& context) {
  * @param key Key.
  * @return Whether it can be bound.
  */
-bool isBindable(engine::Key key) noexcept { return key != engine::Key::Escape; }
+bool isBindable(sq::engine::Key key) noexcept { return key != sq::engine::Key::Escape; }
 
 /**
  * @brief Gets the layout of the player's keyboard, detected once.
  * @return The layout.
  */
-input::KeyboardLayout layout() {
-    static const input::KeyboardLayout detected = input::detectKeyboardLayout();
+sq::input::KeyboardLayout layout() {
+    static const sq::input::KeyboardLayout detected = sq::input::detectKeyboardLayout();
     return detected;
 }
 
@@ -103,14 +103,14 @@ input::KeyboardLayout layout() {
  * @param context Scene context.
  * @return The state.
  */
-MenuState& stateOf(scene::SceneContext& context) { return context.registry().getResource<MenuState>(); }
+MenuState& stateOf(sq::scene::SceneContext& context) { return context.registry().getResource<MenuState>(); }
 
 /**
  * @brief Gets the menus plugin.
  * @param context Scene context.
  * @return The plugin.
  */
-MenuScenesPlugin& menusOf(scene::SceneContext& context) { return context.engine().getPlugin<MenuScenesPlugin>(); }
+MenuScenesPlugin& menusOf(sq::scene::SceneContext& context) { return context.engine().getPlugin<MenuScenesPlugin>(); }
 
 /**
  * @brief A clock value in seconds as "M:SS", with a "+" in overtime.
@@ -128,12 +128,13 @@ std::string clockText(std::uint16_t seconds, bool overtime) {
  * @param context Scene owning it.
  * @param anchorY Vertical anchor.
  */
-void notice(scene::SceneContext& context, float anchorY) {
-    const ecs::Entity line =
-        menu::text(context, ecs::NULL_ENTITY, 0.5F, anchorY, stateOf(context).notice, menu::SMALL_CAP, menu::NOTICE);
-    context.addSystem(scene::SceneStage::Update, [&context, line](engine::Engine& /*engine*/, const ecs::time::Time&) {
-        menu::setText(context.registry(), line, stateOf(context).notice);
-    });
+void notice(sq::scene::SceneContext& context, float anchorY) {
+    const sq::ecs::Entity line = menu::text(context, sq::ecs::NULL_ENTITY, 0.5F, anchorY, stateOf(context).notice,
+                                            menu::SMALL_CAP, menu::NOTICE);
+    context.addSystem(sq::scene::SceneStage::Update,
+                      [&context, line](sq::engine::Engine& /*engine*/, const sq::time::Time&) {
+                          menu::setText(context.registry(), line, stateOf(context).notice);
+                      });
 }
 
 /**
@@ -146,11 +147,11 @@ void notice(scene::SceneContext& context, float anchorY) {
  * @param align Alignment.
  * @param offsetX Offset in pixels.
  */
-void rowText(scene::SceneContext& context, ecs::Entity row, float anchorX, std::string text, ecs::Rgba color,
-             menu::Align align, float offsetX = 0.0F) {
-    const ecs::Entity entity =
+void rowText(sq::scene::SceneContext& context, sq::ecs::Entity row, float anchorX, std::string text,
+             sq::ecs::Rgba color, menu::Align align, float offsetX = 0.0F) {
+    const sq::ecs::Entity entity =
         menu::text(context, row, anchorX, 0.5F, std::move(text), menu::LABEL_CAP, color, align, offsetX);
-    context.registry().getComponents<ui::UiAnchor>().get(entity).offsetY -= menu::LABEL_CAP / 2.0F;
+    context.registry().getComponents<sq::ui::UiAnchor>().get(entity).offsetY -= menu::LABEL_CAP / 2.0F;
 }
 
 /**
@@ -160,56 +161,56 @@ void rowText(scene::SceneContext& context, ecs::Entity row, float anchorX, std::
  * @param index Rank of the button.
  * @return Vertical anchor.
  */
-float stacked(scene::SceneContext& context, float anchorY, int index) {
+float stacked(sq::scene::SceneContext& context, float anchorY, int index) {
     return anchorY +
            ((static_cast<float>(index) * (menu::BUTTON_HEIGHT + menu::BUTTON_GAP)) / menu::screenHeight(context));
 }
 
 }  // namespace
 
-void NameScene::onEnter(scene::SceneContext& context) {
-    ecs::Registry& registry = context.registry();
+void NameScene::onEnter(sq::scene::SceneContext& context) {
+    sq::ecs::Registry& registry = context.registry();
     (void)menu::overlay(context);
     menu::title(context, 0.13F, TITLE_CAP);
-    (void)menu::text(context, ecs::NULL_ENTITY, 0.5F, 0.38F, "CHOISIS TON PSEUDO", menu::SMALL_CAP, menu::DIM);
+    (void)menu::text(context, sq::ecs::NULL_ENTITY, 0.5F, 0.38F, "CHOISIS TON PSEUDO", menu::SMALL_CAP, menu::DIM);
 
     const float fieldWidth =
         std::min(menu::screenWidth(context) - (2.0F * SIDE_MARGIN),
                  menu::textWidth(context, std::string(protocol::MAX_NAME_LENGTH, 'W'), FIELD_CAP) + 44.0F);
     _field = context.spawn();
-    registry.addComponent(_field, ui::UiAnchor{.anchorX = 0.5F, .anchorY = 0.45F, .pivotX = 0.5F});
-    registry.addComponent(
-        _field, ui::UiTextInput{.text = stateOf(context).name,
-                                .action = "name.confirm",
-                                .allowed = std::string(NAME_CHARACTERS),
-                                .uppercase = true,
-                                .maxLength = protocol::MAX_NAME_LENGTH,
-                                .width = fieldWidth,
-                                .height = FIELD_CAP + 44.0F,
-                                .fontSize = FIELD_CAP / (700.0F / 1205.0F),
-                                .fontId = registry.hasResource<GameAssets>() ? registry.getResource<GameAssets>().font
-                                                                             : engine::NO_FONT,
-                                .background = menu::FIELD,
-                                .border = {.r = 60, .g = 120, .b = 255, .a = 200}});
-    registry.addComponent(_field, ui::UiFocusable{.order = 0});
-    (void)menu::text(context, ecs::NULL_ENTITY, 0.5F, 0.585F,
+    registry.addComponent(_field, sq::ui::UiAnchor{.anchorX = 0.5F, .anchorY = 0.45F, .pivotX = 0.5F});
+    registry.addComponent(_field, sq::ui::UiTextInput{.text = stateOf(context).name,
+                                                      .action = "name.confirm",
+                                                      .allowed = std::string(NAME_CHARACTERS),
+                                                      .uppercase = true,
+                                                      .maxLength = protocol::MAX_NAME_LENGTH,
+                                                      .width = fieldWidth,
+                                                      .height = FIELD_CAP + 44.0F,
+                                                      .fontSize = FIELD_CAP / (700.0F / 1205.0F),
+                                                      .fontId = registry.hasResource<GameAssets>()
+                                                                    ? registry.getResource<GameAssets>().font
+                                                                    : sq::engine::NO_FONT,
+                                                      .background = menu::FIELD,
+                                                      .border = {.r = 60, .g = 120, .b = 255, .a = 200}});
+    registry.addComponent(_field, sq::ui::UiFocusable{.order = 0});
+    (void)menu::text(context, sq::ecs::NULL_ENTITY, 0.5F, 0.585F,
                      std::to_string(protocol::MAX_NAME_LENGTH) + " CARACTERES MAX : LETTRES, CHIFFRES, ESPACE, - .",
                      menu::TINY_CAP, menu::DIM);
-    (void)menu::button(context, ecs::NULL_ENTITY, 0.5F, 0.66F, menu::BUTTON_WIDTH, menu::BUTTON_HEIGHT, "VALIDER",
+    (void)menu::button(context, sq::ecs::NULL_ENTITY, 0.5F, 0.66F, menu::BUTTON_WIDTH, menu::BUTTON_HEIGHT, "VALIDER",
                        "name.confirm", 1);
     notice(context, 0.8F);
     menu::focus(registry, _field);
 
     const auto confirm = [this, &context] {
         MenuScenesPlugin::confirmName(context.engine(),
-                                      context.registry().getComponents<ui::UiTextInput>().get(_field).text);
+                                      context.registry().getComponents<sq::ui::UiTextInput>().get(_field).text);
     };
     menu::onClick(context, [confirm](std::string_view action) {
         if (action == "name.confirm") {
             confirm();
         }
     });
-    context.subscribe<ui::UiTextSubmittedEvent>([&context, confirm](const ui::UiTextSubmittedEvent& event) {
+    context.subscribe<sq::ui::UiTextSubmittedEvent>([&context, confirm](const sq::ui::UiTextSubmittedEvent& event) {
         if (event.action == "name.confirm" && context.manager().top() == context.id()) {
             confirm();
         }
@@ -223,27 +224,28 @@ void NameScene::onEnter(scene::SceneContext& context) {
     });
 }
 
-void MenuScene::onEnter(scene::SceneContext& context) {
+void MenuScene::onEnter(sq::scene::SceneContext& context) {
     (void)menu::overlay(context);
     menu::title(context, 0.13F, TITLE_CAP);
-    (void)menu::text(context, ecs::NULL_ENTITY, 0.5F, 0.34F, "MATCHS DE 3 MINUTES  -  2 CONTRE 2", menu::SMALL_CAP,
+    (void)menu::text(context, sq::ecs::NULL_ENTITY, 0.5F, 0.34F, "MATCHS DE 3 MINUTES  -  2 CONTRE 2", menu::SMALL_CAP,
                      menu::DIM);
-    _first = menu::button(context, ecs::NULL_ENTITY, 0.5F, stacked(context, 0.45F, 0), menu::BUTTON_WIDTH,
+    _first = menu::button(context, sq::ecs::NULL_ENTITY, 0.5F, stacked(context, 0.45F, 0), menu::BUTTON_WIDTH,
                           menu::BUTTON_HEIGHT, "NOUVELLE PARTIE", "menu.create", 0);
-    (void)menu::button(context, ecs::NULL_ENTITY, 0.5F, stacked(context, 0.45F, 1), menu::BUTTON_WIDTH,
+    (void)menu::button(context, sq::ecs::NULL_ENTITY, 0.5F, stacked(context, 0.45F, 1), menu::BUTTON_WIDTH,
                        menu::BUTTON_HEIGHT, "REJOINDRE", "menu.browse", 1);
-    (void)menu::button(context, ecs::NULL_ENTITY, 0.5F, stacked(context, 0.45F, 2), menu::BUTTON_WIDTH,
+    (void)menu::button(context, sq::ecs::NULL_ENTITY, 0.5F, stacked(context, 0.45F, 2), menu::BUTTON_WIDTH,
                        menu::BUTTON_HEIGHT * 0.8F, "PARAMETRES", "menu.settings", 2);
     notice(context, 0.84F);
 
     const std::string label = "PSEUDO : " + stateOf(context).name;
     const float nameWidth = menu::textWidth(context, label, menu::LABEL_CAP) + 46.0F;
-    (void)menu::button(context, ecs::NULL_ENTITY, (SIDE_MARGIN + (nameWidth / 2.0F)) / menu::screenWidth(context),
+    (void)menu::button(context, sq::ecs::NULL_ENTITY, (SIDE_MARGIN + (nameWidth / 2.0F)) / menu::screenWidth(context),
                        SIDE_MARGIN / menu::screenHeight(context), nameWidth, 48.0F, label, "menu.rename", 3);
 
-    const ecs::Entity online = menu::text(context, ecs::NULL_ENTITY, 0.5F, 0.92F, "", menu::SMALL_CAP, menu::DIM);
-    context.addSystem(scene::SceneStage::Update,
-                      [&context, online](engine::Engine& /*engine*/, const ecs::time::Time&) {
+    const sq::ecs::Entity online =
+        menu::text(context, sq::ecs::NULL_ENTITY, 0.5F, 0.92F, "", menu::SMALL_CAP, menu::DIM);
+    context.addSystem(sq::scene::SceneStage::Update,
+                      [&context, online](sq::engine::Engine& /*engine*/, const sq::time::Time&) {
                           const std::uint16_t count = stateOf(context).matches.online;
                           menu::setText(context.registry(), online,
                                         std::to_string(count) + (count > 1 ? " JOUEURS EN LIGNE" : " JOUEUR EN LIGNE"));
@@ -264,48 +266,49 @@ void MenuScene::onEnter(scene::SceneContext& context) {
     menu::onBack(context, [&context] { context.engine().stop(); });
 }
 
-void MenuScene::onResume(scene::SceneContext& context) { menu::focus(context.registry(), _first); }
+void MenuScene::onResume(sq::scene::SceneContext& context) { menu::focus(context.registry(), _first); }
 
-void BrowserScene::onEnter(scene::SceneContext& context) {
-    ecs::Registry& registry = context.registry();
+void BrowserScene::onEnter(sq::scene::SceneContext& context) {
+    sq::ecs::Registry& registry = context.registry();
     _rows.clear();
     const float width = menu::screenWidth(context);
     const float height = menu::screenHeight(context);
     (void)menu::overlay(context);
-    (void)menu::text(context, ecs::NULL_ENTITY, 0.5F, 0.08F, "PARTIES EN COURS", HEADING_CAP, menu::TEXT);
+    (void)menu::text(context, sq::ecs::NULL_ENTITY, 0.5F, 0.08F, "PARTIES EN COURS", HEADING_CAP, menu::TEXT);
 
     _rowWidth = std::min(ROW_MAX_WIDTH, width - (2.0F * SIDE_MARGIN));
     const auto visible =
         static_cast<std::size_t>(std::max(1.0F, ((height * 0.58F) + ROW_GAP) / (ROW_HEIGHT + ROW_GAP)));
     _list = context.spawn();
-    registry.addComponent(_list, ui::UiAnchor{.anchorX = 0.5F, .anchorY = 0.22F, .pivotX = 0.5F});
-    registry.addComponent(_list, ui::UiRect{.width = _rowWidth,
-                                            .height = static_cast<float>(visible) * (ROW_HEIGHT + ROW_GAP),
-                                            .fillColor = {.r = 0, .g = 0, .b = 0, .a = 0}});
-    registry.addComponent(_list, ui::UiScrollList{.visibleCount = visible, .itemHeight = ROW_HEIGHT + ROW_GAP});
-    _empty = menu::text(context, ecs::NULL_ENTITY, 0.5F, 0.45F, "", menu::LABEL_CAP, menu::DIM);
-    _hint = menu::text(context, ecs::NULL_ENTITY, 0.5F, 0.815F, "", menu::TINY_CAP, menu::DIM);
+    registry.addComponent(_list, sq::ui::UiAnchor{.anchorX = 0.5F, .anchorY = 0.22F, .pivotX = 0.5F});
+    registry.addComponent(_list, sq::ui::UiRect{.width = _rowWidth,
+                                                .height = static_cast<float>(visible) * (ROW_HEIGHT + ROW_GAP),
+                                                .fillColor = {.r = 0, .g = 0, .b = 0, .a = 0}});
+    registry.addComponent(_list, sq::ui::UiScrollList{.visibleCount = visible, .itemHeight = ROW_HEIGHT + ROW_GAP});
+    _empty = menu::text(context, sq::ecs::NULL_ENTITY, 0.5F, 0.45F, "", menu::LABEL_CAP, menu::DIM);
+    _hint = menu::text(context, sq::ecs::NULL_ENTITY, 0.5F, 0.815F, "", menu::TINY_CAP, menu::DIM);
     notice(context, 0.85F);
 
     const float buttonWidth = std::min(menu::BUTTON_WIDTH, (width - (2.0F * SIDE_MARGIN) - menu::BUTTON_GAP) / 2.0F);
     const float shift = ((menu::BUTTON_GAP / 2.0F) + (buttonWidth / 2.0F)) / width;
-    _back = menu::button(context, ecs::NULL_ENTITY, 0.5F - shift, 0.88F, buttonWidth, menu::BUTTON_HEIGHT * 0.8F,
+    _back = menu::button(context, sq::ecs::NULL_ENTITY, 0.5F - shift, 0.88F, buttonWidth, menu::BUTTON_HEIGHT * 0.8F,
                          "RETOUR", "browser.back", 1000);
-    (void)menu::button(context, ecs::NULL_ENTITY, 0.5F + shift, 0.88F, buttonWidth, menu::BUTTON_HEIGHT * 0.8F,
+    (void)menu::button(context, sq::ecs::NULL_ENTITY, 0.5F + shift, 0.88F, buttonWidth, menu::BUTTON_HEIGHT * 0.8F,
                        "NOUVELLE PARTIE", "browser.create", 1001);
 
-    context.addSystem(scene::SceneStage::Update, [this, &context](engine::Engine& /*engine*/, const ecs::time::Time&) {
-        const ecs::Registry& reg = context.registry();
-        const auto& list = reg.getComponents<ui::UiScrollList>().get(_list);
-        const std::size_t count = _rows.size();
-        std::string hint;
-        if (count > list.visibleCount) {
-            hint = std::to_string(list.first + 1) + "-" +
-                   std::to_string(std::min(count, list.first + list.visibleCount)) + " / " + std::to_string(count) +
-                   "  MOLETTE POUR DEFILER";
-        }
-        menu::setText(context.registry(), _hint, hint);
-    });
+    context.addSystem(sq::scene::SceneStage::Update,
+                      [this, &context](sq::engine::Engine& /*engine*/, const sq::time::Time&) {
+                          const sq::ecs::Registry& reg = context.registry();
+                          const auto& list = reg.getComponents<sq::ui::UiScrollList>().get(_list);
+                          const std::size_t count = _rows.size();
+                          std::string hint;
+                          if (count > list.visibleCount) {
+                              hint = std::to_string(list.first + 1) + "-" +
+                                     std::to_string(std::min(count, list.first + list.visibleCount)) + " / " +
+                                     std::to_string(count) + "  MOLETTE POUR DEFILER";
+                          }
+                          menu::setText(context.registry(), _hint, hint);
+                      });
     menu::onClick(context, [&context](std::string_view action) {
         if (action == "browser.back") {
             context.manager().switchTo<MenuScene>();
@@ -324,20 +327,21 @@ void BrowserScene::onEnter(scene::SceneContext& context) {
 
     showMatches(context);
     menu::focus(registry,
-                _rows.empty() || !registry.hasComponent<ui::UiFocusable>(_rows.front()) ? _back : _rows.front());
+                _rows.empty() || !registry.hasComponent<sq::ui::UiFocusable>(_rows.front()) ? _back : _rows.front());
 }
 
-void BrowserScene::showMatches(scene::SceneContext& context) {
-    ecs::Registry& registry = context.registry();
+void BrowserScene::showMatches(sq::scene::SceneContext& context) {
+    sq::ecs::Registry& registry = context.registry();
     // The rows are rebuilt: remember which match had the focus, to give it back to the same match.
-    const ecs::Entity focused =
-        registry.hasResource<ui::UiFocus>() ? registry.getResource<ui::UiFocus>().focused : ecs::NULL_ENTITY;
+    const sq::ecs::Entity focused = registry.hasResource<sq::ui::UiFocus>()
+                                        ? registry.getResource<sq::ui::UiFocus>().focused
+                                        : sq::ecs::NULL_ENTITY;
     const bool rowFocused = std::ranges::find(_rows, focused) != _rows.end();
     std::string focusedAction;
-    if (rowFocused && registry.hasComponent<ui::UiButton>(focused)) {
-        focusedAction = registry.getComponents<ui::UiButton>().get(focused).action;
+    if (rowFocused && registry.hasComponent<sq::ui::UiButton>(focused)) {
+        focusedAction = registry.getComponents<sq::ui::UiButton>().get(focused).action;
     }
-    for (const ecs::Entity row : _rows) {
+    for (const sq::ecs::Entity row : _rows) {
         registry.killEntity(row);
     }
     _rows.clear();
@@ -345,18 +349,18 @@ void BrowserScene::showMatches(scene::SceneContext& context) {
     int order = 0;
     for (const protocol::MatchInfo& match : matches) {
         const bool full = match.bluePlayers + match.orangePlayers >= protocol::MAX_PLAYERS_PER_MATCH;
-        ecs::Entity row = ecs::NULL_ENTITY;
+        sq::ecs::Entity row = sq::ecs::NULL_ENTITY;
         if (full) {
             row = context.spawn();
-            registry.addComponent(row, ui::UiAnchor{.anchorX = 0.5F, .pivotX = 0.5F});
-            registry.addComponent(row,
-                                  ui::UiRect{.width = _rowWidth, .height = ROW_HEIGHT, .fillColor = menu::ROW_FULL});
-            hierarchy::setParent(registry, row, _list);
+            registry.addComponent(row, sq::ui::UiAnchor{.anchorX = 0.5F, .pivotX = 0.5F});
+            registry.addComponent(
+                row, sq::ui::UiRect{.width = _rowWidth, .height = ROW_HEIGHT, .fillColor = menu::ROW_FULL});
+            sq::hierarchy::setParent(registry, row, _list);
         } else {
             row = menu::button(context, _list, 0.5F, 0.0F, _rowWidth, ROW_HEIGHT, "",
                                std::string(JOIN_PREFIX) + std::to_string(match.id), order++);
         }
-        const ecs::Rgba text = full ? menu::DIM : menu::TEXT;
+        const sq::ecs::Rgba text = full ? menu::DIM : menu::TEXT;
         rowText(context, row, 0.0F, "PARTIE " + std::to_string(match.id), text, menu::Align::Left, ROW_PADDING);
         constexpr float SCORE_AT = 0.47F;
         const float dash = menu::textWidth(context, " - ", menu::LABEL_CAP) / 2.0F;
@@ -379,33 +383,33 @@ void BrowserScene::showMatches(scene::SceneContext& context) {
     }
 }
 
-void BrowserScene::restoreFocus(ecs::Registry& registry, std::string_view action) const {
-    ecs::Entity fallback = ecs::NULL_ENTITY;
-    for (const ecs::Entity row : _rows) {
-        if (!registry.hasComponent<ui::UiButton>(row)) {
+void BrowserScene::restoreFocus(sq::ecs::Registry& registry, std::string_view action) const {
+    sq::ecs::Entity fallback = sq::ecs::NULL_ENTITY;
+    for (const sq::ecs::Entity row : _rows) {
+        if (!registry.hasComponent<sq::ui::UiButton>(row)) {
             continue;  // a full match: not joinable
         }
-        if (registry.getComponents<ui::UiButton>().get(row).action == action) {
+        if (registry.getComponents<sq::ui::UiButton>().get(row).action == action) {
             menu::focus(registry, row);
             return;
         }
-        if (fallback == ecs::NULL_ENTITY) {
+        if (fallback == sq::ecs::NULL_ENTITY) {
             fallback = row;
         }
     }
     // The match is gone or full: the first joinable one, else the back button.
-    menu::focus(registry, fallback != ecs::NULL_ENTITY ? fallback : _back);
+    menu::focus(registry, fallback != sq::ecs::NULL_ENTITY ? fallback : _back);
 }
 
-void JoiningScene::onEnter(scene::SceneContext& context) {
+void JoiningScene::onEnter(sq::scene::SceneContext& context) {
     (void)menu::overlay(context);
-    const ecs::Entity wait =
-        menu::text(context, ecs::NULL_ENTITY, 0.5F, 0.5F, "CONNEXION...", WAIT_CAP, menu::TEXT, menu::Align::Center);
-    context.registry().getComponents<ui::UiAnchor>().get(wait).offsetY -= WAIT_CAP / 2.0F;
-    menu::focus(context.registry(), ecs::NULL_ENTITY);
+    const sq::ecs::Entity wait = menu::text(context, sq::ecs::NULL_ENTITY, 0.5F, 0.5F, "CONNEXION...", WAIT_CAP,
+                                            menu::TEXT, menu::Align::Center);
+    context.registry().getComponents<sq::ui::UiAnchor>().get(wait).offsetY -= WAIT_CAP / 2.0F;
+    menu::focus(context.registry(), sq::ecs::NULL_ENTITY);
     auto remaining = std::make_shared<float>(MenuScenesPlugin::REQUEST_TIMEOUT);
-    context.addSystem(scene::SceneStage::Update,
-                      [&context, remaining](engine::Engine& /*engine*/, const ecs::time::Time& time) {
+    context.addSystem(sq::scene::SceneStage::Update,
+                      [&context, remaining](sq::engine::Engine& /*engine*/, const sq::time::Time& time) {
                           *remaining -= time.deltaTime;
                           if (*remaining <= 0.0F && context.manager().top() == context.id()) {
                               *remaining = MenuScenesPlugin::REQUEST_TIMEOUT;  // pop only once
@@ -423,73 +427,73 @@ void JoiningScene::onEnter(scene::SceneContext& context) {
     });
 }
 
-void MatchScene::onEnter(scene::SceneContext& context) {
-    menu::focus(context.registry(), ecs::NULL_ENTITY);
+void MatchScene::onEnter(sq::scene::SceneContext& context) {
+    menu::focus(context.registry(), sq::ecs::NULL_ENTITY);
     menu::onBack(context, [&context] { context.engine().stop(); });
 }
 
-void EndedScene::onEnter(scene::SceneContext& context) {
-    ecs::Registry& registry = context.registry();
+void EndedScene::onEnter(sq::scene::SceneContext& context) {
+    sq::ecs::Registry& registry = context.registry();
     const MenuState& state = stateOf(context);
     const float width = menu::screenWidth(context);
     const float height = menu::screenHeight(context);
     (void)menu::overlay(context);
 
     std::string result = "MATCH TERMINE";
-    ecs::Rgba color = menu::TEXT;
+    sq::ecs::Rgba color = menu::TEXT;
     if (state.team && state.final.blueScore != state.final.orangeScore) {
         const bool blueWon = state.final.blueScore > state.final.orangeScore;
         const bool won = blueWon == (*state.team == protocol::Team::Blue);
         result = won ? "VICTOIRE" : "DEFAITE";
         color = won ? menu::GOLD : menu::DEFEAT;
     }
-    const ecs::Entity glow = context.spawn();
+    const sq::ecs::Entity glow = context.spawn();
     registry.addComponent(
         glow,
-        ui::UiAnchor{
+        sq::ui::UiAnchor{
             .anchorX = 0.5F, .anchorY = 0.14F, .offsetY = (RESULT_CAP / 2.0F) - (RESULT_CAP * 1.1F), .pivotX = 0.5F});
     registry.addComponent(
-        glow, ui::UiImage{.texture = registry.hasResource<GameAssets>() ? registry.getResource<GameAssets>().hudBand
-                                                                        : ecs::NO_TEXTURE,
-                          .width = RESULT_CAP * 10.0F,
-                          .height = RESULT_CAP * 2.2F,
-                          .tint = {.r = color.r, .g = color.g, .b = color.b, .a = 60}});
-    (void)menu::text(context, ecs::NULL_ENTITY, 0.5F, 0.14F, result, RESULT_CAP, color);
+        glow, sq::ui::UiImage{.texture = registry.hasResource<GameAssets>() ? registry.getResource<GameAssets>().hudBand
+                                                                            : sq::ecs::NO_TEXTURE,
+                              .width = RESULT_CAP * 10.0F,
+                              .height = RESULT_CAP * 2.2F,
+                              .tint = {.r = color.r, .g = color.g, .b = color.b, .a = 60}});
+    (void)menu::text(context, sq::ecs::NULL_ENTITY, 0.5F, 0.14F, result, RESULT_CAP, color);
 
     const float panelWidth = std::min(640.0F, width - (2.0F * SIDE_MARGIN));
     const float panelHeight = (((0.38F - 0.33F) * height) * 2.0F) + SCORE_CAP + (menu::SMALL_CAP * 3.0F);
-    const ecs::Entity panel = context.spawn();
-    registry.addComponent(panel, ui::UiAnchor{.anchorX = 0.5F, .anchorY = 0.33F, .pivotX = 0.5F});
-    registry.addComponent(panel, ui::UiRect{.width = panelWidth, .height = panelHeight, .fillColor = menu::PANEL});
-    const ecs::Entity blueBar = context.spawn();
-    registry.addComponent(blueBar, ui::UiAnchor{});
-    registry.addComponent(blueBar,
-                          ui::UiRect{.width = panelWidth / 2.0F, .height = 6.0F, .fillColor = menu::opaque(BLUE_TEAM)});
-    hierarchy::setParent(registry, blueBar, panel);
-    const ecs::Entity orangeBar = context.spawn();
-    registry.addComponent(orangeBar, ui::UiAnchor{.anchorX = 0.5F});
+    const sq::ecs::Entity panel = context.spawn();
+    registry.addComponent(panel, sq::ui::UiAnchor{.anchorX = 0.5F, .anchorY = 0.33F, .pivotX = 0.5F});
+    registry.addComponent(panel, sq::ui::UiRect{.width = panelWidth, .height = panelHeight, .fillColor = menu::PANEL});
+    const sq::ecs::Entity blueBar = context.spawn();
+    registry.addComponent(blueBar, sq::ui::UiAnchor{});
     registry.addComponent(
-        orangeBar, ui::UiRect{.width = panelWidth / 2.0F, .height = 6.0F, .fillColor = menu::opaque(ORANGE_TEAM)});
-    hierarchy::setParent(registry, orangeBar, panel);
+        blueBar, sq::ui::UiRect{.width = panelWidth / 2.0F, .height = 6.0F, .fillColor = menu::opaque(BLUE_TEAM)});
+    sq::hierarchy::setParent(registry, blueBar, panel);
+    const sq::ecs::Entity orangeBar = context.spawn();
+    registry.addComponent(orangeBar, sq::ui::UiAnchor{.anchorX = 0.5F});
+    registry.addComponent(
+        orangeBar, sq::ui::UiRect{.width = panelWidth / 2.0F, .height = 6.0F, .fillColor = menu::opaque(ORANGE_TEAM)});
+    sq::hierarchy::setParent(registry, orangeBar, panel);
 
     const float halfDash = menu::textWidth(context, "-", SCORE_CAP) / 2.0F;
     const float spacing = 48.0F;
-    (void)menu::text(context, ecs::NULL_ENTITY, 0.5F, 0.38F, "-", SCORE_CAP, menu::DIM);
-    (void)menu::text(context, ecs::NULL_ENTITY, 0.5F, 0.38F, std::to_string(state.final.blueScore), SCORE_CAP,
+    (void)menu::text(context, sq::ecs::NULL_ENTITY, 0.5F, 0.38F, "-", SCORE_CAP, menu::DIM);
+    (void)menu::text(context, sq::ecs::NULL_ENTITY, 0.5F, 0.38F, std::to_string(state.final.blueScore), SCORE_CAP,
                      menu::opaque(BLUE_TEAM), menu::Align::Right, -halfDash - spacing);
-    (void)menu::text(context, ecs::NULL_ENTITY, 0.5F, 0.38F, std::to_string(state.final.orangeScore), SCORE_CAP,
+    (void)menu::text(context, sq::ecs::NULL_ENTITY, 0.5F, 0.38F, std::to_string(state.final.orangeScore), SCORE_CAP,
                      menu::opaque(ORANGE_TEAM), menu::Align::Left, halfDash + spacing);
     const float labels = 0.38F + ((SCORE_CAP + menu::SMALL_CAP) / height);
-    (void)menu::text(context, ecs::NULL_ENTITY, 0.5F, labels, "BLEU", menu::SMALL_CAP, menu::opaque(BLUE_TEAM),
+    (void)menu::text(context, sq::ecs::NULL_ENTITY, 0.5F, labels, "BLEU", menu::SMALL_CAP, menu::opaque(BLUE_TEAM),
                      menu::Align::Right, -halfDash - spacing);
-    (void)menu::text(context, ecs::NULL_ENTITY, 0.5F, labels, "ORANGE", menu::SMALL_CAP, menu::opaque(ORANGE_TEAM),
+    (void)menu::text(context, sq::ecs::NULL_ENTITY, 0.5F, labels, "ORANGE", menu::SMALL_CAP, menu::opaque(ORANGE_TEAM),
                      menu::Align::Left, halfDash + spacing);
     if (state.final.overtime) {
-        (void)menu::text(context, ecs::NULL_ENTITY, 0.5F, 0.33F + ((panelHeight + menu::SMALL_CAP) / height),
+        (void)menu::text(context, sq::ecs::NULL_ENTITY, 0.5F, 0.33F + ((panelHeight + menu::SMALL_CAP) / height),
                          "APRES PROLONGATION", menu::SMALL_CAP, menu::GOLD);
     }
-    const ecs::Entity back = menu::button(context, ecs::NULL_ENTITY, 0.5F, 0.74F, menu::BUTTON_WIDTH,
-                                          menu::BUTTON_HEIGHT, "RETOUR AU MENU", "ended.menu", 0);
+    const sq::ecs::Entity back = menu::button(context, sq::ecs::NULL_ENTITY, 0.5F, 0.74F, menu::BUTTON_WIDTH,
+                                              menu::BUTTON_HEIGHT, "RETOUR AU MENU", "ended.menu", 0);
     menu::focus(registry, back);
 
     const auto leave = [&context] { menusOf(context).leaveMatch(context.engine()); };
@@ -501,12 +505,12 @@ void EndedScene::onEnter(scene::SceneContext& context) {
     menu::onBack(context, leave);
 }
 
-void SettingsScene::onEnter(scene::SceneContext& context) {
-    ecs::Registry& registry = context.registry();
-    auto service = context.engine().mediator().getService<config::Settings>();
-    config::Settings* settings = service ? &service->get() : nullptr;
+void SettingsScene::onEnter(sq::scene::SceneContext& context) {
+    sq::ecs::Registry& registry = context.registry();
+    auto service = context.engine().mediator().getService<sq::config::Settings>();
+    sq::config::Settings* settings = service ? &service->get() : nullptr;
     (void)menu::overlay(context);
-    (void)menu::text(context, ecs::NULL_ENTITY, 0.5F, 0.12F, "PARAMETRES", HEADING_CAP, menu::TEXT);
+    (void)menu::text(context, sq::ecs::NULL_ENTITY, 0.5F, 0.12F, "PARAMETRES", HEADING_CAP, menu::TEXT);
 
     struct Row {
         const char* caption;
@@ -515,35 +519,36 @@ void SettingsScene::onEnter(scene::SceneContext& context) {
         float anchorY;
     };
     constexpr float SLIDER_WIDTH = 320.0F;
-    ecs::Entity first = ecs::NULL_ENTITY;
+    sq::ecs::Entity first = sq::ecs::NULL_ENTITY;
     int order = 0;
     for (const Row& row :
          {Row{.caption = "VOLUME GENERAL", .key = "audio.master", .action = "settings.master", .anchorY = 0.32F},
           Row{.caption = "MUSIQUE", .key = "audio.music", .action = "settings.music", .anchorY = 0.42F},
           Row{.caption = "EFFETS", .key = "audio.sfx", .action = "settings.sfx", .anchorY = 0.52F}}) {
-        (void)menu::text(context, ecs::NULL_ENTITY, 0.5F, row.anchorY, row.caption, menu::SMALL_CAP, menu::DIM,
+        (void)menu::text(context, sq::ecs::NULL_ENTITY, 0.5F, row.anchorY, row.caption, menu::SMALL_CAP, menu::DIM,
                          menu::Align::Right, -24.0F);
-        const ecs::Entity slider = context.spawn();
-        registry.addComponent(slider, ui::UiAnchor{.anchorX = 0.5F, .anchorY = row.anchorY, .offsetX = 24.0F});
+        const sq::ecs::Entity slider = context.spawn();
+        registry.addComponent(slider, sq::ui::UiAnchor{.anchorX = 0.5F, .anchorY = row.anchorY, .offsetX = 24.0F});
         registry.addComponent(
-            slider, ui::UiSlider{.value = settings != nullptr ? static_cast<float>(settings->getNumber(row.key)) : 1.0F,
-                                 .step = 0.1F,
-                                 .action = row.action,
-                                 .width = SLIDER_WIDTH,
-                                 .height = 18.0F,
-                                 .fill = menu::opaque(BLUE_TEAM)});
-        registry.addComponent(slider, ui::UiFocusable{.order = order++});
-        if (first == ecs::NULL_ENTITY) {
+            slider,
+            sq::ui::UiSlider{.value = settings != nullptr ? static_cast<float>(settings->getNumber(row.key)) : 1.0F,
+                             .step = 0.1F,
+                             .action = row.action,
+                             .width = SLIDER_WIDTH,
+                             .height = 18.0F,
+                             .fill = menu::opaque(BLUE_TEAM)});
+        registry.addComponent(slider, sq::ui::UiFocusable{.order = order++});
+        if (first == sq::ecs::NULL_ENTITY) {
             first = slider;
         }
     }
-    (void)menu::button(context, ecs::NULL_ENTITY, 0.5F, 0.62F, menu::BUTTON_WIDTH, menu::BUTTON_HEIGHT * 0.8F,
+    (void)menu::button(context, sq::ecs::NULL_ENTITY, 0.5F, 0.62F, menu::BUTTON_WIDTH, menu::BUTTON_HEIGHT * 0.8F,
                        "TOUCHES", "settings.controls", order++);
-    (void)menu::button(context, ecs::NULL_ENTITY, 0.5F, 0.72F, menu::BUTTON_WIDTH, menu::BUTTON_HEIGHT * 0.8F, "RETOUR",
-                       "settings.back", order);
+    (void)menu::button(context, sq::ecs::NULL_ENTITY, 0.5F, 0.72F, menu::BUTTON_WIDTH, menu::BUTTON_HEIGHT * 0.8F,
+                       "RETOUR", "settings.back", order);
     menu::focus(registry, first);
 
-    context.subscribe<ui::UiValueChangedEvent>([settings](const ui::UiValueChangedEvent& event) {
+    context.subscribe<sq::ui::UiValueChangedEvent>([settings](const sq::ui::UiValueChangedEvent& event) {
         if (settings == nullptr) {
             return;
         }
@@ -565,35 +570,35 @@ void SettingsScene::onEnter(scene::SceneContext& context) {
     menu::onBack(context, [&context] { context.manager().pop(); });
 }
 
-void ControlsScene::onEnter(scene::SceneContext& context) {
+void ControlsScene::onEnter(sq::scene::SceneContext& context) {
     _waiting.reset();
     _wasDown.fill(true);  // A key held when the scene opens (Enter on "TOUCHES") is not a new press.
-    _justBound = engine::Key::Unknown;
+    _justBound = sq::engine::Key::Unknown;
 
-    ecs::Registry& registry = context.registry();
+    sq::ecs::Registry& registry = context.registry();
     (void)menu::overlay(context);
-    (void)menu::text(context, ecs::NULL_ENTITY, 0.5F, 0.08F, "TOUCHES", HEADING_CAP, menu::TEXT);
+    (void)menu::text(context, sq::ecs::NULL_ENTITY, 0.5F, 0.08F, "TOUCHES", HEADING_CAP, menu::TEXT);
     int order = 0;
     float anchorY = CONTROLS_TOP;
     for (const Control control : CONTROLS) {
         const auto index = static_cast<std::size_t>(control);
-        const ecs::Entity button =
-            menu::button(context, ecs::NULL_ENTITY, 0.5F, anchorY, menu::BUTTON_WIDTH, CONTROL_BUTTON_HEIGHT, "",
+        const sq::ecs::Entity button =
+            menu::button(context, sq::ecs::NULL_ENTITY, 0.5F, anchorY, menu::BUTTON_WIDTH, CONTROL_BUTTON_HEIGHT, "",
                          std::string(CONTROL_PREFIX).append(controlId(control)), order++);
-        const ecs::Entity label = menu::text(context, button, 0.5F, 0.5F, "", menu::LABEL_CAP, menu::TEXT);
-        registry.getComponents<ui::UiAnchor>().get(label).offsetY -= menu::LABEL_CAP / 2.0F;
+        const sq::ecs::Entity label = menu::text(context, button, 0.5F, 0.5F, "", menu::LABEL_CAP, menu::TEXT);
+        registry.getComponents<sq::ui::UiAnchor>().get(label).offsetY -= menu::LABEL_CAP / 2.0F;
         _buttons.at(index) = button;
         _labels.at(index) = label;
         anchorY += CONTROLS_STEP;
     }
     anchorY += CONTROLS_STEP * 0.3F;
-    (void)menu::button(context, ecs::NULL_ENTITY, 0.5F, anchorY, menu::BUTTON_WIDTH, CONTROL_BUTTON_HEIGHT,
+    (void)menu::button(context, sq::ecs::NULL_ENTITY, 0.5F, anchorY, menu::BUTTON_WIDTH, CONTROL_BUTTON_HEIGHT,
                        "PAR DEFAUT", "controls.reset", order++);
     anchorY += CONTROLS_STEP;
-    (void)menu::button(context, ecs::NULL_ENTITY, 0.5F, anchorY, menu::BUTTON_WIDTH, CONTROL_BUTTON_HEIGHT, "RETOUR",
-                       "controls.back", order);
-    (void)menu::text(context, ecs::NULL_ENTITY, 0.5F, anchorY + CONTROLS_STEP, "ECHAP ANNULE - MANETTE NON MODIFIABLE",
-                     menu::TINY_CAP, menu::DIM);
+    (void)menu::button(context, sq::ecs::NULL_ENTITY, 0.5F, anchorY, menu::BUTTON_WIDTH, CONTROL_BUTTON_HEIGHT,
+                       "RETOUR", "controls.back", order);
+    (void)menu::text(context, sq::ecs::NULL_ENTITY, 0.5F, anchorY + CONTROLS_STEP,
+                     "ECHAP ANNULE - MANETTE NON MODIFIABLE", menu::TINY_CAP, menu::DIM);
     refreshLabels(context);
     menu::focus(registry, _buttons.front());
 
@@ -606,14 +611,14 @@ void ControlsScene::onEnter(scene::SceneContext& context) {
         }
     });
     menu::onClick(context, [this, &context](std::string_view action) {
-        if (_waiting || _justBound != engine::Key::Unknown) {
+        if (_waiting || _justBound != sq::engine::Key::Unknown) {
             return;
         }
         if (action == "controls.back") {
             context.manager().pop();
             return;
         }
-        config::Settings* settings = settingsOf(context);
+        sq::config::Settings* settings = settingsOf(context);
         if (action == "controls.reset") {
             if (settings != nullptr) {
                 writeControlKeys(*settings, defaultControlKeys());
@@ -634,27 +639,27 @@ void ControlsScene::onEnter(scene::SceneContext& context) {
             }
         }
     });
-    context.addSystem(scene::SceneStage::Update,
-                      [this, &context](engine::Engine& /*engine*/, const ecs::time::Time&) { pollKeys(context); });
+    context.addSystem(sq::scene::SceneStage::Update,
+                      [this, &context](sq::engine::Engine& /*engine*/, const sq::time::Time&) { pollKeys(context); });
 }
 
-void ControlsScene::refreshLabels(scene::SceneContext& context) const {
-    const config::Settings* settings = settingsOf(context);
+void ControlsScene::refreshLabels(sq::scene::SceneContext& context) const {
+    const sq::config::Settings* settings = settingsOf(context);
     const ControlKeys keys = settings != nullptr ? readControlKeys(*settings) : defaultControlKeys();
     for (const Control control : CONTROLS) {
         const auto index = static_cast<std::size_t>(control);
         menu::setText(context.registry(), _labels.at(index),
-                      std::string(controlLabel(control)) + " : " + input::keyLabel(keys.at(index), layout()));
+                      std::string(controlLabel(control)) + " : " + sq::input::keyLabel(keys.at(index), layout()));
     }
 }
 
-void ControlsScene::pollKeys(scene::SceneContext& context) {
-    auto window = context.engine().mediator().getService<engine::IWindowService>();
+void ControlsScene::pollKeys(sq::scene::SceneContext& context) {
+    auto window = context.engine().mediator().getService<sq::engine::IWindowService>();
     if (!window) {
         return;
     }
-    std::optional<engine::Key> pressed;
-    for (const input::KeyName& name : input::keyNames()) {
+    std::optional<sq::engine::Key> pressed;
+    for (const sq::input::KeyName& name : sq::input::keyNames()) {
         const bool down = window->get().isKeyDown(name.key);
         bool& wasDown = _wasDown.at(static_cast<std::size_t>(name.key));
         if (down && !wasDown && !pressed && isBindable(name.key)) {
@@ -662,13 +667,13 @@ void ControlsScene::pollKeys(scene::SceneContext& context) {
         }
         wasDown = down;
     }
-    if (_justBound != engine::Key::Unknown && !window->get().isKeyDown(_justBound)) {
-        _justBound = engine::Key::Unknown;
+    if (_justBound != sq::engine::Key::Unknown && !window->get().isKeyDown(_justBound)) {
+        _justBound = sq::engine::Key::Unknown;
     }
     if (!_waiting || !pressed) {
         return;
     }
-    if (config::Settings* settings = settingsOf(context)) {
+    if (sq::config::Settings* settings = settingsOf(context)) {
         ControlKeys keys = readControlKeys(*settings);
         assignKey(keys, *_waiting, *pressed);
         writeControlKeys(*settings, keys);

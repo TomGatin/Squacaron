@@ -25,7 +25,7 @@ constexpr std::string_view LOG_TAG = "collision";
 
 /** @brief One entity of a contact with its collision category. */
 struct Side {
-    ecs::Entity entity;
+    sq::ecs::Entity entity;
     std::uint16_t category;
 };
 
@@ -46,7 +46,7 @@ std::optional<std::pair<Side, Side>> match(const Side& a, const Side& b, std::ui
 
 }  // namespace
 
-std::optional<GameCollision> classify(const events::CollisionBeginEvent& contact) noexcept {
+std::optional<GameCollision> classify(const sq::events::CollisionBeginEvent& contact) noexcept {
     const Side a{.entity = contact.entityA, .category = contact.categoryA};
     const Side b{.entity = contact.entityB, .category = contact.categoryB};
 
@@ -72,14 +72,14 @@ std::optional<GameCollision> classify(const events::CollisionBeginEvent& contact
     return std::nullopt;
 }
 
-CollisionRouter::CollisionRouter(ecs::EventBus& bus)
-    : _bus(&bus), _token(bus.subscribe<events::CollisionBeginEvent>([this](const events::CollisionBeginEvent& contact) {
-          onContact(contact);
-      })) {}
+CollisionRouter::CollisionRouter(sq::events::EventBus& bus)
+    : _bus(&bus),
+      _token(bus.subscribe<sq::events::CollisionBeginEvent>(
+          [this](const sq::events::CollisionBeginEvent& contact) { onContact(contact); })) {}
 
-CollisionRouter::~CollisionRouter() { _bus->unsubscribe<events::CollisionBeginEvent>(_token); }
+CollisionRouter::~CollisionRouter() { _bus->unsubscribe<sq::events::CollisionBeginEvent>(_token); }
 
-void CollisionRouter::onContact(const events::CollisionBeginEvent& contact) {
+void CollisionRouter::onContact(const sq::events::CollisionBeginEvent& contact) {
     const std::optional<GameCollision> collision = classify(contact);
     if (!collision) {
         return;
@@ -88,12 +88,12 @@ void CollisionRouter::onContact(const events::CollisionBeginEvent& contact) {
         [this](const auto& event) {
             using Event = std::decay_t<decltype(event)>;
             if constexpr (std::is_same_v<Event, ShotHitEvent>) {
-                engine::log::debug(LOG_TAG, event.byPlayer ? "player" : "enemy", " shot ", event.shot, " hit ",
-                                   event.target);
+                sq::engine::log::debug(LOG_TAG, event.byPlayer ? "player" : "enemy", " shot ", event.shot, " hit ",
+                                       event.target);
             } else if constexpr (std::is_same_v<Event, ShipContactEvent>) {
-                engine::log::debug(LOG_TAG, "ship ", event.ship, " touched ", event.other);
+                sq::engine::log::debug(LOG_TAG, "ship ", event.ship, " touched ", event.other);
             } else {
-                engine::log::debug(LOG_TAG, "ship ", event.ship, " touched power-up ", event.powerUp);
+                sq::engine::log::debug(LOG_TAG, "ship ", event.ship, " touched power-up ", event.powerUp);
             }
             _bus->publish(event);
         },

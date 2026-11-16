@@ -11,7 +11,7 @@
 #include "tools/console/ConsoleTypes.hpp"
 #include "tools/devconsole/DevConsole.hpp"
 
-namespace tools {
+namespace sq::tools {
 
 float DevConsoleView::panelHeight(float screenHeight) const noexcept {
     const float minimum = (2.0F * _config.padding) + (3.0F * lineHeight());
@@ -25,7 +25,7 @@ std::size_t DevConsoleView::visibleLines(float screenHeight) const noexcept {
     return rows >= 1.0F ? static_cast<std::size_t>(rows) : 1;
 }
 
-const ecs::Rgba& DevConsoleView::colorOf(OutputLevel level) const noexcept {
+const sq::ecs::Rgba& DevConsoleView::colorOf(OutputLevel level) const noexcept {
     switch (level) {
         case OutputLevel::Echo:
             return _config.echoColor;
@@ -37,7 +37,7 @@ const ecs::Rgba& DevConsoleView::colorOf(OutputLevel level) const noexcept {
     return _config.textColor;
 }
 
-void DevConsoleView::draw(engine::IScreenDrawService& screen, const DevConsole& console, float screenWidth,
+void DevConsoleView::draw(sq::engine::IScreenDrawService& screen, const DevConsole& console, float screenWidth,
                           float screenHeight, bool caretVisible) const {
     const float panel = panelHeight(screenHeight);
     const float pad = _config.padding;
@@ -78,4 +78,4 @@ void DevConsoleView::draw(engine::IScreenDrawService& screen, const DevConsole& 
     }
 }
 
-}  // namespace tools
+}  // namespace sq::tools

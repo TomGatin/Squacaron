@@ -6,7 +6,7 @@
 #pragma once
 #include <string>
 
-namespace scripting {
+namespace sq::scripting {
 
 /**
  * @brief Component attaching a Wren script class instance to an ECS entity.
@@ -29,7 +29,7 @@ struct ScriptComponent {
      * @brief Flag indicating whether this script opts in to `onCollision(other)`.
      *
      * When set, the script must define `onCollision(other)`: it is called with the other `Entity` each time a
-     * collision begins (`events::CollisionBeginEvent`). Wren cannot check if a method exists, hence the opt-in.
+     * collision begins (`sq::events::CollisionBeginEvent`). Wren cannot check if a method exists, hence the opt-in.
      */
     bool hasCollision = false;
 
@@ -37,4 +37,4 @@ struct ScriptComponent {
     bool initialized = false;
 };
 
-}  // namespace scripting
+}  // namespace sq::scripting

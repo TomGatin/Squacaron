@@ -35,10 +35,10 @@ constexpr int KILLED_FRACTION = 10;
 
 }  // namespace
 
-void updateHitFlashes(ecs::Registry& registry, const float deltaTime) {
-    registry.runSystem<HitFlash, rtype::game::EntityNetState, ecs::Renderable>(
-        [deltaTime](ecs::Entity /*entity*/, HitFlash& flash, const rtype::game::EntityNetState& state,
-                    ecs::Renderable& renderable) {
+void updateHitFlashes(sq::ecs::Registry& registry, const float deltaTime) {
+    registry.runSystem<HitFlash, rtype::game::EntityNetState, sq::ecs::Renderable>(
+        [deltaTime](sq::ecs::Entity /*entity*/, HitFlash& flash, const rtype::game::EntityNetState& state,
+                    sq::ecs::Renderable& renderable) {
             if (state.health < flash.lastHealth) {
                 flash.remaining = HIT_FLASH_DURATION;
             } else {
@@ -81,15 +81,15 @@ std::vector<BurstSpec> explosionBursts(const float x, const float y, const float
     return bursts;
 }
 
-std::optional<BossHealth> bossHealth(const ecs::Registry& registry) {
+std::optional<BossHealth> bossHealth(const sq::ecs::Registry& registry) {
     std::optional<BossHealth> total;
     const auto* flashes = registry.findComponents<HitFlash>();
     if (flashes == nullptr) {
         return total;
     }
-    for (const ecs::Entity entity : flashes->getDenseEntities()) {
-        if (!registry.hasComponent<ecs::Replicated>(entity) ||
-            registry.getComponents<ecs::Replicated>().get(entity).kind != rtype::game::KIND_BOSS_CORE ||
+    for (const sq::ecs::Entity entity : flashes->getDenseEntities()) {
+        if (!registry.hasComponent<sq::ecs::Replicated>(entity) ||
+            registry.getComponents<sq::ecs::Replicated>().get(entity).kind != rtype::game::KIND_BOSS_CORE ||
             !registry.hasComponent<rtype::game::EntityNetState>(entity)) {
             continue;
         }
@@ -100,11 +100,11 @@ std::optional<BossHealth> bossHealth(const ecs::Registry& registry) {
     return total;
 }
 
-void updateExplosions(ecs::Registry& registry, const float deltaTime) {
-    std::vector<ecs::Entity> finished;
-    registry.runSystem<ExplosionBurst, ecs::Transform, ecs::Renderable>(
-        [deltaTime, &finished](const ecs::Entity entity, ExplosionBurst& burst, ecs::Transform& transform,
-                               ecs::Renderable& renderable) {
+void updateExplosions(sq::ecs::Registry& registry, const float deltaTime) {
+    std::vector<sq::ecs::Entity> finished;
+    registry.runSystem<ExplosionBurst, sq::ecs::Transform, sq::ecs::Renderable>(
+        [deltaTime, &finished](const sq::ecs::Entity entity, ExplosionBurst& burst, sq::ecs::Transform& transform,
+                               sq::ecs::Renderable& renderable) {
             if (burst.delay > 0.0F) {
                 burst.delay -= deltaTime;
                 renderable.tint.a = 0;
@@ -121,7 +121,7 @@ void updateExplosions(ecs::Registry& registry, const float deltaTime) {
                 finished.push_back(entity);
             }
         });
-    for (const ecs::Entity entity : finished) {
+    for (const sq::ecs::Entity entity : finished) {
         registry.killEntity(entity);
     }
 }

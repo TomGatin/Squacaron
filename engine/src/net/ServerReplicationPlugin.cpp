@@ -13,13 +13,13 @@
 #include "net/NetworkPlugin.hpp"
 #include "net/ReplicationSystems.hpp"
 
-namespace ecs::net {
+namespace sq::net {
 
 ServerReplicationPlugin::ServerReplicationPlugin(std::shared_ptr<IReplicationCodec> codec) : _codec(std::move(codec)) {}
 
-void ServerReplicationPlugin::build(engine::PluginBuilder& builder) { builder.require<NetworkPlugin>(); }
+void ServerReplicationPlugin::build(sq::engine::PluginBuilder& builder) { builder.require<NetworkPlugin>(); }
 
-void ServerReplicationPlugin::init(engine::Engine& engine) {
+void ServerReplicationPlugin::init(sq::engine::Engine& engine) {
     _packets = engine.eventBus().subscribe<PacketReceived>([this, &engine](const PacketReceived& packet) {
         if (auto input = _codec->decodeInput(packet.data)) {
             receiveInput(engine.registry(), packet.peer, *input);
@@ -27,12 +27,12 @@ void ServerReplicationPlugin::init(engine::Engine& engine) {
     });
 }
 
-void ServerReplicationPlugin::fixedUpdate(engine::Engine& engine, const ecs::time::Time& time) {
+void ServerReplicationPlugin::fixedUpdate(sq::engine::Engine& engine, const sq::time::Time& time) {
     applyInputs(engine.registry(), engine.eventBus(), time.deltaTime);
     _pendingTick = static_cast<std::uint32_t>(time.tickCount);
 }
 
-void ServerReplicationPlugin::update(engine::Engine& engine, const ecs::time::Time& /*time*/) {
+void ServerReplicationPlugin::update(sq::engine::Engine& engine, const sq::time::Time& /*time*/) {
     // After several catch-up steps, one snapshot is enough: it carries the latest state.
     if (!_pendingTick) {
         return;
@@ -41,7 +41,7 @@ void ServerReplicationPlugin::update(engine::Engine& engine, const ecs::time::Ti
     _pendingTick.reset();
 }
 
-void ServerReplicationPlugin::shutdown(engine::Engine& engine) {
+void ServerReplicationPlugin::shutdown(sq::engine::Engine& engine) {
     if (_packets) {
         engine.eventBus().unsubscribe<PacketReceived>(*_packets);
         _packets.reset();
@@ -49,4 +49,4 @@ void ServerReplicationPlugin::shutdown(engine::Engine& engine) {
     _pendingTick.reset();
 }
 
-}  // namespace ecs::net
+}  // namespace sq::net

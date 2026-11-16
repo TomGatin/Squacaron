@@ -1,6 +1,6 @@
 #pragma once
 
-namespace ecs::time {
+namespace sq::time {
 
 /**
  * @brief Makes short sleeps last about what they ask for, for as long as the scope lives.
@@ -37,4 +37,4 @@ class PreciseSleepScope {
     bool _raised = false;
 };
 
-}  // namespace ecs::time
+}  // namespace sq::time

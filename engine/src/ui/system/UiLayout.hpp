@@ -14,10 +14,10 @@
 #include "ui/components/UiAnchor.hpp"
 #include "ui/components/UiText.hpp"
 
-namespace ui {
+namespace sq::ui {
 
 /** @brief Axis-aligned rectangle in screen pixels, origin at the top-left corner (same type the draw service takes). */
-using UiScreenRect = engine::ScreenRect;
+using UiScreenRect = sq::engine::ScreenRect;
 
 /** @brief Size of an element in pixels. */
 struct UiSize {
@@ -31,7 +31,7 @@ struct UiSize {
 /** @brief One HUD element placed on screen by `computeLayout`. */
 struct UiLayoutNode {
     /** @brief Element entity. */
-    ecs::Entity entity = ecs::NULL_ENTITY;
+    sq::ecs::Entity entity = sq::ecs::NULL_ENTITY;
 
     /** @brief Resolved screen rectangle of the element. */
     UiScreenRect rect;
@@ -69,20 +69,21 @@ using UiTextMeasure = std::function<UiSize(const UiText&)>;
  * @param measure Text measuring function.
  * @return Size of the element in pixels.
  */
-[[nodiscard]] UiSize elementSize(const ecs::Registry& registry, ecs::Entity entity, const UiTextMeasure& measure);
+[[nodiscard]] UiSize elementSize(const sq::ecs::Registry& registry, sq::ecs::Entity entity,
+                                 const UiTextMeasure& measure);
 
 /**
  * @brief Resolves the screen rectangle of every entity with a `UiAnchor`.
  *
- * - An element whose `hierarchy::Parent` is itself an element (has a `UiAnchor`) is anchored inside its parent's
+ * - An element whose `sq::hierarchy::Parent` is itself an element (has a `UiAnchor`) is anchored inside its parent's
  *   rectangle, so moving or resizing a panel moves its widgets.
  * - Any other element (no parent, or a parent that is not a HUD element) is anchored against the screen.
  * - Entities without a `UiAnchor` are not laid out; HUD elements below them start new screen-anchored trees.
- * - An element carrying `ecs::Hidden` is skipped with its whole subtree.
+ * - An element carrying `sq::ecs::Hidden` is skipped with its whole subtree.
  * - The children of a `UiScrollList` are rows: only the rows in view are laid out, each anchored in its slot.
  *
  * Nodes are emitted depth-first: a parent always comes before its children, and siblings follow the order of the
- * parent's `hierarchy::Children`. This is the draw order (later nodes are drawn on top) and the order used for
+ * parent's `sq::hierarchy::Children`. This is the draw order (later nodes are drawn on top) and the order used for
  * hit-testing. The walk uses an explicit stack, so deep trees cannot overflow the call stack, and its scratch buffers
  * keep their capacity between calls, so a steady UI lays out without allocating.
  *
@@ -91,7 +92,7 @@ using UiTextMeasure = std::function<UiSize(const UiText&)>;
  * @param measure Text measuring function.
  * @param out Receives the nodes; cleared first, its capacity is reused.
  */
-void computeLayout(ecs::Registry& registry, const UiScreenRect& screen, const UiTextMeasure& measure,
+void computeLayout(sq::ecs::Registry& registry, const UiScreenRect& screen, const UiTextMeasure& measure,
                    std::vector<UiLayoutNode>& out);
 
-}  // namespace ui
+}  // namespace sq::ui

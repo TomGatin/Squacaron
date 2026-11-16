@@ -17,7 +17,7 @@
 #include "scene/SceneEvents.hpp"
 #include "scene/SceneTypes.hpp"
 
-namespace scene {
+namespace sq::scene {
 
 SceneId SceneManager::add(std::unique_ptr<IScene> scene) {
     if (!scene) {
@@ -237,8 +237,8 @@ void SceneManager::removeTop(std::exception_ptr& error) {
 }
 
 bool SceneManager::destroyMembers(SceneId id) {
-    ecs::Registry& registry = _engine->registry();
-    const auto* members = static_cast<const ecs::Registry&>(registry).findComponents<SceneMember>();
+    sq::ecs::Registry& registry = _engine->registry();
+    const auto* members = static_cast<const sq::ecs::Registry&>(registry).findComponents<SceneMember>();
     if (members == nullptr) {
         return false;
     }
@@ -259,8 +259,8 @@ bool SceneManager::destroyMembers(SceneId id) {
 }
 
 void SceneManager::setMembersHidden(SceneId id, bool hidden) {
-    ecs::Registry& registry = _engine->registry();
-    const auto* members = static_cast<const ecs::Registry&>(registry).findComponents<SceneMember>();
+    sq::ecs::Registry& registry = _engine->registry();
+    const auto* members = static_cast<const sq::ecs::Registry&>(registry).findComponents<SceneMember>();
     if (members == nullptr) {
         return;
     }
@@ -272,9 +272,9 @@ void SceneManager::setMembersHidden(SceneId id, bool hidden) {
             continue;
         }
         if (hidden) {
-            ecs::hide(registry, entities[i], ecs::HiddenReason::Scene);
+            sq::ecs::hide(registry, entities[i], sq::ecs::HiddenReason::Scene);
         } else {
-            ecs::show(registry, entities[i], ecs::HiddenReason::Scene);
+            sq::ecs::show(registry, entities[i], sq::ecs::HiddenReason::Scene);
         }
     }
 }
@@ -282,7 +282,7 @@ void SceneManager::setMembersHidden(SceneId id, bool hidden) {
 void SceneManager::refreshStates(bool silentTop) {
     bool running = true;
     bool visible = true;
-    ecs::EventBus& bus = _engine->eventBus();
+    sq::events::EventBus& bus = _engine->eventBus();
     for (std::size_t i = _stack.size(); i-- > 0;) {
         const SceneId id = _stack[i];
         Slot& slot = *_slots[id];
@@ -315,7 +315,7 @@ void SceneManager::refreshStates(bool silentTop) {
     }
 }
 
-void SceneManager::runStage(SceneStage stage, engine::Engine& engine, const ecs::time::Time& time) {
+void SceneManager::runStage(SceneStage stage, sq::engine::Engine& engine, const sq::time::Time& time) {
     // Transitions are deferred (and `applyTransitions` / `clear` refuse to run from here), so the stack cannot
     // change while this loop runs.
     if (_runningStage) {
@@ -361,4 +361,4 @@ void SceneManager::clear() {
     }
 }
 
-}  // namespace scene
+}  // namespace sq::scene

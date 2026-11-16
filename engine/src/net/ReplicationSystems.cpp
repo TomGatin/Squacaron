@@ -28,19 +28,19 @@
 #include "net/components/Predicted.hpp"
 #include "net/components/Replicated.hpp"
 
-namespace ecs::net {
+namespace sq::net {
 
 namespace {
 
 /** @brief An input to publish once the iteration over the components is over. */
 struct PendingInput {
-    ecs::Entity entity;
-    NetInput input;
+    sq::ecs::Entity entity;
+    ecs::NetInput input;
 };
 
 // Handlers may spawn or kill entities: events are published after the iteration, never during it, so that the dense
 // arrays being walked are not modified.
-void publishInputs(ecs::EventBus& events, const std::vector<PendingInput>& inputs, const float deltaTime,
+void publishInputs(sq::events::EventBus& events, const std::vector<PendingInput>& inputs, const float deltaTime,
                    const bool replayed) {
     for (const auto& [entity, input] : inputs) {
         events.publish(InputApplied{.entity = entity, .input = input, .deltaTime = deltaTime, .replayed = replayed});
@@ -57,19 +57,19 @@ float lerpAngle(const float from, const float to, const float alpha) {
 
 }  // namespace
 
-std::uint32_t replicate(ecs::Registry& registry, const ecs::Entity entity, const std::uint32_t kind) {
+std::uint32_t replicate(sq::ecs::Registry& registry, const sq::ecs::Entity entity, const std::uint32_t kind) {
     auto& map = registry.hasResource<NetworkEntityMap>() ? registry.getResource<NetworkEntityMap>()
                                                          : registry.emplaceResource<NetworkEntityMap>();
     const std::uint32_t id = map.assign(entity);
-    registry.addComponent(entity, ecs::NetworkId{id});
-    registry.addComponent(entity, ecs::Replicated{kind});
+    registry.addComponent(entity, sq::ecs::NetworkId{id});
+    registry.addComponent(entity, sq::ecs::Replicated{kind});
     return id;
 }
 
-bool receiveInput(ecs::Registry& registry, const PeerId peer, const NetInput& input) {
+bool receiveInput(sq::ecs::Registry& registry, const PeerId peer, const ecs::NetInput& input) {
     bool queued = false;
-    registry.runSystem<ecs::NetworkOwner, ecs::InputBuffer>(
-        [&](const ecs::Entity /*entity*/, const ecs::NetworkOwner& owner, ecs::InputBuffer& buffer) {
+    registry.runSystem<sq::ecs::NetworkOwner, sq::ecs::InputBuffer>(
+        [&](const sq::ecs::Entity /*entity*/, const sq::ecs::NetworkOwner& owner, sq::ecs::InputBuffer& buffer) {
             if (owner.client == peer) {
                 queued = pushInput(buffer, input) || queued;
             }
@@ -77,10 +77,10 @@ bool receiveInput(ecs::Registry& registry, const PeerId peer, const NetInput& in
     return queued;
 }
 
-void applyInputs(ecs::Registry& registry, ecs::EventBus& events, const float deltaTime) {
+void applyInputs(sq::ecs::Registry& registry, sq::events::EventBus& events, const float deltaTime) {
     std::vector<PendingInput> inputs;
     // One input per step, like the client prediction: the server stays at the same pace as the client.
-    registry.runSystem<ecs::InputBuffer>([&](const ecs::Entity entity, ecs::InputBuffer& buffer) {
+    registry.runSystem<sq::ecs::InputBuffer>([&](const sq::ecs::Entity entity, sq::ecs::InputBuffer& buffer) {
         if (const auto input = popInput(buffer)) {
             inputs.push_back({.entity = entity, .input = *input});
         }
@@ -88,20 +88,20 @@ void applyInputs(ecs::Registry& registry, ecs::EventBus& events, const float del
     publishInputs(events, inputs, deltaTime, false);
 }
 
-std::size_t sendSnapshots(ecs::Registry& registry, IReplicationCodec& codec, INetworkService& service,
+std::size_t sendSnapshots(sq::ecs::Registry& registry, IReplicationCodec& codec, INetworkService& service,
                           const std::uint32_t tick) {
     codec.beginSnapshot(tick);
-    registry.runSystem<ecs::NetworkId, ecs::Replicated>(
-        [&](const ecs::Entity entity, const ecs::NetworkId& id, const ecs::Replicated& replicated) {
+    registry.runSystem<sq::ecs::NetworkId, sq::ecs::Replicated>(
+        [&](const sq::ecs::Entity entity, const sq::ecs::NetworkId& id, const sq::ecs::Replicated& replicated) {
             codec.writeEntity(registry, entity, id.value, replicated);
         });
 
     // A peer may control several entities: it receives one snapshot, acknowledging its latest applied input.
     std::unordered_map<PeerId, std::uint32_t> recipients;
-    registry.runSystem<ecs::NetworkOwner>([&](const ecs::Entity entity, const ecs::NetworkOwner& owner) {
+    registry.runSystem<sq::ecs::NetworkOwner>([&](const sq::ecs::Entity entity, const sq::ecs::NetworkOwner& owner) {
         std::uint32_t& last = recipients[owner.client];
-        if (registry.hasComponent<ecs::InputBuffer>(entity)) {
-            last = std::max(last, registry.getComponents<ecs::InputBuffer>().get(entity).lastProcessed);
+        if (registry.hasComponent<sq::ecs::InputBuffer>(entity)) {
+            last = std::max(last, registry.getComponents<sq::ecs::InputBuffer>().get(entity).lastProcessed);
         }
     });
 
@@ -118,12 +118,13 @@ std::size_t sendSnapshots(ecs::Registry& registry, IReplicationCodec& codec, INe
     return sent;
 }
 
-void despawnMissing(ecs::Registry& registry, ecs::EventBus& events, const std::unordered_set<ecs::Entity>& present) {
+void despawnMissing(sq::ecs::Registry& registry, sq::events::EventBus& events,
+                    const std::unordered_set<sq::ecs::Entity>& present) {
     std::vector<ReplicatedEntityDespawned> missing;
-    registry.runSystem<ecs::NetworkId>([&](const ecs::Entity entity, const ecs::NetworkId& id) {
+    registry.runSystem<sq::ecs::NetworkId>([&](const sq::ecs::Entity entity, const sq::ecs::NetworkId& id) {
         if (!present.contains(entity)) {
-            const std::uint32_t kind = registry.hasComponent<ecs::Replicated>(entity)
-                                           ? registry.getComponents<ecs::Replicated>().get(entity).kind
+            const std::uint32_t kind = registry.hasComponent<sq::ecs::Replicated>(entity)
+                                           ? registry.getComponents<sq::ecs::Replicated>().get(entity).kind
                                            : 0;
             missing.push_back({.entity = entity, .id = id.value, .kind = kind});
         }
@@ -136,10 +137,10 @@ void despawnMissing(ecs::Registry& registry, ecs::EventBus& events, const std::u
     }
 }
 
-void reconcile(ecs::Registry& registry, ecs::EventBus& events, const SnapshotApplier& applier,
+void reconcile(sq::ecs::Registry& registry, sq::events::EventBus& events, const SnapshotApplier& applier,
                const std::uint32_t lastProcessedInput, const float deltaTime) {
     std::vector<PendingInput> replays;
-    registry.runSystem<ecs::Predicted>([&](const ecs::Entity entity, ecs::Predicted& predicted) {
+    registry.runSystem<sq::ecs::Predicted>([&](const sq::ecs::Entity entity, sq::ecs::Predicted& predicted) {
         auto& history = predicted.history;
         while (!history.empty() && history.front().sequence <= lastProcessedInput) {
             history.pop_front();
@@ -147,16 +148,17 @@ void reconcile(ecs::Registry& registry, ecs::EventBus& events, const SnapshotApp
         if (!applier.contains(entity)) {
             return;
         }
-        for (const NetInput& input : history) {
+        for (const ecs::NetInput& input : history) {
             replays.push_back({.entity = entity, .input = input});
         }
     });
     publishInputs(events, replays, deltaTime, true);
 }
 
-void predict(ecs::Registry& registry, ecs::EventBus& events, const NetInput& input, const float deltaTime) {
+void predict(sq::ecs::Registry& registry, sq::events::EventBus& events, const ecs::NetInput& input,
+             const float deltaTime) {
     std::vector<PendingInput> inputs;
-    registry.runSystem<ecs::Predicted>([&](const ecs::Entity entity, ecs::Predicted& predicted) {
+    registry.runSystem<sq::ecs::Predicted>([&](const sq::ecs::Entity entity, sq::ecs::Predicted& predicted) {
         if (predicted.capacity == 0) {
             return;
         }
@@ -169,10 +171,11 @@ void predict(ecs::Registry& registry, ecs::EventBus& events, const NetInput& inp
     publishInputs(events, inputs, deltaTime, false);
 }
 
-void interpolate(ecs::Registry& registry, const float deltaTime) {
-    registry.runSystem<ecs::Interpolated, ecs::Transform>(
-        [&registry, deltaTime](const ecs::Entity entity, ecs::Interpolated& interp, ecs::Transform& transform) {
-            if (!interp.initialized || registry.hasComponent<ecs::Predicted>(entity)) {
+void interpolate(sq::ecs::Registry& registry, const float deltaTime) {
+    registry.runSystem<sq::ecs::Interpolated, sq::ecs::Transform>(
+        [&registry, deltaTime](const sq::ecs::Entity entity, sq::ecs::Interpolated& interp,
+                               sq::ecs::Transform& transform) {
+            if (!interp.initialized || registry.hasComponent<sq::ecs::Predicted>(entity)) {
                 return;
             }
             interp.elapsed = std::min(interp.elapsed + deltaTime, interp.duration);
@@ -186,4 +189,4 @@ void interpolate(ecs::Registry& registry, const float deltaTime) {
         });
 }
 
-}  // namespace ecs::net
+}  // namespace sq::net

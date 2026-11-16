@@ -17,7 +17,7 @@ namespace rtype::server::gameplay {
  * @brief Moves the enemies with a `prefabs::SineWave` up and down on each fixed step, around the height they appeared
  * at. Their horizontal move stays their velocity.
  */
-class EnemyMotionPlugin final : public engine::IPlugin {
+class EnemyMotionPlugin final : public sq::engine::IPlugin {
   public:
     /** @brief Plugin name. */
     [[nodiscard]] std::string_view name() const noexcept override { return "RTypeEnemyMotionPlugin"; }
@@ -27,7 +27,7 @@ class EnemyMotionPlugin final : public engine::IPlugin {
      * @param engine Host engine.
      * @param time Fixed step time.
      */
-    void fixedUpdate(engine::Engine& engine, const ecs::time::Time& time) override;
+    void fixedUpdate(sq::engine::Engine& engine, const sq::time::Time& time) override;
 };
 
 }  // namespace rtype::server::gameplay

@@ -6,7 +6,7 @@
 
 #include "net/INetworkManager.hpp"
 
-namespace ecs::net::detail {
+namespace sq::net::detail {
 
 /** @brief Traffic of a transport: written by the network thread, read by the game thread through `stats()`. */
 class TransportCounters {
@@ -56,4 +56,4 @@ class TransportCounters {
     std::atomic<std::uint64_t> _acceptErrors{0};
 };
 
-}  // namespace ecs::net::detail
+}  // namespace sq::net::detail

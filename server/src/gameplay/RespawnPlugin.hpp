@@ -56,7 +56,7 @@ struct ShipSpawnPoint {
  * @param ship Player ship.
  * @param lives Lives, the current one included.
  */
-void giveLives(ecs::Registry& registry, ecs::Entity ship, std::uint8_t lives = STARTING_LIVES);
+void giveLives(sq::ecs::Registry& registry, sq::ecs::Entity ship, std::uint8_t lives = STARTING_LIVES);
 
 /**
  * @brief Brings back the ships of `ShipDestroyed`, while they have lives.
@@ -70,7 +70,7 @@ void giveLives(ecs::Registry& registry, ecs::Entity ship, std::uint8_t lives = S
  * publishes `AllRespawnsOver`. A ship still inside the terrain when its respawn ends starts another one: its contact
  * began while it could not be hit, so no contact event would report it.
  */
-class RespawnPlugin final : public engine::IPlugin {
+class RespawnPlugin final : public sq::engine::IPlugin {
   public:
     /** @brief Plugin name. */
     [[nodiscard]] std::string_view name() const noexcept override { return "RTypeRespawnPlugin"; }
@@ -79,20 +79,20 @@ class RespawnPlugin final : public engine::IPlugin {
      * @brief Subscribes to the destroyed ships.
      * @param engine Host engine.
      */
-    void init(engine::Engine& engine) override;
+    void init(sq::engine::Engine& engine) override;
 
     /**
      * @brief Counts down the respawns and makes the ships whose respawn is over vulnerable again.
      * @param engine Host engine.
      * @param time Fixed step time.
      */
-    void fixedUpdate(engine::Engine& engine, const ecs::time::Time& time) override;
+    void fixedUpdate(sq::engine::Engine& engine, const sq::time::Time& time) override;
 
     /**
      * @brief Unsubscribes from the destroyed ships.
      * @param engine Host engine.
      */
-    void shutdown(engine::Engine& engine) override;
+    void shutdown(sq::engine::Engine& engine) override;
 
   private:
     /**
@@ -100,18 +100,18 @@ class RespawnPlugin final : public engine::IPlugin {
      * @param registry Room registry.
      * @param ship Player ship.
      */
-    void respawn(ecs::Registry& registry, ecs::Entity ship);
+    void respawn(sq::ecs::Registry& registry, sq::ecs::Entity ship);
     /**
      * @brief Takes a ship out of the game, then ends the game if no ship with lives is left.
      * @param registry Room registry.
      * @param ship Player ship that lost its last life.
      */
-    void eliminate(ecs::Registry& registry, ecs::Entity ship);
+    void eliminate(sq::ecs::Registry& registry, sq::ecs::Entity ship);
 
     /** @brief Event bus of the room, set by `init()`. */
-    ecs::EventBus* _bus = nullptr;
+    sq::events::EventBus* _bus = nullptr;
     /** @brief Subscription to the destroyed ships. */
-    std::optional<ecs::EventBus::EventToken> _destroyedToken;
+    std::optional<sq::events::EventBus::EventToken> _destroyedToken;
     /** @brief True while at least one ship is respawning. */
     bool _respawning = false;
 };

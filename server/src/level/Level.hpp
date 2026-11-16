@@ -57,7 +57,7 @@ struct Level {
     float scrollSpeed = 0.0F;
 
     /** @brief Events by scroll distance. */
-    timeline::Timeline timeline;
+    sq::timeline::Timeline timeline;
 
     /**
      * @brief Directory the relative `script` paths of the boss events are resolved from; empty for the current

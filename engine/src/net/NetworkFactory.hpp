@@ -8,7 +8,7 @@
 
 // Creates the transport implementations without exposing them: game code only includes this header and the
 // interfaces, so it never sees Asio. Defined in the "engine_network_asio" target, which must be linked.
-namespace ecs::net {
+namespace sq::net {
 
 /**
  * @brief Creates the server transport.
@@ -26,4 +26,4 @@ namespace ecs::net {
  */
 [[nodiscard]] std::unique_ptr<INetworkClient> createClient(const NetworkConfig& config = {});
 
-}  // namespace ecs::net
+}  // namespace sq::net

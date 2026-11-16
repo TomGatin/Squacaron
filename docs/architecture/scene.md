@@ -28,21 +28,21 @@ module) outlive scene changes.
 #include "scene/IScene.hpp"
 #include "scene/SceneContext.hpp"
 
-class TitleScene final : public scene::IScene {
+class TitleScene final : public sq::scene::IScene {
   public:
     [[nodiscard]] std::string_view name() const noexcept override { return "Title"; }
 
-    void onEnter(scene::SceneContext& context) override {
-        const ecs::Entity logo = context.spawn();  // destroyed when the scene exits
-        context.registry().addComponent(logo, ui::UiText{.text = "MY GAME"});
+    void onEnter(sq::scene::SceneContext& context) override {
+        const sq::ecs::Entity logo = context.spawn();  // destroyed when the scene exits
+        context.registry().addComponent(logo, sq::ui::UiText{.text = "MY GAME"});
 
-        context.subscribe<ui::UiButtonClickedEvent>([&context](const ui::UiButtonClickedEvent& click) {
+        context.subscribe<sq::ui::UiButtonClickedEvent>([&context](const sq::ui::UiButtonClickedEvent& click) {
             if (click.action == "play") {
                 context.manager().switchTo<GameScene>();
             }
         });
 
-        context.addSystem(scene::SceneStage::Update, [](engine::Engine& engine, const ecs::time::Time& time) {
+        context.addSystem(sq::scene::SceneStage::Update, [](sq::engine::Engine& engine, const sq::time::Time& time) {
             // runs every frame while the title runs
         });
     }
@@ -56,7 +56,7 @@ class TitleScene final : public scene::IScene {
 | `subscribe<E>(callback)`          | cancelling the subscription (stored as a token and a typed function pointer) |
 | `addSystem(stage, system)`        | dropping the system                                                        |
 
-Children of an owned entity (`hierarchy::setParent`) are destroyed with it when `HierarchyPlugin` is loaded, so a
+Children of an owned entity (`sq::hierarchy::setParent`) are destroyed with it when `HierarchyPlugin` is loaded, so a
 UI panel spawned with `spawn()` takes its widgets with it. `ScenePlugin` shuts down before `HierarchyPlugin`, in
 whatever order they were added, so this also holds when the program closes.
 
@@ -77,15 +77,15 @@ matters. Systems only run while the scene runs.
 ## Registering and switching
 
 ```cpp
-engine.addPlugin<scene::ScenePlugin>();
-scene::SceneManager& scenes = engine.getPlugin<scene::ScenePlugin>().manager();
+engine.addPlugin<sq::scene::ScenePlugin>();
+sq::scene::SceneManager& scenes = engine.getPlugin<sq::scene::ScenePlugin>().manager();
 scenes.registerScene<TitleScene>();
 scenes.registerScene<GameScene>(levelConfig);  // constructor arguments
 scenes.switchTo<TitleScene>();                 // applied on the first frame
 engine.run();
 ```
 
-Anywhere else, the manager is a Mediator service: `engine.service<scene::SceneManager>()`.
+Anywhere else, the manager is a Mediator service: `engine.service<sq::scene::SceneManager>()`.
 
 A scene is registered once under a unique name and keeps its state between visits. `get<T>()` and `idOf<T>()`
 find a scene by type when it is the only one of its type (they throw otherwise; use `find(name)`).
@@ -138,7 +138,7 @@ sequenceDiagram
     M->>G: onResume
 ```
 
-Entities of a hidden scene carry `ecs::Hidden` with the `Scene` reason, so the UI and the world renderer skip them
+Entities of a hidden scene carry `sq::ecs::Hidden` with the `Scene` reason, so the UI and the world renderer skip them
 without knowing about scenes. An entity spawned while its scene is hidden starts hidden. Hiding done by the game
 itself (`HiddenReason::Manual`) is kept when the scene shows again. See [User Interface](ui.md#hiding).
 
@@ -151,13 +151,13 @@ The `engine_scene_scripting` module bridges scenes and Wren. It is the only modu
 `engine_scene` and `engine_scripting`, so a game without scripting does not link it.
 
 ```cpp
-engine.addPlugin<scene::ScenePlugin>();
-engine.addPlugin<scripting::ScriptPlugin>();
-engine.addPlugin<scene::SceneScriptingPlugin>();
+engine.addPlugin<sq::scene::ScenePlugin>();
+engine.addPlugin<sq::scripting::ScriptPlugin>();
+engine.addPlugin<sq::scene::SceneScriptingPlugin>();
 
-auto& bridge = engine.getPlugin<scene::SceneScriptingPlugin>();
+auto& bridge = engine.getPlugin<sq::scene::SceneScriptingPlugin>();
 bridge.registerScriptScene(engine, "LevelIntro", "scripts/scenes/LevelIntro", "LevelIntro",
-                           scene::ScriptSceneOptions{.mode = scene::SceneMode::Overlay, .hasUpdate = true});
+                           sq::scene::ScriptSceneOptions{.mode = sq::scene::SceneMode::Overlay, .hasUpdate = true});
 ```
 
 ### The `core/Scene` module
@@ -219,15 +219,15 @@ Entities spawned from Wren with `Engine.spawnPrefab` get a `SceneMember`, decide
 
 An entity whose owner scene exited before the spawn was flushed is destroyed right away.
 
-The bridge is a `scripting::IScriptExtension`, the one interface any module uses to plug into the script system
+The bridge is a `sq::scripting::IScriptExtension`, the one interface any module uses to plug into the script system
 (`ScriptSystem::addExtension()` / `removeExtension()`):
 - `modules()` provides built-in modules such as `core/Scene`, kept across hot reloads;
 - `bind(vm)` registers the foreign methods, on the live VM, on every staging VM and on the VM of each hot reload;
 - `onVmReset(phase)` tells about hot reloads, so handles can be released and rebuilt;
 - `onScriptSpawn(registry, entity, owner)` sees every entity spawned from Wren, with the **script owner** that asked.
 
-A scripted scene runs its Wren code inside a `scripting::OwnerScope` with an owner id from
-`scripting::makeExtensionOwner()`, so its sleeping fibers and spawns record it; `ScriptSystem::cancelFibers(owner)`
+A scripted scene runs its Wren code inside a `sq::scripting::OwnerScope` with an owner id from
+`sq::scripting::makeExtensionOwner()`, so its sleeping fibers and spawns record it; `ScriptSystem::cancelFibers(owner)`
 drops its fibers when it exits.
 
 ## Frame timeline

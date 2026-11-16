@@ -15,13 +15,13 @@
 #include "timeline/TimelineEvent.hpp"
 #include "timeline/TimelineEvents.hpp"
 
-namespace timeline {
+namespace sq::timeline {
 
-void TimelinePlugin::fixedUpdate(engine::Engine& engine, const ecs::time::Time& time) {
+void TimelinePlugin::fixedUpdate(sq::engine::Engine& engine, const sq::time::Time& time) {
     step(engine, _speed * time.deltaTime);
 }
 
-void TimelinePlugin::step(engine::Engine& engine, float delta) {
+void TimelinePlugin::step(sq::engine::Engine& engine, float delta) {
     const bool wasFinished = _timeline.finished();
     const std::span<const TimelineEvent> reached = _timeline.advance(delta);
     if (reached.empty()) {
@@ -29,7 +29,7 @@ void TimelinePlugin::step(engine::Engine& engine, float delta) {
     }
     // Copied before publishing: a handler may add events, which would invalidate the span.
     const std::vector<TimelineEvent> fired(reached.begin(), reached.end());
-    ecs::EventBus& bus = engine.eventBus();
+    sq::events::EventBus& bus = engine.eventBus();
     for (const TimelineEvent& event : fired) {
         bus.publish(TimelineEventFired{.event = event});
     }
@@ -44,4 +44,4 @@ void TimelinePlugin::setSpeed(float unitsPerSecond) noexcept {
     }
 }
 
-}  // namespace timeline
+}  // namespace sq::timeline

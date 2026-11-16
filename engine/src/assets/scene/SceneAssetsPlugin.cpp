@@ -15,7 +15,7 @@
 #include "scene/ScenePlugin.hpp"
 #include "scene/SceneTypes.hpp"
 
-namespace assets {
+namespace sq::assets {
 
 namespace {
 
@@ -25,7 +25,7 @@ namespace {
  * @param id Scene.
  * @return The group, or empty.
  */
-std::string_view groupOf(const scene::SceneManager& scenes, const scene::SceneId id) {
+std::string_view groupOf(const sq::scene::SceneManager& scenes, const sq::scene::SceneId id) {
     try {
         const std::string_view name = scenes.scene(id).name();
         return isValidAssetName(name) && name != AssetManager::GLOBAL_GROUP ? name : std::string_view{};
@@ -36,46 +36,46 @@ std::string_view groupOf(const scene::SceneManager& scenes, const scene::SceneId
 
 }  // namespace
 
-void SceneAssetsPlugin::build(engine::PluginBuilder& builder) {
-    builder.require<scene::ScenePlugin>();
+void SceneAssetsPlugin::build(sq::engine::PluginBuilder& builder) {
+    builder.require<sq::scene::ScenePlugin>();
     builder.require<AssetPlugin>();
 }
 
-void SceneAssetsPlugin::init(engine::Engine& engine) {
-    const scene::SceneManager* scenes = &engine.getPlugin<scene::ScenePlugin>().manager();
-    ecs::Registry* registry = &engine.registry();
-    const auto withGroup = [scenes, registry](const scene::SceneId id, auto&& action) {
+void SceneAssetsPlugin::init(sq::engine::Engine& engine) {
+    const sq::scene::SceneManager* scenes = &engine.getPlugin<sq::scene::ScenePlugin>().manager();
+    sq::ecs::Registry* registry = &engine.registry();
+    const auto withGroup = [scenes, registry](const sq::scene::SceneId id, auto&& action) {
         const std::string_view group = groupOf(*scenes, id);
         if (!group.empty() && registry->hasResource<AssetManager>()) {
             action(registry->getResource<AssetManager>(), group);
         }
     };
-    ecs::EventBus& bus = engine.eventBus();
-    _entering = bus.subscribe<scene::SceneEntering>([withGroup](const scene::SceneEntering& event) {
+    sq::events::EventBus& bus = engine.eventBus();
+    _entering = bus.subscribe<sq::scene::SceneEntering>([withGroup](const sq::scene::SceneEntering& event) {
         withGroup(event.id, [](AssetManager& manager, const std::string_view group) { manager.loadGroup(group); });
     });
-    _aborted = bus.subscribe<scene::SceneEnterAborted>([withGroup](const scene::SceneEnterAborted& event) {
+    _aborted = bus.subscribe<sq::scene::SceneEnterAborted>([withGroup](const sq::scene::SceneEnterAborted& event) {
         withGroup(event.id, [](AssetManager& manager, const std::string_view group) { manager.unloadGroup(group); });
     });
-    _exited = bus.subscribe<scene::SceneExited>([withGroup](const scene::SceneExited& event) {
+    _exited = bus.subscribe<sq::scene::SceneExited>([withGroup](const sq::scene::SceneExited& event) {
         withGroup(event.id, [](AssetManager& manager, const std::string_view group) { manager.unloadGroup(group); });
     });
 }
 
-void SceneAssetsPlugin::shutdown(engine::Engine& engine) {
-    ecs::EventBus& bus = engine.eventBus();
+void SceneAssetsPlugin::shutdown(sq::engine::Engine& engine) {
+    sq::events::EventBus& bus = engine.eventBus();
     if (_entering) {
-        bus.unsubscribe<scene::SceneEntering>(*_entering);
+        bus.unsubscribe<sq::scene::SceneEntering>(*_entering);
     }
     if (_aborted) {
-        bus.unsubscribe<scene::SceneEnterAborted>(*_aborted);
+        bus.unsubscribe<sq::scene::SceneEnterAborted>(*_aborted);
     }
     if (_exited) {
-        bus.unsubscribe<scene::SceneExited>(*_exited);
+        bus.unsubscribe<sq::scene::SceneExited>(*_exited);
     }
     _entering.reset();
     _aborted.reset();
     _exited.reset();
 }
 
-}  // namespace assets
+}  // namespace sq::assets

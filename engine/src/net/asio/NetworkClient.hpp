@@ -24,7 +24,7 @@
 #include "net/asio/TransportCounters.hpp"
 #include "net/asio/Wire.hpp"
 
-namespace ecs::net::detail {
+namespace sq::net::detail {
 
 /** @brief Asio implementation of `INetworkClient`: one network thread, one TCP connection, optional UDP. */
 class NetworkClient : public INetworkClient {
@@ -151,4 +151,4 @@ class NetworkClient : public INetworkClient {
     EventQueue _events{_config.maxQueuedMessages, _counters};
 };
 
-}  // namespace ecs::net::detail
+}  // namespace sq::net::detail

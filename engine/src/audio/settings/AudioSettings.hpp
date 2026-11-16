@@ -5,7 +5,7 @@
 #include "audio/types/AudioConstants.hpp"
 #include "audio/types/AudioTypes.hpp"
 
-namespace audio {
+namespace sq::audio {
 
 /**
  * @brief Every audio setting a game can configure, usually read from its configuration file.
@@ -32,4 +32,4 @@ struct AudioSettings {
     float sfxVolume = DEFAULT_VOLUME;
 };
 
-}  // namespace audio
+}  // namespace sq::audio

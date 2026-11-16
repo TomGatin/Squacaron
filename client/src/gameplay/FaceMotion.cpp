@@ -8,9 +8,9 @@
 
 namespace client::gameplay {
 
-void faceMotion(ecs::Registry& registry) {
-    registry.runSystem<FaceMotion, ecs::Transform>(
-        [](ecs::Entity /*entity*/, FaceMotion& facing, ecs::Transform& transform) {
+void faceMotion(sq::ecs::Registry& registry) {
+    registry.runSystem<FaceMotion, sq::ecs::Transform>(
+        [](sq::ecs::Entity /*entity*/, FaceMotion& facing, sq::ecs::Transform& transform) {
             const float dx = transform.x - facing.lastX;
             const float dy = transform.y - facing.lastY;
             if (facing.seen && std::hypot(dx, dy) >= MIN_FACING_MOVE) {

@@ -35,7 +35,7 @@ struct LoaderLog {
     /** @brief Next fresh handle. */
     std::uint32_t next = 1;
     /** @brief Options of each load. */
-    std::vector<assets::LoadOptions> options;
+    std::vector<sq::assets::LoadOptions> options;
     /** @brief `preferred` of each load. */
     std::vector<std::uint32_t> preferred;
     /** @brief Highest handle reserved, 0 if `reserve` was never called. */
@@ -48,10 +48,10 @@ struct LoaderLog {
  * @brief Fake loader of `Kind` recording into `log` (shared, so it outlives the manager's copy of the lambdas). It
  * gives `preferred` back like the engine's stores do.
  */
-template <assets::AssetKind Kind>
-assets::AssetLoader<Kind> fakeLoader(const std::shared_ptr<LoaderLog>& log) {
-    return assets::AssetLoader<Kind>{
-        .load = [log](const std::string& path, const assets::LoadOptions& options, typename Kind::Id preferred) ->
+template <sq::assets::AssetKind Kind>
+sq::assets::AssetLoader<Kind> fakeLoader(const std::shared_ptr<LoaderLog>& log) {
+    return sq::assets::AssetLoader<Kind>{
+        .load = [log](const std::string& path, const sq::assets::LoadOptions& options, typename Kind::Id preferred) ->
         typename Kind::Id {
             if (std::ranges::find(log->missing, path) != log->missing.end()) {
                 return Kind::NONE;
@@ -74,10 +74,10 @@ assets::AssetLoader<Kind> fakeLoader(const std::shared_ptr<LoaderLog>& log) {
 /** @brief Manager with a fake texture loader. */
 class AssetManagerTest : public ::testing::Test {
   protected:
-    void SetUp() override { manager.setLoader<assets::Texture>(fakeLoader<assets::Texture>(textures)); }
+    void SetUp() override { manager.setLoader<sq::assets::Texture>(fakeLoader<sq::assets::Texture>(textures)); }
 
     std::shared_ptr<LoaderLog> textures = std::make_shared<LoaderLog>();
-    assets::AssetManager manager;
+    sq::assets::AssetManager manager;
 };
 
 /** @brief Temporary directory removed at the end of a test. */
@@ -133,45 +133,45 @@ struct OtherTexture {
 }  // namespace
 
 TEST(AssetPath, NormalisesSeparatorsAndDots) {
-    EXPECT_EQ(utils::normalizePath("sprites/ship.png"), "sprites/ship.png");
-    EXPECT_EQ(utils::normalizePath("sprites\\ship.png"), "sprites/ship.png");
-    EXPECT_EQ(utils::normalizePath("a/../sprites/./ship.png"), "sprites/ship.png");
-    EXPECT_EQ(utils::normalizePath("sprites//ship.png"), "sprites/ship.png");
-    EXPECT_EQ(utils::normalizePath("textures/"), "textures");
+    EXPECT_EQ(sq::utils::normalizePath("sprites/ship.png"), "sprites/ship.png");
+    EXPECT_EQ(sq::utils::normalizePath("sprites\\ship.png"), "sprites/ship.png");
+    EXPECT_EQ(sq::utils::normalizePath("a/../sprites/./ship.png"), "sprites/ship.png");
+    EXPECT_EQ(sq::utils::normalizePath("sprites//ship.png"), "sprites/ship.png");
+    EXPECT_EQ(sq::utils::normalizePath("textures/"), "textures");
 }
 
 TEST(AssetPath, RejectsEmptyTooLongAndNulPaths) {
-    EXPECT_FALSE(utils::normalizePath(""));
-    EXPECT_FALSE(utils::normalizePath("."));
-    EXPECT_FALSE(utils::normalizePath(std::string(utils::MAX_PATH_LENGTH + 1, 'a')));
-    EXPECT_FALSE(utils::normalizePath(std::string("a\0b", 3)));
-    EXPECT_FALSE(assets::isValidAssetName(""));
-    EXPECT_FALSE(assets::isValidAssetName(std::string(assets::MAX_NAME_LENGTH + 1, 'a')));
-    EXPECT_TRUE(assets::isValidAssetName("player_ship"));
+    EXPECT_FALSE(sq::utils::normalizePath(""));
+    EXPECT_FALSE(sq::utils::normalizePath("."));
+    EXPECT_FALSE(sq::utils::normalizePath(std::string(sq::utils::MAX_PATH_LENGTH + 1, 'a')));
+    EXPECT_FALSE(sq::utils::normalizePath(std::string("a\0b", 3)));
+    EXPECT_FALSE(sq::assets::isValidAssetName(""));
+    EXPECT_FALSE(sq::assets::isValidAssetName(std::string(sq::assets::MAX_NAME_LENGTH + 1, 'a')));
+    EXPECT_TRUE(sq::assets::isValidAssetName("player_ship"));
 }
 
 TEST(AssetPath, AliasesCannotLookLikePaths) {
-    EXPECT_TRUE(assets::isValidAssetAlias("player_ship"));
-    EXPECT_FALSE(assets::isValidAssetAlias("ship.png"));
-    EXPECT_FALSE(assets::isValidAssetAlias("sprites/ship"));
-    EXPECT_FALSE(assets::isValidAssetAlias("sprites\\ship"));
-    EXPECT_TRUE(assets::looksLikeAssetPath("ship.png"));
-    EXPECT_FALSE(assets::looksLikeAssetPath("ship"));
+    EXPECT_TRUE(sq::assets::isValidAssetAlias("player_ship"));
+    EXPECT_FALSE(sq::assets::isValidAssetAlias("ship.png"));
+    EXPECT_FALSE(sq::assets::isValidAssetAlias("sprites/ship"));
+    EXPECT_FALSE(sq::assets::isValidAssetAlias("sprites\\ship"));
+    EXPECT_TRUE(sq::assets::looksLikeAssetPath("ship.png"));
+    EXPECT_FALSE(sq::assets::looksLikeAssetPath("ship"));
 }
 
 TEST(AssetPath, TellsWhetherAPathStaysInTheWorkingDirectory) {
-    EXPECT_TRUE(utils::isConfinedPath("sprites/ship.png"));
-    EXPECT_TRUE(utils::isConfinedPath("..data/x.png"));
-    EXPECT_FALSE(utils::isConfinedPath("/etc/passwd"));
-    EXPECT_FALSE(utils::isConfinedPath("../secret.png"));
-    EXPECT_FALSE(utils::isConfinedPath(".."));
-    EXPECT_FALSE(utils::isConfinedPath("C:/Windows/x.png"));
-    EXPECT_EQ(utils::normalizePath("a/../../b.png"), "../b.png");
+    EXPECT_TRUE(sq::utils::isConfinedPath("sprites/ship.png"));
+    EXPECT_TRUE(sq::utils::isConfinedPath("..data/x.png"));
+    EXPECT_FALSE(sq::utils::isConfinedPath("/etc/passwd"));
+    EXPECT_FALSE(sq::utils::isConfinedPath("../secret.png"));
+    EXPECT_FALSE(sq::utils::isConfinedPath(".."));
+    EXPECT_FALSE(sq::utils::isConfinedPath("C:/Windows/x.png"));
+    EXPECT_EQ(sq::utils::normalizePath("a/../../b.png"), "../b.png");
 }
 
 TEST(AssetPath, QuotesAndCutsLongNamesForLogs) {
-    EXPECT_EQ(utils::quoteForLog("ship"), "'ship'");
-    EXPECT_EQ(utils::quoteForLog(std::string(500, 'x'), 4), "'xxxx...'");
+    EXPECT_EQ(sq::utils::quoteForLog("ship"), "'ship'");
+    EXPECT_EQ(sq::utils::quoteForLog(std::string(500, 'x'), 4), "'xxxx...'");
 }
 
 TEST(StableSlots, GivesAFreedSlotBackOnlyToTheHandleThatAsksForIt) {
@@ -180,199 +180,199 @@ TEST(StableSlots, GivesAFreedSlotBackOnlyToTheHandleThatAsksForIt) {
         bool loaded = false;
     };
     std::vector<Slot> slots;
-    EXPECT_EQ(ecs::placeInSlot(slots, Slot{.value = 1, .loaded = true}, 0U), 1U);
-    EXPECT_EQ(ecs::placeInSlot(slots, Slot{.value = 2, .loaded = true}, 0U), 2U);
+    EXPECT_EQ(sq::ecs::placeInSlot(slots, Slot{.value = 1, .loaded = true}, 0U), 1U);
+    EXPECT_EQ(sq::ecs::placeInSlot(slots, Slot{.value = 2, .loaded = true}, 0U), 2U);
     slots[0] = Slot{};
     // A fresh load never takes the freed slot...
-    EXPECT_EQ(ecs::placeInSlot(slots, Slot{.value = 3, .loaded = true}, 0U), 3U);
+    EXPECT_EQ(sq::ecs::placeInSlot(slots, Slot{.value = 3, .loaded = true}, 0U), 3U);
     // ...the asset that had it gets it back...
-    EXPECT_EQ(ecs::placeInSlot(slots, Slot{.value = 1, .loaded = true}, 1U), 1U);
+    EXPECT_EQ(sq::ecs::placeInSlot(slots, Slot{.value = 1, .loaded = true}, 1U), 1U);
     // ...and a taken slot is never overwritten.
-    EXPECT_EQ(ecs::placeInSlot(slots, Slot{.value = 4, .loaded = true}, 2U), 4U);
+    EXPECT_EQ(sq::ecs::placeInSlot(slots, Slot{.value = 4, .loaded = true}, 2U), 4U);
     EXPECT_EQ(slots[1].value, 2);
 
-    ecs::reserveSlots(slots, 10U);
-    EXPECT_EQ(ecs::placeInSlot(slots, Slot{.value = 5, .loaded = true}, 0U), 11U);
+    sq::ecs::reserveSlots(slots, 10U);
+    EXPECT_EQ(sq::ecs::placeInSlot(slots, Slot{.value = 5, .loaded = true}, 0U), 11U);
     // A wild handle cannot make the store allocate millions of slots.
-    EXPECT_EQ(ecs::placeInSlot(slots, Slot{.value = 6, .loaded = true}, 4'000'000'000U), 12U);
+    EXPECT_EQ(sq::ecs::placeInSlot(slots, Slot{.value = 6, .loaded = true}, 4'000'000'000U), 12U);
 }
 
 TEST_F(AssetManagerTest, LoadingTheSameFileAHundredTimesLoadsItOnce) {
-    const auto first = manager.load<assets::Texture>("sprites/ship.png");
+    const auto first = manager.load<sq::assets::Texture>("sprites/ship.png");
     for (int i = 0; i < 100; ++i) {
-        EXPECT_EQ(manager.load<assets::Texture>("sprites/ship.png"), first);
+        EXPECT_EQ(manager.load<sq::assets::Texture>("sprites/ship.png"), first);
     }
-    EXPECT_NE(first, assets::Texture::NONE);
+    EXPECT_NE(first, sq::assets::Texture::NONE);
     EXPECT_EQ(textures->loads.size(), 1U);
-    EXPECT_EQ(manager.loadedCount<assets::Texture>(), 1U);
+    EXPECT_EQ(manager.loadedCount<sq::assets::Texture>(), 1U);
 }
 
 TEST_F(AssetManagerTest, AnAliasAndEveryWayOfWritingItsPathShareOneLoad) {
-    ASSERT_TRUE(manager.declare<assets::Texture>("player_ship", "sprites/ship.png"));
-    const auto byAlias = manager.load<assets::Texture>("player_ship");
-    EXPECT_EQ(manager.load<assets::Texture>("sprites/ship.png"), byAlias);
-    EXPECT_EQ(manager.load<assets::Texture>("other/../sprites/ship.png"), byAlias);
-    EXPECT_EQ(manager.load<assets::Texture>("sprites\\ship.png"), byAlias);
-    EXPECT_EQ(manager.get<assets::Texture>("player_ship"), byAlias);
+    ASSERT_TRUE(manager.declare<sq::assets::Texture>("player_ship", "sprites/ship.png"));
+    const auto byAlias = manager.load<sq::assets::Texture>("player_ship");
+    EXPECT_EQ(manager.load<sq::assets::Texture>("sprites/ship.png"), byAlias);
+    EXPECT_EQ(manager.load<sq::assets::Texture>("other/../sprites/ship.png"), byAlias);
+    EXPECT_EQ(manager.load<sq::assets::Texture>("sprites\\ship.png"), byAlias);
+    EXPECT_EQ(manager.get<sq::assets::Texture>("player_ship"), byAlias);
     EXPECT_EQ(textures->loads, std::vector<std::string>{"sprites/ship.png"});
 }
 
 TEST_F(AssetManagerTest, DeclaringLoadsNothingUntilTheGroupIsLoaded) {
-    ASSERT_TRUE(manager.declare<assets::Texture>("ship", "sprites/ship.png", "level1"));
-    ASSERT_TRUE(manager.declare<assets::Texture>("enemy", "sprites/enemy.png", "level1"));
+    ASSERT_TRUE(manager.declare<sq::assets::Texture>("ship", "sprites/ship.png", "level1"));
+    ASSERT_TRUE(manager.declare<sq::assets::Texture>("enemy", "sprites/enemy.png", "level1"));
     EXPECT_TRUE(textures->loads.empty());
-    EXPECT_EQ(manager.get<assets::Texture>("ship"), assets::Texture::NONE);
-    EXPECT_EQ(manager.status<assets::Texture>("ship"), assets::AssetStatus::Declared);
+    EXPECT_EQ(manager.get<sq::assets::Texture>("ship"), sq::assets::Texture::NONE);
+    EXPECT_EQ(manager.status<sq::assets::Texture>("ship"), sq::assets::AssetStatus::Declared);
 
     EXPECT_TRUE(manager.loadGroup("level1"));
     EXPECT_EQ(textures->loads.size(), 2U);
-    EXPECT_NE(manager.get<assets::Texture>("ship"), assets::Texture::NONE);
-    EXPECT_EQ(manager.status<assets::Texture>("ship"), assets::AssetStatus::Loaded);
+    EXPECT_NE(manager.get<sq::assets::Texture>("ship"), sq::assets::Texture::NONE);
+    EXPECT_EQ(manager.status<sq::assets::Texture>("ship"), sq::assets::AssetStatus::Loaded);
     EXPECT_TRUE(manager.isGroupLoaded("level1"));
 
     // Loading it again, or declaring the same assets again (script run twice), loads nothing more.
     EXPECT_TRUE(manager.loadGroup("level1"));
-    EXPECT_TRUE(manager.declare<assets::Texture>("ship", "sprites/ship.png", "level1"));
+    EXPECT_TRUE(manager.declare<sq::assets::Texture>("ship", "sprites/ship.png", "level1"));
     EXPECT_EQ(textures->loads.size(), 2U);
 }
 
 TEST_F(AssetManagerTest, AnAssetDeclaredInALoadedGroupIsLoadedAtOnce) {
     ASSERT_TRUE(manager.loadGroup("level1"));
-    ASSERT_TRUE(manager.declare<assets::Texture>("boss", "sprites/boss.png", "level1"));
-    EXPECT_NE(manager.get<assets::Texture>("boss"), assets::Texture::NONE);
+    ASSERT_TRUE(manager.declare<sq::assets::Texture>("boss", "sprites/boss.png", "level1"));
+    EXPECT_NE(manager.get<sq::assets::Texture>("boss"), sq::assets::Texture::NONE);
 }
 
 TEST_F(AssetManagerTest, UnloadingAGroupReleasesOnlyWhatNoOtherGroupHolds) {
-    manager.declare<assets::Texture>("ship", "sprites/ship.png", "global");
-    manager.declare<assets::Texture>("ship", "sprites/ship.png", "level1");
-    manager.declare<assets::Texture>("boss", "sprites/boss.png", "level1");
+    manager.declare<sq::assets::Texture>("ship", "sprites/ship.png", "global");
+    manager.declare<sq::assets::Texture>("ship", "sprites/ship.png", "level1");
+    manager.declare<sq::assets::Texture>("boss", "sprites/boss.png", "level1");
     manager.loadGroup("global");
     manager.loadGroup("level1");
-    const auto ship = manager.get<assets::Texture>("ship");
-    const auto boss = manager.get<assets::Texture>("boss");
+    const auto ship = manager.get<sq::assets::Texture>("ship");
+    const auto boss = manager.get<sq::assets::Texture>("boss");
 
     manager.unloadGroup("level1");
     EXPECT_EQ(textures->unloads, std::vector<std::uint32_t>{boss});
-    EXPECT_EQ(manager.get<assets::Texture>("ship"), ship);
-    EXPECT_EQ(manager.get<assets::Texture>("boss"), assets::Texture::NONE);
+    EXPECT_EQ(manager.get<sq::assets::Texture>("ship"), ship);
+    EXPECT_EQ(manager.get<sq::assets::Texture>("boss"), sq::assets::Texture::NONE);
     EXPECT_FALSE(manager.isGroupLoaded("level1"));
 
     // The declarations are kept: entering the level again loads the boss again.
     manager.loadGroup("level1");
-    EXPECT_NE(manager.get<assets::Texture>("boss"), assets::Texture::NONE);
+    EXPECT_NE(manager.get<sq::assets::Texture>("boss"), sq::assets::Texture::NONE);
     EXPECT_EQ(textures->loads.size(), 3U);
 }
 
 TEST_F(AssetManagerTest, AnAssetLoadedAgainGetsItsHandleBack) {
-    manager.declare<assets::Texture>("boss", "sprites/boss.png", "level1");
+    manager.declare<sq::assets::Texture>("boss", "sprites/boss.png", "level1");
     manager.loadGroup("level1");
-    const auto boss = manager.get<assets::Texture>("boss");
+    const auto boss = manager.get<sq::assets::Texture>("boss");
     manager.unloadGroup("level1");
     manager.loadGroup("level1");
     // A component or C++ code that kept the handle sees the boss again.
-    EXPECT_EQ(manager.get<assets::Texture>("boss"), boss);
+    EXPECT_EQ(manager.get<sq::assets::Texture>("boss"), boss);
     EXPECT_EQ(textures->preferred.back(), boss);
 }
 
 TEST_F(AssetManagerTest, ANewLoaderReservesTheOldHandlesAndGivesThemBack) {
-    manager.declare<assets::Texture>("a", "a.png");
-    manager.declare<assets::Texture>("b", "b.png", "later");
+    manager.declare<sq::assets::Texture>("a", "a.png");
+    manager.declare<sq::assets::Texture>("b", "b.png", "later");
     manager.loadGroup("global");
     manager.loadGroup("later");
-    const auto a = manager.get<assets::Texture>("a");
-    const auto b = manager.get<assets::Texture>("b");
+    const auto a = manager.get<sq::assets::Texture>("a");
+    const auto b = manager.get<sq::assets::Texture>("b");
     manager.unloadGroup("later");
 
     // The backend restarts (new store): every former handle is reserved, then the held ones are asked for again.
     auto next = std::make_shared<LoaderLog>();
-    manager.setLoader<assets::Texture>(fakeLoader<assets::Texture>(next));
+    manager.setLoader<sq::assets::Texture>(fakeLoader<sq::assets::Texture>(next));
     EXPECT_EQ(next->reserved, std::max(a, b));
-    EXPECT_EQ(manager.get<assets::Texture>("a"), a);
+    EXPECT_EQ(manager.get<sq::assets::Texture>("a"), a);
     // A fresh file cannot take b's former handle, so b gets it back when its group loads again.
-    EXPECT_GT(manager.load<assets::Texture>("c.png"), std::max(a, b));
+    EXPECT_GT(manager.load<sq::assets::Texture>("c.png"), std::max(a, b));
     manager.loadGroup("later");
-    EXPECT_EQ(manager.get<assets::Texture>("b"), b);
+    EXPECT_EQ(manager.get<sq::assets::Texture>("b"), b);
 }
 
 TEST_F(AssetManagerTest, GoingBackAndForthBetweenScenesKeepsTheLoadedCountFlat) {
-    manager.declare<assets::Texture>("menu_bg", "sprites/menu.png", "menu");
-    manager.declare<assets::Texture>("ship", "sprites/ship.png", "game");
+    manager.declare<sq::assets::Texture>("menu_bg", "sprites/menu.png", "menu");
+    manager.declare<sq::assets::Texture>("ship", "sprites/ship.png", "game");
     for (int i = 0; i < 10; ++i) {
         manager.loadGroup("menu");
         manager.unloadGroup("menu");
         manager.loadGroup("game");
-        EXPECT_EQ(manager.loadedCount<assets::Texture>(), 1U);
+        EXPECT_EQ(manager.loadedCount<sq::assets::Texture>(), 1U);
         manager.unloadGroup("game");
     }
-    EXPECT_EQ(manager.loadedCount<assets::Texture>(), 0U);
+    EXPECT_EQ(manager.loadedCount<sq::assets::Texture>(), 0U);
     EXPECT_EQ(textures->loads.size(), textures->unloads.size());
 }
 
 TEST_F(AssetManagerTest, UnloadAllReleasesEverythingOnce) {
-    manager.load<assets::Texture>("a.png", "one");
-    manager.load<assets::Texture>("b.png", "two");
-    manager.load<assets::Texture>("a.png", "two");
+    manager.load<sq::assets::Texture>("a.png", "one");
+    manager.load<sq::assets::Texture>("b.png", "two");
+    manager.load<sq::assets::Texture>("a.png", "two");
     manager.unloadAll();
     EXPECT_EQ(textures->unloads.size(), 2U);
-    EXPECT_EQ(manager.loadedCount<assets::Texture>(), 0U);
+    EXPECT_EQ(manager.loadedCount<sq::assets::Texture>(), 0U);
     manager.unloadAll();
     EXPECT_EQ(textures->unloads.size(), 2U);
 }
 
 TEST_F(AssetManagerTest, WhatLoadPutsInAGroupComesBackWithTheGroup) {
     manager.loadGroup("level1");
-    manager.load<assets::Texture>("sprites/boss.png", "level1");
+    manager.load<sq::assets::Texture>("sprites/boss.png", "level1");
     manager.unloadGroup("level1");
-    EXPECT_EQ(manager.get<assets::Texture>("sprites/boss.png"), assets::Texture::NONE);
+    EXPECT_EQ(manager.get<sq::assets::Texture>("sprites/boss.png"), sq::assets::Texture::NONE);
     EXPECT_TRUE(manager.loadGroup("level1"));
-    EXPECT_NE(manager.get<assets::Texture>("sprites/boss.png"), assets::Texture::NONE);
+    EXPECT_NE(manager.get<sq::assets::Texture>("sprites/boss.png"), sq::assets::Texture::NONE);
 }
 
 TEST_F(AssetManagerTest, DetachingTheLoaderReleasesItsAssetsAndANewLoaderReloadsThem) {
-    manager.load<assets::Texture>("a.png");
-    manager.detachLoader<assets::Texture>();
+    manager.load<sq::assets::Texture>("a.png");
+    manager.detachLoader<sq::assets::Texture>();
     EXPECT_EQ(textures->unloads.size(), 1U);
-    EXPECT_FALSE(manager.hasLoader<assets::Texture>());
-    EXPECT_EQ(manager.get<assets::Texture>("a.png"), assets::Texture::NONE);
+    EXPECT_FALSE(manager.hasLoader<sq::assets::Texture>());
+    EXPECT_EQ(manager.get<sq::assets::Texture>("a.png"), sq::assets::Texture::NONE);
 
     auto next = std::make_shared<LoaderLog>();
-    manager.setLoader<assets::Texture>(fakeLoader<assets::Texture>(next));
+    manager.setLoader<sq::assets::Texture>(fakeLoader<sq::assets::Texture>(next));
     EXPECT_EQ(next->loads, std::vector<std::string>{"a.png"});
 }
 
 TEST(AssetManager, RequestsMadeBeforeAnyLoaderAreServedWhenItIsInstalled) {
-    assets::AssetManager manager;
-    manager.declare<assets::Sound>("jump", "sounds/jump.wav");
+    sq::assets::AssetManager manager;
+    manager.declare<sq::assets::Sound>("jump", "sounds/jump.wav");
     EXPECT_FALSE(manager.loadGroup("global"));
     EXPECT_EQ(manager.groupProgress("global").waiting, 1U);
-    EXPECT_EQ(manager.load<assets::Sound>("sounds/hit.wav"), assets::Sound::NONE);
+    EXPECT_EQ(manager.load<sq::assets::Sound>("sounds/hit.wav"), sq::assets::Sound::NONE);
 
     auto sounds = std::make_shared<LoaderLog>();
-    manager.setLoader<assets::Sound>(fakeLoader<assets::Sound>(sounds));
+    manager.setLoader<sq::assets::Sound>(fakeLoader<sq::assets::Sound>(sounds));
     EXPECT_EQ(sounds->loads.size(), 2U);
-    EXPECT_NE(manager.get<assets::Sound>("jump"), assets::Sound::NONE);
+    EXPECT_NE(manager.get<sq::assets::Sound>("jump"), sq::assets::Sound::NONE);
 }
 
 TEST_F(AssetManagerTest, AMissingFileIsReportedAndNotRetriedOnEveryRequest) {
     textures->missing.push_back("sprites/missing.png");
     for (int i = 0; i < 10; ++i) {
-        EXPECT_EQ(manager.load<assets::Texture>("sprites/missing.png"), assets::Texture::NONE);
+        EXPECT_EQ(manager.load<sq::assets::Texture>("sprites/missing.png"), sq::assets::Texture::NONE);
     }
     EXPECT_EQ(manager.warnings().size(), 1U);
-    EXPECT_EQ(manager.status<assets::Texture>("sprites/missing.png"), assets::AssetStatus::Failed);
+    EXPECT_EQ(manager.status<sq::assets::Texture>("sprites/missing.png"), sq::assets::AssetStatus::Failed);
 }
 
 TEST_F(AssetManagerTest, AFailedAssetIsServedAsTheFallbackButStillReportedAsMissing) {
     textures->missing.push_back("sprites/missing.png");
     textures->fallback = 99;
-    manager.declare<assets::Texture>("ship", "sprites/missing.png");
-    manager.declare<assets::Texture>("star", "sprites/star.png");
+    manager.declare<sq::assets::Texture>("ship", "sprites/missing.png");
+    manager.declare<sq::assets::Texture>("star", "sprites/star.png");
 
     EXPECT_FALSE(manager.loadGroup("global"));
-    EXPECT_EQ(manager.get<assets::Texture>("ship"), 99U);
-    EXPECT_EQ(manager.status<assets::Texture>("ship"), assets::AssetStatus::Failed);
-    EXPECT_EQ(manager.loadedCount<assets::Texture>(), 1U);
-    const assets::GroupProgress progress = manager.groupProgress("global");
+    EXPECT_EQ(manager.get<sq::assets::Texture>("ship"), 99U);
+    EXPECT_EQ(manager.status<sq::assets::Texture>("ship"), sq::assets::AssetStatus::Failed);
+    EXPECT_EQ(manager.loadedCount<sq::assets::Texture>(), 1U);
+    const sq::assets::GroupProgress progress = manager.groupProgress("global");
     EXPECT_EQ(progress.failed, 1U);
     EXPECT_EQ(progress.loaded, 1U);
     ASSERT_EQ(manager.warnings().size(), 1U);
@@ -384,12 +384,12 @@ TEST_F(AssetManagerTest, AFailedAssetIsServedAsTheFallbackButStillReportedAsMiss
 }
 
 TEST_F(AssetManagerTest, InvalidInputIsRejectedWithAWarning) {
-    EXPECT_FALSE(manager.declare<assets::Texture>("ship", ""));
-    EXPECT_FALSE(manager.declare<assets::Texture>("ship", "a.png", ""));
-    EXPECT_FALSE(manager.declare<assets::Texture>(std::string(assets::MAX_NAME_LENGTH + 1, 'x'), "a.png"));
-    EXPECT_FALSE(manager.declare<assets::Texture>("ship.png", "a.png"));
-    EXPECT_EQ(manager.load<assets::Texture>(""), assets::Texture::NONE);
-    EXPECT_EQ(manager.load<assets::Texture>("a.png", ""), assets::Texture::NONE);
+    EXPECT_FALSE(manager.declare<sq::assets::Texture>("ship", ""));
+    EXPECT_FALSE(manager.declare<sq::assets::Texture>("ship", "a.png", ""));
+    EXPECT_FALSE(manager.declare<sq::assets::Texture>(std::string(sq::assets::MAX_NAME_LENGTH + 1, 'x'), "a.png"));
+    EXPECT_FALSE(manager.declare<sq::assets::Texture>("ship.png", "a.png"));
+    EXPECT_EQ(manager.load<sq::assets::Texture>(""), sq::assets::Texture::NONE);
+    EXPECT_EQ(manager.load<sq::assets::Texture>("a.png", ""), sq::assets::Texture::NONE);
     EXPECT_FALSE(manager.loadGroup(""));
     EXPECT_TRUE(textures->loads.empty());
     EXPECT_EQ(manager.warnings().size(), 7U);
@@ -398,113 +398,113 @@ TEST_F(AssetManagerTest, InvalidInputIsRejectedWithAWarning) {
 }
 
 TEST_F(AssetManagerTest, WarningsCutHugeNames) {
-    manager.declare<assets::Texture>(std::string(100'000, 'x'), "");
+    manager.declare<sq::assets::Texture>(std::string(100'000, 'x'), "");
     ASSERT_EQ(manager.warnings().size(), 1U);
-    EXPECT_LT(manager.warnings().front().size(), 2U * utils::MAX_PATH_LENGTH);
+    EXPECT_LT(manager.warnings().front().size(), 2U * sq::utils::MAX_PATH_LENGTH);
 }
 
 TEST_F(AssetManagerTest, AnUnknownAliasIsNeverLookedForOnTheDisk) {
-    EXPECT_EQ(manager.load<assets::Texture>("player_shp"), assets::Texture::NONE);
-    EXPECT_EQ(manager.load<assets::Texture>("player_shp"), assets::Texture::NONE);
+    EXPECT_EQ(manager.load<sq::assets::Texture>("player_shp"), sq::assets::Texture::NONE);
+    EXPECT_EQ(manager.load<sq::assets::Texture>("player_shp"), sq::assets::Texture::NONE);
     EXPECT_TRUE(textures->loads.empty());
-    EXPECT_EQ(manager.status<assets::Texture>("player_shp"), assets::AssetStatus::Unknown);
+    EXPECT_EQ(manager.status<sq::assets::Texture>("player_shp"), sq::assets::AssetStatus::Unknown);
     EXPECT_EQ(manager.warnings().size(), 1U);
 }
 
 TEST_F(AssetManagerTest, AnAliasDeclaredAgainForAnotherFileReleasesTheOldOne) {
-    manager.declare<assets::Texture>("ship", "sprites/old.png", "global");
-    manager.declare<assets::Texture>("ship", "sprites/old.png", "level1");
+    manager.declare<sq::assets::Texture>("ship", "sprites/old.png", "global");
+    manager.declare<sq::assets::Texture>("ship", "sprites/old.png", "level1");
     manager.loadGroup("global");
     manager.loadGroup("level1");
-    const auto old = manager.get<assets::Texture>("ship");
+    const auto old = manager.get<sq::assets::Texture>("ship");
 
-    manager.declare<assets::Texture>("ship", "sprites/new.png");
+    manager.declare<sq::assets::Texture>("ship", "sprites/new.png");
     EXPECT_EQ(manager.warnings().size(), 1U);
-    const auto ship = manager.get<assets::Texture>("ship");
+    const auto ship = manager.get<sq::assets::Texture>("ship");
     // The new file takes the old one's handle: entities that kept it now draw the new file.
     EXPECT_EQ(ship, old);
     EXPECT_EQ(textures->loads, (std::vector<std::string>{"sprites/old.png", "sprites/new.png"}));
-    EXPECT_EQ(manager.get<assets::Texture>("sprites/new.png"), ship);
+    EXPECT_EQ(manager.get<sq::assets::Texture>("sprites/new.png"), ship);
     // Nothing needs the old file any more, in any group.
     EXPECT_EQ(textures->unloads, std::vector<std::uint32_t>{old});
-    EXPECT_EQ(manager.status<assets::Texture>("sprites/old.png"), assets::AssetStatus::Unknown);
-    EXPECT_EQ(manager.loadedCount<assets::Texture>(), 1U);
+    EXPECT_EQ(manager.status<sq::assets::Texture>("sprites/old.png"), sq::assets::AssetStatus::Unknown);
+    EXPECT_EQ(manager.loadedCount<sq::assets::Texture>(), 1U);
 
     // The alias kept its groups: unloading level1 keeps the ship (global), loading level1 loads nothing old.
     manager.unloadGroup("level1");
-    EXPECT_EQ(manager.get<assets::Texture>("ship"), ship);
+    EXPECT_EQ(manager.get<sq::assets::Texture>("ship"), ship);
     manager.loadGroup("level1");
     EXPECT_EQ(std::ranges::count(textures->loads, "sprites/old.png"), 1);
 }
 
 TEST_F(AssetManagerTest, AGroupThatLoadedAnAliasLetsItGoWhenTheAliasIsRebound) {
-    manager.declare<assets::Texture>("ship", "sprites/old.png", "menu");
-    manager.load<assets::Texture>("ship", "level1");
-    manager.declare<assets::Texture>("ship", "sprites/new.png", "menu");
+    manager.declare<sq::assets::Texture>("ship", "sprites/old.png", "menu");
+    manager.load<sq::assets::Texture>("ship", "level1");
+    manager.declare<sq::assets::Texture>("ship", "sprites/new.png", "menu");
     // level1 took "ship", not the old file: it follows the alias to the new file.
-    EXPECT_EQ(manager.status<assets::Texture>("sprites/old.png"), assets::AssetStatus::Unknown);
-    EXPECT_EQ(manager.status<assets::Texture>("ship"), assets::AssetStatus::Loaded);
-    EXPECT_TRUE(manager.undeclare<assets::Texture>("ship"));
-    EXPECT_EQ(manager.loadedCount<assets::Texture>(), 0U);
+    EXPECT_EQ(manager.status<sq::assets::Texture>("sprites/old.png"), sq::assets::AssetStatus::Unknown);
+    EXPECT_EQ(manager.status<sq::assets::Texture>("ship"), sq::assets::AssetStatus::Loaded);
+    EXPECT_TRUE(manager.undeclare<sq::assets::Texture>("ship"));
+    EXPECT_EQ(manager.loadedCount<sq::assets::Texture>(), 0U);
 }
 
 TEST_F(AssetManagerTest, AForgottenHandleStaysReservedForTheNextBackend) {
-    manager.declare<assets::Texture>("a", "a.png");
-    manager.declare<assets::Texture>("b", "b.png");
+    manager.declare<sq::assets::Texture>("a", "a.png");
+    manager.declare<sq::assets::Texture>("b", "b.png");
     manager.loadGroup("global");
-    const auto b = manager.get<assets::Texture>("b");
-    manager.undeclare<assets::Texture>("b");
+    const auto b = manager.get<sq::assets::Texture>("b");
+    manager.undeclare<sq::assets::Texture>("b");
 
     auto next = std::make_shared<LoaderLog>();
-    manager.setLoader<assets::Texture>(fakeLoader<assets::Texture>(next));
+    manager.setLoader<sq::assets::Texture>(fakeLoader<sq::assets::Texture>(next));
     EXPECT_GE(next->reserved, b);
 }
 
 TEST_F(AssetManagerTest, UndeclaringAnAliasReleasesItsFile) {
-    manager.declare<assets::Texture>("ship", "sprites/ship.png");
+    manager.declare<sq::assets::Texture>("ship", "sprites/ship.png");
     manager.loadGroup("global");
-    EXPECT_TRUE(manager.undeclare<assets::Texture>("ship"));
+    EXPECT_TRUE(manager.undeclare<sq::assets::Texture>("ship"));
     EXPECT_EQ(textures->unloads.size(), 1U);
-    EXPECT_EQ(manager.status<assets::Texture>("ship"), assets::AssetStatus::Unknown);
-    EXPECT_FALSE(manager.undeclare<assets::Texture>("ship"));
+    EXPECT_EQ(manager.status<sq::assets::Texture>("ship"), sq::assets::AssetStatus::Unknown);
+    EXPECT_FALSE(manager.undeclare<sq::assets::Texture>("ship"));
 }
 
 TEST_F(AssetManagerTest, ForgettingAGroupReleasesAndRemovesItsDeclarations) {
-    manager.declare<assets::Texture>("boss", "sprites/boss.png", "level1");
-    manager.declare<assets::Texture>("ship", "sprites/ship.png", "level1");
-    manager.declare<assets::Texture>("ship", "sprites/ship.png", "global");
+    manager.declare<sq::assets::Texture>("boss", "sprites/boss.png", "level1");
+    manager.declare<sq::assets::Texture>("ship", "sprites/ship.png", "level1");
+    manager.declare<sq::assets::Texture>("ship", "sprites/ship.png", "global");
     manager.loadGroup("level1");
     manager.forgetGroup("level1");
     EXPECT_FALSE(manager.isGroupLoaded("level1"));
-    EXPECT_EQ(manager.status<assets::Texture>("boss"), assets::AssetStatus::Unknown);
-    EXPECT_EQ(manager.status<assets::Texture>("ship"), assets::AssetStatus::Declared);
+    EXPECT_EQ(manager.status<sq::assets::Texture>("boss"), sq::assets::AssetStatus::Unknown);
+    EXPECT_EQ(manager.status<sq::assets::Texture>("ship"), sq::assets::AssetStatus::Declared);
     EXPECT_EQ(manager.groupProgress("level1").total, 0U);
 }
 
 TEST_F(AssetManagerTest, TheSameFileWithOtherOptionsIsAnotherAsset) {
-    manager.declare<assets::Texture>("a", "a.png", "global", {.filter = assets::TextureFilter::Smooth});
-    manager.declare<assets::Texture>("b", "a.png", "global", {.filter = assets::TextureFilter::Nearest});
+    manager.declare<sq::assets::Texture>("a", "a.png", "global", {.filter = sq::assets::TextureFilter::Smooth});
+    manager.declare<sq::assets::Texture>("b", "a.png", "global", {.filter = sq::assets::TextureFilter::Nearest});
     manager.loadGroup("global");
     ASSERT_EQ(textures->options.size(), 2U);
-    EXPECT_NE(manager.get<assets::Texture>("a"), manager.get<assets::Texture>("b"));
+    EXPECT_NE(manager.get<sq::assets::Texture>("a"), manager.get<sq::assets::Texture>("b"));
     EXPECT_TRUE(manager.warnings().empty());
     // Declaring the same pair again loads nothing.
-    manager.declare<assets::Texture>("a", "a.png", "global", {.filter = assets::TextureFilter::Smooth});
+    manager.declare<sq::assets::Texture>("a", "a.png", "global", {.filter = sq::assets::TextureFilter::Smooth});
     EXPECT_EQ(textures->options.size(), 2U);
 }
 
 TEST_F(AssetManagerTest, KindsHaveSeparateAliases) {
     auto sounds = std::make_shared<LoaderLog>();
-    manager.setLoader<assets::Sound>(fakeLoader<assets::Sound>(sounds));
-    manager.declare<assets::Texture>("jump", "sprites/jump.png");
-    manager.declare<assets::Sound>("jump", "sounds/jump.wav");
+    manager.setLoader<sq::assets::Sound>(fakeLoader<sq::assets::Sound>(sounds));
+    manager.declare<sq::assets::Texture>("jump", "sprites/jump.png");
+    manager.declare<sq::assets::Sound>("jump", "sounds/jump.wav");
     manager.loadGroup("global");
     EXPECT_EQ(textures->loads, std::vector<std::string>{"sprites/jump.png"});
     EXPECT_EQ(sounds->loads, std::vector<std::string>{"sounds/jump.wav"});
 }
 
 TEST(AssetManager, GamesAddTheirOwnKindsWithoutTouchingTheEngine) {
-    assets::AssetManager manager;
+    sq::assets::AssetManager manager;
     EXPECT_TRUE(manager.hasKind("texture"));
     EXPECT_FALSE(manager.hasKind("level"));
     manager.registerKind<Level>();
@@ -517,7 +517,7 @@ TEST(AssetManager, GamesAddTheirOwnKindsWithoutTouchingTheEngine) {
     EXPECT_TRUE(manager.loadGroup("global"));
     EXPECT_EQ(levels->loads, std::vector<std::string>{"levels/stage1.json"});
     EXPECT_EQ(manager.handle("level", "stage1"), manager.get<Level>("stage1"));
-    EXPECT_EQ(manager.status("level", "stage1"), assets::AssetStatus::Loaded);
+    EXPECT_EQ(manager.status("level", "stage1"), sq::assets::AssetStatus::Loaded);
 
     EXPECT_FALSE(manager.declare("shader", "x", "x.glsl", "global"));
     EXPECT_THROW(manager.registerKind<OtherTexture>(), std::logic_error);
@@ -525,9 +525,10 @@ TEST(AssetManager, GamesAddTheirOwnKindsWithoutTouchingTheEngine) {
 
 TEST_F(AssetManagerTest, AGroupLoadsStepByStepBehindALoadingScreen) {
     for (int i = 0; i < 5; ++i) {
-        manager.declare<assets::Texture>("tile_" + std::to_string(i), "tiles/" + std::to_string(i) + ".png", "level1");
+        manager.declare<sq::assets::Texture>("tile_" + std::to_string(i), "tiles/" + std::to_string(i) + ".png",
+                                             "level1");
     }
-    assets::GroupProgress progress = manager.loadGroupStep("level1", 2);
+    sq::assets::GroupProgress progress = manager.loadGroupStep("level1", 2);
     EXPECT_TRUE(manager.isGroupLoaded("level1"));
     EXPECT_EQ(progress.total, 5U);
     EXPECT_EQ(progress.loaded, 2U);
@@ -550,7 +551,7 @@ TEST_F(AssetManagerTest, PreloadDirectoryDeclaresFilesByStemAndLoadsThemWithTheG
     directory.touch("c_sound.wav");
     directory.touch("d.old.png");
 
-    EXPECT_EQ(manager.preloadDirectory<assets::Texture>(directory.path(), "level1"), 2U);
+    EXPECT_EQ(manager.preloadDirectory<sq::assets::Texture>(directory.path(), "level1"), 2U);
     // "d.old" is not a valid alias.
     EXPECT_EQ(manager.warnings().size(), 1U);
     EXPECT_TRUE(textures->loads.empty());
@@ -558,22 +559,22 @@ TEST_F(AssetManagerTest, PreloadDirectoryDeclaresFilesByStemAndLoadsThemWithTheG
     ASSERT_EQ(textures->loads.size(), 2U);
     EXPECT_TRUE(textures->loads[0].ends_with("a_star.PNG"));
     EXPECT_TRUE(textures->loads[1].ends_with("b_ship.png"));
-    EXPECT_NE(manager.get<assets::Texture>("a_star"), assets::Texture::NONE);
-    EXPECT_NE(manager.get<assets::Texture>("b_ship"), assets::Texture::NONE);
-    EXPECT_EQ(manager.get<assets::Texture>("notes"), assets::Texture::NONE);
+    EXPECT_NE(manager.get<sq::assets::Texture>("a_star"), sq::assets::Texture::NONE);
+    EXPECT_NE(manager.get<sq::assets::Texture>("b_ship"), sq::assets::Texture::NONE);
+    EXPECT_EQ(manager.get<sq::assets::Texture>("notes"), sq::assets::Texture::NONE);
 
     manager.unloadGroup("level1");
-    EXPECT_EQ(manager.loadedCount<assets::Texture>(), 0U);
+    EXPECT_EQ(manager.loadedCount<sq::assets::Texture>(), 0U);
 }
 
 TEST_F(AssetManagerTest, PreloadNeverStealsAnAliasInUse) {
     const TempDirectory directory;
     directory.touch("ship.jpg");
     directory.touch("ship.png");
-    manager.declare<assets::Texture>("star", "sprites/star.png", "menu");
+    manager.declare<sq::assets::Texture>("star", "sprites/star.png", "menu");
     directory.touch("star.png");
 
-    EXPECT_EQ(manager.preloadDirectory<assets::Texture>(directory.path(), "level1"), 1U);
+    EXPECT_EQ(manager.preloadDirectory<sq::assets::Texture>(directory.path(), "level1"), 1U);
     EXPECT_EQ(manager.warnings().size(), 2U);
     manager.loadGroup("menu");
     // "star" still names the menu's file.
@@ -585,57 +586,57 @@ TEST_F(AssetManagerTest, PreloadingIntoALoadedGroupLoadsAtOnce) {
     const TempDirectory directory;
     directory.touch("ship.png");
     manager.loadGroup("global");
-    EXPECT_EQ(manager.preloadDirectory<assets::Texture>(directory.path()), 1U);
+    EXPECT_EQ(manager.preloadDirectory<sq::assets::Texture>(directory.path()), 1U);
     EXPECT_EQ(textures->loads.size(), 1U);
 }
 
 TEST_F(AssetManagerTest, PreloadingAMissingDirectoryWarns) {
-    EXPECT_EQ(manager.preloadDirectory<assets::Texture>("does/not/exist"), 0U);
+    EXPECT_EQ(manager.preloadDirectory<sq::assets::Texture>("does/not/exist"), 0U);
     EXPECT_EQ(manager.warnings().size(), 1U);
 }
 
 TEST_F(AssetManagerTest, AHotReloadDropsTheDeclarationsTheScriptNoLongerMakes) {
-    manager.declare<assets::Texture>("from_code", "sprites/code.png");
+    manager.declare<sq::assets::Texture>("from_code", "sprites/code.png");
     manager.beginScriptDeclarations(false);
-    manager.declare<assets::Texture>("kept", "sprites/kept.png");
-    manager.declare<assets::Texture>("removed", "sprites/removed.png");
+    manager.declare<sq::assets::Texture>("kept", "sprites/kept.png");
+    manager.declare<sq::assets::Texture>("removed", "sprites/removed.png");
     manager.endScriptDeclarations();
     manager.loadGroup("global");
-    ASSERT_EQ(manager.loadedCount<assets::Texture>(), 3U);
+    ASSERT_EQ(manager.loadedCount<sq::assets::Texture>(), 3U);
 
     // The script runs again without the "removed" line.
     manager.beginScriptDeclarations(true);
-    manager.declare<assets::Texture>("kept", "sprites/kept.png");
+    manager.declare<sq::assets::Texture>("kept", "sprites/kept.png");
     manager.endScriptDeclarations();
 
-    EXPECT_EQ(manager.status<assets::Texture>("removed"), assets::AssetStatus::Unknown);
-    EXPECT_EQ(manager.status<assets::Texture>("kept"), assets::AssetStatus::Loaded);
-    EXPECT_EQ(manager.status<assets::Texture>("from_code"), assets::AssetStatus::Loaded);
+    EXPECT_EQ(manager.status<sq::assets::Texture>("removed"), sq::assets::AssetStatus::Unknown);
+    EXPECT_EQ(manager.status<sq::assets::Texture>("kept"), sq::assets::AssetStatus::Loaded);
+    EXPECT_EQ(manager.status<sq::assets::Texture>("from_code"), sq::assets::AssetStatus::Loaded);
     EXPECT_EQ(textures->unloads.size(), 1U);
     EXPECT_EQ(textures->loads.size(), 3U);
 }
 
 TEST_F(AssetManagerTest, AHotReloadKeepsWhatCodeAlsoDeclared) {
     manager.beginScriptDeclarations(false);
-    manager.declare<assets::Texture>("ship", "sprites/ship.png");
+    manager.declare<sq::assets::Texture>("ship", "sprites/ship.png");
     manager.endScriptDeclarations();
-    manager.declare<assets::Texture>("ship", "sprites/ship.png");
+    manager.declare<sq::assets::Texture>("ship", "sprites/ship.png");
     manager.loadGroup("global");
 
     manager.beginScriptDeclarations(true);
     manager.endScriptDeclarations();
-    EXPECT_EQ(manager.status<assets::Texture>("ship"), assets::AssetStatus::Loaded);
+    EXPECT_EQ(manager.status<sq::assets::Texture>("ship"), sq::assets::AssetStatus::Loaded);
     EXPECT_TRUE(textures->unloads.empty());
 }
 
 TEST_F(AssetManagerTest, AHotReloadMovingAnAliasKeepsOnlyTheGroupsTheScriptStillNames) {
     manager.beginScriptDeclarations(false);
-    manager.declare<assets::Texture>("ship", "sprites/old.png", "global");
-    manager.declare<assets::Texture>("ship", "sprites/old.png", "level1");
+    manager.declare<sq::assets::Texture>("ship", "sprites/old.png", "global");
+    manager.declare<sq::assets::Texture>("ship", "sprites/old.png", "level1");
     manager.endScriptDeclarations();
 
     manager.beginScriptDeclarations(true);
-    manager.declare<assets::Texture>("ship", "sprites/new.png", "global");
+    manager.declare<sq::assets::Texture>("ship", "sprites/new.png", "global");
     manager.endScriptDeclarations();
     EXPECT_EQ(manager.groupProgress("level1").total, 0U);
     EXPECT_EQ(manager.groupProgress("global").total, 1U);
@@ -643,32 +644,32 @@ TEST_F(AssetManagerTest, AHotReloadMovingAnAliasKeepsOnlyTheGroupsTheScriptStill
 
 TEST_F(AssetManagerTest, AFailedHotReloadReplacesNothing) {
     manager.beginScriptDeclarations(false);
-    manager.declare<assets::Texture>("ship", "sprites/ship.png");
+    manager.declare<sq::assets::Texture>("ship", "sprites/ship.png");
     manager.endScriptDeclarations();
     manager.loadGroup("global");
 
     manager.beginScriptDeclarations(true);
     manager.endScriptDeclarations(false);
-    EXPECT_EQ(manager.status<assets::Texture>("ship"), assets::AssetStatus::Loaded);
+    EXPECT_EQ(manager.status<sq::assets::Texture>("ship"), sq::assets::AssetStatus::Loaded);
     // The declaration is not stale any more: the next successful reload judges it again.
     manager.beginScriptDeclarations(true);
-    manager.declare<assets::Texture>("ship", "sprites/ship.png");
+    manager.declare<sq::assets::Texture>("ship", "sprites/ship.png");
     manager.endScriptDeclarations();
-    EXPECT_EQ(manager.status<assets::Texture>("ship"), assets::AssetStatus::Loaded);
+    EXPECT_EQ(manager.status<sq::assets::Texture>("ship"), sq::assets::AssetStatus::Loaded);
 }
 
 TEST_F(AssetManagerTest, AnUnknownAliasStaysQuietAfterTheWarnOnceKeysAreFull) {
     for (std::size_t i = 0; i < 2000; ++i) {
-        static_cast<void>(manager.load<assets::Texture>("missing_" + std::to_string(i)));
+        static_cast<void>(manager.load<sq::assets::Texture>("missing_" + std::to_string(i)));
     }
     manager.clearWarnings();
-    static_cast<void>(manager.load<assets::Texture>("again"));
-    static_cast<void>(manager.load<assets::Texture>("again"));
+    static_cast<void>(manager.load<sq::assets::Texture>("again"));
+    static_cast<void>(manager.load<sq::assets::Texture>("again"));
     EXPECT_EQ(manager.warnings().size(), 1U);
 }
 
 TEST(AssetManager, ScriptsSeeZeroForNoneWhateverTheKindsSentinel) {
-    assets::AssetManager manager;
+    sq::assets::AssetManager manager;
     manager.registerKind<Sentinel>();
     EXPECT_EQ(manager.get<Sentinel>("nothing"), Sentinel::NONE);
     EXPECT_EQ(manager.handle("sentinel", "nothing"), 0U);
@@ -676,27 +677,27 @@ TEST(AssetManager, ScriptsSeeZeroForNoneWhateverTheKindsSentinel) {
 
 TEST_F(AssetManagerTest, FreedEntriesAreReused) {
     for (int i = 0; i < 100; ++i) {
-        manager.declare<assets::Texture>("temp", "sprites/temp_" + std::to_string(i) + ".png", "scratch");
-        manager.undeclare<assets::Texture>("temp");
+        manager.declare<sq::assets::Texture>("temp", "sprites/temp_" + std::to_string(i) + ".png", "scratch");
+        manager.undeclare<sq::assets::Texture>("temp");
     }
     EXPECT_EQ(manager.groupProgress("scratch").total, 0U);
-    EXPECT_EQ(manager.status<assets::Texture>("sprites/temp_0.png"), assets::AssetStatus::Unknown);
+    EXPECT_EQ(manager.status<sq::assets::Texture>("sprites/temp_0.png"), sq::assets::AssetStatus::Unknown);
 }
 
 TEST(AssetPlugin, AddsTheManagerAndReleasesEverythingAtShutdown) {
-    engine::Engine engine;
-    engine.addPlugin<assets::AssetPlugin>();
+    sq::engine::Engine engine;
+    engine.addPlugin<sq::assets::AssetPlugin>();
     engine.init();
-    ASSERT_TRUE(engine.registry().hasResource<assets::AssetManager>());
+    ASSERT_TRUE(engine.registry().hasResource<sq::assets::AssetManager>());
 
     auto log = std::make_shared<LoaderLog>();
-    auto& manager = engine.registry().getResource<assets::AssetManager>();
-    manager.setLoader<assets::Music>(fakeLoader<assets::Music>(log));
-    manager.load<assets::Music>("music/theme.ogg");
+    auto& manager = engine.registry().getResource<sq::assets::AssetManager>();
+    manager.setLoader<sq::assets::Music>(fakeLoader<sq::assets::Music>(log));
+    manager.load<sq::assets::Music>("music/theme.ogg");
 
     engine.shutdown();
     EXPECT_EQ(log->unloads.size(), 1U);
-    EXPECT_FALSE(engine.registry().hasResource<assets::AssetManager>());
+    EXPECT_FALSE(engine.registry().hasResource<sq::assets::AssetManager>());
 }
 
 TEST(AssetManager, RelativePathsAreLoadedFromTheRootAndKeptRelative) {
@@ -704,14 +705,14 @@ TEST(AssetManager, RelativePathsAreLoadedFromTheRootAndKeptRelative) {
     std::filesystem::create_directories(root.path() / "textures");
     std::ofstream(root.path() / "textures" / "car.png") << "x";
 
-    assets::AssetManager manager(root.path());
+    sq::assets::AssetManager manager(root.path());
     auto textures = std::make_shared<LoaderLog>();
-    manager.setLoader<assets::Texture>(fakeLoader<assets::Texture>(textures));
+    manager.setLoader<sq::assets::Texture>(fakeLoader<sq::assets::Texture>(textures));
 
-    const auto ship = manager.load<assets::Texture>("sprites/ship.png");
+    const auto ship = manager.load<sq::assets::Texture>("sprites/ship.png");
     const std::filesystem::path absolute = root.path() / "absolute.png";
-    manager.load<assets::Texture>(absolute.generic_string());
-    EXPECT_EQ(manager.preloadDirectory<assets::Texture>("textures", "level"), 1U);
+    manager.load<sq::assets::Texture>(absolute.generic_string());
+    EXPECT_EQ(manager.preloadDirectory<sq::assets::Texture>("textures", "level"), 1U);
     EXPECT_TRUE(manager.loadGroup("level"));
 
     ASSERT_EQ(textures->loads.size(), 3U);
@@ -719,9 +720,9 @@ TEST(AssetManager, RelativePathsAreLoadedFromTheRootAndKeptRelative) {
     EXPECT_EQ(textures->loads[1], absolute.generic_string());
     EXPECT_EQ(textures->loads[2], (root.path() / "textures/car.png").generic_string());
     // The keys stay as declared: the same names work wherever the game is installed.
-    EXPECT_EQ(manager.get<assets::Texture>("sprites/ship.png"), ship);
-    EXPECT_NE(manager.get<assets::Texture>("textures/car.png"), assets::Texture::NONE);
-    EXPECT_NE(manager.get<assets::Texture>("car"), assets::Texture::NONE);
+    EXPECT_EQ(manager.get<sq::assets::Texture>("sprites/ship.png"), ship);
+    EXPECT_NE(manager.get<sq::assets::Texture>("textures/car.png"), sq::assets::Texture::NONE);
+    EXPECT_NE(manager.get<sq::assets::Texture>("car"), sq::assets::Texture::NONE);
     EXPECT_EQ(manager.root(), root.path());
 }
 

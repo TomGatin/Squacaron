@@ -10,18 +10,18 @@
 #include "core/IPlugin.hpp"
 #include "core/PluginBuilder.hpp"
 
-namespace assets {
+namespace sq::assets {
 
 /**
- * @brief Loads the `assets::Sound` and `assets::Music` kinds through the backend of `audio::AudioPlugin`.
+ * @brief Loads the `sq::assets::Sound` and `sq::assets::Music` kinds through the backend of `sq::audio::AudioPlugin`.
  *
- * Starts after `audio::AudioPlugin` and `AssetPlugin`, and stops before both, so the sounds are released while the
+ * Starts after `sq::audio::AudioPlugin` and `AssetPlugin`, and stops before both, so the sounds are released while the
  * audio device is still open. With a muted backend (no audio device, `NullAudioBackend`) no loader is installed: the
  * sounds stay declared and `AssetStatus::Declared` instead of failing one by one with a warning each.
  *
  * This module (`engine_assets_audio`) is the only one that depends on both `engine_assets` and `engine_audio`.
  */
-class AudioAssetsPlugin final : public engine::IPlugin {
+class AudioAssetsPlugin final : public sq::engine::IPlugin {
   public:
     /**
      * @brief Gets plugin name.
@@ -30,22 +30,22 @@ class AudioAssetsPlugin final : public engine::IPlugin {
     [[nodiscard]] std::string_view name() const noexcept override { return "AudioAssetsPlugin"; }
 
     /**
-     * @brief Declares the dependencies on `audio::AudioPlugin` and `AssetPlugin`.
+     * @brief Declares the dependencies on `sq::audio::AudioPlugin` and `AssetPlugin`.
      * @param builder Dependency builder.
      */
-    void build(engine::PluginBuilder& builder) override;
+    void build(sq::engine::PluginBuilder& builder) override;
 
     /**
      * @brief Installs the sound and music loaders, unless the backend is muted.
      * @param engine Host engine.
      */
-    void init(engine::Engine& engine) override;
+    void init(sq::engine::Engine& engine) override;
 
     /**
      * @brief Releases the sounds and musics of the manager and removes the loaders.
      * @param engine Host engine.
      */
-    void shutdown(engine::Engine& engine) override;
+    void shutdown(sq::engine::Engine& engine) override;
 
     /**
      * @brief Tells whether the loaders are installed.
@@ -58,4 +58,4 @@ class AudioAssetsPlugin final : public engine::IPlugin {
     bool _attached = false;
 };
 
-}  // namespace assets
+}  // namespace sq::assets

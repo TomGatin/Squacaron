@@ -1,10 +1,10 @@
 # Collision Categories
 
-**Source:** `server/src/prefabs/CollisionCategories.hpp` (namespace `prefabs::collision`)
+**Source:** `server/src/prefabs/CollisionCategories.hpp` (namespace `sq::prefabs::collision`)
 
 ## Principle
 
-Each `ecs::Collider2D` carries two 16-bit fields, forwarded to the Box2D fixture filter:
+Each `sq::ecs::Collider2D` carries two 16-bit fields, forwarded to the Box2D fixture filter:
 
 - `categoryBits` — **what I am** (exactly one bit);
 - `maskBits` — **what I can touch** (a set of categories).
@@ -15,7 +15,7 @@ Two colliders `A` and `B` interact only if **both** accept each other:
 (A.categoryBits & B.maskBits) != 0 && (B.categoryBits & A.maskBits) != 0
 ```
 
-This is the rule implemented by `prefabs::collision::canCollide(a, b)`. A single side accepting the other is not enough: an obstacle accepts every category (`ALL`), yet an enemy passes through it because `ENEMY_MASK` does not include `OBSTACLE`.
+This is the rule implemented by `sq::prefabs::collision::canCollide(a, b)`. A single side accepting the other is not enough: an obstacle accepts every category (`ALL`), yet an enemy passes through it because `ENEMY_MASK` does not include `OBSTACLE`.
 
 ## Categories
 

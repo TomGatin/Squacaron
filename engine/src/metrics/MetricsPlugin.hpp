@@ -15,11 +15,13 @@
 #include "metrics/ProcessUsage.hpp"
 #include "metrics/RollingStats.hpp"
 
-namespace ecs::time {
-struct Time;
-}
+namespace sq::time {
 
-namespace metrics {
+struct Time;
+
+}  // namespace sq::time
+
+namespace sq::metrics {
 
 /**
  * @brief How worrying an average frame time is.
@@ -33,9 +35,9 @@ namespace metrics {
  * date.
  *
  * It draws nothing and needs no window, so a headless program can use it too. Other plugins add their own lines to the
- * board: see `ecs::net::NetworkMetricsPlugin`.
+ * board: see `sq::net::NetworkMetricsPlugin`.
  */
-class MetricsPlugin final : public engine::IPlugin {
+class MetricsPlugin final : public sq::engine::IPlugin {
   public:
     /**
      * @brief Gets plugin name.
@@ -44,23 +46,23 @@ class MetricsPlugin final : public engine::IPlugin {
     [[nodiscard]] std::string_view name() const noexcept override { return "MetricsPlugin"; }
 
     /**
-     * @brief Declares the dependency on `engine::CorePlugin`.
+     * @brief Declares the dependency on `sq::engine::CorePlugin`.
      * @param builder Dependency builder.
      */
-    void build(engine::PluginBuilder& builder) override;
+    void build(sq::engine::PluginBuilder& builder) override;
 
     /**
      * @brief Creates the `MetricsBoard` resource, unless the registry already has one.
      * @param engine Host engine.
      */
-    void init(engine::Engine& engine) override;
+    void init(sq::engine::Engine& engine) override;
 
     /**
      * @brief Records the frame time and refreshes the board every `REFRESH_PERIOD` seconds.
      * @param engine Host engine.
      * @param time Frame time.
      */
-    void update(engine::Engine& engine, const ecs::time::Time& time) override;
+    void update(sq::engine::Engine& engine, const sq::time::Time& time) override;
 
     /**
      * @brief Removes the `MetricsBoard` if `init` created it, and forgets the measures.
@@ -69,7 +71,7 @@ class MetricsPlugin final : public engine::IPlugin {
      *
      * @param engine Host engine.
      */
-    void shutdown(engine::Engine& engine) override;
+    void shutdown(sq::engine::Engine& engine) override;
 
     /**
      * @brief Gets the last frame times.
@@ -83,7 +85,7 @@ class MetricsPlugin final : public engine::IPlugin {
      * @param registry Registry holding the board.
      * @param elapsed Seconds since the last refresh.
      */
-    void publish(ecs::Registry& registry, float elapsed);
+    void publish(sq::ecs::Registry& registry, float elapsed);
 
     /** @brief Last frame times, in seconds. */
     RollingStats _frames;
@@ -95,4 +97,4 @@ class MetricsPlugin final : public engine::IPlugin {
     bool _ownsBoard = false;
 };
 
-}  // namespace metrics
+}  // namespace sq::metrics

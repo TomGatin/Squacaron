@@ -7,11 +7,11 @@ namespace client {
 /**
  * @brief Adds everything the client needs to play online; nothing connects until a `ConnectRequest` is published.
  *
- * Adds `ecs::net::NetworkPlugin`, `ecs::net::ClientReplicationPlugin`, `RTypeNetworkPlugin` (with a factory making a
+ * Adds `sq::net::NetworkPlugin`, `sq::net::ClientReplicationPlugin`, `RTypeNetworkPlugin` (with a factory making a
  * fresh asio transport for each connection) and `PlayerControlPlugin`.
  *
  * @param engine Engine of the client.
  */
-void addNetworkPlugins(engine::Engine& engine);
+void addNetworkPlugins(sq::engine::Engine& engine);
 
 }  // namespace client

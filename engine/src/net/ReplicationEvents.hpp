@@ -6,7 +6,7 @@
 #include "net/components/InputBuffer.hpp"
 
 // Events published on the engine EventBus by the replication plugins.
-namespace ecs::net {
+namespace sq::net {
 
 /**
  * @brief An input must be applied to the entity it drives.
@@ -17,9 +17,9 @@ namespace ecs::net {
  */
 struct InputApplied {
     /** @brief Entity driven by the input. */
-    ecs::Entity entity{};
+    sq::ecs::Entity entity{};
     /** @brief Input to apply; `actions` is game-defined. */
-    NetInput input{};
+    ecs::NetInput input{};
     /** @brief Duration of the step covered by this input, in seconds. */
     float deltaTime = 0.0F;
     /** @brief True when the client replays an input after a snapshot (no sound or effect should be played again). */
@@ -33,13 +33,13 @@ struct InputApplied {
  */
 struct LocalInput {
     /** @brief Input of this step; its sequence must increase with every input. */
-    NetInput input{};
+    ecs::NetInput input{};
 };
 
 /** @brief Client: a snapshot created a local entity. Published once the whole snapshot has been applied. */
 struct ReplicatedEntitySpawned {
     /** @brief New local entity, already carrying `NetworkId`, `Replicated` and the state written by the codec. */
-    ecs::Entity entity{};
+    sq::ecs::Entity entity{};
     /** @brief Network id of the entity. */
     std::uint32_t id = 0;
     /** @brief Game-defined kind, to choose its sprite, sound... */
@@ -49,11 +49,11 @@ struct ReplicatedEntitySpawned {
 /** @brief Client: a replicated entity is no longer in the snapshots. Published just before it is killed. */
 struct ReplicatedEntityDespawned {
     /** @brief Local entity, still alive while the event is handled. */
-    ecs::Entity entity{};
+    sq::ecs::Entity entity{};
     /** @brief Network id of the entity. */
     std::uint32_t id = 0;
     /** @brief Game-defined kind of the entity. */
     std::uint32_t kind = 0;
 };
 
-}  // namespace ecs::net
+}  // namespace sq::net

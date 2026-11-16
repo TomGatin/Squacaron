@@ -7,7 +7,7 @@
 
 #include "scripting/detail/WrenFwd.hpp"
 
-namespace scripting::detail {
+namespace sq::scripting::detail {
 
 void WrenHandleDeleter::operator()(ScriptObject* handle) const noexcept {
     if (handle != nullptr && vm != nullptr) {
@@ -15,4 +15,4 @@ void WrenHandleDeleter::operator()(ScriptObject* handle) const noexcept {
     }
 }
 
-}  // namespace scripting::detail
+}  // namespace sq::scripting::detail

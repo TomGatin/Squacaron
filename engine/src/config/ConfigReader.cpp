@@ -13,7 +13,7 @@
 
 #include "config/ConfigFile.hpp"
 
-namespace config {
+namespace sq::config {
 
 ConfigReader::ConfigReader(const ConfigFile& file, std::vector<std::string>& warnings)
     : _file(&file), _warnings(&warnings) {}
@@ -89,4 +89,4 @@ bool ConfigReader::present(std::string_view key) {
     return _file->contains(key);
 }
 
-}  // namespace config
+}  // namespace sq::config

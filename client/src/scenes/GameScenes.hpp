@@ -40,7 +40,7 @@ struct LevelBanner {
  * Each `LevelStart` and `LevelComplete` shows a banner in the scripted `LevelTransition` overlay. The game ends on
  * `GameEnded` (game over screen), on leaving (lobby), or when the connection is lost (connect screen).
  */
-class GameScene final : public scene::IScene {
+class GameScene final : public sq::scene::IScene {
   public:
     /**
      * @brief Gets the scene name.
@@ -52,7 +52,7 @@ class GameScene final : public scene::IScene {
      * @brief Spawns the HUD and shows the level already announced, if any.
      * @param context Scene context.
      */
-    void onEnter(scene::SceneContext& context) override;
+    void onEnter(sq::scene::SceneContext& context) override;
 
   private:
     /**
@@ -61,13 +61,13 @@ class GameScene final : public scene::IScene {
      * @param title Main line.
      * @param subtitle Second line.
      */
-    static void showBanner(scene::SceneContext& context, std::string title, std::string subtitle);
+    static void showBanner(sq::scene::SceneContext& context, std::string title, std::string subtitle);
 
     /**
      * @brief Spawns the boss health bar, hidden, and the system that shows and fills it while a boss is on screen.
      * @param context Scene context.
      */
-    void spawnBossBar(scene::SceneContext& context);
+    void spawnBossBar(sq::scene::SceneContext& context);
 
     /**
      * @brief Spawns the life icons of the player and the system that shows one per life left; once it is eliminated,
@@ -75,22 +75,22 @@ class GameScene final : public scene::IScene {
      * @param context Scene context.
      * @param playerIndex Index of the local player.
      */
-    void spawnLives(scene::SceneContext& context, std::uint8_t playerIndex);
+    void spawnLives(sq::scene::SceneContext& context, std::uint8_t playerIndex);
 
     /** @brief Level line of the HUD. */
-    ecs::Entity _level = ecs::NULL_ENTITY;
+    sq::ecs::Entity _level = sq::ecs::NULL_ENTITY;
     /** @brief Total score line of the HUD. */
-    ecs::Entity _score = ecs::NULL_ENTITY;
+    sq::ecs::Entity _score = sq::ecs::NULL_ENTITY;
     /** @brief Score line of this player, under the total. */
-    ecs::Entity _personal = ecs::NULL_ENTITY;
+    sq::ecs::Entity _personal = sq::ecs::NULL_ENTITY;
     /** @brief Boss health bar of the HUD, hidden without a boss. */
-    ecs::Entity _bossBar = ecs::NULL_ENTITY;
+    sq::ecs::Entity _bossBar = sq::ecs::NULL_ENTITY;
     /** @brief Caption of the boss health bar. */
-    ecs::Entity _bossCaption = ecs::NULL_ENTITY;
+    sq::ecs::Entity _bossCaption = sq::ecs::NULL_ENTITY;
     /** @brief Life icons of the HUD, one per life left. */
-    std::array<ecs::Entity, gameplay::STARTING_LIVES> _lives{};
+    std::array<sq::ecs::Entity, gameplay::STARTING_LIVES> _lives{};
     /** @brief Shown instead of the lives once the player is out. */
-    ecs::Entity _out = ecs::NULL_ENTITY;
+    sq::ecs::Entity _out = sq::ecs::NULL_ENTITY;
     /** @brief Seconds before the client closes, once the player is out. */
     std::optional<float> _closeIn;
 };
@@ -100,7 +100,7 @@ class GameScene final : public scene::IScene {
  *
  * While it is open, the local ship receives no input (`PlayerControlPlugin::setPaused`).
  */
-class PauseScene final : public scene::IScene {
+class PauseScene final : public sq::scene::IScene {
   public:
     /**
      * @brief Gets the scene name.
@@ -112,33 +112,33 @@ class PauseScene final : public scene::IScene {
      * @brief Drawn over the game, which keeps running.
      * @return `SceneMode::Overlay`.
      */
-    [[nodiscard]] scene::SceneMode mode() const noexcept override { return scene::SceneMode::Overlay; }
+    [[nodiscard]] sq::scene::SceneMode mode() const noexcept override { return sq::scene::SceneMode::Overlay; }
 
     /**
      * @brief Spawns the menu and pauses the local inputs.
      * @param context Scene context.
      */
-    void onEnter(scene::SceneContext& context) override;
+    void onEnter(sq::scene::SceneContext& context) override;
 
     /**
      * @brief Resumes the local inputs.
      * @param context Scene context.
      */
-    void onExit(scene::SceneContext& context) override;
+    void onExit(sq::scene::SceneContext& context) override;
 
     /**
      * @brief Focuses the first button again.
      * @param context Scene context.
      */
-    void onResume(scene::SceneContext& context) override;
+    void onResume(sq::scene::SceneContext& context) override;
 
   private:
     /** @brief "Resume" button. */
-    ecs::Entity _resume = ecs::NULL_ENTITY;
+    sq::ecs::Entity _resume = sq::ecs::NULL_ENTITY;
 };
 
 /** @brief End of a game: victory or defeat, scores, back to the lobby. */
-class GameOverScene final : public scene::IScene {
+class GameOverScene final : public sq::scene::IScene {
   public:
     /**
      * @brief Gets the scene name.
@@ -150,7 +150,7 @@ class GameOverScene final : public scene::IScene {
      * @brief Spawns the result of the last game.
      * @param context Scene context.
      */
-    void onEnter(scene::SceneContext& context) override;
+    void onEnter(sq::scene::SceneContext& context) override;
 };
 
 }  // namespace client

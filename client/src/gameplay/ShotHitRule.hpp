@@ -30,7 +30,7 @@ class ShotHitRule {
      * @param bus Bus on which `CollisionRouter` publishes.
      * @param registry Registry owning the shots and their targets.
      */
-    ShotHitRule(ecs::EventBus& bus, ecs::Registry& registry);
+    ShotHitRule(sq::events::EventBus& bus, sq::ecs::Registry& registry);
 
     /** @brief Unsubscribes from the bus. */
     ~ShotHitRule();
@@ -52,11 +52,11 @@ class ShotHitRule {
     void onShotHit(const rtype::server::collision::ShotHitEvent& hit);
 
     /** @brief Bus the rule is subscribed to. */
-    ecs::EventBus* _bus;
+    sq::events::EventBus* _bus;
     /** @brief Registry owning the entities. */
-    ecs::Registry* _registry;
+    sq::ecs::Registry* _registry;
     /** @brief Subscription token of `onShotHit`. */
-    ecs::EventBus::EventToken _token;
+    sq::events::EventBus::EventToken _token;
     /** @brief Enemies destroyed so far. */
     std::size_t _destroyedEnemies = 0;
 };

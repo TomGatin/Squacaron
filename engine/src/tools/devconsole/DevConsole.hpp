@@ -12,7 +12,7 @@
 #include "tools/devconsole/DevConsoleTypes.hpp"
 #include "tools/devconsole/InputLine.hpp"
 
-namespace tools {
+namespace sq::tools {
 
 class Console;
 
@@ -110,4 +110,4 @@ class DevConsole {
     std::string _draft;
 };
 
-}  // namespace tools
+}  // namespace sq::tools

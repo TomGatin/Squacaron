@@ -12,7 +12,7 @@
 #include "config/ConfigFile.hpp"
 #include "config/ConfigReader.hpp"
 
-namespace audio {
+namespace sq::audio {
 
 namespace {
 
@@ -21,7 +21,7 @@ constexpr float MIN_PAN_RANGE = 1.0F;
 constexpr float MAX_WORLD_DISTANCE = std::numeric_limits<float>::max();
 
 /** @brief Reads the backend name, the only audio setting that is a string. */
-AudioBackendKind readBackend(config::ConfigReader& reader, std::string_view key, AudioBackendKind fallback) {
+AudioBackendKind readBackend(sq::config::ConfigReader& reader, std::string_view key, AudioBackendKind fallback) {
     const std::string name = reader.text(key, "auto");
     if (name == "auto") {
         return AudioBackendKind::Auto;
@@ -38,8 +38,8 @@ AudioBackendKind readBackend(config::ConfigReader& reader, std::string_view key,
 
 }  // namespace
 
-AudioSettings readAudioSettings(const config::ConfigFile& file, std::vector<std::string>& warnings) {
-    config::ConfigReader reader(file, warnings);
+AudioSettings readAudioSettings(const sq::config::ConfigFile& file, std::vector<std::string>& warnings) {
+    sq::config::ConfigReader reader(file, warnings);
     const AudioSettings defaults;
     AudioSettings settings;
 
@@ -73,4 +73,4 @@ AudioSettings readAudioSettings(const config::ConfigFile& file, std::vector<std:
     return settings;
 }
 
-}  // namespace audio
+}  // namespace sq::audio

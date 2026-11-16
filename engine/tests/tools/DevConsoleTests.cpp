@@ -33,11 +33,11 @@
 
 namespace {
 
-using engine::Key;
-using tools::DevConsole;
-using tools::EditAction;
-using tools::InputLine;
-using tools::KeyRepeater;
+using sq::engine::Key;
+using sq::tools::DevConsole;
+using sq::tools::EditAction;
+using sq::tools::InputLine;
+using sq::tools::KeyRepeater;
 
 // Non-ASCII code points, written as numbers: MSVC reads the sources in the local code page, where a literal `E_ACUTE`
 // would be several characters.
@@ -51,20 +51,20 @@ constexpr auto SUPERSCRIPT_TWO = static_cast<char32_t>(0x00B2);
 // --- UTF-8 helpers ----------------------------------------------------------------------------------------------
 
 TEST(TextUtils, EncodesUtf8AndRefusesInvalidCodePoints) {
-    EXPECT_EQ(tools::detail::encodeUtf8(U'a'), "a");
-    EXPECT_EQ(tools::detail::encodeUtf8(E_ACUTE), "\xC3\xA9");
-    EXPECT_EQ(tools::detail::encodeUtf8(EURO), "\xE2\x82\xAC");
-    EXPECT_EQ(tools::detail::encodeUtf8(U'\U0001F600'), "\xF0\x9F\x98\x80");
-    EXPECT_TRUE(tools::detail::encodeUtf8(static_cast<char32_t>(0xD800)).empty());
-    EXPECT_TRUE(tools::detail::encodeUtf8(static_cast<char32_t>(0x110000)).empty());
+    EXPECT_EQ(sq::tools::detail::encodeUtf8(U'a'), "a");
+    EXPECT_EQ(sq::tools::detail::encodeUtf8(E_ACUTE), "\xC3\xA9");
+    EXPECT_EQ(sq::tools::detail::encodeUtf8(EURO), "\xE2\x82\xAC");
+    EXPECT_EQ(sq::tools::detail::encodeUtf8(U'\U0001F600'), "\xF0\x9F\x98\x80");
+    EXPECT_TRUE(sq::tools::detail::encodeUtf8(static_cast<char32_t>(0xD800)).empty());
+    EXPECT_TRUE(sq::tools::detail::encodeUtf8(static_cast<char32_t>(0x110000)).empty());
 }
 
 TEST(TextUtils, StepsOverWholeCodePoints) {
     const std::string text = "a\xC3\xA9z";  // a, é (2 bytes), z
-    EXPECT_EQ(tools::detail::nextCodePoint(text, 1), 3U);
-    EXPECT_EQ(tools::detail::previousCodePoint(text, 3), 1U);
-    EXPECT_EQ(tools::detail::previousCodePoint(text, 0), 0U);
-    EXPECT_EQ(tools::detail::nextCodePoint(text, text.size()), text.size());
+    EXPECT_EQ(sq::tools::detail::nextCodePoint(text, 1), 3U);
+    EXPECT_EQ(sq::tools::detail::previousCodePoint(text, 3), 1U);
+    EXPECT_EQ(sq::tools::detail::previousCodePoint(text, 0), 0U);
+    EXPECT_EQ(sq::tools::detail::nextCodePoint(text, text.size()), text.size());
 }
 
 // --- InputLine --------------------------------------------------------------------------------------------------
@@ -150,7 +150,7 @@ TEST(KeyRepeater, ResetMakesAHeldKeyWaitForItsRelease) {
 class DevConsoleTest : public ::testing::Test {
   protected:
     DevConsoleTest() {
-        tools::registerBuiltinCommands(console);
+        sq::tools::registerBuiltinCommands(console);
         (void)cvars.add("r_wireframe", false);
         (void)cvars.add("r_draw_colliders", false);
         dev.open();
@@ -164,8 +164,8 @@ class DevConsoleTest : public ::testing::Test {
 
     [[nodiscard]] std::string lastOutput() const { return console.output().back().text; }
 
-    tools::CVarManager cvars;
-    tools::Console console{cvars};
+    sq::tools::CVarManager cvars;
+    sq::tools::Console console{cvars};
     DevConsole dev{console};
 };
 
@@ -247,7 +247,7 @@ TEST_F(DevConsoleTest, CompletesTheWordBeforeTheCursorAndKeepsTheRest) {
 
 TEST_F(DevConsoleTest, ScrollsWithinTheOutput) {
     for (int i = 0; i < 20; ++i) {
-        console.print(tools::OutputLevel::Info, "line");
+        console.print(sq::tools::OutputLevel::Info, "line");
     }
     dev.setPageSize(5);
     dev.apply(EditAction::PageUp);
@@ -276,48 +276,52 @@ TEST_F(DevConsoleTest, CloseActionClosesAndKeepsTheLine) {
 // --- DevConsoleView ---------------------------------------------------------------------------------------------
 
 /** @brief Records the draw calls; every character is 10 px wide. */
-class RecordingScreen final : public engine::IScreenDrawService {
+class RecordingScreen final : public sq::engine::IScreenDrawService {
   public:
     struct Text {
         std::string text;
         float x;
         float y;
-        ecs::Rgba color;
+        sq::ecs::Rgba color;
     };
 
-    engine::FontId loadFont(const std::string& /*path*/) override { return 7; }
-    [[nodiscard]] engine::TextSize measureText(std::string_view text, float fontSize, float /*spacing*/,
-                                               engine::FontId /*font*/) const override {
+    sq::engine::FontId loadFont(const std::string& /*path*/) override { return 7; }
+    [[nodiscard]] sq::engine::TextSize measureText(std::string_view text, float fontSize, float /*spacing*/,
+                                                   sq::engine::FontId /*font*/) const override {
         return {.width = 10.0F * static_cast<float>(text.size()), .height = fontSize};
     }
-    void fillRect(const engine::ScreenRect& rect, const ecs::Rgba& /*color*/) override { rects.push_back(rect); }
-    void strokeRect(const engine::ScreenRect& /*rect*/, float /*thickness*/, const ecs::Rgba& /*color*/) override {}
+    void fillRect(const sq::engine::ScreenRect& rect, const sq::ecs::Rgba& /*color*/) override {
+        rects.push_back(rect);
+    }
+    void strokeRect(const sq::engine::ScreenRect& /*rect*/, float /*thickness*/,
+                    const sq::ecs::Rgba& /*color*/) override {}
     void drawText(std::string_view text, float x, float y, float /*fontSize*/, float /*spacing*/,
-                  const ecs::Rgba& color, engine::FontId font) override {
+                  const sq::ecs::Rgba& color, sq::engine::FontId font) override {
         texts.push_back({.text = std::string(text), .x = x, .y = y, .color = color});
         lastFont = font;
     }
-    void drawTexture(ecs::TextureId /*texture*/, const ecs::TextureRect& /*source*/, const engine::ScreenRect& /*dest*/,
-                     float /*rotation*/, const ecs::Rgba& /*tint*/) override {}
+    void drawTexture(sq::ecs::TextureId /*texture*/, const sq::ecs::TextureRect& /*source*/,
+                     const sq::engine::ScreenRect& /*dest*/, float /*rotation*/,
+                     const sq::ecs::Rgba& /*tint*/) override {}
 
     [[nodiscard]] const Text* find(std::string_view text) const {
         const auto it = std::ranges::find_if(texts, [text](const Text& t) { return t.text == text; });
         return it == texts.end() ? nullptr : &*it;
     }
 
-    std::vector<engine::ScreenRect> rects;
+    std::vector<sq::engine::ScreenRect> rects;
     std::vector<Text> texts;
-    engine::FontId lastFont = engine::NO_FONT;
+    sq::engine::FontId lastFont = sq::engine::NO_FONT;
 };
 
 TEST_F(DevConsoleTest, ViewDrawsTheOutputNewestAtTheBottomAndTheInputWithItsCursor) {
-    console.print(tools::OutputLevel::Info, "older");
-    console.print(tools::OutputLevel::Error, "newer");
+    console.print(sq::tools::OutputLevel::Info, "older");
+    console.print(sq::tools::OutputLevel::Error, "newer");
     typeText(U"abc");
     dev.apply(EditAction::Left);
 
-    const tools::DevConsoleConfig config;
-    tools::DevConsoleView view(config);
+    const sq::tools::DevConsoleConfig config;
+    sq::tools::DevConsoleView view(config);
     RecordingScreen screen;
     view.draw(screen, dev, 800.0F, 600.0F, true);
 
@@ -335,7 +339,7 @@ TEST_F(DevConsoleTest, ViewDrawsTheOutputNewestAtTheBottomAndTheInputWithItsCurs
     EXPECT_LE(input->y + config.fontSize, 600.0F * config.heightRatio);
 
     // Cursor after "> ab": padding + 4 characters.
-    const bool caretDrawn = std::ranges::any_of(screen.rects, [&config](const engine::ScreenRect& r) {
+    const bool caretDrawn = std::ranges::any_of(screen.rects, [&config](const sq::engine::ScreenRect& r) {
         return r.width == 2.0F && r.x == config.padding + 40.0F;
     });
     EXPECT_TRUE(caretDrawn);
@@ -343,9 +347,9 @@ TEST_F(DevConsoleTest, ViewDrawsTheOutputNewestAtTheBottomAndTheInputWithItsCurs
 
 TEST_F(DevConsoleTest, ViewShowsAHintWhenScrolledAndUsesTheFont) {
     for (int i = 0; i < 100; ++i) {
-        console.print(tools::OutputLevel::Info, "line " + std::to_string(i));
+        console.print(sq::tools::OutputLevel::Info, "line " + std::to_string(i));
     }
-    tools::DevConsoleView view{tools::DevConsoleConfig{}};
+    sq::tools::DevConsoleView view{sq::tools::DevConsoleConfig{}};
     view.setFont(7);
     dev.setPageSize(view.visibleLines(600.0F));
     dev.scroll(2);
@@ -369,7 +373,7 @@ struct FakeDevice {
     bool captured = false;
 };
 
-class FakeWindow final : public engine::IWindowService {
+class FakeWindow final : public sq::engine::IWindowService {
   public:
     explicit FakeWindow(std::shared_ptr<FakeDevice> device) : _device(std::move(device)) {}
     [[nodiscard]] bool shouldClose() const noexcept override { return false; }
@@ -381,16 +385,21 @@ class FakeWindow final : public engine::IWindowService {
         return !_device->captured && _device->held.contains(key);
     }
     [[nodiscard]] bool isGamepadAvailable(int /*gamepad*/) const noexcept override { return false; }
-    [[nodiscard]] bool isGamepadButtonDown(int /*gamepad*/, engine::GamepadButton /*button*/) const noexcept override {
+    [[nodiscard]] bool isGamepadButtonDown(int /*gamepad*/,
+                                           sq::engine::GamepadButton /*button*/) const noexcept override {
         return false;
     }
-    [[nodiscard]] float gamepadAxis(int /*gamepad*/, engine::GamepadAxis /*axis*/) const noexcept override {
+    [[nodiscard]] float gamepadAxis(int /*gamepad*/, sq::engine::GamepadAxis /*axis*/) const noexcept override {
         return 0.0F;
     }
-    [[nodiscard]] bool isMouseButtonDown(engine::MouseButton /*button*/) const noexcept override { return false; }
-    [[nodiscard]] bool isMouseButtonPressed(engine::MouseButton /*button*/) const noexcept override { return false; }
-    [[nodiscard]] bool isMouseButtonReleased(engine::MouseButton /*button*/) const noexcept override { return false; }
-    [[nodiscard]] engine::MousePosition mousePosition() const noexcept override { return {}; }
+    [[nodiscard]] bool isMouseButtonDown(sq::engine::MouseButton /*button*/) const noexcept override { return false; }
+    [[nodiscard]] bool isMouseButtonPressed(sq::engine::MouseButton /*button*/) const noexcept override {
+        return false;
+    }
+    [[nodiscard]] bool isMouseButtonReleased(sq::engine::MouseButton /*button*/) const noexcept override {
+        return false;
+    }
+    [[nodiscard]] sq::engine::MousePosition mousePosition() const noexcept override { return {}; }
     [[nodiscard]] float mouseWheelDelta() const noexcept override { return 0.0F; }
     [[nodiscard]] char32_t nextTypedCharacter() noexcept override { return U'\0'; }
 
@@ -398,7 +407,7 @@ class FakeWindow final : public engine::IWindowService {
     std::shared_ptr<FakeDevice> _device;
 };
 
-class FakeCapture final : public engine::IInputCaptureService {
+class FakeCapture final : public sq::engine::IInputCaptureService {
   public:
     explicit FakeCapture(std::shared_ptr<FakeDevice> device) : _device(std::move(device)) {}
     void setCaptured(bool captured) override { _device->captured = captured; }
@@ -418,20 +427,21 @@ class FakeCapture final : public engine::IInputCaptureService {
     std::shared_ptr<FakeDevice> _device;
 };
 
-class FakeServicesPlugin final : public engine::IPlugin {
+class FakeServicesPlugin final : public sq::engine::IPlugin {
   public:
     FakeServicesPlugin(std::shared_ptr<FakeDevice> device, std::shared_ptr<RecordingScreen> screen)
         : _device(std::move(device)), _screen(std::move(screen)) {}
     [[nodiscard]] std::string_view name() const noexcept override { return "FakeServicesPlugin"; }
-    void build(engine::PluginBuilder& builder) override {
-        builder.provides<engine::IWindowService>();
-        builder.provides<engine::IInputCaptureService>();
-        builder.provides<engine::IScreenDrawService>();
+    void build(sq::engine::PluginBuilder& builder) override {
+        builder.provides<sq::engine::IWindowService>();
+        builder.provides<sq::engine::IInputCaptureService>();
+        builder.provides<sq::engine::IScreenDrawService>();
     }
-    void init(engine::Engine& engine) override {
-        if (!engine.mediator().registerService<engine::IWindowService>(std::make_shared<FakeWindow>(_device)) ||
-            !engine.mediator().registerService<engine::IInputCaptureService>(std::make_shared<FakeCapture>(_device)) ||
-            !engine.mediator().registerService<engine::IScreenDrawService>(_screen)) {
+    void init(sq::engine::Engine& engine) override {
+        if (!engine.mediator().registerService<sq::engine::IWindowService>(std::make_shared<FakeWindow>(_device)) ||
+            !engine.mediator().registerService<sq::engine::IInputCaptureService>(
+                std::make_shared<FakeCapture>(_device)) ||
+            !engine.mediator().registerService<sq::engine::IScreenDrawService>(_screen)) {
             throw std::logic_error("fake services already registered");
         }
     }
@@ -445,8 +455,8 @@ class DevConsolePluginTest : public ::testing::Test {
   protected:
     DevConsolePluginTest() {
         engine.addPlugin<FakeServicesPlugin>(device, screen);
-        engine.addPlugin<tools::ConsolePlugin>();
-        engine.addPlugin<tools::DevConsolePlugin>();
+        engine.addPlugin<sq::tools::ConsolePlugin>();
+        engine.addPlugin<sq::tools::DevConsolePlugin>();
         engine.init();
     }
 
@@ -463,11 +473,11 @@ class DevConsolePluginTest : public ::testing::Test {
         engine.advance();
     }
 
-    [[nodiscard]] tools::DevConsole& dev() { return *engine.getPlugin<tools::DevConsolePlugin>().devConsole(); }
+    [[nodiscard]] sq::tools::DevConsole& dev() { return *engine.getPlugin<sq::tools::DevConsolePlugin>().devConsole(); }
 
     std::shared_ptr<FakeDevice> device = std::make_shared<FakeDevice>();
     std::shared_ptr<RecordingScreen> screen = std::make_shared<RecordingScreen>();
-    engine::Engine engine;
+    sq::engine::Engine engine;
 };
 
 TEST_F(DevConsolePluginTest, TheToggleKeyOpensTheConsoleAndCapturesTheInput) {
@@ -502,16 +512,16 @@ TEST_F(DevConsolePluginTest, TypingAndEnterRunTheLine) {
 
     frame({Key::Enter});
     EXPECT_TRUE(dev().input().text().empty());
-    EXPECT_EQ(engine.service<tools::Console>().output().back().text, "hello");
+    EXPECT_EQ(engine.service<sq::tools::Console>().output().back().text, "hello");
     frame({Key::Enter});  // held: runs once
-    EXPECT_EQ(engine.service<tools::Console>().history().size(), 1U);
+    EXPECT_EQ(engine.service<sq::tools::Console>().history().size(), 1U);
 }
 
 TEST_F(DevConsolePluginTest, EscapeClosesTheConsoleAndKeysHeldWhenOpeningDoNotFire) {
     frame({Key::Enter, Key::Grave});  // Enter held while opening: ignored until released
     EXPECT_TRUE(dev().isOpen());
     frame({Key::Enter});
-    EXPECT_TRUE(engine.service<tools::Console>().output().empty());
+    EXPECT_TRUE(engine.service<sq::tools::Console>().output().empty());
 
     frame({Key::Escape});
     EXPECT_FALSE(dev().isOpen());
@@ -520,7 +530,7 @@ TEST_F(DevConsolePluginTest, EscapeClosesTheConsoleAndKeysHeldWhenOpeningDoNotFi
 
 TEST_F(DevConsolePluginTest, TheMouseWheelScrollsTheOutput) {
     for (int i = 0; i < 200; ++i) {
-        engine.service<tools::Console>().print(tools::OutputLevel::Info, "line");
+        engine.service<sq::tools::Console>().print(sq::tools::OutputLevel::Info, "line");
     }
     frame({Key::Grave});
     frame();  // the first draw sets the page size
@@ -530,16 +540,16 @@ TEST_F(DevConsolePluginTest, TheMouseWheelScrollsTheOutput) {
 }
 
 /** @brief A game plugin drawing its own overlay, independent of the console. */
-class OverlayPlugin final : public engine::IPlugin {
+class OverlayPlugin final : public sq::engine::IPlugin {
   public:
     [[nodiscard]] std::string_view name() const noexcept override { return "OverlayPlugin"; }
 };
 
 TEST(DevConsolePluginOrder, RunsAfterTheIndependentGamePluginsEvenWhenAddedFirst) {
-    engine::Engine engine;
+    sq::engine::Engine engine;
     engine.addPlugin<FakeServicesPlugin>(std::make_shared<FakeDevice>(), std::make_shared<RecordingScreen>());
-    engine.addPlugin<tools::ConsolePlugin>();
-    engine.addPlugin<tools::DevConsolePlugin>();
+    engine.addPlugin<sq::tools::ConsolePlugin>();
+    engine.addPlugin<sq::tools::DevConsolePlugin>();
     engine.addPlugin<OverlayPlugin>();
     engine.init();
     EXPECT_EQ(engine.executionOrder().back()->name(), "DevConsolePlugin");

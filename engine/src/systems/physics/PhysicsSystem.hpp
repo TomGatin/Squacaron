@@ -6,14 +6,14 @@
 #include "ecs/Registry.hpp"
 #include "events/EventBus.hpp"
 
-namespace systems {
+namespace sq::systems {
 
 /**
  * @brief Advances the physics simulation and synchronizes it with ECS transforms.
  *
  * Entities with a `Transform` and a `RigidBody2D` get a physics body; a `Collider2D` gives that body a shape.
- * Contacts found during a step are published on the EventBus as `events::CollisionBeginEvent` and
- * `events::CollisionEndEvent` once the step is over (see `systems/physics/PhysicsEvents.hpp`).
+ * Contacts found during a step are published on the EventBus as `sq::events::CollisionBeginEvent` and
+ * `sq::events::CollisionEndEvent` once the step is over (see `systems/physics/PhysicsEvents.hpp`).
  *
  * The physics backend (Box2D) is a private implementation detail: this header exposes engine types only.
  * The registry and the event bus passed to the constructor must outlive this system.
@@ -25,7 +25,7 @@ class PhysicsSystem {
      * @param registry Target ECS registry holding physics entities.
      * @param bus Event bus receiving the contact events.
      */
-    PhysicsSystem(ecs::Registry& registry, ecs::EventBus& bus);
+    PhysicsSystem(sq::ecs::Registry& registry, sq::events::EventBus& bus);
 
     /** @brief Detaches lifecycle listeners and releases the physics world. */
     ~PhysicsSystem();
@@ -58,4 +58,4 @@ class PhysicsSystem {
     std::unique_ptr<Impl> _impl;
 };
 
-}  // namespace systems
+}  // namespace sq::systems

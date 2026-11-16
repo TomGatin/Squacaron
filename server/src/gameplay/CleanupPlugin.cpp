@@ -29,25 +29,26 @@ bool flowsLeft(const std::uint32_t kind) noexcept {
 
 }  // namespace
 
-void CleanupPlugin::fixedUpdate(engine::Engine& engine, const ecs::time::Time& /*time*/) {
-    ecs::Registry& registry = engine.registry();
-    std::vector<ecs::Entity> toDestroy;
-    registry.runSystem<ecs::Transform, ecs::Replicated>(
-        [&toDestroy](const ecs::Entity entity, const ecs::Transform& transform, const ecs::Replicated& replicated) {
-            const bool bulletGone =
-                replicated.kind == game::KIND_PLAYER_BULLET && transform.x > SCENE_WIDTH + OFFSCREEN_MARGIN;
-            const bool enemyGone = flowsLeft(replicated.kind) && transform.x < -OFFSCREEN_MARGIN;
-            // An aimed missile may leave by any edge.
-            const bool missileGone = replicated.kind == game::KIND_MISSILE &&
-                                     (transform.x > SCENE_WIDTH + OFFSCREEN_MARGIN || transform.y < -OFFSCREEN_MARGIN ||
-                                      transform.y > SCENE_HEIGHT + OFFSCREEN_MARGIN);
-            const bool terrainGone = replicated.kind == game::KIND_OBSTACLE &&
-                                     transform.x < -OFFSCREEN_MARGIN - (game::TERRAIN_BLOCK_WIDTH / 2.0F);
-            if (bulletGone || enemyGone || missileGone || terrainGone) {
-                toDestroy.push_back(entity);
-            }
-        });
-    for (const ecs::Entity entity : toDestroy) {
+void CleanupPlugin::fixedUpdate(sq::engine::Engine& engine, const sq::time::Time& /*time*/) {
+    sq::ecs::Registry& registry = engine.registry();
+    std::vector<sq::ecs::Entity> toDestroy;
+    registry.runSystem<sq::ecs::Transform, sq::ecs::Replicated>([&toDestroy](const sq::ecs::Entity entity,
+                                                                             const sq::ecs::Transform& transform,
+                                                                             const sq::ecs::Replicated& replicated) {
+        const bool bulletGone =
+            replicated.kind == game::KIND_PLAYER_BULLET && transform.x > SCENE_WIDTH + OFFSCREEN_MARGIN;
+        const bool enemyGone = flowsLeft(replicated.kind) && transform.x < -OFFSCREEN_MARGIN;
+        // An aimed missile may leave by any edge.
+        const bool missileGone = replicated.kind == game::KIND_MISSILE &&
+                                 (transform.x > SCENE_WIDTH + OFFSCREEN_MARGIN || transform.y < -OFFSCREEN_MARGIN ||
+                                  transform.y > SCENE_HEIGHT + OFFSCREEN_MARGIN);
+        const bool terrainGone = replicated.kind == game::KIND_OBSTACLE &&
+                                 transform.x < -OFFSCREEN_MARGIN - (game::TERRAIN_BLOCK_WIDTH / 2.0F);
+        if (bulletGone || enemyGone || missileGone || terrainGone) {
+            toDestroy.push_back(entity);
+        }
+    });
+    for (const sq::ecs::Entity entity : toDestroy) {
         registry.killEntity(entity);
     }
 }

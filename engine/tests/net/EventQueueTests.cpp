@@ -9,11 +9,11 @@
 
 namespace {
 
-using ecs::net::Bytes;
-using ecs::net::Channel;
-using ecs::net::EventType;
-using ecs::net::NetworkEvent;
-using ecs::net::PeerId;
+using sq::net::Bytes;
+using sq::net::Channel;
+using sq::net::EventType;
+using sq::net::NetworkEvent;
+using sq::net::PeerId;
 
 NetworkEvent data(const PeerId peer, const std::uint8_t value) {
     return {.type = EventType::Data, .peer = peer, .data = Bytes{value}, .channel = Channel::Unreliable};
@@ -22,8 +22,8 @@ NetworkEvent data(const PeerId peer, const std::uint8_t value) {
 }  // namespace
 
 TEST(EventQueue, QueueFilledPastTheCapStaysAtTheCap) {
-    ecs::net::detail::TransportCounters counters;
-    ecs::net::detail::EventQueue queue(4, counters);
+    sq::net::detail::TransportCounters counters;
+    sq::net::detail::EventQueue queue(4, counters);
 
     for (std::uint8_t i = 0; i < 100; ++i) {
         std::ignore = queue.push(data(1, i));
@@ -37,8 +37,8 @@ TEST(EventQueue, QueueFilledPastTheCapStaysAtTheCap) {
 }
 
 TEST(EventQueue, CapIsPerPeerAndPerPoll) {
-    ecs::net::detail::TransportCounters counters;
-    ecs::net::detail::EventQueue queue(2, counters);
+    sq::net::detail::TransportCounters counters;
+    sq::net::detail::EventQueue queue(2, counters);
 
     EXPECT_TRUE(queue.push(data(1, 0)));
     EXPECT_TRUE(queue.push(data(1, 1)));
@@ -51,8 +51,8 @@ TEST(EventQueue, CapIsPerPeerAndPerPoll) {
 }
 
 TEST(EventQueue, ConnectionEventsAreNeverDropped) {
-    ecs::net::detail::TransportCounters counters;
-    ecs::net::detail::EventQueue queue(1, counters);
+    sq::net::detail::TransportCounters counters;
+    sq::net::detail::EventQueue queue(1, counters);
 
     std::ignore = queue.push(data(1, 0));
     std::ignore = queue.push(data(1, 1));

@@ -9,7 +9,7 @@
 #include <string>
 #include <string_view>
 
-namespace tools::detail {
+namespace sq::tools::detail {
 
 /**
  * @brief Tells whether a byte is an ASCII control character (tabs and newlines included).
@@ -55,4 +55,4 @@ namespace tools::detail {
  */
 [[nodiscard]] std::size_t nextCodePoint(std::string_view text, std::size_t pos) noexcept;
 
-}  // namespace tools::detail
+}  // namespace sq::tools::detail

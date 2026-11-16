@@ -25,7 +25,7 @@ namespace {
 constexpr const char* LOG_TAG = "server";
 
 /** @brief True for the messages the menu handles itself; the others go to the player's match. */
-bool isMenuRequest(const ecs::net::Bytes& data) {
+bool isMenuRequest(const sq::net::Bytes& data) {
     if (data.empty()) {
         return false;
     }
@@ -36,20 +36,20 @@ bool isMenuRequest(const ecs::net::Bytes& data) {
 
 }  // namespace
 
-MatchServer::MatchServer(std::shared_ptr<ecs::net::INetworkServer> transport, const bool threaded,
+MatchServer::MatchServer(std::shared_ptr<sq::net::INetworkServer> transport, const bool threaded,
                          std::filesystem::path scriptRoot)
     : _transport(std::move(transport)), _threaded(threaded), _scriptRoot(std::move(scriptRoot)) {}
 
 void MatchServer::update() {
-    for (const ecs::net::NetworkEvent& event : _transport->poll()) {
+    for (const sq::net::NetworkEvent& event : _transport->poll()) {
         switch (event.type) {
-            case ecs::net::EventType::Connected:
+            case sq::net::EventType::Connected:
                 onConnected(event.peer);
                 break;
-            case ecs::net::EventType::Disconnected:
+            case sq::net::EventType::Disconnected:
                 onDisconnected(event.peer);
                 break;
-            case ecs::net::EventType::Data:
+            case sq::net::EventType::Data:
                 onData(event);
                 break;
         }
@@ -66,7 +66,7 @@ void MatchServer::update() {
     }
 }
 
-std::optional<std::uint16_t> MatchServer::matchOf(const ecs::net::PeerId peer) const {
+std::optional<std::uint16_t> MatchServer::matchOf(const sq::net::PeerId peer) const {
     const auto it = _matchOf.find(peer);
     if (it == _matchOf.end()) {
         return std::nullopt;
@@ -96,20 +96,20 @@ protocol::MatchList MatchServer::matchList() const {
     return list;
 }
 
-void MatchServer::onConnected(const ecs::net::PeerId peer) {
+void MatchServer::onConnected(const sq::net::PeerId peer) {
     _online.insert(peer);
-    engine::log::info(LOG_TAG, "player ", peer, " connected (", _online.size(), " online)");
+    sq::engine::log::info(LOG_TAG, "player ", peer, " connected (", _online.size(), " online)");
     sendList(peer);
 }
 
-void MatchServer::onDisconnected(const ecs::net::PeerId peer) {
+void MatchServer::onDisconnected(const sq::net::PeerId peer) {
     leave(peer);
     _online.erase(peer);
     _names.erase(peer);
-    engine::log::info(LOG_TAG, "player ", peer, " disconnected (", _online.size(), " online)");
+    sq::engine::log::info(LOG_TAG, "player ", peer, " disconnected (", _online.size(), " online)");
 }
 
-void MatchServer::onData(const ecs::net::NetworkEvent& event) {
+void MatchServer::onData(const sq::net::NetworkEvent& event) {
     if (!_online.contains(event.peer)) {
         return;
     }
@@ -133,13 +133,13 @@ void MatchServer::onData(const ecs::net::NetworkEvent& event) {
         leave(event.peer);
         sendList(event.peer);
     } else if (const auto* name = std::get_if<protocol::SetName>(&*message)) {
-        engine::log::info(LOG_TAG, "player ", event.peer, " is ", name->name);
+        sq::engine::log::info(LOG_TAG, "player ", event.peer, " is ", name->name);
         _names.insert_or_assign(event.peer, name->name);
         forwardName(event.peer);
     }
 }
 
-void MatchServer::create(const ecs::net::PeerId peer) {
+void MatchServer::create(const sq::net::PeerId peer) {
     if (_matchOf.contains(peer)) {
         return;  // already playing: the client is out of sync, its request is meaningless
     }
@@ -152,7 +152,7 @@ void MatchServer::create(const ecs::net::PeerId peer) {
     try {
         room = std::make_unique<MatchRoom>(*_transport, id, _scriptRoot);
     } catch (const std::exception& error) {
-        engine::log::error(LOG_TAG, "cannot start a match: ", error.what());
+        sq::engine::log::error(LOG_TAG, "cannot start a match: ", error.what());
         sendResult(peer, protocol::JoinStatus::ServerFull);
         return;
     }
@@ -160,11 +160,11 @@ void MatchServer::create(const ecs::net::PeerId peer) {
         room->runInBackground();
     }
     _rooms.emplace(id, std::move(room));
-    engine::log::info(LOG_TAG, "player ", peer, " created match ", id, " (", _rooms.size(), " matches)");
+    sq::engine::log::info(LOG_TAG, "player ", peer, " created match ", id, " (", _rooms.size(), " matches)");
     join(peer, id);
 }
 
-void MatchServer::join(const ecs::net::PeerId peer, const std::uint16_t matchId) {
+void MatchServer::join(const sq::net::PeerId peer, const std::uint16_t matchId) {
     if (_matchOf.contains(peer)) {
         return;
     }
@@ -184,17 +184,17 @@ void MatchServer::join(const ecs::net::PeerId peer, const std::uint16_t matchId)
     forwardName(peer);
 }
 
-void MatchServer::forwardName(const ecs::net::PeerId peer) {
+void MatchServer::forwardName(const sq::net::PeerId peer) {
     const auto match = matchOf(peer);
     const auto name = _names.find(peer);
     if (match && name != _names.end()) {
         // After the `Connected` event: the match spawns the car, then names it.
         _rooms.at(*match)->deliver(peer, protocol::encode(protocol::SetName{.name = name->second}),
-                                   ecs::net::Channel::Reliable);
+                                   sq::net::Channel::Reliable);
     }
 }
 
-void MatchServer::leave(const ecs::net::PeerId peer) {
+void MatchServer::leave(const sq::net::PeerId peer) {
     const auto match = matchOf(peer);
     if (!match) {
         return;
@@ -204,18 +204,18 @@ void MatchServer::leave(const ecs::net::PeerId peer) {
     it->second->removePlayer(peer);
     if (it->second->playerCount() == 0) {
         _rooms.erase(it);
-        engine::log::info(LOG_TAG, "match ", *match, " closed (", _rooms.size(), " matches)");
+        sq::engine::log::info(LOG_TAG, "match ", *match, " closed (", _rooms.size(), " matches)");
     }
 }
 
-void MatchServer::sendResult(const ecs::net::PeerId peer, const protocol::JoinStatus status,
+void MatchServer::sendResult(const sq::net::PeerId peer, const protocol::JoinStatus status,
                              const std::uint16_t matchId) {
     _transport->send(peer, protocol::encode(protocol::JoinResult{.status = status, .matchId = matchId}),
-                     ecs::net::Channel::Reliable);
+                     sq::net::Channel::Reliable);
 }
 
-void MatchServer::sendList(const ecs::net::PeerId peer) {
-    _transport->send(peer, protocol::encode(matchList()), ecs::net::Channel::Reliable);
+void MatchServer::sendList(const sq::net::PeerId peer) {
+    _transport->send(peer, protocol::encode(matchList()), sq::net::Channel::Reliable);
 }
 
 void MatchServer::broadcastList() {
@@ -223,10 +223,10 @@ void MatchServer::broadcastList() {
     if (_lastSent && *_lastSent == list) {
         return;
     }
-    const ecs::net::Bytes bytes = protocol::encode(list);
-    for (const ecs::net::PeerId peer : _online) {
+    const sq::net::Bytes bytes = protocol::encode(list);
+    for (const sq::net::PeerId peer : _online) {
         if (!_matchOf.contains(peer)) {
-            _transport->send(peer, bytes, ecs::net::Channel::Reliable);
+            _transport->send(peer, bytes, sq::net::Channel::Reliable);
         }
     }
     _lastSent = std::move(list);

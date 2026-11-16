@@ -18,7 +18,7 @@
 #include "events/EventBus.hpp"
 #include "tools/cvars/CVarRef.hpp"
 
-namespace ecs::time {
+namespace sq::ecs::time {
 struct Time;
 }
 
@@ -32,7 +32,7 @@ namespace rlss::client {
  * and rebuilt when the name changes. It keeps the same size on screen whatever the zoom, and follows the car above its
  * boost gauge. Leaving the match removes every label.
  */
-class NameTagPlugin final : public engine::IPlugin {
+class NameTagPlugin final : public sq::engine::IPlugin {
   public:
     /**
      * @brief Gets plugin name.
@@ -45,26 +45,26 @@ class NameTagPlugin final : public engine::IPlugin {
      * be final before the labels are placed on screen.
      * @param builder Dependency builder.
      */
-    void build(engine::PluginBuilder& builder) override;
+    void build(sq::engine::PluginBuilder& builder) override;
 
     /**
      * @brief Subscribes to the received packets, the despawned cars and the match left.
      * @param engine Host engine.
      */
-    void init(engine::Engine& engine) override;
+    void init(sq::engine::Engine& engine) override;
 
     /**
      * @brief Builds the missing labels, removes the stale ones, and places them above their car.
      * @param engine Host engine.
      * @param time Frame time.
      */
-    void update(engine::Engine& engine, const ecs::time::Time& time) override;
+    void update(sq::engine::Engine& engine, const sq::time::Time& time) override;
 
     /**
      * @brief Unsubscribes and removes the labels.
      * @param engine Host engine.
      */
-    void shutdown(engine::Engine& engine) override;
+    void shutdown(sq::engine::Engine& engine) override;
 
     /**
      * @brief Names known for the match, by car network id.
@@ -76,7 +76,7 @@ class NameTagPlugin final : public engine::IPlugin {
     /** @brief The label of one car. */
     struct Tag {
         /** @brief Car entity it follows. */
-        ecs::Entity car = 0;
+        sq::ecs::Entity car = 0;
         /** @brief Name drawn. */
         std::string name;
         /** @brief Background and letters, around the point above the car. */
@@ -87,7 +87,7 @@ class NameTagPlugin final : public engine::IPlugin {
      * @brief Removes every label.
      * @param engine Host engine.
      */
-    void clearTags(engine::Engine& engine);
+    void clearTags(sq::engine::Engine& engine);
 
     /** @brief Names of the match, by car network id. */
     std::unordered_map<std::uint32_t, std::string> _names;
@@ -98,13 +98,13 @@ class NameTagPlugin final : public engine::IPlugin {
     /** @brief True between `MatchJoined` and `MatchLeft`: names received outside a match are late, and ignored. */
     bool _inMatch = false;
     /** @brief Subscription to `PacketReceived`, while initialized. */
-    std::optional<ecs::EventBus::EventToken> _packets;
+    std::optional<sq::events::EventBus::EventToken> _packets;
     /** @brief Subscription to `MatchJoined`, while initialized. */
-    std::optional<ecs::EventBus::EventToken> _joined;
+    std::optional<sq::events::EventBus::EventToken> _joined;
     /** @brief Subscription to `MatchLeft`, while initialized. */
-    std::optional<ecs::EventBus::EventToken> _left;
+    std::optional<sq::events::EventBus::EventToken> _left;
     /** @brief `cl_nametags`: whether the labels are drawn; unset without a console. */
-    tools::CVarRef<bool> _visible;
+    sq::tools::CVarRef<bool> _visible;
 };
 
 }  // namespace rlss::client

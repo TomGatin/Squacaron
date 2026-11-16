@@ -17,7 +17,7 @@ constexpr double FRAME = 1.0 / 64.0;
 /** @brief Client engine with the metrics and the ship line, on a fake clock. */
 struct ShipSide {
     ShipSide() {
-        engine.addPlugin<metrics::MetricsPlugin>();
+        engine.addPlugin<sq::metrics::MetricsPlugin>();
         engine.addPlugin<client::ShipMetricsPlugin>();
         engine.init();
     }
@@ -30,18 +30,18 @@ struct ShipSide {
         }
     }
 
-    [[nodiscard]] const metrics::Metric* position() {
-        return engine.registry().getResource<metrics::MetricsBoard>().find("Position");
+    [[nodiscard]] const sq::metrics::Metric* position() {
+        return engine.registry().getResource<sq::metrics::MetricsBoard>().find("Position");
     }
 
     double now = 0.0;
-    engine::Engine engine{[this]() -> double { return now; }};
+    sq::engine::Engine engine{[this]() -> double { return now; }};
 };
 
 }  // namespace
 
 TEST(ShipMetrics, RequiresTheMetricsPlugin) {
-    engine::Engine engine;
+    sq::engine::Engine engine;
     engine.addPlugin<client::ShipMetricsPlugin>();
 
     EXPECT_ANY_THROW(engine.init());
@@ -56,12 +56,12 @@ TEST(ShipMetrics, NoLineBeforeTheShipIsThere) {
 
 TEST(ShipMetrics, ShowsThePositionOfThePredictedShip) {
     ShipSide side;
-    ecs::Registry& registry = side.engine.registry();
-    const ecs::Entity ship = registry.spawnEntity();
-    registry.addComponent(ship, ecs::Predicted{});
-    registry.addComponent(ship, ecs::Transform{.x = 12.4F, .y = 33.6F});
-    const ecs::Entity other = registry.spawnEntity();
-    registry.addComponent(other, ecs::Transform{.x = 500.0F, .y = 500.0F});
+    sq::ecs::Registry& registry = side.engine.registry();
+    const sq::ecs::Entity ship = registry.spawnEntity();
+    registry.addComponent(ship, sq::ecs::Predicted{});
+    registry.addComponent(ship, sq::ecs::Transform{.x = 12.4F, .y = 33.6F});
+    const sq::ecs::Entity other = registry.spawnEntity();
+    registry.addComponent(other, sq::ecs::Transform{.x = 500.0F, .y = 500.0F});
 
     side.refresh();
 

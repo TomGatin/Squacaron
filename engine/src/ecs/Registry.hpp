@@ -15,9 +15,7 @@
 #include "Entity.hpp"
 #include "SparseArray.hpp"
 
-namespace ecs {
-
-namespace detail {
+namespace sq::ecs::detail {
 
 /**
  * @brief Base interface for type-erased resource storage slots.
@@ -75,7 +73,9 @@ class ResourceSlot final : public IResourceSlot {
     Resource _resource;
 };
 
-}  // namespace detail
+}  // namespace sq::ecs::detail
+
+namespace sq::ecs {
 
 /**
  * @brief Central coordinator for the Entity Component System (ECS).
@@ -436,6 +436,6 @@ class Registry {
     std::size_t _nextComponentRemoveListenerId = 0;
 };
 
-}  // namespace ecs
+}  // namespace sq::ecs
 
 #include "Registry.tpp"  // IWYU pragma: export

@@ -12,7 +12,7 @@
 #include "core/PluginBuilder.hpp"
 #include "tools/scripting/WrenConsole.hpp"
 
-namespace tools {
+namespace sq::tools {
 
 /**
  * @brief Lets the console run Wren code, when the program has both the console and the script plugins.
@@ -24,7 +24,7 @@ namespace tools {
  * Running code can change anything in the game, so both are cheats: refused while cheats are disallowed (competitive
  * servers). Neither `engine_tools` nor `engine_scripting` knows about the other; this module joins them.
  */
-class ConsoleScriptingPlugin final : public engine::IPlugin {
+class ConsoleScriptingPlugin final : public sq::engine::IPlugin {
   public:
     /** @brief Name of the command. */
     static constexpr std::string_view COMMAND = "wren";
@@ -41,23 +41,23 @@ class ConsoleScriptingPlugin final : public engine::IPlugin {
      * @brief Declares the console and the script plugins.
      * @param builder Dependency builder.
      */
-    void build(engine::PluginBuilder& builder) override;
+    void build(sq::engine::PluginBuilder& builder) override;
 
     /**
      * @brief Adds the `wren` command and the `.wren` script runner to the console.
      * @param engine Host engine.
      */
-    void init(engine::Engine& engine) override;
+    void init(sq::engine::Engine& engine) override;
 
     /**
      * @brief Removes the command and the runner.
      * @param engine Host engine.
      */
-    void shutdown(engine::Engine& engine) override;
+    void shutdown(sq::engine::Engine& engine) override;
 
   private:
     /** @brief Runs the code, created at `init` on the script VM. */
     std::unique_ptr<WrenConsole> _wren;
 };
 
-}  // namespace tools
+}  // namespace sq::tools

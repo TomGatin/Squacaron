@@ -9,7 +9,7 @@
  *
  * Severity uses green, yellow and red; tags use the other colors, so that the two never get mixed up.
  */
-namespace engine::log::style {
+namespace sq::engine::log::style {
 
 /** @brief ANSI code that turns every style off. */
 inline constexpr std::string_view RESET = "\x1b[0m";
@@ -30,4 +30,4 @@ inline constexpr std::string_view TIME = "\x1b[2m";
  */
 [[nodiscard]] std::string_view tag(std::string_view tag) noexcept;
 
-}  // namespace engine::log::style
+}  // namespace sq::engine::log::style

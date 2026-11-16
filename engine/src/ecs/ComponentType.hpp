@@ -3,14 +3,16 @@
 #include <atomic>
 #include <cstddef>
 
-namespace ecs {
+namespace sq::ecs {
 
 /**
  * @brief Numeric sequential identifier assigned to each component type.
  */
 using ComponentTypeId = std::size_t;
 
-namespace detail {
+}  // namespace sq::ecs
+
+namespace sq::ecs::detail {
 
 /**
  * @brief Generates sequential integer IDs starting from 0.
@@ -22,7 +24,9 @@ namespace detail {
     return counter.fetch_add(1, std::memory_order_relaxed);
 }
 
-}  // namespace detail
+}  // namespace sq::ecs::detail
+
+namespace sq::ecs {
 
 /**
  * @brief Retrieves a unique, sequential numeric ID for a component type.
@@ -39,4 +43,4 @@ template <typename Component>
     return id;
 }
 
-}  // namespace ecs
+}  // namespace sq::ecs

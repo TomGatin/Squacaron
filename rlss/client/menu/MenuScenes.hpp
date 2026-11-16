@@ -21,7 +21,7 @@
 namespace rlss::client {
 
 /** @brief Name entry: the title, a field and "VALIDER". Skipped when a name is saved. */
-class NameScene final : public scene::IScene {
+class NameScene final : public sq::scene::IScene {
   public:
     /**
      * @brief Gets the scene name.
@@ -33,15 +33,15 @@ class NameScene final : public scene::IScene {
      * @brief Spawns the screen, the field holding the current name.
      * @param context Scene context.
      */
-    void onEnter(scene::SceneContext& context) override;
+    void onEnter(sq::scene::SceneContext& context) override;
 
   private:
     /** @brief Name field. */
-    ecs::Entity _field = ecs::NULL_ENTITY;
+    sq::ecs::Entity _field = sq::ecs::NULL_ENTITY;
 };
 
 /** @brief Main menu: new match, browse, settings, name in the corner, players online. */
-class MenuScene final : public scene::IScene {
+class MenuScene final : public sq::scene::IScene {
   public:
     /**
      * @brief Gets the scene name.
@@ -53,21 +53,21 @@ class MenuScene final : public scene::IScene {
      * @brief Spawns the menu.
      * @param context Scene context.
      */
-    void onEnter(scene::SceneContext& context) override;
+    void onEnter(sq::scene::SceneContext& context) override;
 
     /**
      * @brief Focuses the first button again.
      * @param context Scene context.
      */
-    void onResume(scene::SceneContext& context) override;
+    void onResume(sq::scene::SceneContext& context) override;
 
   private:
     /** @brief First button. */
-    ecs::Entity _first = ecs::NULL_ENTITY;
+    sq::ecs::Entity _first = sq::ecs::NULL_ENTITY;
 };
 
 /** @brief Matches in progress: one row per match (score, clock, players), scrollable; join or create. */
-class BrowserScene final : public scene::IScene {
+class BrowserScene final : public sq::scene::IScene {
   public:
     /**
      * @brief Gets the scene name.
@@ -79,32 +79,32 @@ class BrowserScene final : public scene::IScene {
      * @brief Spawns the list from the last matches received.
      * @param context Scene context.
      */
-    void onEnter(scene::SceneContext& context) override;
+    void onEnter(sq::scene::SceneContext& context) override;
 
   private:
     /**
      * @brief Replaces the rows with the current matches.
      * @param context Scene context.
      */
-    void showMatches(scene::SceneContext& context);
+    void showMatches(sq::scene::SceneContext& context);
 
     /**
      * @brief Focuses the row of a match after the rows were rebuilt.
      * @param registry Registry.
      * @param action Action of the row that had the focus; its match may be gone or full.
      */
-    void restoreFocus(ecs::Registry& registry, std::string_view action) const;
+    void restoreFocus(sq::ecs::Registry& registry, std::string_view action) const;
 
     /** @brief Scroll list of the rows. */
-    ecs::Entity _list = ecs::NULL_ENTITY;
+    sq::ecs::Entity _list = sq::ecs::NULL_ENTITY;
     /** @brief "No match" line. */
-    ecs::Entity _empty = ecs::NULL_ENTITY;
+    sq::ecs::Entity _empty = sq::ecs::NULL_ENTITY;
     /** @brief Scroll hint. */
-    ecs::Entity _hint = ecs::NULL_ENTITY;
+    sq::ecs::Entity _hint = sq::ecs::NULL_ENTITY;
     /** @brief "RETOUR" button. */
-    ecs::Entity _back = ecs::NULL_ENTITY;
+    sq::ecs::Entity _back = sq::ecs::NULL_ENTITY;
     /** @brief Current rows. */
-    std::vector<ecs::Entity> _rows;
+    std::vector<sq::ecs::Entity> _rows;
     /** @brief Width of a row. */
     float _rowWidth = 0.0F;
 };
@@ -113,7 +113,7 @@ class BrowserScene final : public scene::IScene {
  * @brief Waiting for the answer to a create or join request; gives up after `MenuScenesPlugin::REQUEST_TIMEOUT`, or at
  *        once on back.
  */
-class JoiningScene final : public scene::IScene {
+class JoiningScene final : public sq::scene::IScene {
   public:
     /**
      * @brief Gets the scene name.
@@ -125,11 +125,11 @@ class JoiningScene final : public scene::IScene {
      * @brief Spawns the waiting screen and its timeout.
      * @param context Scene context.
      */
-    void onEnter(scene::SceneContext& context) override;
+    void onEnter(sq::scene::SceneContext& context) override;
 };
 
 /** @brief In a match: no menu, the HUD and the arena are drawn by their plugins. */
-class MatchScene final : public scene::IScene {
+class MatchScene final : public sq::scene::IScene {
   public:
     /**
      * @brief Gets the scene name.
@@ -141,11 +141,11 @@ class MatchScene final : public scene::IScene {
      * @brief Clears the focus; Escape quits, as before the menus.
      * @param context Scene context.
      */
-    void onEnter(scene::SceneContext& context) override;
+    void onEnter(sq::scene::SceneContext& context) override;
 };
 
 /** @brief End of a match, over the arena: victory or defeat, final score, back to the menu. */
-class EndedScene final : public scene::IScene {
+class EndedScene final : public sq::scene::IScene {
   public:
     /**
      * @brief Gets the scene name.
@@ -157,17 +157,17 @@ class EndedScene final : public scene::IScene {
      * @brief The arena stays visible behind.
      * @return `SceneMode::Overlay`.
      */
-    [[nodiscard]] scene::SceneMode mode() const noexcept override { return scene::SceneMode::Overlay; }
+    [[nodiscard]] sq::scene::SceneMode mode() const noexcept override { return sq::scene::SceneMode::Overlay; }
 
     /**
      * @brief Spawns the result.
      * @param context Scene context.
      */
-    void onEnter(scene::SceneContext& context) override;
+    void onEnter(sq::scene::SceneContext& context) override;
 };
 
 /** @brief Settings: volumes, saved at once, and the way to the controls screen. */
-class SettingsScene final : public scene::IScene {
+class SettingsScene final : public sq::scene::IScene {
   public:
     /**
      * @brief Gets the scene name.
@@ -179,14 +179,14 @@ class SettingsScene final : public scene::IScene {
      * @brief Spawns the sliders.
      * @param context Scene context.
      */
-    void onEnter(scene::SceneContext& context) override;
+    void onEnter(sq::scene::SceneContext& context) override;
 };
 
-/** @brief Number of `engine::Key` values the controls screen tracks (`engine::Key` is 8 bits). */
+/** @brief Number of `sq::engine::Key` values the controls screen tracks (`sq::engine::Key` is 8 bits). */
 inline constexpr std::size_t KEY_SLOTS = 256;
 
 /** @brief Controls: a button per control showing its key; selecting one waits for the new key. */
-class ControlsScene final : public scene::IScene {
+class ControlsScene final : public sq::scene::IScene {
   public:
     /**
      * @brief Gets the scene name.
@@ -198,31 +198,31 @@ class ControlsScene final : public scene::IScene {
      * @brief Spawns a button per control and starts listening for keys.
      * @param context Scene context.
      */
-    void onEnter(scene::SceneContext& context) override;
+    void onEnter(sq::scene::SceneContext& context) override;
 
   private:
     /**
      * @brief Writes the current key of every control on its button.
      * @param context Scene context.
      */
-    void refreshLabels(scene::SceneContext& context) const;
+    void refreshLabels(sq::scene::SceneContext& context) const;
 
     /**
      * @brief Looks for a key pressed this frame while a control waits for one, and binds it.
      * @param context Scene context.
      */
-    void pollKeys(scene::SceneContext& context);
+    void pollKeys(sq::scene::SceneContext& context);
 
     /** @brief Button of each control, indexed by `Control`. */
-    std::array<ecs::Entity, CONTROL_COUNT> _buttons{};
+    std::array<sq::ecs::Entity, CONTROL_COUNT> _buttons{};
     /** @brief Label of each button, indexed by `Control`. */
-    std::array<ecs::Entity, CONTROL_COUNT> _labels{};
+    std::array<sq::ecs::Entity, CONTROL_COUNT> _labels{};
     /** @brief Control waiting for a key, if any. */
     std::optional<Control> _waiting;
-    /** @brief Keys down at the previous frame, indexed by `engine::Key`, so only new presses count. */
+    /** @brief Keys down at the previous frame, indexed by `sq::engine::Key`, so only new presses count. */
     std::array<bool, KEY_SLOTS> _wasDown{};
     /** @brief Key just bound: clicks are ignored until it is released, so Enter or Space do not start a new wait. */
-    engine::Key _justBound = engine::Key::Unknown;
+    sq::engine::Key _justBound = sq::engine::Key::Unknown;
 };
 
 }  // namespace rlss::client

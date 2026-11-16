@@ -17,12 +17,12 @@
 #include "systems/physics/IPhysicsService.hpp"
 #include "systems/physics/PhysicsSystem.hpp"
 
-namespace systems {
+namespace sq::systems {
 
 /**
  * @brief Concrete adapter implementing IPhysicsService via PhysicsSystem.
  */
-class PhysicsPlugin::PhysicsServiceImpl final : public engine::IPhysicsService {
+class PhysicsPlugin::PhysicsServiceImpl final : public sq::engine::IPhysicsService {
   public:
     /**
      * @brief Constructs PhysicsServiceImpl wrapping a PhysicsSystem reference.
@@ -57,28 +57,28 @@ PhysicsPlugin::~PhysicsPlugin() {
     }
 }
 
-void PhysicsPlugin::build(engine::PluginBuilder& builder) {
-    builder.require<engine::CorePlugin>();
-    builder.provides<engine::IPhysicsService>();
+void PhysicsPlugin::build(sq::engine::PluginBuilder& builder) {
+    builder.require<sq::engine::CorePlugin>();
+    builder.provides<sq::engine::IPhysicsService>();
 }
 
-void PhysicsPlugin::init(engine::Engine& engine) {
+void PhysicsPlugin::init(sq::engine::Engine& engine) {
     _physicsSystem = std::make_unique<PhysicsSystem>(engine.registry(), engine.eventBus());
     _physicsService = std::make_shared<PhysicsServiceImpl>(*_physicsSystem);
-    if (const auto res = engine.mediator().registerService<engine::IPhysicsService>(_physicsService); !res) {
-        throw engine::MediatorError(res.error());
+    if (const auto res = engine.mediator().registerService<sq::engine::IPhysicsService>(_physicsService); !res) {
+        throw sq::engine::MediatorError(res.error());
     }
 }
 
-void PhysicsPlugin::fixedUpdate(engine::Engine& /*engine*/, const ecs::time::Time& time) {
+void PhysicsPlugin::fixedUpdate(sq::engine::Engine& /*engine*/, const sq::time::Time& time) {
     if (_physicsSystem != nullptr) {
         _physicsSystem->update(time.deltaTime);
     }
 }
 
-void PhysicsPlugin::shutdown(engine::Engine& engine) {
-    if (engine.mediator().hasService<engine::IPhysicsService>()) {
-        engine.mediator().removeService<engine::IPhysicsService>();
+void PhysicsPlugin::shutdown(sq::engine::Engine& engine) {
+    if (engine.mediator().hasService<sq::engine::IPhysicsService>()) {
+        engine.mediator().removeService<sq::engine::IPhysicsService>();
     }
     if (_physicsService != nullptr) {
         _physicsService->setSystem(nullptr);
@@ -87,4 +87,4 @@ void PhysicsPlugin::shutdown(engine::Engine& engine) {
     _physicsSystem.reset();
 }
 
-}  // namespace systems
+}  // namespace sq::systems

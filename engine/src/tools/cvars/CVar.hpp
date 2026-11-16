@@ -12,7 +12,7 @@
 
 #include "tools/cvars/CVarTypes.hpp"
 
-namespace tools {
+namespace sq::tools {
 
 /**
  * @brief One console variable. Read-only view: values change through `CVarManager` or a `CVarRef`.
@@ -85,4 +85,4 @@ class CVar {
     CVarValue _value;
 };
 
-}  // namespace tools
+}  // namespace sq::tools

@@ -5,7 +5,7 @@
 #include "audio/types/AudioTypes.hpp"  // IWYU pragma: export
 #include "core/AudioHandles.hpp"       // IWYU pragma: export
 
-namespace audio {
+namespace sq::audio {
 
 /** @brief Silent gain. */
 inline constexpr float MIN_VOLUME = 0.0F;
@@ -64,4 +64,4 @@ inline constexpr float DEFAULT_MAX_DISTANCE = 1500.0F;
 /** @brief Default distance, in world units, under which requests of the same sound in one update are merged. */
 inline constexpr float DEFAULT_MERGE_DISTANCE = 32.0F;
 
-}  // namespace audio
+}  // namespace sq::audio

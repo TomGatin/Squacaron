@@ -1,6 +1,6 @@
 # Missile
 
-**Name:** `missile` (`prefabs::MISSILE_PREFAB`)
+**Name:** `missile` (`sq::prefabs::MISSILE_PREFAB`)
 **Source:** `server/src/prefabs/missile/`
 
 ## Purpose
@@ -39,16 +39,16 @@ Every transform key read by `makeTransform` (`x`, `y`, `z`, `rotation`, `scaleX`
 ## API
 
 ```cpp
-void buildMissile(ecs::Entity e, ecs::Registry& registry, PrefabParams const& params);
+void buildMissile(sq::ecs::Entity e, sq::ecs::Registry& registry, PrefabParams const& params);
 ```
 
 ```cpp
-manager.registerPrefab(prefabs::MISSILE_PREFAB, prefabs::buildMissile);
-manager.spawn(prefabs::MISSILE_PREFAB, buffer, {{"x", 800.0F}, {"y", 300.0F}, {"speed", -400.0F}});
+manager.registerPrefab(sq::prefabs::MISSILE_PREFAB, sq::prefabs::buildMissile);
+manager.spawn(sq::prefabs::MISSILE_PREFAB, buffer, {{"x", 800.0F}, {"y", 300.0F}, {"speed", -400.0F}});
 ```
 
 Variants are registered under another name with their own defaults:
 
 ```cpp
-manager.registerPrefab("fast_missile", prefabs::buildMissile, {{"speed", -1200.0F}});
+manager.registerPrefab("fast_missile", sq::prefabs::buildMissile, {{"speed", -1200.0F}});
 ```

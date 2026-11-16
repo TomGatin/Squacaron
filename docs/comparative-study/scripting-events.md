@@ -76,7 +76,7 @@ To resolve this without sacrificing performance:
 Exposing ECS components to the scripting VM often degenerates into brittle C-preprocessor macros or heavy runtime reflection libraries. We leverage modern C++23 pointer-to-member templates (`ComponentBinder<T>`):
 
 ```cpp
-scripting::ComponentBinder<Position> binder(vm, "game", "Position");
+sq::scripting::ComponentBinder<Position> binder(vm, "game", "Position");
 binder.property<&Position::x>("x")
       .property<&Position::y>("y");
 vm.interpret("game", binder.generateWrenClass());

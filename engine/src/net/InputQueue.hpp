@@ -4,7 +4,7 @@
 
 #include "net/components/InputBuffer.hpp"
 
-namespace ecs::net {
+namespace sq::net {
 
 /**
  * @brief Queues an input received over an unreliable channel.
@@ -17,13 +17,13 @@ namespace ecs::net {
  * @param input Received input, moved into the queue.
  * @return True if the input is now in the queue.
  */
-bool pushInput(ecs::InputBuffer& buffer, ecs::NetInput input);
+bool pushInput(sq::ecs::InputBuffer& buffer, sq::ecs::NetInput input);
 
 /**
  * @brief Takes the oldest pending input and marks it as processed.
  * @param buffer Input buffer of the entity.
  * @return The input to apply, or nothing if the queue is empty.
  */
-std::optional<ecs::NetInput> popInput(ecs::InputBuffer& buffer);
+std::optional<sq::ecs::NetInput> popInput(sq::ecs::InputBuffer& buffer);
 
-}  // namespace ecs::net
+}  // namespace sq::net

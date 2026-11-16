@@ -8,7 +8,7 @@
 #include "audio/types/AudioConstants.hpp"
 #include "audio/types/AudioTypes.hpp"
 
-namespace audio {
+namespace sq::audio {
 
 /** @brief Gain and stereo position of a sound, resulting from where it is heard from. */
 struct SpatialGains {
@@ -71,4 +71,4 @@ struct SpatialGains {
     return {.volume = computeAttenuation(std::hypot(dx, dy), config), .pan = computePan(dx, config)};
 }
 
-}  // namespace audio
+}  // namespace sq::audio

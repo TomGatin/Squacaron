@@ -14,19 +14,19 @@
 #include "ecs/Entity.hpp"
 #include "events/EventBus.hpp"
 
-namespace ecs::time {
+namespace sq::ecs::time {
 struct Time;
 }
 
 namespace rlss::client {
 
 /**
- * @brief Spawns the camera entity (`ecs::CameraComponent`, tag "main_camera", `rlss::game::CameraRig`, `CameraDirector`
- * script) and keeps its `CameraRig` up to date: the local car (from the server's `Welcome` and the network id map), the
- * ball (from the replication events), the match phase (from `MatchStatus`), the window size and the arena bounds.
- * The framing itself (aim, zoom, easing, bounds) is in `rlss/scripts/CameraDirector.wren`.
+ * @brief Spawns the camera entity (`sq::ecs::CameraComponent`, tag "main_camera", `rlss::game::CameraRig`,
+ * `CameraDirector` script) and keeps its `CameraRig` up to date: the local car (from the server's `Welcome` and the
+ * network id map), the ball (from the replication events), the match phase (from `MatchStatus`), the window size and
+ * the arena bounds. The framing itself (aim, zoom, easing, bounds) is in `rlss/scripts/CameraDirector.wren`.
  */
-class CameraPlugin final : public engine::IPlugin {
+class CameraPlugin final : public sq::engine::IPlugin {
   public:
     /**
      * @brief Gets plugin name.
@@ -38,48 +38,48 @@ class CameraPlugin final : public engine::IPlugin {
      * @brief Declares the dependencies on the render, network, replication plugins and the car view (bindings).
      * @param builder Dependency builder.
      */
-    void build(engine::PluginBuilder& builder) override;
+    void build(sq::engine::PluginBuilder& builder) override;
 
     /**
      * @brief Spawns the camera and subscribes to the network and replication events.
      * @param engine Host engine.
      */
-    void init(engine::Engine& engine) override;
+    void init(sq::engine::Engine& engine) override;
 
     /**
      * @brief Resolves the local car from its network id.
      * @param engine Host engine.
      * @param time Frame time.
      */
-    void update(engine::Engine& engine, const ecs::time::Time& time) override;
+    void update(sq::engine::Engine& engine, const sq::time::Time& time) override;
 
     /**
      * @brief Unsubscribes from the events.
      * @param engine Host engine.
      */
-    void shutdown(engine::Engine& engine) override;
+    void shutdown(sq::engine::Engine& engine) override;
 
     /**
-     * @brief Camera entity, carrying the `ecs::CameraComponent` the world is drawn through.
+     * @brief Camera entity, carrying the `sq::ecs::CameraComponent` the world is drawn through.
      * @return The entity (valid once initialized).
      */
-    [[nodiscard]] ecs::Entity camera() const noexcept { return _camera; }
+    [[nodiscard]] sq::ecs::Entity camera() const noexcept { return _camera; }
 
   private:
     /** @brief Camera entity. */
-    ecs::Entity _camera = 0;
+    sq::ecs::Entity _camera = 0;
     /** @brief Network id of the local car, once the server said it. */
     std::optional<std::uint32_t> _localCar;
     /** @brief Subscription to `PacketReceived`, while initialized. */
-    std::optional<ecs::EventBus::EventToken> _packets;
+    std::optional<sq::events::EventBus::EventToken> _packets;
     /** @brief Subscription to `ReplicatedEntitySpawned`, while initialized. */
-    std::optional<ecs::EventBus::EventToken> _spawned;
+    std::optional<sq::events::EventBus::EventToken> _spawned;
     /** @brief Subscription to `ReplicatedEntityDespawned`, while initialized. */
-    std::optional<ecs::EventBus::EventToken> _despawned;
+    std::optional<sq::events::EventBus::EventToken> _despawned;
     /** @brief Subscription to `MatchJoined`, while initialized. */
-    std::optional<ecs::EventBus::EventToken> _joined;
+    std::optional<sq::events::EventBus::EventToken> _joined;
     /** @brief Subscription to `MatchLeft`, while initialized. */
-    std::optional<ecs::EventBus::EventToken> _left;
+    std::optional<sq::events::EventBus::EventToken> _left;
 };
 
 }  // namespace rlss::client

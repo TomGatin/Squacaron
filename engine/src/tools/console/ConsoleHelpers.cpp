@@ -10,7 +10,7 @@
 #include "tools/common/TextUtils.hpp"
 #include "tools/console/CommandLine.hpp"
 
-namespace tools::detail {
+namespace sq::tools::detail {
 
 std::string printable(std::string_view text) {
     std::string shown(text.substr(0, MAX_LINE_LENGTH));
@@ -60,4 +60,4 @@ std::optional<WordCursor> locateLastWord(std::string_view line) {
     return cursor;
 }
 
-}  // namespace tools::detail
+}  // namespace sq::tools::detail

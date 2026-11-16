@@ -13,7 +13,7 @@
 #include <utility>
 #include <vector>
 
-namespace scripting {
+namespace sq::scripting {
 
 class WrenVM;
 
@@ -129,4 +129,4 @@ class ScriptHotReloader {
     bool _lastReplaySucceeded = true;
 };
 
-}  // namespace scripting
+}  // namespace sq::scripting

@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
 
-namespace ecs {
+namespace sq::ecs {
 
 /**
  * @brief Generational handle identifying an entity in the Entity Component System.
@@ -63,4 +63,4 @@ inline constexpr std::uint32_t MAX_ENTITY_GENERATION = (1U << ENTITY_GENERATION_
  */
 inline constexpr Entity NULL_ENTITY = makeEntity(MAX_ENTITY_INDEX, MAX_ENTITY_GENERATION);
 
-}  // namespace ecs
+}  // namespace sq::ecs

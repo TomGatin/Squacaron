@@ -6,7 +6,7 @@
 #include "audio/types/AudioTypes.hpp"
 #include "audio/types/SoundParams.hpp"
 
-namespace audio {
+namespace sq::audio {
 
 /**
  * @brief Low-level audio output used by the audio system.
@@ -189,4 +189,4 @@ class IAudioBackend {
     IAudioBackend() = default;
 };
 
-}  // namespace audio
+}  // namespace sq::audio

@@ -10,7 +10,7 @@
 
 #include "render/api/components/Renderable.hpp"
 
-namespace ui {
+namespace sq::ui {
 
 /** @brief Interaction state of a UiButton. */
 enum class UiButtonState : std::uint8_t {
@@ -38,16 +38,16 @@ struct UiButton {
     static constexpr float DEFAULT_FONT_SIZE = 20.0F;
 
     /** @brief Default background colour when idle (dark gray). */
-    static constexpr ecs::Rgba DEFAULT_COLOR_IDLE = {.r = 80, .g = 80, .b = 80, .a = 255};
+    static constexpr sq::ecs::Rgba DEFAULT_COLOR_IDLE = {.r = 80, .g = 80, .b = 80, .a = 255};
 
     /** @brief Default background colour when hovered (light gray). */
-    static constexpr ecs::Rgba DEFAULT_COLOR_HOVERED = {.r = 120, .g = 120, .b = 120, .a = 255};
+    static constexpr sq::ecs::Rgba DEFAULT_COLOR_HOVERED = {.r = 120, .g = 120, .b = 120, .a = 255};
 
     /** @brief Default background colour when pressed (darker gray). */
-    static constexpr ecs::Rgba DEFAULT_COLOR_PRESSED = {.r = 50, .g = 50, .b = 50, .a = 255};
+    static constexpr sq::ecs::Rgba DEFAULT_COLOR_PRESSED = {.r = 50, .g = 50, .b = 50, .a = 255};
 
     /** @brief Default label text colour (white). */
-    static constexpr ecs::Rgba DEFAULT_COLOR_TEXT = {.r = 255, .g = 255, .b = 255, .a = 255};
+    static constexpr sq::ecs::Rgba DEFAULT_COLOR_TEXT = {.r = 255, .g = 255, .b = 255, .a = 255};
 
     /** @brief Width of the button in pixels. */
     float width = DEFAULT_WIDTH;
@@ -67,16 +67,16 @@ struct UiButton {
     std::string action;
 
     /** @brief Background colour when the cursor is not over the button. */
-    ecs::Rgba colorIdle = DEFAULT_COLOR_IDLE;
+    sq::ecs::Rgba colorIdle = DEFAULT_COLOR_IDLE;
 
     /** @brief Background colour when the cursor hovers over the button. */
-    ecs::Rgba colorHovered = DEFAULT_COLOR_HOVERED;
+    sq::ecs::Rgba colorHovered = DEFAULT_COLOR_HOVERED;
 
     /** @brief Background colour while the left mouse button is held. */
-    ecs::Rgba colorPressed = DEFAULT_COLOR_PRESSED;
+    sq::ecs::Rgba colorPressed = DEFAULT_COLOR_PRESSED;
 
     /** @brief Label text colour. */
-    ecs::Rgba colorText = DEFAULT_COLOR_TEXT;
+    sq::ecs::Rgba colorText = DEFAULT_COLOR_TEXT;
 
     /** @brief Font size for the label in pixels. */
     float fontSize = DEFAULT_FONT_SIZE;
@@ -85,4 +85,4 @@ struct UiButton {
     UiButtonState state = UiButtonState::Idle;
 };
 
-}  // namespace ui
+}  // namespace sq::ui

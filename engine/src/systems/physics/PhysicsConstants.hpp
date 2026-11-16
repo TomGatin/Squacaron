@@ -2,7 +2,7 @@
 
 #include <cstddef>
 
-namespace physics {
+namespace sq::physics {
 
 /** @brief Number of screen pixels represented by one Box2D meter. */
 inline constexpr float PPM = 32.0F;
@@ -19,4 +19,4 @@ inline constexpr float POSITION_EPSILON = 0.0001F;
 /** @brief Contacts the physics system can buffer per step before its contact buffers have to grow. */
 inline constexpr std::size_t INITIAL_CONTACT_CAPACITY = 256;
 
-}  // namespace physics
+}  // namespace sq::physics

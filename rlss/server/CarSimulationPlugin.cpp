@@ -31,19 +31,19 @@
 
 namespace rlss::server {
 
-void CarSimulationPlugin::build(engine::PluginBuilder& builder) {
-    builder.require<scripting::ScriptPlugin>();
-    builder.require<ecs::net::ServerReplicationPlugin>();
+void CarSimulationPlugin::build(sq::engine::PluginBuilder& builder) {
+    builder.require<sq::scripting::ScriptPlugin>();
+    builder.require<sq::net::ServerReplicationPlugin>();
 }
 
-void CarSimulationPlugin::init(engine::Engine& engine) {
-    if (!game::installScriptBindings(engine.getPlugin<scripting::ScriptPlugin>().scriptSystem())) {
+void CarSimulationPlugin::init(sq::engine::Engine& engine) {
+    if (!game::installScriptBindings(engine.getPlugin<sq::scripting::ScriptPlugin>().scriptSystem())) {
         throw std::runtime_error("CarSimulationPlugin: Wren refused the RLSS component bindings");
     }
 
-    ecs::Registry& registry = engine.registry();
+    sq::ecs::Registry& registry = engine.registry();
     _arena = registry.spawnEntity();
-    registry.addComponent(_arena, ecs::Tag{.name = std::string(game::ARENA_TAG)});
+    registry.addComponent(_arena, sq::ecs::Tag{.name = std::string(game::ARENA_TAG)});
     registry.addComponent(_arena, game::ArenaShape{
                                       .left = arena::LEFT,
                                       .top = arena::TOP,
@@ -57,7 +57,7 @@ void CarSimulationPlugin::init(engine::Engine& engine) {
                                   });
     registry.addComponent(_arena, game::MatchState{});
     // The match script steps every car and the ball together.
-    registry.addComponent(_arena, scripting::ScriptComponent{
+    registry.addComponent(_arena, sq::scripting::ScriptComponent{
                                       .moduleName = std::string(game::MATCH_SCRIPT_MODULE),
                                       .className = "Match",
                                       .hasUpdate = true,
@@ -65,36 +65,36 @@ void CarSimulationPlugin::init(engine::Engine& engine) {
 
     // The ball starts in the middle of the arena and falls.
     _ball = registry.spawnEntity();
-    registry.addComponent(_ball, ecs::Transform{
+    registry.addComponent(_ball, sq::ecs::Transform{
                                      .x = (arena::LEFT + arena::RIGHT) / 2.0F,
                                      .y = (arena::TOP + arena::BOTTOM) / 2.0F,
                                  });
-    registry.addComponent(_ball, scripting::ScriptComponent{
+    registry.addComponent(_ball, sq::scripting::ScriptComponent{
                                      .moduleName = std::string(game::BALL_SCRIPT_MODULE),
                                      .className = "Ball",
                                  });
     registry.addComponent(_ball, game::ShotGlow{});
     registry.addComponent(_ball, game::BallCues{});
-    ecs::net::replicate(registry, _ball, game::KIND_BALL);
+    sq::net::replicate(registry, _ball, game::KIND_BALL);
 
     // A player who joins gets the score at once; afterwards, `update` sends it when it changes.
     _connected =
-        engine.eventBus().subscribe<ecs::net::PeerConnected>([this, &engine](const ecs::net::PeerConnected& event) {
+        engine.eventBus().subscribe<sq::net::PeerConnected>([this, &engine](const sq::net::PeerConnected& event) {
             if (const auto status = currentStatus(engine)) {
-                engine.service<ecs::net::INetworkService>().send(event.peer, protocol::encode(*status),
-                                                                 ecs::net::Channel::Reliable);
+                engine.service<sq::net::INetworkService>().send(event.peer, protocol::encode(*status),
+                                                                sq::net::Channel::Reliable);
             }
         });
 
-    _inputs = engine.eventBus().subscribe<ecs::net::InputApplied>([&registry](const ecs::net::InputApplied& event) {
-        auto& states = registry.getComponents<input::InputState>();
+    _inputs = engine.eventBus().subscribe<sq::net::InputApplied>([&registry](const sq::net::InputApplied& event) {
+        auto& states = registry.getComponents<sq::input::InputState>();
         if (!states.contains(event.entity)) {
             return;
         }
-        input::InputState& state = states.get(event.entity);
+        sq::input::InputState& state = states.get(event.entity);
         float steer = 0.0F;
         float pitch = 0.0F;
-        for (const ecs::NetAxis& axis : event.input.axes) {
+        for (const sq::ecs::NetAxis& axis : event.input.axes) {
             if (axis.action == game::STEER_ID) {
                 steer = std::clamp(axis.value, -1.0F, 1.0F);
             } else if (axis.action == game::PITCH_ID) {
@@ -103,7 +103,7 @@ void CarSimulationPlugin::init(engine::Engine& engine) {
         }
         state.setAxis(game::STEER_ID, steer);
         state.setAxis(game::PITCH_ID, pitch);
-        const auto held = [&event](const input::ActionId action) {
+        const auto held = [&event](const sq::input::ActionId action) {
             return std::ranges::find(event.input.held, action) != event.input.held.end();
         };
         state.setDown(game::JUMP_ID, held(game::JUMP_ID));
@@ -111,16 +111,16 @@ void CarSimulationPlugin::init(engine::Engine& engine) {
     });
 }
 
-void CarSimulationPlugin::update(engine::Engine& engine, const ecs::time::Time& /*time*/) {
+void CarSimulationPlugin::update(sq::engine::Engine& engine, const sq::time::Time& /*time*/) {
     const auto status = currentStatus(engine);
     if (!status || (_sent && *status == *_sent)) {
         return;
     }
-    engine.service<ecs::net::INetworkService>().broadcast(protocol::encode(*status), ecs::net::Channel::Reliable);
+    engine.service<sq::net::INetworkService>().broadcast(protocol::encode(*status), sq::net::Channel::Reliable);
     _sent = status;
 }
 
-std::optional<protocol::MatchStatus> CarSimulationPlugin::currentStatus(engine::Engine& engine) const {
+std::optional<protocol::MatchStatus> CarSimulationPlugin::currentStatus(sq::engine::Engine& engine) const {
     const auto& states = engine.registry().getComponents<game::MatchState>();
     if (!states.contains(_arena)) {
         return std::nullopt;
@@ -142,16 +142,16 @@ std::optional<protocol::MatchStatus> CarSimulationPlugin::currentStatus(engine::
     };
 }
 
-void CarSimulationPlugin::shutdown(engine::Engine& engine) {
+void CarSimulationPlugin::shutdown(sq::engine::Engine& engine) {
     if (_inputs) {
-        engine.eventBus().unsubscribe<ecs::net::InputApplied>(*_inputs);
+        engine.eventBus().unsubscribe<sq::net::InputApplied>(*_inputs);
         _inputs.reset();
     }
     if (_connected) {
-        engine.eventBus().unsubscribe<ecs::net::PeerConnected>(*_connected);
+        engine.eventBus().unsubscribe<sq::net::PeerConnected>(*_connected);
         _connected.reset();
     }
-    for (const ecs::Entity entity : {_ball, _arena}) {
+    for (const sq::ecs::Entity entity : {_ball, _arena}) {
         if (engine.registry().isAlive(entity)) {
             engine.registry().killEntity(entity);
         }

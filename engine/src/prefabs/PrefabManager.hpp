@@ -16,7 +16,7 @@
 #include "prefabs/PrefabParams.hpp"
 #include "utils/MoveOnlyFunction.hpp"
 
-namespace prefabs {
+namespace sq::prefabs {
 
 /**
  * @brief Maps prefab names to factories that attach a pre-configured set of components to an entity.
@@ -34,7 +34,7 @@ class PrefabManager {
      *
      * Invoked at `CommandBuffer::flush` time, once the entity exists in the Registry.
      */
-    using Factory = std::function<void(ecs::Entity, ecs::Registry&, PrefabParams const&)>;
+    using Factory = std::function<void(sq::ecs::Entity, sq::ecs::Registry&, PrefabParams const&)>;
 
     /**
      * @brief Registers (or replaces) a prefab under the given name.
@@ -69,10 +69,10 @@ class PrefabManager {
      * @param params Instance parameters, merged over the registration defaults.
      * @return True if the spawn was queued, false if the prefab is unknown.
      */
-    bool spawn(std::string_view name, ecs::CommandBuffer& buffer, PrefabParams const& params = {}) const;
+    bool spawn(std::string_view name, sq::ecs::CommandBuffer& buffer, PrefabParams const& params = {}) const;
 
     /** @brief Callback run on a prefab instance right after its factory built it. */
-    using AfterSpawn = ecs::MoveOnlyFunction<void(ecs::Entity, ecs::Registry&)>;
+    using AfterSpawn = sq::ecs::MoveOnlyFunction<void(sq::ecs::Entity, sq::ecs::Registry&)>;
 
     /**
      * @brief Queues the creation of a prefab instance, then runs `after` on it once the factory is done.
@@ -84,7 +84,8 @@ class PrefabManager {
      * @param after Callback run on the new entity; may be empty.
      * @return True if the spawn was queued, false if the prefab is unknown.
      */
-    bool spawn(std::string_view name, ecs::CommandBuffer& buffer, PrefabParams const& params, AfterSpawn after) const;
+    bool spawn(std::string_view name, sq::ecs::CommandBuffer& buffer, PrefabParams const& params,
+               AfterSpawn after) const;
 
   private:
     /** @brief A registered factory and its default parameters. */
@@ -99,4 +100,4 @@ class PrefabManager {
     std::unordered_map<std::string, Prefab, detail::StringHash, std::equal_to<>> _prefabs;
 };
 
-}  // namespace prefabs
+}  // namespace sq::prefabs

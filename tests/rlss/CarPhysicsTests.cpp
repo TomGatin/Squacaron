@@ -133,8 +133,8 @@ class CarPhysics : public ::testing::Test {
         _scripts.enableHotReload(false);
         ASSERT_TRUE(game::installScriptBindings(_scripts));
 
-        const ecs::Entity arenaEntity = _registry.spawnEntity();
-        _registry.addComponent(arenaEntity, ecs::Tag{.name = std::string(game::ARENA_TAG)});
+        const sq::ecs::Entity arenaEntity = _registry.spawnEntity();
+        _registry.addComponent(arenaEntity, sq::ecs::Tag{.name = std::string(game::ARENA_TAG)});
         _registry.addComponent(arenaEntity, game::ArenaShape{.left = arena::LEFT,
                                                              .top = arena::TOP,
                                                              .right = arena::RIGHT,
@@ -149,38 +149,38 @@ class CarPhysics : public ::testing::Test {
         _arena = arenaEntity;
         _registry.addComponent(
             arenaEntity,
-            scripting::ScriptComponent{
+            sq::scripting::ScriptComponent{
                 .moduleName = std::string(game::MATCH_SCRIPT_MODULE), .className = "Match", .hasUpdate = true});
     }
 
     /** @brief Spawns a car at rest, wheels down. */
     void spawnCar(const float x, const float y, const float facing = 1.0F) {
         _car = _registry.spawnEntity();
-        _registry.addComponent(_car, ecs::Transform{.x = x, .y = y, .scaleX = facing});
-        input::InputState controls;
+        _registry.addComponent(_car, sq::ecs::Transform{.x = x, .y = y, .scaleX = facing});
+        sq::input::InputState controls;
         controls.playerIndex = 3;
         _registry.addComponent(_car, std::move(controls));
         _registry.addComponent(_car, game::CarStatus{});
         _registry.addComponent(_car, game::CarCues{});
-        _registry.addComponent(
-            _car, scripting::ScriptComponent{.moduleName = std::string(game::CAR_SCRIPT_MODULE), .className = "Car"});
+        _registry.addComponent(_car, sq::scripting::ScriptComponent{.moduleName = std::string(game::CAR_SCRIPT_MODULE),
+                                                                    .className = "Car"});
     }
 
     /** @brief Spawns the ball at rest. */
     void spawnBall(const float x, const float y) {
         _ball = _registry.spawnEntity();
-        _registry.addComponent(_ball, ecs::Transform{.x = x, .y = y});
+        _registry.addComponent(_ball, sq::ecs::Transform{.x = x, .y = y});
         _registry.addComponent(_ball, game::ShotGlow{});
         _registry.addComponent(_ball, game::BallCues{});
-        _registry.addComponent(_ball, scripting::ScriptComponent{.moduleName = std::string(game::BALL_SCRIPT_MODULE),
-                                                                 .className = "Ball"});
+        _registry.addComponent(_ball, sq::scripting::ScriptComponent{
+                                          .moduleName = std::string(game::BALL_SCRIPT_MODULE), .className = "Ball"});
     }
 
     /** @brief Simulates `seconds` with the given input held. */
     void run(const float seconds, const float steer = 0.0F, const bool jump = false, const bool boost = false,
              const float pitch = 0.0F) {
         if (_car != 0) {
-            auto& input = _registry.getComponents<input::InputState>().get(_car);
+            auto& input = _registry.getComponents<sq::input::InputState>().get(_car);
             input.setAxis(game::STEER_ID, steer);
             input.setAxis(game::PITCH_ID, pitch);
             input.setDown(game::JUMP_ID, jump);
@@ -203,7 +203,7 @@ class CarPhysics : public ::testing::Test {
      * gradient of the test's own arena distance.
      */
     [[nodiscard]] bool notOnItsBack() {
-        const ecs::Transform& t = transform();
+        const sq::ecs::Transform& t = transform();
         const float c = std::cos(t.rotation);
         const float s = std::sin(t.rotation);
         float closest = std::numeric_limits<float>::max();
@@ -226,13 +226,15 @@ class CarPhysics : public ::testing::Test {
         return roofTowardWall < 0.5F;
     }
 
-    [[nodiscard]] const ecs::Transform& transform() { return _registry.getComponents<ecs::Transform>().get(_car); }
-    [[nodiscard]] const ecs::Transform& ball() { return _registry.getComponents<ecs::Transform>().get(_ball); }
+    [[nodiscard]] const sq::ecs::Transform& transform() {
+        return _registry.getComponents<sq::ecs::Transform>().get(_car);
+    }
+    [[nodiscard]] const sq::ecs::Transform& ball() { return _registry.getComponents<sq::ecs::Transform>().get(_ball); }
     [[nodiscard]] const game::CarStatus& status() { return _registry.getComponents<game::CarStatus>().get(_car); }
 
     /** @brief Every corner of the hitbox is inside the arena (with a small tolerance). */
     [[nodiscard]] bool insideArena() {
-        const ecs::Transform& t = transform();
+        const sq::ecs::Transform& t = transform();
         const float c = std::cos(t.rotation);
         const float s = std::sin(t.rotation);
         for (const float lx : {-HALF_LENGTH, HALF_LENGTH}) {
@@ -298,7 +300,8 @@ class CarPhysics : public ::testing::Test {
         const float ballY = arena::BOTTOM - BALL_RADIUS;
         spawnBall(arena::WIDTH / 2.0F, ballY);
         spawnCar((arena::WIDTH / 2.0F) + BALL_RADIUS + HALF_HEIGHT - 1.0F, ballY);
-        _registry.getComponents<ecs::Transform>().get(_car).rotation = std::numbers::pi_v<float> / 2.0F;  // wheels left
+        _registry.getComponents<sq::ecs::Transform>().get(_car).rotation =
+            std::numbers::pi_v<float> / 2.0F;  // wheels left
     }
 
     [[nodiscard]] const game::MatchState& match() { return _registry.getComponents<game::MatchState>().get(_arena); }
@@ -309,12 +312,12 @@ class CarPhysics : public ::testing::Test {
     /** @brief `Match.DURATION`: 3 minutes. */
     static constexpr int MATCH_DURATION = 180;
 
-    ecs::Registry _registry;
-    ecs::EventBus _bus;
-    scripting::ScriptSystem _scripts;
-    ecs::Entity _arena = 0;
-    ecs::Entity _car = 0;
-    ecs::Entity _ball = 0;
+    sq::ecs::Registry _registry;
+    sq::events::EventBus _bus;
+    sq::scripting::ScriptSystem _scripts;
+    sq::ecs::Entity _arena = 0;
+    sq::ecs::Entity _car = 0;
+    sq::ecs::Entity _ball = 0;
 };
 
 TEST_F(CarPhysics, FallsAndRestsOnTheFloor) {
@@ -345,7 +348,7 @@ TEST_F(CarPhysics, SteeringBackTurnsTheCarAround) {
 TEST_F(CarPhysics, DrivesUpTheWallAboveTheGoalAndAlongTheCeilingForAMoment) {
     // On the right wall, above the goal, wheels against the wall and nose up.
     spawnCar(arena::RIGHT - HALF_HEIGHT + 1.0F, arena::GOAL_TOP - 80.0F);
-    _registry.getComponents<ecs::Transform>().get(_car).rotation = -std::numbers::pi_v<float> / 2.0F;
+    _registry.getComponents<sq::ecs::Transform>().get(_car).rotation = -std::numbers::pi_v<float> / 2.0F;
     run(0.1F);
     float highest = arena::BOTTOM;
     for (int i = 0; i < 90; ++i) {
@@ -682,7 +685,7 @@ float fastestBall(CarPhysics& test, float seconds, float steer, bool jump = fals
 
 TEST_F(CarPhysics, BoostingNoseUpClimbsAgainstGravity) {
     spawnCar(arena::WIDTH / 2.0F, arena::BOTTOM - 600.0F);
-    _registry.getComponents<ecs::Transform>().get(_car).rotation = -std::numbers::pi_v<float> / 2.0F;  // nose up
+    _registry.getComponents<sq::ecs::Transform>().get(_car).rotation = -std::numbers::pi_v<float> / 2.0F;  // nose up
     run(FRAME, 0.0F, false, true);
     const float start = transform().y;
     run(0.6F, 0.0F, false, true);
@@ -691,7 +694,7 @@ TEST_F(CarPhysics, BoostingNoseUpClimbsAgainstGravity) {
 
 TEST_F(CarPhysics, DrivesUpsideDownOnTheCeilingWhileDrivingAndFallsWhenLettingGo) {
     spawnCar(arena::WIDTH / 2.0F, arena::TOP + HALF_HEIGHT - 1.0F);
-    _registry.getComponents<ecs::Transform>().get(_car).rotation = std::numbers::pi_v<float>;  // wheels up
+    _registry.getComponents<sq::ecs::Transform>().get(_car).rotation = std::numbers::pi_v<float>;  // wheels up
     run(0.8F, 1.0F);
     EXPECT_LT(transform().y, arena::TOP + 30.0F);  // still on the ceiling after 0.8 s of driving
     run(1.0F);
@@ -700,7 +703,7 @@ TEST_F(CarPhysics, DrivesUpsideDownOnTheCeilingWhileDrivingAndFallsWhenLettingGo
 
 TEST_F(CarPhysics, TheFlipStaysAvailableUntilTheCarTouchesASurface) {
     spawnCar(arena::WIDTH / 2.0F, arena::TOP + HALF_HEIGHT - 1.0F);
-    _registry.getComponents<ecs::Transform>().get(_car).rotation = std::numbers::pi_v<float>;
+    _registry.getComponents<sq::ecs::Transform>().get(_car).rotation = std::numbers::pi_v<float>;
     run(0.5F, 1.0F);
     run(FRAME, 1.0F, true);  // tap jump: off the ceiling, downward
     run(1.3F);               // long fall: Rocket League would have closed the flip window (1.25 s)
@@ -767,7 +770,7 @@ float fastestBall(CarPhysics& test, const float seconds, const float steer, cons
 TEST_F(CarPhysics, DroppedUpsideDownItTurnsOverAndLandsOnItsWheels) {
     const float floor = arena::BOTTOM - HALF_HEIGHT;
     spawnCar(arena::WIDTH / 2.0F, floor - 400.0F);
-    _registry.getComponents<ecs::Transform>().get(_car).rotation = std::numbers::pi_v<float>;  // roof down
+    _registry.getComponents<sq::ecs::Transform>().get(_car).rotation = std::numbers::pi_v<float>;  // roof down
     for (int i = 0; i < 90; ++i) {
         run(FRAME);
         // Close enough to touch the floor with a corner: the wheels already point down.
@@ -983,7 +986,7 @@ TEST_F(CarPhysics, ABallThrownIntoAGoalCornerFollowsTheCurve) {
 namespace {
 
 /** @brief Direction of the nose on screen, in radians (0 right, -pi/2 up), from a car transform. */
-float noseAngle(const ecs::Transform& car) {
+float noseAngle(const sq::ecs::Transform& car) {
     const float facing = car.scaleX < 0.0F ? -1.0F : 1.0F;
     return std::atan2(facing * std::sin(car.rotation), facing * std::cos(car.rotation));
 }

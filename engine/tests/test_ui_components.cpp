@@ -26,7 +26,7 @@
 
 namespace {
 
-struct FakeWindow : engine::IWindowService {
+struct FakeWindow : sq::engine::IWindowService {
     int w = 1920;
     int h = 1080;
     float mx = 0.0F;
@@ -54,99 +54,100 @@ struct FakeWindow : engine::IWindowService {
     void endFrame() override {}
     [[nodiscard]] int width() const noexcept override { return w; }
     [[nodiscard]] int height() const noexcept override { return h; }
-    [[nodiscard]] bool isKeyDown(engine::Key) const noexcept override { return false; }
+    [[nodiscard]] bool isKeyDown(sq::engine::Key) const noexcept override { return false; }
     [[nodiscard]] bool isGamepadAvailable(int) const noexcept override { return false; }
-    [[nodiscard]] bool isGamepadButtonDown(int, engine::GamepadButton) const noexcept override { return false; }
-    [[nodiscard]] float gamepadAxis(int, engine::GamepadAxis) const noexcept override { return 0.0F; }
-    [[nodiscard]] bool isMouseButtonDown(engine::MouseButton btn) const noexcept override {
-        return btn == engine::MouseButton::Left && leftDown;
+    [[nodiscard]] bool isGamepadButtonDown(int, sq::engine::GamepadButton) const noexcept override { return false; }
+    [[nodiscard]] float gamepadAxis(int, sq::engine::GamepadAxis) const noexcept override { return 0.0F; }
+    [[nodiscard]] bool isMouseButtonDown(sq::engine::MouseButton btn) const noexcept override {
+        return btn == sq::engine::MouseButton::Left && leftDown;
     }
-    [[nodiscard]] bool isMouseButtonPressed(engine::MouseButton btn) const noexcept override {
-        return btn == engine::MouseButton::Left && leftPressed;
+    [[nodiscard]] bool isMouseButtonPressed(sq::engine::MouseButton btn) const noexcept override {
+        return btn == sq::engine::MouseButton::Left && leftPressed;
     }
-    [[nodiscard]] bool isMouseButtonReleased(engine::MouseButton btn) const noexcept override {
-        return btn == engine::MouseButton::Left && leftReleased;
+    [[nodiscard]] bool isMouseButtonReleased(sq::engine::MouseButton btn) const noexcept override {
+        return btn == sq::engine::MouseButton::Left && leftReleased;
     }
-    [[nodiscard]] engine::MousePosition mousePosition() const noexcept override { return {.x = mx, .y = my}; }
+    [[nodiscard]] sq::engine::MousePosition mousePosition() const noexcept override { return {.x = mx, .y = my}; }
     [[nodiscard]] float mouseWheelDelta() const noexcept override { return 0.0F; }
     [[nodiscard]] char32_t nextTypedCharacter() noexcept override { return U'\0'; }
 };
 
-static ecs::Entity makeButton(ecs::Registry& reg, float ancX, float ancY, float w = 120.0F, float h = 36.0F,
-                              const std::string& action = "click") {
-    const ecs::Entity e = reg.spawnEntity();
-    reg.addComponent<ui::UiAnchor>(e, ui::UiAnchor{.anchorX = ancX, .anchorY = ancY});
-    reg.addComponent<ui::UiButton>(e, ui::UiButton{.width = w, .height = h, .action = action});
+static sq::ecs::Entity makeButton(sq::ecs::Registry& reg, float ancX, float ancY, float w = 120.0F, float h = 36.0F,
+                                  const std::string& action = "click") {
+    const sq::ecs::Entity e = reg.spawnEntity();
+    reg.addComponent<sq::ui::UiAnchor>(e, sq::ui::UiAnchor{.anchorX = ancX, .anchorY = ancY});
+    reg.addComponent<sq::ui::UiButton>(e, sq::ui::UiButton{.width = w, .height = h, .action = action});
     return e;
 }
 
 /** @brief Fixed text size, so layout tests do not need a window or a font. */
-constexpr ui::UiSize FAKE_TEXT_SIZE = {.width = 50.0F, .height = 10.0F};
+constexpr sq::ui::UiSize FAKE_TEXT_SIZE = {.width = 50.0F, .height = 10.0F};
 
-ui::UiSize fakeMeasure(const ui::UiText& /*text*/) { return FAKE_TEXT_SIZE; }
+sq::ui::UiSize fakeMeasure(const sq::ui::UiText& /*text*/) { return FAKE_TEXT_SIZE; }
 
-std::vector<ui::UiLayoutNode> layoutOf(ecs::Registry& reg, const FakeWindow& win) {
-    std::vector<ui::UiLayoutNode> nodes;
-    ui::computeLayout(reg, ui::UiScreenRect{.width = static_cast<float>(win.w), .height = static_cast<float>(win.h)},
-                      fakeMeasure, nodes);
+std::vector<sq::ui::UiLayoutNode> layoutOf(sq::ecs::Registry& reg, const FakeWindow& win) {
+    std::vector<sq::ui::UiLayoutNode> nodes;
+    sq::ui::computeLayout(reg,
+                          sq::ui::UiScreenRect{.width = static_cast<float>(win.w), .height = static_cast<float>(win.h)},
+                          fakeMeasure, nodes);
     return nodes;
 }
 
-void updateButtons(ecs::Registry& reg, const FakeWindow& win, ecs::EventBus& bus) {
-    ui::UiButtonSystem::update(reg, layoutOf(reg, win), win, bus);
+void updateButtons(sq::ecs::Registry& reg, const FakeWindow& win, sq::events::EventBus& bus) {
+    sq::ui::UiButtonSystem::update(reg, layoutOf(reg, win), win, bus);
 }
 
-const ui::UiLayoutNode* findNode(const std::vector<ui::UiLayoutNode>& nodes, ecs::Entity e) {
-    const auto it = std::ranges::find(nodes, e, &ui::UiLayoutNode::entity);
+const sq::ui::UiLayoutNode* findNode(const std::vector<sq::ui::UiLayoutNode>& nodes, sq::ecs::Entity e) {
+    const auto it = std::ranges::find(nodes, e, &sq::ui::UiLayoutNode::entity);
     return it == nodes.end() ? nullptr : &*it;
 }
 
-std::ptrdiff_t indexOf(const std::vector<ui::UiLayoutNode>& nodes, ecs::Entity e) {
-    return std::ranges::find(nodes, e, &ui::UiLayoutNode::entity) - nodes.begin();
+std::ptrdiff_t indexOf(const std::vector<sq::ui::UiLayoutNode>& nodes, sq::ecs::Entity e) {
+    return std::ranges::find(nodes, e, &sq::ui::UiLayoutNode::entity) - nodes.begin();
 }
 
 /** @brief Records the draw calls it receives, in order. */
-struct FakeScreenDraw final : engine::IScreenDrawService {
+struct FakeScreenDraw final : sq::engine::IScreenDrawService {
     struct Call {
         std::string kind;
-        engine::ScreenRect rect;
-        ecs::Rgba color;
+        sq::engine::ScreenRect rect;
+        sq::ecs::Rgba color;
         std::string text;
     };
     std::vector<Call> calls;
 
-    engine::FontId loadFont(const std::string& /*path*/) override { return engine::NO_FONT; }
-    [[nodiscard]] engine::TextSize measureText(std::string_view /*text*/, float /*fontSize*/, float /*spacing*/,
-                                               engine::FontId /*font*/) const override {
+    sq::engine::FontId loadFont(const std::string& /*path*/) override { return sq::engine::NO_FONT; }
+    [[nodiscard]] sq::engine::TextSize measureText(std::string_view /*text*/, float /*fontSize*/, float /*spacing*/,
+                                                   sq::engine::FontId /*font*/) const override {
         return {.width = FAKE_TEXT_SIZE.width, .height = FAKE_TEXT_SIZE.height};
     }
-    void fillRect(const engine::ScreenRect& rect, const ecs::Rgba& color) override {
+    void fillRect(const sq::engine::ScreenRect& rect, const sq::ecs::Rgba& color) override {
         calls.push_back({.kind = "fill", .rect = rect, .color = color, .text = {}});
     }
-    void strokeRect(const engine::ScreenRect& rect, float /*thickness*/, const ecs::Rgba& color) override {
+    void strokeRect(const sq::engine::ScreenRect& rect, float /*thickness*/, const sq::ecs::Rgba& color) override {
         calls.push_back({.kind = "stroke", .rect = rect, .color = color, .text = {}});
     }
     void drawText(std::string_view text, float x, float y, float /*fontSize*/, float /*spacing*/,
-                  const ecs::Rgba& color, engine::FontId /*font*/) override {
+                  const sq::ecs::Rgba& color, sq::engine::FontId /*font*/) override {
         calls.push_back({.kind = "text", .rect = {.x = x, .y = y}, .color = color, .text = std::string(text)});
     }
-    void drawTexture(ecs::TextureId /*texture*/, const ecs::TextureRect& /*source*/, const engine::ScreenRect& dest,
-                     float /*rotation*/, const ecs::Rgba& tint) override {
+    void drawTexture(sq::ecs::TextureId /*texture*/, const sq::ecs::TextureRect& /*source*/,
+                     const sq::engine::ScreenRect& dest, float /*rotation*/, const sq::ecs::Rgba& tint) override {
         calls.push_back({.kind = "texture", .rect = dest, .color = tint, .text = {}});
     }
 };
 
-void renderUi(ecs::Registry& reg, FakeScreenDraw& draw) {
-    ui::UiRenderSystem system;
-    system.update(reg, ui::UiScreenRect{.width = 1920.0F, .height = 1080.0F}, draw);
+void renderUi(sq::ecs::Registry& reg, FakeScreenDraw& draw) {
+    sq::ui::UiRenderSystem system;
+    system.update(reg, sq::ui::UiScreenRect{.width = 1920.0F, .height = 1080.0F}, draw);
 }
 
 }  // namespace
 
-TEST(FontId, NoFontSentinelIsZero) { EXPECT_EQ(ui::NO_FONT, 0U); }
+TEST(FontId, NoFontSentinelIsZero) { EXPECT_EQ(sq::ui::NO_FONT, 0U); }
 
 TEST(UiAnchor, DefaultValues) {
-    const ui::UiAnchor anchor;
+    const sq::ui::UiAnchor anchor;
 
     EXPECT_EQ(anchor.anchorX, 0.0F);
     EXPECT_EQ(anchor.anchorY, 0.0F);
@@ -155,7 +156,7 @@ TEST(UiAnchor, DefaultValues) {
 }
 
 TEST(UiAnchor, DesignatedInitializersKeepOtherDefaults) {
-    const ui::UiAnchor anchor{.anchorX = 0.5F, .anchorY = 1.0F};
+    const sq::ui::UiAnchor anchor{.anchorX = 0.5F, .anchorY = 1.0F};
 
     EXPECT_EQ(anchor.anchorX, 0.5F);
     EXPECT_EQ(anchor.anchorY, 1.0F);
@@ -164,25 +165,26 @@ TEST(UiAnchor, DesignatedInitializersKeepOtherDefaults) {
 }
 
 TEST(UiAnchor, WorksAsEcsComponent) {
-    ecs::Registry registry;
-    const ecs::Entity entity = registry.spawnEntity();
+    sq::ecs::Registry registry;
+    const sq::ecs::Entity entity = registry.spawnEntity();
 
-    registry.addComponent<ui::UiAnchor>(entity, ui::UiAnchor{.anchorX = 0.5F, .offsetY = -8.0F});
+    registry.addComponent<sq::ui::UiAnchor>(entity, sq::ui::UiAnchor{.anchorX = 0.5F, .offsetY = -8.0F});
 
-    ASSERT_TRUE(registry.hasComponent<ui::UiAnchor>(entity));
-    EXPECT_EQ(registry.getComponents<ui::UiAnchor>().get(entity).anchorX, 0.5F);
-    EXPECT_EQ(registry.getComponents<ui::UiAnchor>().get(entity).offsetY, -8.0F);
+    ASSERT_TRUE(registry.hasComponent<sq::ui::UiAnchor>(entity));
+    EXPECT_EQ(registry.getComponents<sq::ui::UiAnchor>().get(entity).anchorX, 0.5F);
+    EXPECT_EQ(registry.getComponents<sq::ui::UiAnchor>().get(entity).offsetY, -8.0F);
 }
 
-static std::pair<float, float> resolveAnchor(const ui::UiAnchor& anchor, float screenW, float screenH,
+static std::pair<float, float> resolveAnchor(const sq::ui::UiAnchor& anchor, float screenW, float screenH,
                                              float elemW = 0.0F, float elemH = 0.0F) {
-    const ui::UiScreenRect rect = ui::resolveAnchor(anchor, ui::UiScreenRect{.width = screenW, .height = screenH},
-                                                    ui::UiSize{.width = elemW, .height = elemH});
+    const sq::ui::UiScreenRect rect =
+        sq::ui::resolveAnchor(anchor, sq::ui::UiScreenRect{.width = screenW, .height = screenH},
+                              sq::ui::UiSize{.width = elemW, .height = elemH});
     return {rect.x, rect.y};
 }
 
 TEST(UiAnchorResolution, TopLeftCorner) {
-    const ui::UiAnchor anchor{.anchorX = 0.0F, .anchorY = 0.0F};
+    const sq::ui::UiAnchor anchor{.anchorX = 0.0F, .anchorY = 0.0F};
     auto [x, y] = resolveAnchor(anchor, 1920.0F, 1080.0F);
 
     EXPECT_FLOAT_EQ(x, 0.0F);
@@ -190,7 +192,7 @@ TEST(UiAnchorResolution, TopLeftCorner) {
 }
 
 TEST(UiAnchorResolution, BottomRightCornerNoPivot) {
-    const ui::UiAnchor anchor{.anchorX = 1.0F, .anchorY = 1.0F};
+    const sq::ui::UiAnchor anchor{.anchorX = 1.0F, .anchorY = 1.0F};
     auto [x, y] = resolveAnchor(anchor, 1920.0F, 1080.0F);
 
     EXPECT_FLOAT_EQ(x, 1920.0F);
@@ -198,7 +200,7 @@ TEST(UiAnchorResolution, BottomRightCornerNoPivot) {
 }
 
 TEST(UiAnchorResolution, BottomRightCornerWithPivot) {
-    const ui::UiAnchor anchor{.anchorX = 1.0F, .anchorY = 1.0F, .pivotX = 1.0F, .pivotY = 1.0F};
+    const sq::ui::UiAnchor anchor{.anchorX = 1.0F, .anchorY = 1.0F, .pivotX = 1.0F, .pivotY = 1.0F};
     auto [x, y] = resolveAnchor(anchor, 1920.0F, 1080.0F, 200.0F, 40.0F);
 
     EXPECT_FLOAT_EQ(x, 1920.0F - 200.0F);
@@ -206,7 +208,7 @@ TEST(UiAnchorResolution, BottomRightCornerWithPivot) {
 }
 
 TEST(UiAnchorResolution, CenterWithOffset) {
-    const ui::UiAnchor anchor{.anchorX = 0.5F, .anchorY = 0.5F, .offsetX = -50.0F, .offsetY = 10.0F};
+    const sq::ui::UiAnchor anchor{.anchorX = 0.5F, .anchorY = 0.5F, .offsetX = -50.0F, .offsetY = 10.0F};
     auto [x, y] = resolveAnchor(anchor, 1920.0F, 1080.0F);
 
     EXPECT_FLOAT_EQ(x, 910.0F);
@@ -214,7 +216,7 @@ TEST(UiAnchorResolution, CenterWithOffset) {
 }
 
 TEST(UiAnchorResolution, CenterPivotCentersElement) {
-    const ui::UiAnchor anchor{.anchorX = 0.5F, .anchorY = 0.5F, .pivotX = 0.5F, .pivotY = 0.5F};
+    const sq::ui::UiAnchor anchor{.anchorX = 0.5F, .anchorY = 0.5F, .pivotX = 0.5F, .pivotY = 0.5F};
     auto [x, y] = resolveAnchor(anchor, 1920.0F, 1080.0F, 200.0F, 40.0F);
 
     EXPECT_FLOAT_EQ(x, 960.0F - 100.0F);
@@ -222,14 +224,14 @@ TEST(UiAnchorResolution, CenterPivotCentersElement) {
 }
 
 TEST(UiAnchor, DefaultPivotIsZero) {
-    const ui::UiAnchor anchor;
+    const sq::ui::UiAnchor anchor;
 
     EXPECT_EQ(anchor.pivotX, 0.0F);
     EXPECT_EQ(anchor.pivotY, 0.0F);
 }
 
 TEST(UiRect, DefaultValues) {
-    const ui::UiRect rect;
+    const sq::ui::UiRect rect;
 
     EXPECT_EQ(rect.width, 0.0F);
     EXPECT_EQ(rect.height, 0.0F);
@@ -238,7 +240,7 @@ TEST(UiRect, DefaultValues) {
 }
 
 TEST(UiRect, DesignatedInitializersKeepOtherDefaults) {
-    const ui::UiRect rect{
+    const sq::ui::UiRect rect{
         .width = 200.0F,
         .height = 40.0F,
         .fillColor = {.r = 255, .g = 0, .b = 0, .a = 255},
@@ -251,23 +253,23 @@ TEST(UiRect, DesignatedInitializersKeepOtherDefaults) {
 }
 
 TEST(UiText, DefaultValues) {
-    const ui::UiText text;
+    const sq::ui::UiText text;
 
     EXPECT_TRUE(text.text.empty());
     EXPECT_EQ(text.fontSize, 20.0F);
-    EXPECT_EQ(text.fontId, ui::NO_FONT);
+    EXPECT_EQ(text.fontId, sq::ui::NO_FONT);
 }
 
 TEST(UiText, DesignatedInitializersKeepOtherDefaults) {
-    const ui::UiText text{.text = "score: 0", .fontSize = 32.0F};
+    const sq::ui::UiText text{.text = "score: 0", .fontSize = 32.0F};
 
     EXPECT_EQ(text.text, "score: 0");
     EXPECT_EQ(text.fontSize, 32.0F);
-    EXPECT_EQ(text.fontId, ui::NO_FONT);
+    EXPECT_EQ(text.fontId, sq::ui::NO_FONT);
 }
 
 TEST(UiProgressBar, DefaultValues) {
-    const ui::UiProgressBar bar;
+    const sq::ui::UiProgressBar bar;
 
     EXPECT_EQ(bar.value, 0.0F);
     EXPECT_EQ(bar.min, 0.0F);
@@ -277,14 +279,14 @@ TEST(UiProgressBar, DefaultValues) {
 }
 
 TEST(UiProgressBar, DesignatedInitializersKeepOtherDefaults) {
-    const ui::UiProgressBar bar{.value = 50.0F, .min = 0.0F, .max = 100.0F};
+    const sq::ui::UiProgressBar bar{.value = 50.0F, .min = 0.0F, .max = 100.0F};
 
     EXPECT_EQ(bar.value, 50.0F);
     EXPECT_EQ(bar.max, 100.0F);
     EXPECT_EQ(bar.width, 100.0F);
 }
 
-static float computeRatio(const ui::UiProgressBar& bar) {
+static float computeRatio(const sq::ui::UiProgressBar& bar) {
     const float range = bar.max - bar.min;
     if (range <= 0.0F) {
         return 0.0F;
@@ -293,29 +295,29 @@ static float computeRatio(const ui::UiProgressBar& bar) {
 }
 
 TEST(UiProgressBarRatio, MidRange) {
-    const ui::UiProgressBar bar{.value = 50.0F, .min = 0.0F, .max = 100.0F};
+    const sq::ui::UiProgressBar bar{.value = 50.0F, .min = 0.0F, .max = 100.0F};
     EXPECT_FLOAT_EQ(computeRatio(bar), 0.5F);
 }
 
 TEST(UiProgressBarRatio, ClampsBelowMin) {
-    const ui::UiProgressBar bar{.value = -10.0F, .min = 0.0F, .max = 100.0F};
+    const sq::ui::UiProgressBar bar{.value = -10.0F, .min = 0.0F, .max = 100.0F};
     EXPECT_FLOAT_EQ(computeRatio(bar), 0.0F);
 }
 
 TEST(UiProgressBarRatio, ClampsAboveMax) {
-    const ui::UiProgressBar bar{.value = 150.0F, .min = 0.0F, .max = 100.0F};
+    const sq::ui::UiProgressBar bar{.value = 150.0F, .min = 0.0F, .max = 100.0F};
     EXPECT_FLOAT_EQ(computeRatio(bar), 1.0F);
 }
 
 TEST(UiProgressBarRatio, ZeroRangeReturnsZero) {
-    const ui::UiProgressBar bar{.value = 5.0F, .min = 5.0F, .max = 5.0F};
+    const sq::ui::UiProgressBar bar{.value = 5.0F, .min = 5.0F, .max = 5.0F};
     EXPECT_FLOAT_EQ(computeRatio(bar), 0.0F);
 }
 
 TEST(UiButton, DefaultValues) {
-    const ui::UiButton btn;
+    const sq::ui::UiButton btn;
 
-    EXPECT_EQ(btn.state, ui::UiButtonState::Idle);
+    EXPECT_EQ(btn.state, sq::ui::UiButtonState::Idle);
     EXPECT_EQ(btn.width, 120.0F);
     EXPECT_EQ(btn.height, 36.0F);
     EXPECT_TRUE(btn.label.empty());
@@ -323,151 +325,152 @@ TEST(UiButton, DefaultValues) {
 }
 
 TEST(UiButton, WorksAsEcsComponent) {
-    ecs::Registry registry;
-    const ecs::Entity entity = registry.spawnEntity();
+    sq::ecs::Registry registry;
+    const sq::ecs::Entity entity = registry.spawnEntity();
 
-    registry.addComponent<ui::UiButton>(entity, ui::UiButton{.action = "fire"});
+    registry.addComponent<sq::ui::UiButton>(entity, sq::ui::UiButton{.action = "fire"});
 
-    ASSERT_TRUE(registry.hasComponent<ui::UiButton>(entity));
-    EXPECT_EQ(registry.getComponents<ui::UiButton>().get(entity).action, "fire");
+    ASSERT_TRUE(registry.hasComponent<sq::ui::UiButton>(entity));
+    EXPECT_EQ(registry.getComponents<sq::ui::UiButton>().get(entity).action, "fire");
 }
 
 TEST(UiButtonSystem, IdleToHoveredWhenMouseEnters) {
-    ecs::Registry reg;
-    ecs::EventBus bus;
+    sq::ecs::Registry reg;
+    sq::events::EventBus bus;
     FakeWindow win;
-    const ecs::Entity e = makeButton(reg, 0.0F, 0.0F);
+    const sq::ecs::Entity e = makeButton(reg, 0.0F, 0.0F);
 
     win.mx = 60.0F;
     win.my = 18.0F;
     updateButtons(reg, win, bus);
 
-    EXPECT_EQ(reg.getComponents<ui::UiButton>().get(e).state, ui::UiButtonState::Hovered);
+    EXPECT_EQ(reg.getComponents<sq::ui::UiButton>().get(e).state, sq::ui::UiButtonState::Hovered);
 }
 
 TEST(UiButtonSystem, HoveredToIdleWhenMouseLeaves) {
-    ecs::Registry reg;
-    ecs::EventBus bus;
+    sq::ecs::Registry reg;
+    sq::events::EventBus bus;
     FakeWindow win;
-    const ecs::Entity e = makeButton(reg, 0.0F, 0.0F);
-    reg.getComponents<ui::UiButton>().get(e).state = ui::UiButtonState::Hovered;
+    const sq::ecs::Entity e = makeButton(reg, 0.0F, 0.0F);
+    reg.getComponents<sq::ui::UiButton>().get(e).state = sq::ui::UiButtonState::Hovered;
 
     win.mx = 999.0F;
     win.my = 999.0F;
     updateButtons(reg, win, bus);
 
-    EXPECT_EQ(reg.getComponents<ui::UiButton>().get(e).state, ui::UiButtonState::Idle);
+    EXPECT_EQ(reg.getComponents<sq::ui::UiButton>().get(e).state, sq::ui::UiButtonState::Idle);
 }
 
 TEST(UiButtonSystem, HoveredToPressedOnMouseDown) {
-    ecs::Registry reg;
-    ecs::EventBus bus;
+    sq::ecs::Registry reg;
+    sq::events::EventBus bus;
     FakeWindow win;
-    const ecs::Entity e = makeButton(reg, 0.0F, 0.0F);
-    reg.getComponents<ui::UiButton>().get(e).state = ui::UiButtonState::Hovered;
+    const sq::ecs::Entity e = makeButton(reg, 0.0F, 0.0F);
+    reg.getComponents<sq::ui::UiButton>().get(e).state = sq::ui::UiButtonState::Hovered;
 
     win.mx = 60.0F;
     win.my = 18.0F;
     win.press();
     updateButtons(reg, win, bus);
 
-    EXPECT_EQ(reg.getComponents<ui::UiButton>().get(e).state, ui::UiButtonState::Pressed);
+    EXPECT_EQ(reg.getComponents<sq::ui::UiButton>().get(e).state, sq::ui::UiButtonState::Pressed);
 }
 
 TEST(UiButtonSystem, IdleToPressedWhenEnteringAndPressingSameFrame) {
-    ecs::Registry reg;
-    ecs::EventBus bus;
+    sq::ecs::Registry reg;
+    sq::events::EventBus bus;
     FakeWindow win;
-    const ecs::Entity e = makeButton(reg, 0.0F, 0.0F);
+    const sq::ecs::Entity e = makeButton(reg, 0.0F, 0.0F);
 
     win.mx = 60.0F;
     win.my = 18.0F;
     win.press();
     updateButtons(reg, win, bus);
 
-    EXPECT_EQ(reg.getComponents<ui::UiButton>().get(e).state, ui::UiButtonState::Pressed);
+    EXPECT_EQ(reg.getComponents<sq::ui::UiButton>().get(e).state, sq::ui::UiButtonState::Pressed);
 }
 
 TEST(UiButtonSystem, HeldMouseDraggedOntoButtonDoesNotPress) {
-    ecs::Registry reg;
-    ecs::EventBus bus;
+    sq::ecs::Registry reg;
+    sq::events::EventBus bus;
     FakeWindow win;
-    const ecs::Entity e = makeButton(reg, 0.0F, 0.0F);
-    reg.getComponents<ui::UiButton>().get(e).state = ui::UiButtonState::Hovered;
+    const sq::ecs::Entity e = makeButton(reg, 0.0F, 0.0F);
+    reg.getComponents<sq::ui::UiButton>().get(e).state = sq::ui::UiButtonState::Hovered;
 
     win.mx = 60.0F;
     win.my = 18.0F;
     win.leftDown = true;
     updateButtons(reg, win, bus);
 
-    EXPECT_EQ(reg.getComponents<ui::UiButton>().get(e).state, ui::UiButtonState::Hovered);
+    EXPECT_EQ(reg.getComponents<sq::ui::UiButton>().get(e).state, sq::ui::UiButtonState::Hovered);
 }
 
 TEST(UiButtonSystem, PressedToReleasedAndEventOnReleaseOverButton) {
-    ecs::Registry reg;
-    ecs::EventBus bus;
+    sq::ecs::Registry reg;
+    sq::events::EventBus bus;
     FakeWindow win;
-    const ecs::Entity e = makeButton(reg, 0.0F, 0.0F, 120.0F, 36.0F, "shoot");
-    reg.getComponents<ui::UiButton>().get(e).state = ui::UiButtonState::Pressed;
+    const sq::ecs::Entity e = makeButton(reg, 0.0F, 0.0F, 120.0F, 36.0F, "shoot");
+    reg.getComponents<sq::ui::UiButton>().get(e).state = sq::ui::UiButtonState::Pressed;
 
     std::string capturedAction;
-    bus.subscribe<ui::UiButtonClickedEvent>([&](const ui::UiButtonClickedEvent& ev) { capturedAction = ev.action; });
+    bus.subscribe<sq::ui::UiButtonClickedEvent>(
+        [&](const sq::ui::UiButtonClickedEvent& ev) { capturedAction = ev.action; });
 
     win.mx = 60.0F;
     win.my = 18.0F;
     win.release();
     updateButtons(reg, win, bus);
 
-    EXPECT_EQ(reg.getComponents<ui::UiButton>().get(e).state, ui::UiButtonState::Released);
+    EXPECT_EQ(reg.getComponents<sq::ui::UiButton>().get(e).state, sq::ui::UiButtonState::Released);
     EXPECT_EQ(capturedAction, "shoot");
 }
 
 TEST(UiButtonSystem, ReleasedLastsOneFrame) {
-    ecs::Registry reg;
-    ecs::EventBus bus;
+    sq::ecs::Registry reg;
+    sq::events::EventBus bus;
     FakeWindow win;
-    const ecs::Entity e = makeButton(reg, 0.0F, 0.0F);
-    reg.getComponents<ui::UiButton>().get(e).state = ui::UiButtonState::Released;
+    const sq::ecs::Entity e = makeButton(reg, 0.0F, 0.0F);
+    reg.getComponents<sq::ui::UiButton>().get(e).state = sq::ui::UiButtonState::Released;
 
     int clicks = 0;
-    bus.subscribe<ui::UiButtonClickedEvent>([&](const ui::UiButtonClickedEvent&) { ++clicks; });
+    bus.subscribe<sq::ui::UiButtonClickedEvent>([&](const sq::ui::UiButtonClickedEvent&) { ++clicks; });
 
     win.mx = 60.0F;
     win.my = 18.0F;
     updateButtons(reg, win, bus);
 
-    EXPECT_EQ(reg.getComponents<ui::UiButton>().get(e).state, ui::UiButtonState::Hovered);
+    EXPECT_EQ(reg.getComponents<sq::ui::UiButton>().get(e).state, sq::ui::UiButtonState::Hovered);
     EXPECT_EQ(clicks, 0);
 }
 
 TEST(UiButtonSystem, ReleaseOutsideCancelsClick) {
-    ecs::Registry reg;
-    ecs::EventBus bus;
+    sq::ecs::Registry reg;
+    sq::events::EventBus bus;
     FakeWindow win;
-    const ecs::Entity e = makeButton(reg, 0.0F, 0.0F, 120.0F, 36.0F, "quit");
-    reg.getComponents<ui::UiButton>().get(e).state = ui::UiButtonState::Pressed;
+    const sq::ecs::Entity e = makeButton(reg, 0.0F, 0.0F, 120.0F, 36.0F, "quit");
+    reg.getComponents<sq::ui::UiButton>().get(e).state = sq::ui::UiButtonState::Pressed;
 
     bool fired = false;
-    bus.subscribe<ui::UiButtonClickedEvent>([&](const ui::UiButtonClickedEvent&) { fired = true; });
+    bus.subscribe<sq::ui::UiButtonClickedEvent>([&](const sq::ui::UiButtonClickedEvent&) { fired = true; });
 
     win.mx = 999.0F;
     win.my = 999.0F;
     win.release();
     updateButtons(reg, win, bus);
 
-    EXPECT_EQ(reg.getComponents<ui::UiButton>().get(e).state, ui::UiButtonState::Idle);
+    EXPECT_EQ(reg.getComponents<sq::ui::UiButton>().get(e).state, sq::ui::UiButtonState::Idle);
     EXPECT_FALSE(fired);
 }
 
 TEST(UiButtonSystem, NoEventWhenStillPressed) {
-    ecs::Registry reg;
-    ecs::EventBus bus;
+    sq::ecs::Registry reg;
+    sq::events::EventBus bus;
     FakeWindow win;
-    const ecs::Entity e = makeButton(reg, 0.0F, 0.0F);
-    reg.getComponents<ui::UiButton>().get(e).state = ui::UiButtonState::Pressed;
+    const sq::ecs::Entity e = makeButton(reg, 0.0F, 0.0F);
+    reg.getComponents<sq::ui::UiButton>().get(e).state = sq::ui::UiButtonState::Pressed;
 
     bool fired = false;
-    bus.subscribe<ui::UiButtonClickedEvent>([&](const ui::UiButtonClickedEvent&) { fired = true; });
+    bus.subscribe<sq::ui::UiButtonClickedEvent>([&](const sq::ui::UiButtonClickedEvent&) { fired = true; });
 
     win.mx = 60.0F;
     win.my = 18.0F;
@@ -475,48 +478,48 @@ TEST(UiButtonSystem, NoEventWhenStillPressed) {
     updateButtons(reg, win, bus);
 
     EXPECT_FALSE(fired);
-    EXPECT_EQ(reg.getComponents<ui::UiButton>().get(e).state, ui::UiButtonState::Pressed);
+    EXPECT_EQ(reg.getComponents<sq::ui::UiButton>().get(e).state, sq::ui::UiButtonState::Pressed);
 }
 
 TEST(UiButtonSystem, FullClickSequence) {
-    ecs::Registry reg;
-    ecs::EventBus bus;
+    sq::ecs::Registry reg;
+    sq::events::EventBus bus;
     FakeWindow win;
-    const ecs::Entity e = makeButton(reg, 0.0F, 0.0F);
+    const sq::ecs::Entity e = makeButton(reg, 0.0F, 0.0F);
     int clicks = 0;
-    bus.subscribe<ui::UiButtonClickedEvent>([&](const ui::UiButtonClickedEvent&) { ++clicks; });
-    const auto state = [&] { return reg.getComponents<ui::UiButton>().get(e).state; };
+    bus.subscribe<sq::ui::UiButtonClickedEvent>([&](const sq::ui::UiButtonClickedEvent&) { ++clicks; });
+    const auto state = [&] { return reg.getComponents<sq::ui::UiButton>().get(e).state; };
 
     win.mx = 60.0F;
     win.my = 18.0F;
     updateButtons(reg, win, bus);
-    EXPECT_EQ(state(), ui::UiButtonState::Hovered);
+    EXPECT_EQ(state(), sq::ui::UiButtonState::Hovered);
 
     win.press();
     updateButtons(reg, win, bus);
-    EXPECT_EQ(state(), ui::UiButtonState::Pressed);
+    EXPECT_EQ(state(), sq::ui::UiButtonState::Pressed);
 
     win.leftPressed = false;  // still held on the next frame
     updateButtons(reg, win, bus);
-    EXPECT_EQ(state(), ui::UiButtonState::Pressed);
+    EXPECT_EQ(state(), sq::ui::UiButtonState::Pressed);
 
     win.release();
     updateButtons(reg, win, bus);
-    EXPECT_EQ(state(), ui::UiButtonState::Released);
+    EXPECT_EQ(state(), sq::ui::UiButtonState::Released);
 
     win.leftReleased = false;
     updateButtons(reg, win, bus);
-    EXPECT_EQ(state(), ui::UiButtonState::Hovered);
+    EXPECT_EQ(state(), sq::ui::UiButtonState::Hovered);
     EXPECT_EQ(clicks, 1);
 }
 
 // --- Layout with entity hierarchies ---
 
 TEST(UiLayout, ResolveAnchorIsRelativeToContainer) {
-    const ui::UiAnchor anchor{.anchorX = 0.5F, .anchorY = 1.0F, .offsetX = 5.0F, .pivotX = 0.5F, .pivotY = 1.0F};
-    const ui::UiScreenRect rect =
-        ui::resolveAnchor(anchor, ui::UiScreenRect{.x = 100.0F, .y = 50.0F, .width = 200.0F, .height = 80.0F},
-                          ui::UiSize{.width = 40.0F, .height = 20.0F});
+    const sq::ui::UiAnchor anchor{.anchorX = 0.5F, .anchorY = 1.0F, .offsetX = 5.0F, .pivotX = 0.5F, .pivotY = 1.0F};
+    const sq::ui::UiScreenRect rect =
+        sq::ui::resolveAnchor(anchor, sq::ui::UiScreenRect{.x = 100.0F, .y = 50.0F, .width = 200.0F, .height = 80.0F},
+                              sq::ui::UiSize{.width = 40.0F, .height = 20.0F});
 
     EXPECT_FLOAT_EQ(rect.x, 100.0F + 100.0F + 5.0F - 20.0F);
     EXPECT_FLOAT_EQ(rect.y, 50.0F + 80.0F - 20.0F);
@@ -525,30 +528,30 @@ TEST(UiLayout, ResolveAnchorIsRelativeToContainer) {
 }
 
 TEST(UiLayout, ElementSizeComesFromDrawable) {
-    ecs::Registry reg;
-    const ecs::Entity rect = reg.spawnEntity();
-    reg.addComponent<ui::UiRect>(rect, ui::UiRect{.width = 30.0F, .height = 12.0F});
-    const ecs::Entity text = reg.spawnEntity();
-    reg.addComponent<ui::UiText>(text, ui::UiText{.text = "hi"});
-    const ecs::Entity group = reg.spawnEntity();
+    sq::ecs::Registry reg;
+    const sq::ecs::Entity rect = reg.spawnEntity();
+    reg.addComponent<sq::ui::UiRect>(rect, sq::ui::UiRect{.width = 30.0F, .height = 12.0F});
+    const sq::ecs::Entity text = reg.spawnEntity();
+    reg.addComponent<sq::ui::UiText>(text, sq::ui::UiText{.text = "hi"});
+    const sq::ecs::Entity group = reg.spawnEntity();
 
-    EXPECT_FLOAT_EQ(ui::elementSize(reg, rect, fakeMeasure).width, 30.0F);
-    EXPECT_FLOAT_EQ(ui::elementSize(reg, text, fakeMeasure).height, FAKE_TEXT_SIZE.height);
-    EXPECT_FLOAT_EQ(ui::elementSize(reg, group, fakeMeasure).width, 0.0F);
+    EXPECT_FLOAT_EQ(sq::ui::elementSize(reg, rect, fakeMeasure).width, 30.0F);
+    EXPECT_FLOAT_EQ(sq::ui::elementSize(reg, text, fakeMeasure).height, FAKE_TEXT_SIZE.height);
+    EXPECT_FLOAT_EQ(sq::ui::elementSize(reg, group, fakeMeasure).width, 0.0F);
 }
 
 TEST(UiLayout, ChildIsAnchoredInsideParentRect) {
-    ecs::Registry reg;
-    const ecs::Entity panel = reg.spawnEntity();
-    reg.addComponent<ui::UiAnchor>(panel, ui::UiAnchor{.anchorX = 0.5F, .anchorY = 0.5F});
-    reg.addComponent<ui::UiRect>(panel, ui::UiRect{.width = 400.0F, .height = 200.0F});
-    const ecs::Entity button = makeButton(reg, 1.0F, 1.0F, 100.0F, 40.0F);
-    reg.getComponents<ui::UiAnchor>().get(button).pivotX = 1.0F;
-    reg.getComponents<ui::UiAnchor>().get(button).pivotY = 1.0F;
-    ASSERT_TRUE(hierarchy::setParent(reg, button, panel));
+    sq::ecs::Registry reg;
+    const sq::ecs::Entity panel = reg.spawnEntity();
+    reg.addComponent<sq::ui::UiAnchor>(panel, sq::ui::UiAnchor{.anchorX = 0.5F, .anchorY = 0.5F});
+    reg.addComponent<sq::ui::UiRect>(panel, sq::ui::UiRect{.width = 400.0F, .height = 200.0F});
+    const sq::ecs::Entity button = makeButton(reg, 1.0F, 1.0F, 100.0F, 40.0F);
+    reg.getComponents<sq::ui::UiAnchor>().get(button).pivotX = 1.0F;
+    reg.getComponents<sq::ui::UiAnchor>().get(button).pivotY = 1.0F;
+    ASSERT_TRUE(sq::hierarchy::setParent(reg, button, panel));
 
     const auto nodes = layoutOf(reg, FakeWindow{});
-    const ui::UiLayoutNode* node = findNode(nodes, button);
+    const sq::ui::UiLayoutNode* node = findNode(nodes, button);
 
     ASSERT_NE(node, nullptr);
     // Panel at (960, 540), 400x200: the button sits in its bottom-right corner.
@@ -557,18 +560,18 @@ TEST(UiLayout, ChildIsAnchoredInsideParentRect) {
 }
 
 TEST(UiLayout, NestingAccumulatesThroughSeveralLevels) {
-    ecs::Registry reg;
-    const ecs::Entity root = reg.spawnEntity();
-    reg.addComponent<ui::UiAnchor>(root, ui::UiAnchor{.offsetX = 10.0F, .offsetY = 10.0F});
-    const ecs::Entity mid = reg.spawnEntity();
-    reg.addComponent<ui::UiAnchor>(mid, ui::UiAnchor{.offsetX = 20.0F});
-    const ecs::Entity leaf = reg.spawnEntity();
-    reg.addComponent<ui::UiAnchor>(leaf, ui::UiAnchor{.offsetY = 5.0F});
-    ASSERT_TRUE(hierarchy::setParent(reg, mid, root));
-    ASSERT_TRUE(hierarchy::setParent(reg, leaf, mid));
+    sq::ecs::Registry reg;
+    const sq::ecs::Entity root = reg.spawnEntity();
+    reg.addComponent<sq::ui::UiAnchor>(root, sq::ui::UiAnchor{.offsetX = 10.0F, .offsetY = 10.0F});
+    const sq::ecs::Entity mid = reg.spawnEntity();
+    reg.addComponent<sq::ui::UiAnchor>(mid, sq::ui::UiAnchor{.offsetX = 20.0F});
+    const sq::ecs::Entity leaf = reg.spawnEntity();
+    reg.addComponent<sq::ui::UiAnchor>(leaf, sq::ui::UiAnchor{.offsetY = 5.0F});
+    ASSERT_TRUE(sq::hierarchy::setParent(reg, mid, root));
+    ASSERT_TRUE(sq::hierarchy::setParent(reg, leaf, mid));
 
     const auto nodes = layoutOf(reg, FakeWindow{});
-    const ui::UiLayoutNode* node = findNode(nodes, leaf);
+    const sq::ui::UiLayoutNode* node = findNode(nodes, leaf);
 
     ASSERT_NE(node, nullptr);
     EXPECT_FLOAT_EQ(node->rect.x, 30.0F);
@@ -576,14 +579,14 @@ TEST(UiLayout, NestingAccumulatesThroughSeveralLevels) {
 }
 
 TEST(UiLayout, ParentComesBeforeChildrenInSiblingOrder) {
-    ecs::Registry reg;
+    sq::ecs::Registry reg;
     // Children spawned before the parent, so storage order alone would put them first.
-    const ecs::Entity second = makeButton(reg, 0.0F, 0.0F);
-    const ecs::Entity first = makeButton(reg, 0.0F, 0.0F);
-    const ecs::Entity panel = reg.spawnEntity();
-    reg.addComponent<ui::UiAnchor>(panel, ui::UiAnchor{});
-    ASSERT_TRUE(hierarchy::setParent(reg, first, panel));
-    ASSERT_TRUE(hierarchy::setParent(reg, second, panel));
+    const sq::ecs::Entity second = makeButton(reg, 0.0F, 0.0F);
+    const sq::ecs::Entity first = makeButton(reg, 0.0F, 0.0F);
+    const sq::ecs::Entity panel = reg.spawnEntity();
+    reg.addComponent<sq::ui::UiAnchor>(panel, sq::ui::UiAnchor{});
+    ASSERT_TRUE(sq::hierarchy::setParent(reg, first, panel));
+    ASSERT_TRUE(sq::hierarchy::setParent(reg, second, panel));
 
     const auto nodes = layoutOf(reg, FakeWindow{});
 
@@ -593,43 +596,43 @@ TEST(UiLayout, ParentComesBeforeChildrenInSiblingOrder) {
 }
 
 TEST(UiLayout, ChildOfNonUiEntityIsAnchoredToScreen) {
-    ecs::Registry reg;
-    const ecs::Entity ship = reg.spawnEntity();
-    const ecs::Entity label = makeButton(reg, 0.5F, 0.0F);
-    ASSERT_TRUE(hierarchy::setParent(reg, label, ship));
+    sq::ecs::Registry reg;
+    const sq::ecs::Entity ship = reg.spawnEntity();
+    const sq::ecs::Entity label = makeButton(reg, 0.5F, 0.0F);
+    ASSERT_TRUE(sq::hierarchy::setParent(reg, label, ship));
 
     const auto nodes = layoutOf(reg, FakeWindow{});
-    const ui::UiLayoutNode* node = findNode(nodes, label);
+    const sq::ui::UiLayoutNode* node = findNode(nodes, label);
 
     ASSERT_NE(node, nullptr);
     EXPECT_FLOAT_EQ(node->rect.x, 960.0F);
 }
 
 TEST(UiLayout, ElementUnderNonUiChildIsAnchoredToScreen) {
-    ecs::Registry reg;
-    const ecs::Entity panel = reg.spawnEntity();
-    reg.addComponent<ui::UiAnchor>(panel, ui::UiAnchor{.offsetX = 300.0F});
-    const ecs::Entity plain = reg.spawnEntity();
-    const ecs::Entity deep = makeButton(reg, 0.0F, 0.0F);
-    ASSERT_TRUE(hierarchy::setParent(reg, plain, panel));
-    ASSERT_TRUE(hierarchy::setParent(reg, deep, plain));
+    sq::ecs::Registry reg;
+    const sq::ecs::Entity panel = reg.spawnEntity();
+    reg.addComponent<sq::ui::UiAnchor>(panel, sq::ui::UiAnchor{.offsetX = 300.0F});
+    const sq::ecs::Entity plain = reg.spawnEntity();
+    const sq::ecs::Entity deep = makeButton(reg, 0.0F, 0.0F);
+    ASSERT_TRUE(sq::hierarchy::setParent(reg, plain, panel));
+    ASSERT_TRUE(sq::hierarchy::setParent(reg, deep, plain));
 
     const auto nodes = layoutOf(reg, FakeWindow{});
-    const ui::UiLayoutNode* node = findNode(nodes, deep);
+    const sq::ui::UiLayoutNode* node = findNode(nodes, deep);
 
     EXPECT_EQ(findNode(nodes, plain), nullptr);
     ASSERT_NE(node, nullptr);
     EXPECT_FLOAT_EQ(node->rect.x, 0.0F);
-    EXPECT_EQ(std::ranges::count(nodes, deep, &ui::UiLayoutNode::entity), 1);
+    EXPECT_EQ(std::ranges::count(nodes, deep, &sq::ui::UiLayoutNode::entity), 1);
 }
 
 TEST(UiLayout, DestroyingPanelRemovesItsWidgets) {
-    ecs::Registry reg;
-    const hierarchy::HierarchyHooks hooks(reg);
-    const ecs::Entity panel = reg.spawnEntity();
-    reg.addComponent<ui::UiAnchor>(panel, ui::UiAnchor{});
-    const ecs::Entity button = makeButton(reg, 0.0F, 0.0F);
-    ASSERT_TRUE(hierarchy::setParent(reg, button, panel));
+    sq::ecs::Registry reg;
+    const sq::hierarchy::HierarchyHooks hooks(reg);
+    const sq::ecs::Entity panel = reg.spawnEntity();
+    reg.addComponent<sq::ui::UiAnchor>(panel, sq::ui::UiAnchor{});
+    const sq::ecs::Entity button = makeButton(reg, 0.0F, 0.0F);
+    ASSERT_TRUE(sq::hierarchy::setParent(reg, button, panel));
 
     reg.killEntity(panel);
 
@@ -637,39 +640,40 @@ TEST(UiLayout, DestroyingPanelRemovesItsWidgets) {
 }
 
 TEST(UiButtonSystem, NestedButtonIsHitWhereItIsDrawn) {
-    ecs::Registry reg;
-    ecs::EventBus bus;
+    sq::ecs::Registry reg;
+    sq::events::EventBus bus;
     FakeWindow win;
-    const ecs::Entity panel = reg.spawnEntity();
-    reg.addComponent<ui::UiAnchor>(panel, ui::UiAnchor{.offsetX = 500.0F, .offsetY = 300.0F});
-    const ecs::Entity button = makeButton(reg, 0.0F, 0.0F);
-    ASSERT_TRUE(hierarchy::setParent(reg, button, panel));
+    const sq::ecs::Entity panel = reg.spawnEntity();
+    reg.addComponent<sq::ui::UiAnchor>(panel, sq::ui::UiAnchor{.offsetX = 500.0F, .offsetY = 300.0F});
+    const sq::ecs::Entity button = makeButton(reg, 0.0F, 0.0F);
+    ASSERT_TRUE(sq::hierarchy::setParent(reg, button, panel));
 
     win.mx = 10.0F;
     win.my = 10.0F;
     updateButtons(reg, win, bus);
-    EXPECT_EQ(reg.getComponents<ui::UiButton>().get(button).state, ui::UiButtonState::Idle);
+    EXPECT_EQ(reg.getComponents<sq::ui::UiButton>().get(button).state, sq::ui::UiButtonState::Idle);
 
     win.mx = 510.0F;
     win.my = 310.0F;
     updateButtons(reg, win, bus);
-    EXPECT_EQ(reg.getComponents<ui::UiButton>().get(button).state, ui::UiButtonState::Hovered);
+    EXPECT_EQ(reg.getComponents<sq::ui::UiButton>().get(button).state, sq::ui::UiButtonState::Hovered);
 }
 
 // --- Rendering through IScreenDrawService ---
 
 TEST(UiRenderSystem, ParentIsSubmittedBeforeChild) {
-    ecs::Registry reg;
-    constexpr ecs::Rgba PARENT_COLOR = {.r = 10, .g = 0, .b = 0, .a = 255};
-    constexpr ecs::Rgba CHILD_COLOR = {.r = 20, .g = 0, .b = 0, .a = 255};
+    sq::ecs::Registry reg;
+    constexpr sq::ecs::Rgba PARENT_COLOR = {.r = 10, .g = 0, .b = 0, .a = 255};
+    constexpr sq::ecs::Rgba CHILD_COLOR = {.r = 20, .g = 0, .b = 0, .a = 255};
     // Child spawned first, so storage order alone would draw it below its parent.
-    const ecs::Entity child = reg.spawnEntity();
-    reg.addComponent<ui::UiAnchor>(child, ui::UiAnchor{.offsetX = 5.0F});
-    reg.addComponent<ui::UiRect>(child, ui::UiRect{.width = 10.0F, .height = 10.0F, .fillColor = CHILD_COLOR});
-    const ecs::Entity parent = reg.spawnEntity();
-    reg.addComponent<ui::UiAnchor>(parent, ui::UiAnchor{.offsetX = 100.0F});
-    reg.addComponent<ui::UiRect>(parent, ui::UiRect{.width = 50.0F, .height = 50.0F, .fillColor = PARENT_COLOR});
-    ASSERT_TRUE(hierarchy::setParent(reg, child, parent));
+    const sq::ecs::Entity child = reg.spawnEntity();
+    reg.addComponent<sq::ui::UiAnchor>(child, sq::ui::UiAnchor{.offsetX = 5.0F});
+    reg.addComponent<sq::ui::UiRect>(child, sq::ui::UiRect{.width = 10.0F, .height = 10.0F, .fillColor = CHILD_COLOR});
+    const sq::ecs::Entity parent = reg.spawnEntity();
+    reg.addComponent<sq::ui::UiAnchor>(parent, sq::ui::UiAnchor{.offsetX = 100.0F});
+    reg.addComponent<sq::ui::UiRect>(parent,
+                                     sq::ui::UiRect{.width = 50.0F, .height = 50.0F, .fillColor = PARENT_COLOR});
+    ASSERT_TRUE(sq::hierarchy::setParent(reg, child, parent));
 
     FakeScreenDraw draw;
     renderUi(reg, draw);
@@ -681,16 +685,16 @@ TEST(UiRenderSystem, ParentIsSubmittedBeforeChild) {
 }
 
 TEST(UiRenderSystem, TransparentFillIsSkippedAndBorderDrawn) {
-    ecs::Registry reg;
-    const ecs::Entity e = reg.spawnEntity();
-    reg.addComponent<ui::UiAnchor>(e, ui::UiAnchor{});
-    reg.addComponent<ui::UiRect>(e, ui::UiRect{
-                                        .width = 10.0F,
-                                        .height = 10.0F,
-                                        .fillColor = {.r = 0, .g = 0, .b = 0, .a = 0},
-                                        .borderColor = {.r = 255, .g = 255, .b = 255, .a = 255},
-                                        .borderThickness = 2.0F,
-                                    });
+    sq::ecs::Registry reg;
+    const sq::ecs::Entity e = reg.spawnEntity();
+    reg.addComponent<sq::ui::UiAnchor>(e, sq::ui::UiAnchor{});
+    reg.addComponent<sq::ui::UiRect>(e, sq::ui::UiRect{
+                                            .width = 10.0F,
+                                            .height = 10.0F,
+                                            .fillColor = {.r = 0, .g = 0, .b = 0, .a = 0},
+                                            .borderColor = {.r = 255, .g = 255, .b = 255, .a = 255},
+                                            .borderThickness = 2.0F,
+                                        });
 
     FakeScreenDraw draw;
     renderUi(reg, draw);
@@ -700,11 +704,11 @@ TEST(UiRenderSystem, TransparentFillIsSkippedAndBorderDrawn) {
 }
 
 TEST(UiRenderSystem, ProgressBarFillsBackgroundThenRatio) {
-    ecs::Registry reg;
-    const ecs::Entity e = reg.spawnEntity();
-    reg.addComponent<ui::UiAnchor>(e, ui::UiAnchor{});
-    reg.addComponent<ui::UiProgressBar>(
-        e, ui::UiProgressBar{.value = 25.0F, .min = 0.0F, .max = 100.0F, .width = 200.0F, .height = 10.0F});
+    sq::ecs::Registry reg;
+    const sq::ecs::Entity e = reg.spawnEntity();
+    reg.addComponent<sq::ui::UiAnchor>(e, sq::ui::UiAnchor{});
+    reg.addComponent<sq::ui::UiProgressBar>(
+        e, sq::ui::UiProgressBar{.value = 25.0F, .min = 0.0F, .max = 100.0F, .width = 200.0F, .height = 10.0F});
 
     FakeScreenDraw draw;
     renderUi(reg, draw);
@@ -715,9 +719,9 @@ TEST(UiRenderSystem, ProgressBarFillsBackgroundThenRatio) {
 }
 
 TEST(UiRenderSystem, ButtonLabelIsCentred) {
-    ecs::Registry reg;
-    const ecs::Entity e = makeButton(reg, 0.0F, 0.0F, 120.0F, 36.0F);
-    reg.getComponents<ui::UiButton>().get(e).label = "Play";
+    sq::ecs::Registry reg;
+    const sq::ecs::Entity e = makeButton(reg, 0.0F, 0.0F, 120.0F, 36.0F);
+    reg.getComponents<sq::ui::UiButton>().get(e).label = "Play";
 
     FakeScreenDraw draw;
     renderUi(reg, draw);
@@ -730,10 +734,10 @@ TEST(UiRenderSystem, ButtonLabelIsCentred) {
 }
 
 TEST(UiRenderSystem, TextIsAnchoredWithMeasuredSize) {
-    ecs::Registry reg;
-    const ecs::Entity e = reg.spawnEntity();
-    reg.addComponent<ui::UiAnchor>(e, ui::UiAnchor{.anchorX = 1.0F, .pivotX = 1.0F});
-    reg.addComponent<ui::UiText>(e, ui::UiText{.text = "SCORE"});
+    sq::ecs::Registry reg;
+    const sq::ecs::Entity e = reg.spawnEntity();
+    reg.addComponent<sq::ui::UiAnchor>(e, sq::ui::UiAnchor{.anchorX = 1.0F, .pivotX = 1.0F});
+    reg.addComponent<sq::ui::UiText>(e, sq::ui::UiText{.text = "SCORE"});
 
     FakeScreenDraw draw;
     renderUi(reg, draw);

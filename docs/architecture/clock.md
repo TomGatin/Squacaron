@@ -6,7 +6,7 @@ The game simulation must not depend on CPU speed: an enemy moving at 100 units p
 real second on a slow laptop as well as on a fast server. The **`Clock`** class turns the real time that elapses between
 two loop iterations into a whole number of **fixed-duration simulation steps** (the *fixed timestep* pattern).
 
-It lives in `engine/src/ecs/time/` under the `ecs::time` namespace and has **no graphical dependency**, so the headless
+It lives in `engine/src/ecs/time/` under the `sq::ecs::time` namespace and has **no graphical dependency**, so the headless
 server and the client use the exact same code.
 
 | File                                    | Content                                                               |
@@ -63,7 +63,7 @@ smaller than one step is kept.
 | `totalElapsedTime` | `float`         | Simulated time since the clock started (or was reset), in seconds                |
 | `tickCount`        | `std::uint64_t` | Number of steps executed since the clock started (or was reset)                  |
 
-`Time.hpp` also provides `ecs::time::DEFAULT_FIXED_DT` (`1.0F / 60.0F`, i.e. 60 Hz), the step size to pass to `tick`
+`Time.hpp` also provides `sq::time::DEFAULT_FIXED_DT` (`1.0F / 60.0F`, i.e. 60 Hz), the step size to pass to `tick`
 unless a different rate is needed.
 
 The total is accumulated internally in `double` precision, so it does not drift even after many thousands of ticks.
@@ -71,7 +71,7 @@ The total is accumulated internally in `double` precision, so it does not drift 
 ## 4. API Reference
 
 ```cpp
-namespace ecs::time {
+namespace sq::ecs::time {
 
 class Clock {
   public:
@@ -98,7 +98,7 @@ class Clock {
 |----------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `Clock(source, maxStepsPerTick)` | Records the starting instant. A `nullptr` source selects `steadyNowSeconds` (based on `std::chrono::steady_clock`). `maxStepsPerTick` is forced to at least `1`. |
 | `tick(fixedDt, step)`            | Runs `step(const Time&)` once per whole `fixedDt` of accumulated time. Does nothing and returns `0` if `fixedDt <= 0`.                                           |
-| `tick(fixedDt, registry, step)`  | Runs `step(Registry&)` once per whole `fixedDt` of accumulated time, automatically updating the `ecs::time::Time` resource stored in `registry`.                 |
+| `tick(fixedDt, registry, step)`  | Runs `step(Registry&)` once per whole `fixedDt` of accumulated time, automatically updating the `sq::time::Time` resource stored in `registry`.                 |
 | `time()`                         | Returns the `Time` of the last executed step.                                                                                                                    |
 | `reset()`                        | Re-reads the current instant and clears the accumulator, the total and the counters.                                                                             |
 
@@ -110,11 +110,11 @@ type erasure, heap allocation or indirect call on a path executed every frame.
 ### Server main loop
 
 A headless program does not write this loop by hand: `engine.run()` paces itself when there is no window (one frame
-per fixed step by default), and a loop that drives `advance()` or anything else uses `engine::FixedRateLoop`
+per fixed step by default), and a loop that drives `advance()` or anything else uses `sq::engine::FixedRateLoop`
 (`core/FixedRateLoop.hpp`):
 
 ```cpp
-engine::FixedRateLoop loop(1000.0);   // passes per second; holds a PreciseSleepScope while it runs
+sq::engine::FixedRateLoop loop(1000.0);   // passes per second; holds a PreciseSleepScope while it runs
 loop.stopOnSignals(true);             // Ctrl+C / SIGTERM end run()
 loop.run([&] { room.advance(); });    // the clock decides how many fixed steps each pass runs
 ```
@@ -128,10 +128,10 @@ The clock decides how many steps are due, but a step can only run when the loop 
 sleep lasts about 1 ms. On Windows it lasts at least one period of the system timer, **about 15.6 ms by default**: steps
 then run up to 15 ms late, and when two are due at once the server sends a single snapshot for both.
 
-`ecs::time::PreciseSleepScope` asks Windows for a 1 ms period (`timeBeginPeriod(1)`) while it lives, and gives it back
+`sq::time::PreciseSleepScope` asks Windows for a 1 ms period (`timeBeginPeriod(1)`) while it lives, and gives it back
 when destroyed. It does nothing on the other systems, and `raised()` tells whether it changed the period.
 
-- `engine::FixedRateLoop` holds one while a paced loop runs, so `engine.run()` without a window, the server loop and the
+- `sq::engine::FixedRateLoop` holds one while a paced loop runs, so `engine.run()` without a window, the server loop and the
   room threads all get it. Create one by hand only for a loop that sleeps on its own.
 - A raylib window already asks for the same period, so a windowed client does not need one.
 - The period applies to the whole process; scopes can be nested. Windows 11 may ignore it for a process whose window
@@ -139,13 +139,13 @@ when destroyed. It does nothing on the other systems, and `raised()` tells wheth
 
 ### Client main loop & Engine integration
 
-In the modern architecture, the `Clock` is driven automatically by the central `engine::Engine`. The engine ticks the clock during its main loop and dispatches `fixedUpdate(engine, time)` to all registered plugins, while the implicit `engine::TimePlugin` keeps the `ecs::time::Time` resource synchronized in the ECS Registry:
+In the modern architecture, the `Clock` is driven automatically by the central `sq::engine::Engine`. The engine ticks the clock during its main loop and dispatches `fixedUpdate(engine, time)` to all registered plugins, while the implicit `sq::engine::TimePlugin` keeps the `sq::time::Time` resource synchronized in the ECS Registry:
 
 ```cpp
-engine::Engine engine;
-engine.addPlugin<render::RenderPlugin>()
-      .addPlugin<input::InputPlugin>()
-      .addPlugin<systems::PhysicsPlugin>()
+sq::engine::Engine engine;
+engine.addPlugin<sq::render::RenderPlugin>()
+      .addPlugin<sq::input::InputPlugin>()
+      .addPlugin<sq::systems::PhysicsPlugin>()
       .addPlugin<client::RTypeGamePlugin>();
 
 engine.run();
@@ -167,7 +167,7 @@ When managing a manual loop (e.g. in standalone tests):
 
 ```cpp
 while (!window.shouldClose()) {
-    clock.tick(FIXED_DT, [&](const ecs::time::Time& time) {
+    clock.tick(FIXED_DT, [&](const sq::time::Time& time) {
         input.update();
         animation.update(time.deltaTime);
     });
@@ -177,8 +177,8 @@ while (!window.shouldClose()) {
 
 ### Guidelines
 
-- The callback receives a `const ecs::time::Time&` argument: a lambda must accept it, even if it ignores it
-  (`[&](const ecs::time::Time&) { ... }`).
+- The callback receives a `const sq::time::Time&` argument: a lambda must accept it, even if it ignores it
+  (`[&](const sq::time::Time&) { ... }`).
 - Systems must take their `dt` from `Time::deltaTime` and **never measure time themselves**.
 - Put in the callback only what must advance at a fixed rate (logic, AI, scripts, physics, network tick). Keep rendering
   and sleeping out of it.
@@ -192,10 +192,10 @@ advance by hand.
 
 ```cpp
 double now = 0.0;
-ecs::time::Clock clock([&now] { return now; });
+sq::time::Clock clock([&now] { return now; });
 
 now = 1.0;   // one second "passes" instantly
-std::size_t steps = clock.tick(ecs::time::DEFAULT_FIXED_DT, [](const ecs::time::Time&) {});
+std::size_t steps = clock.tick(sq::time::DEFAULT_FIXED_DT, [](const sq::time::Time&) {});
 ```
 
 The unit tests in `tests/test_clock.cpp` cover:

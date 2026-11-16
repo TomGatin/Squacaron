@@ -13,15 +13,19 @@
 #include "core/PluginBuilder.hpp"
 #include "scripting/IScriptExtension.hpp"
 
-namespace ecs {
+namespace sq::ecs {
+
 class Registry;
-}
 
-namespace scripting {
+}  // namespace sq::ecs
+
+namespace sq::scripting {
+
 class ScriptSystem;
-}
 
-namespace assets {
+}  // namespace sq::scripting
+
+namespace sq::assets {
 
 /**
  * @brief Lets Wren scripts declare, load and release assets.
@@ -38,7 +42,7 @@ namespace assets {
  * group are rejected with a warning of the manager. This module is the only one that depends on both
  * `engine_assets` and `engine_scripting`.
  */
-class AssetScriptingPlugin final : public engine::IPlugin, private scripting::IScriptExtension {
+class AssetScriptingPlugin final : public sq::engine::IPlugin, private sq::scripting::IScriptExtension {
   public:
     /**
      * @brief Creates the bridge.
@@ -56,19 +60,19 @@ class AssetScriptingPlugin final : public engine::IPlugin, private scripting::IS
      * @brief Declares the dependencies on `AssetPlugin` and `ScriptPlugin`.
      * @param builder Dependency builder.
      */
-    void build(engine::PluginBuilder& builder) override;
+    void build(sq::engine::PluginBuilder& builder) override;
 
     /**
      * @brief Adds `core/Assets`, runs the declaration module and follows the hot reloads.
      * @param engine Host engine.
      */
-    void init(engine::Engine& engine) override;
+    void init(sq::engine::Engine& engine) override;
 
     /**
      * @brief Stops following the hot reloads.
      * @param engine Host engine.
      */
-    void shutdown(engine::Engine& engine) override;
+    void shutdown(sq::engine::Engine& engine) override;
 
     /**
      * @brief Tells whether the declaration module ran without error at init.
@@ -78,24 +82,24 @@ class AssetScriptingPlugin final : public engine::IPlugin, private scripting::IS
 
   private:
     /** @brief The `core/Assets` module. @return One module. */
-    [[nodiscard]] std::vector<scripting::ModuleSource> modules() const override;
+    [[nodiscard]] std::vector<sq::scripting::ModuleSource> modules() const override;
     /** @brief Binds the foreign methods of `core/Assets`. @param vm VM to bind. */
-    void bind(scripting::WrenVM& vm) override;
+    void bind(sq::scripting::WrenVM& vm) override;
     /**
      * @brief Around a hot reload, the modules run their declarations again: those no longer made are dropped at the
      * end, unless a module failed to run again (its missing declarations would unload assets still in use).
      * @param phase Phase.
      */
-    void onVmReset(scripting::VmResetPhase phase) override;
+    void onVmReset(sq::scripting::VmResetPhase phase) override;
 
     /** @brief Wren module declaring the game's assets, or empty. */
     std::string _declarationModule;
     /** @brief Whether the declaration module ran at init. */
     bool _declarationsLoaded = false;
     /** @brief Script system followed for hot reloads. */
-    scripting::ScriptSystem* _scripts = nullptr;
+    sq::scripting::ScriptSystem* _scripts = nullptr;
     /** @brief Registry holding the `AssetManager`, between `init` and `shutdown`. */
-    ecs::Registry* _registry = nullptr;
+    sq::ecs::Registry* _registry = nullptr;
 };
 
-}  // namespace assets
+}  // namespace sq::assets

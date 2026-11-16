@@ -6,7 +6,7 @@
 #include <string>
 #include <string_view>
 
-namespace tools::detail {
+namespace sq::tools::detail {
 
 bool isControl(char c) noexcept {
     const auto byte = static_cast<unsigned char>(c);
@@ -70,4 +70,4 @@ std::size_t nextCodePoint(std::string_view text, std::size_t pos) noexcept {
     return pos;
 }
 
-}  // namespace tools::detail
+}  // namespace sq::tools::detail

@@ -11,7 +11,7 @@
 #include "scripting/ScriptOwner.hpp"
 #include "scripting/detail/WrenTypes.hpp"
 
-namespace scripting {
+namespace sq::scripting {
 
 void FiberScheduler::add(detail::UniqueWrenHandle fiber, const float seconds, const ScriptOwner owner) {
     _sleeping.push_back(SleepingFiber{.fiber = std::move(fiber), .timeRemaining = seconds, .owner = owner});
@@ -37,4 +37,4 @@ void FiberScheduler::update(const float dt, const Resume& resume) {
     _ready.clear();
 }
 
-}  // namespace scripting
+}  // namespace sq::scripting

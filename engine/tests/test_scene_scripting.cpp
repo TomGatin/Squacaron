@@ -31,7 +31,7 @@ namespace {
 struct Dot {};
 
 /** @brief Plain C++ scene, to mix with scripted ones. */
-class GameScene final : public scene::IScene {
+class GameScene final : public sq::scene::IScene {
   public:
     [[nodiscard]] std::string_view name() const noexcept override { return "Game"; }
 };
@@ -114,24 +114,23 @@ class Waiting {
 class SceneScriptingTest : public ::testing::Test {
   protected:
     void SetUp() override {
-        engine.addPlugin<scene::ScenePlugin>();
-        engine.addPlugin<scripting::ScriptPlugin>();
-        engine.addPlugin<scene::SceneScriptingPlugin>();
-        prefabs.registerPrefab("dot", [](ecs::Entity e, ecs::Registry& registry, const prefabs::PrefabParams&) {
-            registry.addComponent(e, Dot{});
-        });
-        auto& bridge = engine.getPlugin<scene::SceneScriptingPlugin>();
+        engine.addPlugin<sq::scene::ScenePlugin>();
+        engine.addPlugin<sq::scripting::ScriptPlugin>();
+        engine.addPlugin<sq::scene::SceneScriptingPlugin>();
+        prefabs.registerPrefab("dot", [](sq::ecs::Entity e, sq::ecs::Registry& registry,
+                                         const sq::prefabs::PrefabParams&) { registry.addComponent(e, Dot{}); });
+        auto& bridge = engine.getPlugin<sq::scene::SceneScriptingPlugin>();
         game = manager().registerScene<GameScene>();
         title = bridge.registerScriptScene(engine, "Title", titleFile.module(), "Title",
-                                           scene::ScriptSceneOptions{.hasUpdate = true});
+                                           sq::scene::ScriptSceneOptions{.hasUpdate = true});
         waiting = bridge.registerScriptScene(engine, "Waiting", waitingFile.module(), "Waiting");
         engine.init();
         spawner.emplace(scripts(), prefabs);
         scripts().addExtension(*spawner);
     }
 
-    scene::SceneManager& manager() { return engine.getPlugin<scene::ScenePlugin>().manager(); }
-    scripting::ScriptSystem& scripts() { return engine.getPlugin<scripting::ScriptPlugin>().scriptSystem(); }
+    sq::scene::SceneManager& manager() { return engine.getPlugin<sq::scene::ScenePlugin>().manager(); }
+    sq::scripting::ScriptSystem& scripts() { return engine.getPlugin<sq::scripting::ScriptPlugin>().scriptSystem(); }
 
     /** @brief Runs Wren code in a fresh module, returning whether it succeeded. */
     bool run(std::string_view code) {
@@ -158,25 +157,25 @@ class SceneScriptingTest : public ::testing::Test {
 
     int countDots() {
         int count = 0;
-        engine.registry().runSystem<Dot>([&](ecs::Entity /*e*/, Dot& /*dot*/) { ++count; });
+        engine.registry().runSystem<Dot>([&](sq::ecs::Entity /*e*/, Dot& /*dot*/) { ++count; });
         return count;
     }
 
     ScriptFile logFile{"TestSceneLog", LOG_MODULE};
     ScriptFile titleFile{"TestSceneTitle", TITLE_SCENE};
     ScriptFile waitingFile{"TestSceneWaiting", WAITING_SCENE};
-    prefabs::PrefabManager prefabs;
-    engine::Engine engine;
+    sq::prefabs::PrefabManager prefabs;
+    sq::engine::Engine engine;
     /** @brief Spawns the prefabs of `Engine.spawnPrefab`; destroyed before the engine. */
-    std::optional<prefabs::ScriptPrefabSpawner> spawner;
-    scene::SceneId game = scene::INVALID_SCENE;
-    scene::SceneId title = scene::INVALID_SCENE;
-    scene::SceneId waiting = scene::INVALID_SCENE;
+    std::optional<sq::prefabs::ScriptPrefabSpawner> spawner;
+    sq::scene::SceneId game = sq::scene::INVALID_SCENE;
+    sq::scene::SceneId title = sq::scene::INVALID_SCENE;
+    sq::scene::SceneId waiting = sq::scene::INVALID_SCENE;
 };
 
 TEST_F(SceneScriptingTest, ScriptsChangeAndQueryTheStackByName) {
     ASSERT_TRUE(run("import \"core/Scene\" for Scene\nScene.switchTo(\"Game\")"));
-    EXPECT_EQ(manager().top(), scene::INVALID_SCENE);
+    EXPECT_EQ(manager().top(), sq::scene::INVALID_SCENE);
     frame();
     EXPECT_EQ(manager().top(), game);
     EXPECT_EQ(read("Scene.current"), "Game");
@@ -185,7 +184,7 @@ TEST_F(SceneScriptingTest, ScriptsChangeAndQueryTheStackByName) {
 
     ASSERT_TRUE(run("import \"core/Scene\" for Scene\nScene.pop()"));
     frame();
-    EXPECT_EQ(manager().top(), scene::INVALID_SCENE);
+    EXPECT_EQ(manager().top(), sq::scene::INVALID_SCENE);
     EXPECT_EQ(read("Scene.current"), "null");
 }
 
@@ -210,7 +209,7 @@ TEST_F(SceneScriptingTest, ScriptSceneHooksRunInOrder) {
 TEST_F(SceneScriptingTest, UpdateRunsOnlyWhileTheScriptSceneRuns) {
     manager().switchTo(title);
     frame();
-    EXPECT_TRUE(static_cast<scene::ScriptScene&>(manager().scene(title)).hasInstance());
+    EXPECT_TRUE(static_cast<sq::scene::ScriptScene&>(manager().scene(title)).hasInstance());
     frame();
     frame();
     EXPECT_EQ(read("Log.frames"), "3");
@@ -230,8 +229,8 @@ TEST_F(SceneScriptingTest, EntitiesSpawnedByAScriptSceneBelongToIt) {
     frame();
     frame();  // the script system flushes its spawns during update
     ASSERT_EQ(countDots(), 1);
-    engine.registry().runSystem<Dot>([&](ecs::Entity e, Dot& /*dot*/) {
-        EXPECT_EQ(engine.registry().getComponents<scene::SceneMember>().get(e).id, title);
+    engine.registry().runSystem<Dot>([&](sq::ecs::Entity e, Dot& /*dot*/) {
+        EXPECT_EQ(engine.registry().getComponents<sq::scene::SceneMember>().get(e).id, title);
     });
 
     manager().switchTo(game);
@@ -249,14 +248,14 @@ class Spawner {
 )wren"};
     manager().switchTo(game);
     frame();
-    const ecs::Entity entity = manager().context(game).spawn();
-    engine.registry().addComponent(entity,
-                                   scripting::ScriptComponent{.moduleName = spawner.module(), .className = "Spawner"});
+    const sq::ecs::Entity entity = manager().context(game).spawn();
+    engine.registry().addComponent(
+        entity, sq::scripting::ScriptComponent{.moduleName = spawner.module(), .className = "Spawner"});
     frame();
     frame();
     ASSERT_EQ(countDots(), 1);
-    engine.registry().runSystem<Dot>([&](ecs::Entity e, Dot& /*dot*/) {
-        EXPECT_EQ(engine.registry().getComponents<scene::SceneMember>().get(e).id, game);
+    engine.registry().runSystem<Dot>([&](sq::ecs::Entity e, Dot& /*dot*/) {
+        EXPECT_EQ(engine.registry().getComponents<sq::scene::SceneMember>().get(e).id, game);
     });
 }
 
@@ -266,8 +265,8 @@ TEST_F(SceneScriptingTest, SpawnsWithoutOwnerGoToTheTopExclusiveScene) {
     ASSERT_TRUE(run("import \"core/Engine\" for Engine\nEngine.spawnPrefab(\"dot\", 0, 0)"));
     frame();
     ASSERT_EQ(countDots(), 1);
-    engine.registry().runSystem<Dot>([&](ecs::Entity e, Dot& /*dot*/) {
-        EXPECT_EQ(engine.registry().getComponents<scene::SceneMember>().get(e).id, game);
+    engine.registry().runSystem<Dot>([&](sq::ecs::Entity e, Dot& /*dot*/) {
+        EXPECT_EQ(engine.registry().getComponents<sq::scene::SceneMember>().get(e).id, game);
     });
 }
 
@@ -290,7 +289,7 @@ TEST_F(SceneScriptingTest, FibersOfARunningSceneResume) {
 TEST_F(SceneScriptingTest, HotReloadKeepsTheBindingsAndRebuildsTheScene) {
     manager().switchTo(title);
     frame();
-    auto& titleScene = static_cast<scene::ScriptScene&>(manager().scene(title));
+    auto& titleScene = static_cast<sq::scene::ScriptScene&>(manager().scene(title));
     ASSERT_TRUE(titleScene.hasInstance());
 
     titleFile.write(std::string(TITLE_SCENE) + "\n// edited\n");

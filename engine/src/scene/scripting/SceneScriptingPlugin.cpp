@@ -22,7 +22,7 @@
 #include "scripting/ScriptSystem.hpp"
 #include "scripting/WrenVM.hpp"
 
-namespace scene {
+namespace sq::scene {
 
 namespace {
 
@@ -34,8 +34,8 @@ constexpr std::string_view SCENE_CLASS = "Scene";
  * @param call Foreign call.
  * @return The manager, or null outside a running bridge.
  */
-SceneManager* managerOf(scripting::ForeignCall& call) {
-    auto* scripts = call.userData<scripting::ScriptSystem>();
+SceneManager* managerOf(sq::scripting::ForeignCall& call) {
+    auto* scripts = call.userData<sq::scripting::ScriptSystem>();
     if (scripts == nullptr || scripts->getRegistry() == nullptr ||
         !scripts->getRegistry()->hasResource<SceneScriptBridge>()) {
         return nullptr;
@@ -50,7 +50,7 @@ SceneManager* managerOf(scripting::ForeignCall& call) {
  * @return Its id.
  * @throws std::invalid_argument if the argument is not a string or names no scene (aborts the fiber).
  */
-SceneId sceneArgument(scripting::ForeignCall& call, const SceneManager& manager) {
+SceneId sceneArgument(sq::scripting::ForeignCall& call, const SceneManager& manager) {
     auto const name = call.arg<std::string_view>(1);
     if (!name) {
         throw std::invalid_argument("Scene: the scene name must be a string");
@@ -68,7 +68,7 @@ SceneId sceneArgument(scripting::ForeignCall& call, const SceneManager& manager)
  * @param call Foreign call.
  */
 template <void (SceneManager::*Transition)(SceneId)>
-void sceneTransition(scripting::ForeignCall& call) {
+void sceneTransition(sq::scripting::ForeignCall& call) {
     SceneManager* manager = managerOf(call);
     if (manager != nullptr) {
         (manager->*Transition)(sceneArgument(call, *manager));
@@ -79,7 +79,7 @@ void sceneTransition(scripting::ForeignCall& call) {
  * @brief `Scene.pop()`.
  * @param call Foreign call.
  */
-void scenePop(scripting::ForeignCall& call) {
+void scenePop(sq::scripting::ForeignCall& call) {
     if (SceneManager* manager = managerOf(call); manager != nullptr) {
         manager->pop();
     }
@@ -89,7 +89,7 @@ void scenePop(scripting::ForeignCall& call) {
  * @brief `Scene.current`: name of the top scene, or null.
  * @param call Foreign call.
  */
-void sceneCurrent(scripting::ForeignCall& call) {
+void sceneCurrent(sq::scripting::ForeignCall& call) {
     const SceneManager* manager = managerOf(call);
     if (manager == nullptr || manager->top() == INVALID_SCENE) {
         call.retNull();
@@ -104,7 +104,7 @@ void sceneCurrent(scripting::ForeignCall& call) {
  * @param call Foreign call.
  */
 template <bool (SceneManager::*Query)(SceneId) const noexcept>
-void sceneQuery(scripting::ForeignCall& call) {
+void sceneQuery(sq::scripting::ForeignCall& call) {
     const SceneManager* manager = managerOf(call);
     call.ret(manager != nullptr && (manager->*Query)(sceneArgument(call, *manager)));
 }
@@ -113,7 +113,7 @@ void sceneQuery(scripting::ForeignCall& call) {
  * @brief Binds the foreign methods of `core/Scene`; also replayed on the VM of each hot reload.
  * @param vm VM to bind.
  */
-void bindSceneModule(scripting::WrenVM& vm) {
+void bindSceneModule(sq::scripting::WrenVM& vm) {
     vm.registerForeignMethod<&sceneTransition<&SceneManager::switchTo>>(SCENE_MODULE_NAME, SCENE_CLASS, true,
                                                                         "switchTo(_)");
     vm.registerForeignMethod<&sceneTransition<&SceneManager::push>>(SCENE_MODULE_NAME, SCENE_CLASS, true, "push(_)");
@@ -128,28 +128,28 @@ void bindSceneModule(scripting::WrenVM& vm) {
 
 }  // namespace
 
-void SceneScriptingPlugin::build(engine::PluginBuilder& builder) {
+void SceneScriptingPlugin::build(sq::engine::PluginBuilder& builder) {
     builder.require<ScenePlugin>();
-    builder.require<scripting::ScriptPlugin>();
+    builder.require<sq::scripting::ScriptPlugin>();
 }
 
-void SceneScriptingPlugin::init(engine::Engine& engine) {
+void SceneScriptingPlugin::init(sq::engine::Engine& engine) {
     _manager = &engine.getPlugin<ScenePlugin>().manager();
-    _scripts = &engine.getPlugin<scripting::ScriptPlugin>().scriptSystem();
+    _scripts = &engine.getPlugin<sq::scripting::ScriptPlugin>().scriptSystem();
     engine.registry().emplaceResource<SceneScriptBridge>(SceneScriptBridge{.manager = _manager});
 
     _scripts->addExtension(*this);
 }
 
-std::vector<scripting::ModuleSource> SceneScriptingPlugin::modules() const {
+std::vector<sq::scripting::ModuleSource> SceneScriptingPlugin::modules() const {
     return {{.name = std::string(SCENE_MODULE_NAME), .source = std::string(SCENE_MODULE_SOURCE)}};
 }
 
-void SceneScriptingPlugin::bind(scripting::WrenVM& vm) { bindSceneModule(vm); }
+void SceneScriptingPlugin::bind(sq::scripting::WrenVM& vm) { bindSceneModule(vm); }
 
-void SceneScriptingPlugin::onVmReset(const scripting::VmResetPhase phase) {
+void SceneScriptingPlugin::onVmReset(const sq::scripting::VmResetPhase phase) {
     for (ScriptScene* scriptScene : _scriptScenes) {
-        if (phase == scripting::VmResetPhase::Before) {
+        if (phase == sq::scripting::VmResetPhase::Before) {
             scriptScene->releaseHandles();
         } else {
             scriptScene->rebuildAfterReload();
@@ -157,33 +157,34 @@ void SceneScriptingPlugin::onVmReset(const scripting::VmResetPhase phase) {
     }
 }
 
-void SceneScriptingPlugin::shutdown(engine::Engine& /*engine*/) {
+void SceneScriptingPlugin::shutdown(sq::engine::Engine& /*engine*/) {
     if (_scripts != nullptr) {
         _scripts->removeExtension(*this);
     }
     // The manager stays readable until the scenes exit (ScenePlugin shuts down after this plugin).
 }
 
-SceneId SceneScriptingPlugin::registerScriptScene(engine::Engine& engine, std::string name, std::string module,
+SceneId SceneScriptingPlugin::registerScriptScene(sq::engine::Engine& engine, std::string name, std::string module,
                                                   std::string className, ScriptSceneOptions options) {
     auto scriptScene = std::make_unique<ScriptScene>(std::move(name), std::move(module), std::move(className), options,
-                                                     engine.getPlugin<scripting::ScriptPlugin>().scriptSystem());
+                                                     engine.getPlugin<sq::scripting::ScriptPlugin>().scriptSystem());
     SceneManager& manager = engine.getPlugin<ScenePlugin>().manager();
     const SceneId id = manager.add(std::move(scriptScene));
     _scriptScenes.push_back(&dynamic_cast<ScriptScene&>(manager.scene(id)));
     return id;
 }
 
-void SceneScriptingPlugin::onScriptSpawn(ecs::Registry& registry, ecs::Entity spawned, scripting::ScriptOwner owner) {
+void SceneScriptingPlugin::onScriptSpawn(sq::ecs::Registry& registry, sq::ecs::Entity spawned,
+                                         sq::scripting::ScriptOwner owner) {
     if (_manager == nullptr) {
         return;
     }
     const SceneManager& manager = *_manager;
 
     std::optional<SceneId> scene = sceneOfOwner(owner);
-    if (!scene && scripting::isEntityOwner(owner)) {
-        const auto entity = static_cast<ecs::Entity>(owner);
-        if (const auto* members = static_cast<const ecs::Registry&>(registry).findComponents<SceneMember>();
+    if (!scene && sq::scripting::isEntityOwner(owner)) {
+        const auto entity = static_cast<sq::ecs::Entity>(owner);
+        if (const auto* members = static_cast<const sq::ecs::Registry&>(registry).findComponents<SceneMember>();
             members != nullptr && members->contains(entity)) {
             scene = members->get(entity).id;
         }
@@ -203,4 +204,4 @@ void SceneScriptingPlugin::onScriptSpawn(ecs::Registry& registry, ecs::Entity sp
     registry.addComponent(spawned, SceneMember{.id = *scene});
 }
 
-}  // namespace scene
+}  // namespace sq::scene

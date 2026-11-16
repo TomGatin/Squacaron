@@ -17,7 +17,7 @@
 #include "events/EventBus.hpp"
 #include "protocol/Protocol.hpp"
 
-namespace ecs::time {
+namespace sq::ecs::time {
 struct Time;
 }
 
@@ -72,7 +72,7 @@ struct MatchListUpdated {};
  *   events.
  * - The player name and the volumes are saved settings: a saved name skips the name screen.
  */
-class MenuScenesPlugin final : public engine::IPlugin {
+class MenuScenesPlugin final : public sq::engine::IPlugin {
   public:
     /** @brief Longest wait for a `JoinResult`. */
     static constexpr float REQUEST_TIMEOUT = 5.0F;
@@ -93,33 +93,33 @@ class MenuScenesPlugin final : public engine::IPlugin {
      * @brief Declares the plugins the menus use.
      * @param builder Dependency builder.
      */
-    void build(engine::PluginBuilder& builder) override;
+    void build(sq::engine::PluginBuilder& builder) override;
 
     /**
      * @brief Declares the settings, registers the scenes, and opens the name screen or the menu.
      * @param engine Host engine.
      */
-    void init(engine::Engine& engine) override;
+    void init(sq::engine::Engine& engine) override;
 
     /**
      * @brief Expires the notice.
      * @param engine Host engine.
      * @param time Frame time.
      */
-    void update(engine::Engine& engine, const ecs::time::Time& time) override;
+    void update(sq::engine::Engine& engine, const sq::time::Time& time) override;
 
     /**
      * @brief Unsubscribes from the network.
      * @param engine Host engine.
      */
-    void shutdown(engine::Engine& engine) override;
+    void shutdown(sq::engine::Engine& engine) override;
 
     /**
      * @brief Sends a create or join request and shows the waiting screen; does nothing while one is pending.
      * @param engine Host engine.
      * @param request Encoded `CreateMatch` or `JoinMatch`.
      */
-    static void request(engine::Engine& engine, const protocol::Bytes& request);
+    static void request(sq::engine::Engine& engine, const protocol::Bytes& request);
 
     /**
      * @brief Confirms the name typed by the player: sends it, saves it, opens the menu.
@@ -127,19 +127,19 @@ class MenuScenesPlugin final : public engine::IPlugin {
      * @param typed Name typed.
      * @return `false` (with a notice) if the name is not valid.
      */
-    static bool confirmName(engine::Engine& engine, std::string typed);
+    static bool confirmName(sq::engine::Engine& engine, std::string typed);
 
     /**
      * @brief Leaves the match and goes back to the menu.
      * @param engine Host engine.
      */
-    void leaveMatch(engine::Engine& engine);
+    void leaveMatch(sq::engine::Engine& engine);
 
     /**
      * @brief Gives up waiting for the pending request: its answer will be dropped, and a match it joined is left.
      * @param engine Host engine.
      */
-    static void cancelRequest(engine::Engine& engine);
+    static void cancelRequest(sq::engine::Engine& engine);
 
   private:
     /**
@@ -147,19 +147,19 @@ class MenuScenesPlugin final : public engine::IPlugin {
      * @param engine Host engine.
      * @param message The message.
      */
-    void onMessage(engine::Engine& engine, const protocol::Message& message);
+    void onMessage(sq::engine::Engine& engine, const protocol::Message& message);
 
     /**
      * @brief Handles the answer to a create or join request.
      * @param engine Host engine.
      * @param result The answer.
      */
-    void onJoinResult(engine::Engine& engine, const protocol::JoinResult& result);
+    void onJoinResult(sq::engine::Engine& engine, const protocol::JoinResult& result);
 
     /** @brief Link to the server. */
     std::shared_ptr<ServerLink> _link;
     /** @brief Subscription to the packets. */
-    std::optional<ecs::EventBus::EventToken> _packets;
+    std::optional<sq::events::EventBus::EventToken> _packets;
 };
 
 }  // namespace rlss::client

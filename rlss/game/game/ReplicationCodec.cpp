@@ -45,7 +45,8 @@ float cueSpeed(const std::uint8_t level) {
 }
 
 /** @brief The sound cues of an entity: a car's jumps and impacts, the ball's hits and bounces. */
-std::pair<protocol::SoundCue, protocol::SoundCue> soundCues(const ecs::Registry& registry, const ecs::Entity entity) {
+std::pair<protocol::SoundCue, protocol::SoundCue> soundCues(const sq::ecs::Registry& registry,
+                                                            const sq::ecs::Entity entity) {
     const auto* cars = registry.findComponents<CarCues>();
     if (cars != nullptr && cars->contains(entity)) {
         const CarCues& cues = cars->get(entity);
@@ -69,13 +70,13 @@ void ReplicationCodec::beginSnapshot(const std::uint32_t tick) {
     _entities.clear();
 }
 
-void ReplicationCodec::writeEntity(const ecs::Registry& registry, const ecs::Entity entity, const std::uint32_t id,
-                                   const ecs::Replicated& replicated) {
-    const auto* transforms = registry.findComponents<ecs::Transform>();
+void ReplicationCodec::writeEntity(const sq::ecs::Registry& registry, const sq::ecs::Entity entity,
+                                   const std::uint32_t id, const sq::ecs::Replicated& replicated) {
+    const auto* transforms = registry.findComponents<sq::ecs::Transform>();
     if (transforms == nullptr || !transforms->contains(entity)) {
         return;
     }
-    const ecs::Transform& transform = transforms->get(entity);
+    const sq::ecs::Transform& transform = transforms->get(entity);
     // The color byte is the car's palette index, or the ball's shot color.
     const auto* looks = registry.findComponents<CarLook>();
     const auto* glows = registry.findComponents<ShotGlow>();
@@ -102,13 +103,13 @@ void ReplicationCodec::writeEntity(const ecs::Registry& registry, const ecs::Ent
     });
 }
 
-std::vector<ecs::net::Bytes> ReplicationCodec::encodeSnapshot(const std::uint32_t lastProcessedInput) {
+std::vector<sq::net::Bytes> ReplicationCodec::encodeSnapshot(const std::uint32_t lastProcessedInput) {
     const std::size_t perPart = protocol::MAX_ENTITIES_PER_PART;
     const std::size_t partCount = std::max<std::size_t>(1, (_entities.size() + perPart - 1) / perPart);
     if (partCount > protocol::MAX_SNAPSHOT_PARTS) {
         return {};
     }
-    std::vector<ecs::net::Bytes> parts;
+    std::vector<sq::net::Bytes> parts;
     parts.reserve(partCount);
     for (std::size_t part = 0; part < partCount; ++part) {
         const auto first = static_cast<std::ptrdiff_t>(std::min(part * perPart, _entities.size()));
@@ -125,13 +126,13 @@ std::vector<ecs::net::Bytes> ReplicationCodec::encodeSnapshot(const std::uint32_
     return parts;
 }
 
-std::optional<ecs::NetInput> ReplicationCodec::decodeInput(const ecs::net::Bytes& data) {
+std::optional<sq::ecs::NetInput> ReplicationCodec::decodeInput(const sq::net::Bytes& data) {
     const auto message = protocol::decode(data);
     const auto* input = message ? std::get_if<protocol::PlayerInput>(&*message) : nullptr;
     if (input == nullptr) {
         return std::nullopt;
     }
-    ecs::NetInput result{
+    sq::ecs::NetInput result{
         .sequence = input->sequence,
         .held = {},
         .axes = {{.action = STEER_ID, .value = input->steer}, {.action = PITCH_ID, .value = input->pitch}},
@@ -145,7 +146,7 @@ std::optional<ecs::NetInput> ReplicationCodec::decodeInput(const ecs::net::Bytes
     return result;
 }
 
-ecs::net::Bytes ReplicationCodec::encodeInput(const ecs::NetInput& input) {
+sq::net::Bytes ReplicationCodec::encodeInput(const sq::ecs::NetInput& input) {
     protocol::PlayerInput message{
         .sequence = input.sequence,
         .steer = 0.0F,
@@ -153,7 +154,7 @@ ecs::net::Bytes ReplicationCodec::encodeInput(const ecs::NetInput& input) {
         .jump = false,
         .boost = false,
     };
-    for (const ecs::NetAxis& axis : input.axes) {
+    for (const sq::ecs::NetAxis& axis : input.axes) {
         if (axis.action == STEER_ID) {
             message.steer = axis.value;
         } else if (axis.action == PITCH_ID) {
@@ -165,14 +166,14 @@ ecs::net::Bytes ReplicationCodec::encodeInput(const ecs::NetInput& input) {
     return protocol::encode(message);
 }
 
-std::optional<ecs::net::SnapshotHeader> ReplicationCodec::decodeSnapshot(const ecs::net::Bytes& data) {
+std::optional<sq::net::SnapshotHeader> ReplicationCodec::decodeSnapshot(const sq::net::Bytes& data) {
     auto message = protocol::decode(data);
     auto* snapshot = message ? std::get_if<protocol::Snapshot>(&*message) : nullptr;
     if (snapshot == nullptr) {
         return std::nullopt;
     }
     _received = std::move(snapshot->entities);
-    return ecs::net::SnapshotHeader{
+    return sq::net::SnapshotHeader{
         .tick = snapshot->tick,
         .lastProcessedInput = snapshot->lastProcessedInput,
         .partIndex = snapshot->partIndex,
@@ -180,15 +181,15 @@ std::optional<ecs::net::SnapshotHeader> ReplicationCodec::decodeSnapshot(const e
     };
 }
 
-void ReplicationCodec::applySnapshot(ecs::net::SnapshotApplier& applier) {
-    ecs::Registry& registry = applier.registry();
+void ReplicationCodec::applySnapshot(sq::net::SnapshotApplier& applier) {
+    sq::ecs::Registry& registry = applier.registry();
     for (const protocol::EntityState& state : _received) {
         const auto entity = applier.entity(state.id, state.kind);
         if (!entity) {
             continue;
         }
-        if (!registry.hasComponent<ecs::Interpolated>(*entity)) {
-            registry.addComponent(*entity, ecs::Interpolated{});
+        if (!registry.hasComponent<sq::ecs::Interpolated>(*entity)) {
+            registry.addComponent(*entity, sq::ecs::Interpolated{});
         }
         if (state.kind == KIND_CAR) {
             registry.addComponent(*entity, CarLook{.color = state.color});
@@ -213,7 +214,7 @@ void ReplicationCodec::applySnapshot(ecs::net::SnapshotApplier& applier) {
                                                .bounceSpeed = cueSpeed(state.secondCue.value),
                                            });
         }
-        applier.setTransform(*entity, ecs::Transform{
+        applier.setTransform(*entity, sq::ecs::Transform{
                                           .x = state.x,
                                           .y = state.y,
                                           .z = 0.0F,

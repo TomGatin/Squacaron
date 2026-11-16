@@ -4,7 +4,7 @@
 
 #include "audio/types/AudioConstants.hpp"
 
-namespace audio {
+namespace sq::audio {
 
 /**
  * @brief Voice limits of an audio backend.
@@ -19,4 +19,4 @@ struct AudioConfig {
     std::size_t maxActiveVoices = DEFAULT_MAX_ACTIVE_VOICES;
 };
 
-}  // namespace audio
+}  // namespace sq::audio

@@ -1,12 +1,12 @@
 # Alien Gunner
 
-**Name:** `alien_gunner` (`prefabs::ALIEN_GUNNER_PREFAB`)
+**Name:** `alien_gunner` (`sq::prefabs::ALIEN_GUNNER_PREFAB`)
 **Source:** `server/src/prefabs/alien_gunner/`
 
 ## Purpose
 
 A slower enemy that fires at the ships. Like the [Alien Scout](alien-scout.md), it flies straight to the left and dies
-on the first hit; its `prefabs::EnemyGun` makes it fire a missile at the nearest ship every `fire_interval` seconds.
+on the first hit; its `sq::prefabs::EnemyGun` makes it fire a missile at the nearest ship every `fire_interval` seconds.
 
 The gun needs no script: `gameplay::EnemyFirePlugin` counts every `EnemyGun` down on each fixed step. A gun only fires
 while its enemy is on the screen, and its first shot comes half an interval after it appears. Each shot is a
@@ -20,7 +20,7 @@ replicated `missile` aimed at the nearest ship that can be hit (not respawning),
 | `Renderable` | `layer = 1` |
 | `RigidBody2D` | `Kinematic`, `velocityX = speed` |
 | `Collider2D` | Box, `halfWidth = halfHeight = ALIEN_GUNNER_HALF_SIZE` (`20` px), sensor, `ENEMY` / `ENEMY_MASK` |
-| `prefabs::EnemyGun` | `interval = fire_interval`, `cooldown = interval / 2`, `shotSpeed = shot_speed` |
+| `sq::prefabs::EnemyGun` | `interval = fire_interval`, `cooldown = interval / 2`, `shotSpeed = shot_speed` |
 
 ## Parameters
 

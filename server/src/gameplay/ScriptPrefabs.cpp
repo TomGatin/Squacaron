@@ -25,7 +25,7 @@ namespace rtype::server::gameplay {
 namespace {
 
 /** @brief Builder of an R-Type prefab, as declared by each `prefabs/<name>/` header. */
-using Builder = void (*)(ecs::Entity, ecs::Registry&, const ::prefabs::PrefabParams&);
+using Builder = void (*)(sq::ecs::Entity, sq::ecs::Registry&, const sq::prefabs::PrefabParams&);
 
 /**
  * @brief Prefabs a script may spawn, with their builder.
@@ -42,11 +42,11 @@ constexpr std::array<std::pair<std::string_view, Builder>, 4> SCRIPT_PREFABS{{
 
 }  // namespace
 
-void registerScriptPrefabs(::prefabs::PrefabManager& manager) {
+void registerScriptPrefabs(sq::prefabs::PrefabManager& manager) {
     for (const auto& [name, build] : SCRIPT_PREFABS) {
         const protocol::EntityKind kind = protocol::makeEntityKind(name);
-        manager.registerPrefab(name, [build, kind](const ecs::Entity entity, ecs::Registry& registry,
-                                                   const ::prefabs::PrefabParams& params) {
+        manager.registerPrefab(name, [build, kind](const sq::ecs::Entity entity, sq::ecs::Registry& registry,
+                                                   const sq::prefabs::PrefabParams& params) {
             build(entity, registry, params);
             // A prefab that survives several hits replicates its hit points, like the level bosses.
             const std::uint8_t health = registry.hasComponent<::prefabs::Health>(entity)
@@ -56,7 +56,7 @@ void registerScriptPrefabs(::prefabs::PrefabManager& manager) {
             const auto look = static_cast<std::uint8_t>(std::clamp<std::int64_t>(
                 params.get<std::int64_t>("subtype", 0), 0, std::numeric_limits<std::uint8_t>::max()));
             registry.addComponent(entity, game::EntityNetState{.subtype = look, .health = health});
-            ecs::net::replicate(registry, entity, kind);
+            sq::net::replicate(registry, entity, kind);
         });
     }
 }

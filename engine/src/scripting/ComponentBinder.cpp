@@ -15,7 +15,7 @@
 #include "scripting/WrenVM.hpp"
 #include "scripting/detail/WrenApi.hpp"
 
-namespace scripting {
+namespace sq::scripting {
 
 ComponentBinderBase::ComponentBinderBase(WrenVM& vm, std::string moduleName, std::string className)
     : _vm(&vm), _module(std::move(moduleName)), _className(std::move(className)) {
@@ -25,11 +25,11 @@ ComponentBinderBase::ComponentBinderBase(WrenVM& vm, std::string moduleName, std
                                 [](::WrenVM* rawVm) noexcept {
                                     try {
                                         ForeignCall const call(rawVm);
-                                        auto entityId = call.arg<ecs::Entity>(1);
+                                        auto entityId = call.arg<sq::ecs::Entity>(1);
                                         if (!entityId.has_value()) {
                                             return;
                                         }
-                                        auto* ptr = call.retNewForeign<ecs::Entity>(0);
+                                        auto* ptr = call.retNewForeign<sq::ecs::Entity>(0);
                                         if (ptr != nullptr) {
                                             *ptr = *entityId;
                                         }
@@ -67,4 +67,4 @@ const std::string& ComponentBinderBase::getModule() const noexcept { return _mod
 
 const std::string& ComponentBinderBase::getClassName() const noexcept { return _className; }
 
-}  // namespace scripting
+}  // namespace sq::scripting

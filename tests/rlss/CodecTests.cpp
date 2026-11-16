@@ -20,7 +20,7 @@ namespace game = rlss::game;
 
 TEST(RlssCodec, InputSurvivesTheWire) {
     game::ReplicationCodec codec;
-    const ecs::NetInput input{
+    const sq::ecs::NetInput input{
         .sequence = 42,
         .held = {game::JUMP_ID},
         .axes = {{.action = game::STEER_ID, .value = 0.5F}, {.action = game::PITCH_ID, .value = -1.0F}}};
@@ -38,22 +38,22 @@ TEST(RlssCodec, InputSurvivesTheWire) {
 }
 
 TEST(RlssCodec, SnapshotSplitsIntoPartsAndRecreatesTheCars) {
-    ecs::Registry server;
+    sq::ecs::Registry server;
     constexpr std::uint16_t MATCH = 12;
     game::ReplicationCodec codec(MATCH);
     codec.beginSnapshot(7);
     constexpr std::uint32_t CARS = rlss::protocol::MAX_ENTITIES_PER_PART + 2;
     for (std::uint32_t id = 1; id <= CARS; ++id) {
-        const ecs::Entity car = server.spawnEntity();
-        server.addComponent(car, ecs::Transform{.x = static_cast<float>(id), .y = 2.0F, .scaleX = -1.0F});
+        const sq::ecs::Entity car = server.spawnEntity();
+        server.addComponent(car, sq::ecs::Transform{.x = static_cast<float>(id), .y = 2.0F, .scaleX = -1.0F});
         server.addComponent(car, game::CarLook{.color = 4});
-        codec.writeEntity(server, car, id, ecs::Replicated{.kind = game::KIND_CAR});
+        codec.writeEntity(server, car, id, sq::ecs::Replicated{.kind = game::KIND_CAR});
     }
     const auto parts = codec.encodeSnapshot(3);
     ASSERT_EQ(parts.size(), 2U);
 
-    ecs::Registry client;
-    ecs::net::NetworkEntityMap map;
+    sq::ecs::Registry client;
+    sq::net::NetworkEntityMap map;
     std::size_t applied = 0;
     for (const auto& part : parts) {
         // Every part says which match it comes from: a client drops those of another match.
@@ -63,7 +63,7 @@ TEST(RlssCodec, SnapshotSplitsIntoPartsAndRecreatesTheCars) {
         EXPECT_EQ(header->tick, 7U);
         EXPECT_EQ(header->lastProcessedInput, 3U);
         EXPECT_EQ(header->partCount, 2U);
-        ecs::net::SnapshotApplier applier(client, map, 1.0F / 60.0F);
+        sq::net::SnapshotApplier applier(client, map, 1.0F / 60.0F);
         codec.applySnapshot(applier);
         applied += applier.spawned().size();
     }
@@ -71,30 +71,30 @@ TEST(RlssCodec, SnapshotSplitsIntoPartsAndRecreatesTheCars) {
 
     const auto entity = map.entityOf(1);
     ASSERT_TRUE(entity.has_value());
-    EXPECT_TRUE(client.hasComponent<ecs::Interpolated>(*entity));
+    EXPECT_TRUE(client.hasComponent<sq::ecs::Interpolated>(*entity));
     EXPECT_EQ(client.getComponents<game::CarLook>().get(*entity).color, 4);
-    EXPECT_FLOAT_EQ(client.getComponents<ecs::Transform>().get(*entity).scaleX, -1.0F);
+    EXPECT_FLOAT_EQ(client.getComponents<sq::ecs::Transform>().get(*entity).scaleX, -1.0F);
 }
 
 TEST(RlssCodec, SoundCuesReachTheClient) {
-    ecs::Registry server;
+    sq::ecs::Registry server;
     game::ReplicationCodec codec(1);
     codec.beginSnapshot(1);
-    const ecs::Entity car = server.spawnEntity();
-    server.addComponent(car, ecs::Transform{});
+    const sq::ecs::Entity car = server.spawnEntity();
+    server.addComponent(car, sq::ecs::Transform{});
     server.addComponent(car, game::CarCues{.jumps = 18, .jumpKind = 2, .impacts = 3, .impactSpeed = 1200.0F});
-    codec.writeEntity(server, car, 1, ecs::Replicated{.kind = game::KIND_CAR});
-    const ecs::Entity ball = server.spawnEntity();
-    server.addComponent(ball, ecs::Transform{});
+    codec.writeEntity(server, car, 1, sq::ecs::Replicated{.kind = game::KIND_CAR});
+    const sq::ecs::Entity ball = server.spawnEntity();
+    server.addComponent(ball, sq::ecs::Transform{});
     server.addComponent(ball, game::BallCues{.hits = 5, .hitSpeed = 9000.0F, .bounces = 1, .bounceSpeed = 50.0F});
-    codec.writeEntity(server, ball, 2, ecs::Replicated{.kind = game::KIND_BALL});
+    codec.writeEntity(server, ball, 2, sq::ecs::Replicated{.kind = game::KIND_BALL});
     const auto parts = codec.encodeSnapshot(0);
     ASSERT_EQ(parts.size(), 1U);
 
-    ecs::Registry client;
-    ecs::net::NetworkEntityMap map;
+    sq::ecs::Registry client;
+    sq::net::NetworkEntityMap map;
     ASSERT_TRUE(codec.decodeSnapshot(parts.front()).has_value());
-    ecs::net::SnapshotApplier applier(client, map, 1.0F / 60.0F);
+    sq::net::SnapshotApplier applier(client, map, 1.0F / 60.0F);
     codec.applySnapshot(applier);
 
     const auto carEntity = map.entityOf(1);

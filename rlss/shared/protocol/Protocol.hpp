@@ -20,7 +20,7 @@ namespace rlss::protocol {
 inline constexpr std::string_view GAME_TITLE = "RLSS";
 
 /**
- * @brief Transport protocol id (`ecs::net::NetworkConfig::protocolId`): an R-Type client and an RLSS server refuse
+ * @brief Transport protocol id (`sq::net::NetworkConfig::protocolId`): an R-Type client and an RLSS server refuse
  * each other during the handshake. Bump the low byte on every incompatible protocol change.
  */
 inline constexpr std::uint32_t PROTOCOL_ID = 0x524C000AU;  // "RL", version 10

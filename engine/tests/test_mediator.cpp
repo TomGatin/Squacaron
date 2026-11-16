@@ -51,7 +51,7 @@ class CounterService final : public ITestCounterService {
 }  // namespace
 
 TEST(Mediator, RegisterAndRetrieveService) {
-    engine::Mediator mediator;
+    sq::engine::Mediator mediator;
     EXPECT_FALSE(mediator.hasService<ITestGreetingService>());
 
     auto servicePtr = std::make_shared<GreetingService>();
@@ -65,7 +65,7 @@ TEST(Mediator, RegisterAndRetrieveService) {
 }
 
 TEST(Mediator, EmplaceService) {
-    engine::Mediator mediator;
+    sq::engine::Mediator mediator;
     [[maybe_unused]] const auto empRes = mediator.emplaceService<ITestCounterService, CounterService>(10);
 
     EXPECT_TRUE(mediator.hasService<ITestCounterService>());
@@ -75,17 +75,17 @@ TEST(Mediator, EmplaceService) {
 }
 
 TEST(Mediator, MissingServiceReturnsErrorOrThrows) {
-    const engine::Mediator mediator;
+    const sq::engine::Mediator mediator;
     auto result = mediator.getService<ITestGreetingService>();
     EXPECT_FALSE(result.has_value());
-    EXPECT_EQ(result.error(), engine::MediatorError::ServiceNotFound);
+    EXPECT_EQ(result.error(), sq::engine::MediatorError::ServiceNotFound);
 
-    EXPECT_THROW(static_cast<void>(mediator.service<ITestGreetingService>()), engine::MediatorError);
+    EXPECT_THROW(static_cast<void>(mediator.service<ITestGreetingService>()), sq::engine::MediatorError);
     EXPECT_THROW(static_cast<void>(mediator.service<ITestGreetingService>()), std::exception);
 }
 
 TEST(Mediator, DuplicateRegistrationRejectsWithAlreadyRegistered) {
-    engine::Mediator mediator;
+    sq::engine::Mediator mediator;
     auto servicePtr1 = std::make_shared<GreetingService>();
     auto servicePtr2 = std::make_shared<GreetingService>();
 
@@ -94,27 +94,27 @@ TEST(Mediator, DuplicateRegistrationRejectsWithAlreadyRegistered) {
 
     auto result2 = mediator.registerService<ITestGreetingService>(servicePtr2);
     EXPECT_FALSE(result2.has_value());
-    EXPECT_EQ(result2.error(), engine::MediatorError::AlreadyRegistered);
+    EXPECT_EQ(result2.error(), sq::engine::MediatorError::AlreadyRegistered);
 
     // Stored service must not be replaced
     EXPECT_EQ(mediator.service<ITestGreetingService>().greet("Alice"), "Hello, Alice!");
 }
 
 TEST(Mediator, DuplicateEmplaceRejectsWithAlreadyRegistered) {
-    engine::Mediator mediator;
+    sq::engine::Mediator mediator;
     auto result1 = mediator.emplaceService<ITestCounterService, CounterService>(10);
     ASSERT_TRUE(result1.has_value());
 
     auto result2 = mediator.emplaceService<ITestCounterService, CounterService>(20);
     EXPECT_FALSE(result2.has_value());
-    EXPECT_EQ(result2.error(), engine::MediatorError::AlreadyRegistered);
+    EXPECT_EQ(result2.error(), sq::engine::MediatorError::AlreadyRegistered);
 
     // Stored service must not be replaced
     EXPECT_EQ(mediator.service<ITestCounterService>().value(), 10);
 }
 
 TEST(Mediator, RemoveService) {
-    engine::Mediator mediator;
+    sq::engine::Mediator mediator;
     [[maybe_unused]] const auto empRes = mediator.emplaceService<ITestCounterService, CounterService>(0);
     EXPECT_TRUE(mediator.hasService<ITestCounterService>());
 
@@ -141,7 +141,7 @@ struct DestructionRecorder {
 TEST(Mediator, ReleasesServicesInReverseRegistrationOrder) {
     std::vector<int> log;
     {
-        engine::Mediator mediator;
+        sq::engine::Mediator mediator;
         ASSERT_TRUE(mediator.registerService(std::make_shared<DestructionRecorder<1>>(log)).has_value());
         ASSERT_TRUE((mediator.emplaceService<DestructionRecorder<2>, DestructionRecorder<2>>(log).has_value()));
         ASSERT_TRUE(mediator.registerService(std::make_shared<DestructionRecorder<3>>(log)).has_value());

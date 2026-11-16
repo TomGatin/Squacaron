@@ -9,7 +9,7 @@
 
 #include <vector>
 
-namespace ecs {
+namespace sq::ecs {
 
 /**
  * @brief Drives frame-based animation by updating the Renderable::sourceRect each tick.
@@ -59,4 +59,4 @@ struct AnimationComponent {
     bool loop = true;
 };
 
-}  // namespace ecs
+}  // namespace sq::ecs

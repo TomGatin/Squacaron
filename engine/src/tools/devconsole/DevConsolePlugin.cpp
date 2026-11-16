@@ -18,7 +18,7 @@
 #include "tools/devconsole/KeyRepeater.hpp"
 #include "ui/UiPlugin.hpp"
 
-namespace tools {
+namespace sq::tools {
 
 DevConsolePlugin::DevConsolePlugin(DevConsoleConfig config)
     : _config(std::move(config)), _view(_config), _toggle(false, _config.repeatDelay, _config.repeatInterval) {
@@ -30,28 +30,28 @@ DevConsolePlugin::DevConsolePlugin(DevConsoleConfig config)
 
 DevConsolePlugin::~DevConsolePlugin() = default;
 
-void DevConsolePlugin::build(engine::PluginBuilder& builder) {
+void DevConsolePlugin::build(sq::engine::PluginBuilder& builder) {
     builder.require<ConsolePlugin>();
-    builder.requireService<engine::IWindowService>();
-    builder.requireService<engine::IInputCaptureService>();
-    builder.requireService<engine::IScreenDrawService>();
+    builder.requireService<sq::engine::IWindowService>();
+    builder.requireService<sq::engine::IInputCaptureService>();
+    builder.requireService<sq::engine::IScreenDrawService>();
     // The console is drawn after the UI, so it stays on top of menus and overlays.
-    builder.optionally<ui::UiPlugin>();
+    builder.optionally<sq::ui::UiPlugin>();
 }
 
-void DevConsolePlugin::init(engine::Engine& engine) {
+void DevConsolePlugin::init(sq::engine::Engine& engine) {
     _devConsole = std::make_unique<DevConsole>(engine.service<Console>());
     if (!_config.fontPath.empty()) {
-        _view.setFont(engine.service<engine::IScreenDrawService>().loadFont(_config.fontPath));
+        _view.setFont(engine.service<sq::engine::IScreenDrawService>().loadFont(_config.fontPath));
     }
 }
 
-void DevConsolePlugin::preUpdate(engine::Engine& engine) {
-    auto found = engine.mediator().getService<engine::IInputCaptureService>();
+void DevConsolePlugin::preUpdate(sq::engine::Engine& engine) {
+    auto found = engine.mediator().getService<sq::engine::IInputCaptureService>();
     if (!_devConsole || !found) {
         return;
     }
-    engine::IInputCaptureService& capture = found->get();
+    sq::engine::IInputCaptureService& capture = found->get();
     const float dt = engine.clock().lastFrameDelta();
 
     const bool wasOpen = _devConsole->isOpen();
@@ -76,7 +76,7 @@ void DevConsolePlugin::preUpdate(engine::Engine& engine) {
     }
 }
 
-void DevConsolePlugin::readEditing(engine::IInputCaptureService& capture, float dt) {
+void DevConsolePlugin::readEditing(sq::engine::IInputCaptureService& capture, float dt) {
     bool edited = false;
     for (char32_t cp = capture.nextTypedCharacter(); cp != U'\0'; cp = capture.nextTypedCharacter()) {
         _devConsole->type(cp);
@@ -98,7 +98,7 @@ void DevConsolePlugin::readEditing(engine::IInputCaptureService& capture, float 
     }
 }
 
-void DevConsolePlugin::discardPendingInput(engine::IInputCaptureService& capture) {
+void DevConsolePlugin::discardPendingInput(sq::engine::IInputCaptureService& capture) {
     while (capture.nextTypedCharacter() != U'\0') {
     }
     for (std::size_t i = 0; i < KEY_BINDINGS.size(); ++i) {
@@ -106,12 +106,12 @@ void DevConsolePlugin::discardPendingInput(engine::IInputCaptureService& capture
     }
 }
 
-void DevConsolePlugin::lateUpdate(engine::Engine& engine, const ecs::time::Time& /*time*/) {
+void DevConsolePlugin::lateUpdate(sq::engine::Engine& engine, const sq::time::Time& /*time*/) {
     if (!_devConsole || !_devConsole->isOpen()) {
         return;
     }
-    auto window = engine.mediator().getService<engine::IWindowService>();
-    auto screen = engine.mediator().getService<engine::IScreenDrawService>();
+    auto window = engine.mediator().getService<sq::engine::IWindowService>();
+    auto screen = engine.mediator().getService<sq::engine::IScreenDrawService>();
     if (!window || !screen) {
         return;
     }
@@ -121,11 +121,11 @@ void DevConsolePlugin::lateUpdate(engine::Engine& engine, const ecs::time::Time&
     _view.draw(screen->get(), *_devConsole, width, height, _caretVisible);
 }
 
-void DevConsolePlugin::shutdown(engine::Engine& engine) {
-    if (auto capture = engine.mediator().getService<engine::IInputCaptureService>(); capture) {
+void DevConsolePlugin::shutdown(sq::engine::Engine& engine) {
+    if (auto capture = engine.mediator().getService<sq::engine::IInputCaptureService>(); capture) {
         capture->get().setCaptured(false);
     }
     _devConsole.reset();
 }
 
-}  // namespace tools
+}  // namespace sq::tools

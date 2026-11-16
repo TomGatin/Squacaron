@@ -2,7 +2,7 @@
 
 #include "render/window/WindowConfig.hpp"
 
-namespace render {
+namespace sq::render {
 
 /**
  * @brief RAII owner of the raylib window and its OpenGL context.
@@ -46,4 +46,4 @@ class Window {
     static void endFrame();
 };
 
-}  // namespace render
+}  // namespace sq::render

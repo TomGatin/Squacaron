@@ -7,7 +7,7 @@
 
 #include "timeline/TimelineEvent.hpp"
 
-namespace timeline {
+namespace sq::timeline {
 
 /**
  * @brief Published once for every timeline event the cursor reaches, in firing order.
@@ -27,4 +27,4 @@ struct TimelineEventFired {
  */
 struct TimelineFinished {};
 
-}  // namespace timeline
+}  // namespace sq::timeline

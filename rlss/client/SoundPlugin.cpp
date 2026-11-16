@@ -44,7 +44,7 @@ constexpr const char* LOG_TAG = "sound";
 constexpr int CUE_MASK = protocol::SOUND_CUE_MAX;
 
 // --- Spatialization (uu): the camera shows 1500 to 2900 uu across, everything on screen is heard in full ---
-constexpr audio::SpatialConfig SPATIAL{
+constexpr sq::audio::SpatialConfig SPATIAL{
     .enabled = true,
     .panRange = 1500.0F,
     .maxPan = 0.6F,
@@ -101,8 +101,8 @@ float strength(const float speed) { return std::clamp(speed / game::SOUND_CUE_FU
 /** @brief True if a replicated counter moved since `played`. */
 bool changed(const int counter, const int played) { return (counter & CUE_MASK) != (played & CUE_MASK); }
 
-audio::SoundPosition positionOf(const ecs::Transform& transform) {
-    return audio::SoundPosition{.x = transform.x, .y = transform.y};
+sq::audio::SoundPosition positionOf(const sq::ecs::Transform& transform) {
+    return sq::audio::SoundPosition{.x = transform.x, .y = transform.y};
 }
 
 /** @brief Pitch of the blast of a colored shot: each color sounds a bit different. */
@@ -161,35 +161,35 @@ std::string_view soundAlias(const Sound sound) noexcept {
     return "";
 }
 
-void SoundPlugin::build(engine::PluginBuilder& builder) {
-    builder.require<audio::AudioPlugin>();
-    builder.require<assets::AssetScriptingPlugin>();
-    builder.require<assets::AudioAssetsPlugin>();
-    builder.require<ecs::net::ClientReplicationPlugin>();
+void SoundPlugin::build(sq::engine::PluginBuilder& builder) {
+    builder.require<sq::audio::AudioPlugin>();
+    builder.require<sq::assets::AssetScriptingPlugin>();
+    builder.require<sq::assets::AudioAssetsPlugin>();
+    builder.require<sq::net::ClientReplicationPlugin>();
     builder.require<CameraPlugin>();
     builder.require<HudPlugin>();
 }
 
-void SoundPlugin::init(engine::Engine& engine) {
-    auto& audioService = engine.service<engine::IAudioService>();
+void SoundPlugin::init(sq::engine::Engine& engine) {
+    auto& audioService = engine.service<sq::engine::IAudioService>();
     audioService.setSpatialConfig(SPATIAL);
     // Loaded by the asset manager from rlss/scripts/Assets.wren, which also releases them at shutdown.
-    auto& manager = engine.registry().getResource<assets::AssetManager>();
-    manager.loadGroup(assets::AssetManager::GLOBAL_GROUP);
+    auto& manager = engine.registry().getResource<sq::assets::AssetManager>();
+    manager.loadGroup(sq::assets::AssetManager::GLOBAL_GROUP);
     for (std::size_t i = 0; i < SOUND_COUNT; ++i) {
         const std::string_view alias = soundAlias(static_cast<Sound>(i));
-        _sounds.at(i) = manager.get<assets::Sound>(alias);
-        if (_sounds.at(i) == audio::NO_SOUND && audioService.isAvailable()) {
-            engine::log::warning(LOG_TAG, "no sound '", alias, "': this sound stays silent");
+        _sounds.at(i) = manager.get<sq::assets::Sound>(alias);
+        if (_sounds.at(i) == sq::audio::NO_SOUND && audioService.isAvailable()) {
+            sq::engine::log::warning(LOG_TAG, "no sound '", alias, "': this sound stays silent");
         }
     }
 
-    ecs::Registry& registry = engine.registry();
+    sq::ecs::Registry& registry = engine.registry();
     _listener = registry.spawnEntity();
-    registry.addComponent(_listener, ecs::Transform{});
-    registry.addComponent(_listener, ecs::AudioListener{});
+    registry.addComponent(_listener, sq::ecs::Transform{});
+    registry.addComponent(_listener, sq::ecs::AudioListener{});
     // The crowd plays where the listener is: centered, full volume. Only during a match.
-    registry.addComponent(_listener, ecs::AudioEmitter{
+    registry.addComponent(_listener, sq::ecs::AudioEmitter{
                                          .sound = _sounds.at(static_cast<std::size_t>(Sound::Crowd)),
                                          .volume = CROWD_VOLUME,
                                          .loop = true,
@@ -197,20 +197,20 @@ void SoundPlugin::init(engine::Engine& engine) {
                                      });
 
     auto& events = engine.eventBus();
-    _spawned = events.subscribe<ecs::net::ReplicatedEntitySpawned>(
-        [this, &engine](const ecs::net::ReplicatedEntitySpawned& event) {
-            ecs::Registry& world = engine.registry();
-            if (!world.hasComponent<ecs::Transform>(event.entity)) {
+    _spawned = events.subscribe<sq::net::ReplicatedEntitySpawned>(
+        [this, &engine](const sq::net::ReplicatedEntitySpawned& event) {
+            sq::ecs::Registry& world = engine.registry();
+            if (!world.hasComponent<sq::ecs::Transform>(event.entity)) {
                 return;
             }
-            const ecs::Transform transform = world.getComponents<ecs::Transform>().get(event.entity);
+            const sq::ecs::Transform transform = world.getComponents<sq::ecs::Transform>().get(event.entity);
             if (event.kind == game::KIND_CAR) {
                 // Start from the counters received: what happened before this car appeared is not played.
                 const auto& cues = world.getComponents<game::CarCues>();
                 const game::CarCues known = cues.contains(event.entity) ? cues.get(event.entity) : game::CarCues{};
-                const ecs::Entity boost = world.spawnEntity();
+                const sq::ecs::Entity boost = world.spawnEntity();
                 world.addComponent(boost, transform);
-                world.addComponent(boost, ecs::AudioEmitter{
+                world.addComponent(boost, sq::ecs::AudioEmitter{
                                               .sound = _sounds.at(static_cast<std::size_t>(Sound::Boost)),
                                               .volume = BOOST_VOLUME,
                                               .loop = true,
@@ -223,7 +223,7 @@ void SoundPlugin::init(engine::Engine& engine) {
                                                      .lastX = transform.x,
                                                      .lastY = transform.y,
                                                  });
-                world.addComponent(event.entity, ecs::AudioEmitter{
+                world.addComponent(event.entity, sq::ecs::AudioEmitter{
                                                      .sound = _sounds.at(static_cast<std::size_t>(Sound::Engine)),
                                                      .volume = ENGINE_IDLE_VOLUME,
                                                      .pitch = ENGINE_IDLE_PITCH,
@@ -235,14 +235,14 @@ void SoundPlugin::init(engine::Engine& engine) {
                 world.addComponent(event.entity, BallAudio{.hits = known.hits, .bounces = known.bounces});
             }
         });
-    _despawned = events.subscribe<ecs::net::ReplicatedEntityDespawned>(
-        [&engine](const ecs::net::ReplicatedEntityDespawned& event) {
-            ecs::Registry& world = engine.registry();
+    _despawned = events.subscribe<sq::net::ReplicatedEntityDespawned>(
+        [&engine](const sq::net::ReplicatedEntityDespawned& event) {
+            sq::ecs::Registry& world = engine.registry();
             auto& cars = world.getComponents<CarAudio>();
             if (!cars.contains(event.entity)) {
                 return;
             }
-            const ecs::Entity boost = cars.get(event.entity).boost;
+            const sq::ecs::Entity boost = cars.get(event.entity).boost;
             if (boost != 0 && world.isAlive(boost)) {
                 world.killEntity(boost);
             }
@@ -257,20 +257,21 @@ void SoundPlugin::init(engine::Engine& engine) {
     });
 }
 
-void SoundPlugin::update(engine::Engine& engine, const ecs::time::Time& time) {
-    ecs::Registry& registry = engine.registry();
+void SoundPlugin::update(sq::engine::Engine& engine, const sq::time::Time& time) {
+    sq::ecs::Registry& registry = engine.registry();
     // Heard from the center of the screen.
-    std::optional<audio::SoundPosition> camera;
-    registry.runSystem<ecs::CameraComponent>([&camera](ecs::Entity /*entity*/, const ecs::CameraComponent& view) {
-        if (!camera) {
-            camera = audio::SoundPosition{.x = view.targetX, .y = view.targetY};
-        }
-    });
+    std::optional<sq::audio::SoundPosition> camera;
+    registry.runSystem<sq::ecs::CameraComponent>(
+        [&camera](sq::ecs::Entity /*entity*/, const sq::ecs::CameraComponent& view) {
+            if (!camera) {
+                camera = sq::audio::SoundPosition{.x = view.targetX, .y = view.targetY};
+            }
+        });
     if (camera && registry.isAlive(_listener)) {
-        ecs::Transform& listener = registry.getComponents<ecs::Transform>().get(_listener);
+        sq::ecs::Transform& listener = registry.getComponents<sq::ecs::Transform>().get(_listener);
         listener.x = camera->x;
         listener.y = camera->y;
-        registry.getComponents<ecs::AudioEmitter>().get(_listener).playing = _inMatch;
+        registry.getComponents<sq::ecs::AudioEmitter>().get(_listener).playing = _inMatch;
     }
 
     updateCars(engine, time.deltaTime);
@@ -278,23 +279,23 @@ void SoundPlugin::update(engine::Engine& engine, const ecs::time::Time& time) {
     updateMatch(engine);
 }
 
-void SoundPlugin::play(engine::Engine& engine, const Sound sound, const float volume, const float pitch,
-                       const std::optional<audio::SoundPosition> position) const {
-    engine.eventBus().publish(events::PlaySoundEvent{
+void SoundPlugin::play(sq::engine::Engine& engine, const Sound sound, const float volume, const float pitch,
+                       const std::optional<sq::audio::SoundPosition> position) const {
+    engine.eventBus().publish(sq::events::PlaySoundEvent{
         .sound = _sounds.at(static_cast<std::size_t>(sound)),
-        .volume = std::clamp(volume, audio::MIN_VOLUME, audio::MAX_VOLUME),
+        .volume = std::clamp(volume, sq::audio::MIN_VOLUME, sq::audio::MAX_VOLUME),
         .pitch = pitch,
         .position = position,
     });
 }
 
-void SoundPlugin::updateCars(engine::Engine& engine, const float dt) const {
-    ecs::Registry& registry = engine.registry();
-    auto& transforms = registry.getComponents<ecs::Transform>();
-    auto& emitters = registry.getComponents<ecs::AudioEmitter>();
-    registry.runSystem<CarAudio, game::CarCues, game::CarStatus, ecs::Transform, ecs::AudioEmitter>(
-        [&](ecs::Entity /*entity*/, CarAudio& track, const game::CarCues& cues, const game::CarStatus& status,
-            const ecs::Transform& transform, ecs::AudioEmitter& engineSound) {
+void SoundPlugin::updateCars(sq::engine::Engine& engine, const float dt) const {
+    sq::ecs::Registry& registry = engine.registry();
+    auto& transforms = registry.getComponents<sq::ecs::Transform>();
+    auto& emitters = registry.getComponents<sq::ecs::AudioEmitter>();
+    registry.runSystem<CarAudio, game::CarCues, game::CarStatus, sq::ecs::Transform, sq::ecs::AudioEmitter>(
+        [&](sq::ecs::Entity /*entity*/, CarAudio& track, const game::CarCues& cues, const game::CarStatus& status,
+            const sq::ecs::Transform& transform, sq::ecs::AudioEmitter& engineSound) {
             // Engine: pitch and volume follow the speed, measured on screen and smoothed.
             const float moved = std::hypot(transform.x - track.lastX, transform.y - track.lastY);
             track.lastX = transform.x;
@@ -311,13 +312,13 @@ void SoundPlugin::updateCars(engine::Engine& engine, const float dt) const {
 
             // Boost: its own entity, which follows the car.
             if (track.boost != 0 && transforms.contains(track.boost) && emitters.contains(track.boost)) {
-                ecs::Transform& boost = transforms.get(track.boost);
+                sq::ecs::Transform& boost = transforms.get(track.boost);
                 boost.x = transform.x;
                 boost.y = transform.y;
                 emitters.get(track.boost).playing = status.boosting;
             }
 
-            const audio::SoundPosition where = positionOf(transform);
+            const sq::audio::SoundPosition where = positionOf(transform);
             if (changed(cues.jumps, track.jumps)) {
                 track.jumps = cues.jumps;
                 switch (static_cast<game::JumpKind>(cues.jumpKind)) {
@@ -341,11 +342,11 @@ void SoundPlugin::updateCars(engine::Engine& engine, const float dt) const {
         });
 }
 
-void SoundPlugin::updateBall(engine::Engine& engine) const {
-    engine.registry().runSystem<BallAudio, game::BallCues, game::ShotGlow, ecs::Transform>(
-        [&](ecs::Entity /*entity*/, BallAudio& track, const game::BallCues& cues, const game::ShotGlow& glow,
-            const ecs::Transform& transform) {
-            const audio::SoundPosition where = positionOf(transform);
+void SoundPlugin::updateBall(sq::engine::Engine& engine) const {
+    engine.registry().runSystem<BallAudio, game::BallCues, game::ShotGlow, sq::ecs::Transform>(
+        [&](sq::ecs::Entity /*entity*/, BallAudio& track, const game::BallCues& cues, const game::ShotGlow& glow,
+            const sq::ecs::Transform& transform) {
+            const sq::audio::SoundPosition where = positionOf(transform);
             if (changed(cues.hits, track.hits)) {
                 track.hits = cues.hits;
                 const float hard = strength(cues.hitSpeed);
@@ -365,10 +366,10 @@ void SoundPlugin::updateBall(engine::Engine& engine) const {
         });
 }
 
-void SoundPlugin::updateMatch(engine::Engine& engine) {
+void SoundPlugin::updateMatch(sq::engine::Engine& engine) {
     std::optional<game::MatchState> current;
     engine.registry().runSystem<game::MatchState>(
-        [&current](ecs::Entity /*entity*/, const game::MatchState& state) { current = state; });
+        [&current](sq::ecs::Entity /*entity*/, const game::MatchState& state) { current = state; });
     if (!_inMatch || !current || current->phase == game::NO_MATCH) {
         return;
     }
@@ -402,14 +403,14 @@ void SoundPlugin::updateMatch(engine::Engine& engine) {
     }
 }
 
-void SoundPlugin::shutdown(engine::Engine& engine) {
+void SoundPlugin::shutdown(sq::engine::Engine& engine) {
     auto& events = engine.eventBus();
     if (_spawned) {
-        events.unsubscribe<ecs::net::ReplicatedEntitySpawned>(*_spawned);
+        events.unsubscribe<sq::net::ReplicatedEntitySpawned>(*_spawned);
         _spawned.reset();
     }
     if (_despawned) {
-        events.unsubscribe<ecs::net::ReplicatedEntityDespawned>(*_despawned);
+        events.unsubscribe<sq::net::ReplicatedEntityDespawned>(*_despawned);
         _despawned.reset();
     }
     if (_joined) {
@@ -421,7 +422,7 @@ void SoundPlugin::shutdown(engine::Engine& engine) {
         _left.reset();
     }
     // The sounds belong to the asset manager, which releases them when the audio plugin stops.
-    _sounds.fill(audio::NO_SOUND);
+    _sounds.fill(sq::audio::NO_SOUND);
 }
 
 }  // namespace rlss::client

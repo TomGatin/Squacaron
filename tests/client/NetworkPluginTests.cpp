@@ -35,10 +35,10 @@
 
 namespace {
 
-using ecs::net::Bytes;
-using ecs::net::Channel;
-using ecs::net::EventType;
-using ecs::net::NetworkEvent;
+using sq::net::Bytes;
+using sq::net::Channel;
+using sq::net::EventType;
+using sq::net::NetworkEvent;
 namespace protocol = rtype::protocol;
 namespace game = rtype::game;
 
@@ -50,7 +50,7 @@ constexpr std::uint32_t MY_SHIP = 10;
 constexpr std::uint32_t OTHER_SHIP = 11;
 
 /** @brief Client transport the test talks through, in place of the server. */
-class FakeClient final : public ecs::net::INetworkClient {
+class FakeClient final : public sq::net::INetworkClient {
   public:
     struct Sent {
         Bytes data;
@@ -61,7 +61,7 @@ class FakeClient final : public ecs::net::INetworkClient {
         connectedTo = host + ":" + std::to_string(port);
         return connects;
     }
-    [[nodiscard]] ecs::net::DisconnectReason disconnectReason() const override { return reason; }
+    [[nodiscard]] sq::net::DisconnectReason disconnectReason() const override { return reason; }
     bool openUdp(const std::uint16_t port) override {
         udpPort = port;
         return udpOpens;
@@ -80,7 +80,7 @@ class FakeClient final : public ecs::net::INetworkClient {
     bool stopped = false;
     int udpClosed = 0;
     std::string connectedTo;
-    ecs::net::DisconnectReason reason = ecs::net::DisconnectReason::ConnectionLost;
+    sq::net::DisconnectReason reason = sq::net::DisconnectReason::ConnectionLost;
 };
 
 /** @brief Client engine with the network plugins; every connection uses the next fake transport. */
@@ -88,9 +88,9 @@ class RTypeNetworkPluginTest : public ::testing::Test {
   protected:
     RTypeNetworkPluginTest() {
         engine.setFixedDeltaTime(DT);
-        const auto connection = std::make_shared<ecs::net::ClientConnection>(nullptr);
-        engine.addPlugin<ecs::net::NetworkPlugin>(connection, connection);
-        engine.addPlugin<ecs::net::ClientReplicationPlugin>(std::make_shared<game::ReplicationCodec>());
+        const auto connection = std::make_shared<sq::net::ClientConnection>(nullptr);
+        engine.addPlugin<sq::net::NetworkPlugin>(connection, connection);
+        engine.addPlugin<sq::net::ClientReplicationPlugin>(std::make_shared<game::ReplicationCodec>());
         engine.addPlugin<client::RTypeNetworkPlugin>(connection, [this] {
             ++transportsMade;
             transport = std::make_shared<FakeClient>();
@@ -120,7 +120,7 @@ class RTypeNetworkPluginTest : public ::testing::Test {
         bus.subscribe<client::GameEnded>([this](const auto& /*event*/) { results.emplace_back("over"); });
         engine.init();
         inputEntity = engine.registry().spawnEntity();
-        engine.registry().addComponent(inputEntity, ::input::InputState{.playerIndex = 0, .actions = {}});
+        engine.registry().addComponent(inputEntity, sq::input::InputState{.playerIndex = 0, .actions = {}});
     }
 
     [[nodiscard]] client::RTypeNetworkPlugin& session() { return engine.getPlugin<client::RTypeNetworkPlugin>(); }
@@ -134,7 +134,7 @@ class RTypeNetworkPluginTest : public ::testing::Test {
     /** @brief The server sends a message; the client handles it during the frame this runs. */
     void receive(const protocol::Message& message, const Channel channel = Channel::Reliable) {
         transport->next.push_back({.type = EventType::Data,
-                                   .peer = ecs::net::SERVER_PEER,
+                                   .peer = sq::net::SERVER_PEER,
                                    .data = protocol::encode(message),
                                    .channel = channel});
         step();
@@ -187,8 +187,8 @@ class RTypeNetworkPluginTest : public ::testing::Test {
         actions()[client::input::ACTION_READY].justPressed = false;
     }
 
-    std::unordered_map<::input::ActionId, ::input::ActionData>& actions() {
-        return engine.registry().getComponents<::input::InputState>().get(inputEntity).actions;
+    std::unordered_map<sq::input::ActionId, sq::input::ActionData>& actions() {
+        return engine.registry().getComponents<sq::input::InputState>().get(inputEntity).actions;
     }
 
     /** @brief Snapshot with the ship of player 0 and the ship of player 1. */
@@ -201,12 +201,12 @@ class RTypeNetworkPluginTest : public ::testing::Test {
                 {.entityId = OTHER_SHIP, .kind = game::KIND_PLAYER_SHIP, .subtype = 1, .x = 200.0F, .y = 100.0F}}};
     }
 
-    [[nodiscard]] ecs::Entity entityOf(const std::uint32_t id) {
-        return engine.registry().getResource<ecs::net::NetworkEntityMap>().entityOf(id).value();
+    [[nodiscard]] sq::ecs::Entity entityOf(const std::uint32_t id) {
+        return engine.registry().getResource<sq::net::NetworkEntityMap>().entityOf(id).value();
     }
 
     [[nodiscard]] std::size_t replicatedCount() {
-        return engine.registry().getResource<ecs::net::NetworkEntityMap>().size();
+        return engine.registry().getResource<sq::net::NetworkEntityMap>().size();
     }
 
     double now = 0.0;
@@ -215,8 +215,8 @@ class RTypeNetworkPluginTest : public ::testing::Test {
     int transportsMade = 0;
     std::shared_ptr<FakeClient> transport;
     std::vector<std::string> results;
-    engine::Engine engine{[this]() -> double { return now; }};
-    ecs::Entity inputEntity = 0;
+    sq::engine::Engine engine{[this]() -> double { return now; }};
+    sq::ecs::Entity inputEntity = 0;
 };
 
 }  // namespace
@@ -257,7 +257,7 @@ TEST_F(RTypeNetworkPluginTest, IgnoresMalformedAndUnreliableMessages) {
 
 TEST_F(RTypeNetworkPluginTest, AFailedConnectionIsReportedAndCanBeRetried) {
     engine.eventBus().publish(client::ConnectRequest{.host = "nowhere", .port = 1});
-    transport->reason = ecs::net::DisconnectReason::Unreachable;
+    transport->reason = sq::net::DisconnectReason::Unreachable;
     transportEvent(EventType::Disconnected);
     EXPECT_EQ(results, (std::vector<std::string>{"failed: the server cannot be reached"}));
     EXPECT_EQ(session().state(), client::SessionState::Offline);
@@ -421,9 +421,9 @@ TEST_F(RTypeNetworkPluginTest, SendsTheActionsOfEachStepOverUdp) {
     startGame();
     transport->sent.clear();
     actions()[game::ACTION_MOVE_X].axis = -1.0F;
-    actions()[::input::makeActionId("shoot")].held = true;
+    actions()[sq::input::makeActionId("shoot")].held = true;
     actions()[client::input::ACTION_READY].held = true;
-    actions()[::input::makeActionId("charge_weapon")].held = false;
+    actions()[sq::input::makeActionId("charge_weapon")].held = false;
 
     // Each step also sends the inputs not acknowledged yet: the last one sent is the input of the step.
     step();
@@ -432,7 +432,7 @@ TEST_F(RTypeNetworkPluginTest, SendsTheActionsOfEachStepOverUdp) {
     const auto second = sentMessages<protocol::PlayerInput>().back();
 
     EXPECT_EQ(second.sequence, first.sequence + 1);
-    EXPECT_EQ(first.held, std::vector<protocol::ActionId>{::input::makeActionId("shoot")})
+    EXPECT_EQ(first.held, std::vector<protocol::ActionId>{sq::input::makeActionId("shoot")})
         << "ready is not a game input";
     ASSERT_EQ(first.axes.size(), 1U);
     EXPECT_EQ(first.axes[0].action, game::ACTION_MOVE_X);
@@ -445,16 +445,16 @@ TEST_F(RTypeNetworkPluginTest, LocalShipIsPredictedAndTheOthersInterpolated) {
     receive(twoShips(1), Channel::Unreliable);
 
     auto& registry = engine.registry();
-    EXPECT_TRUE(registry.hasComponent<ecs::Predicted>(entityOf(MY_SHIP)));
-    EXPECT_FALSE(registry.hasComponent<ecs::Predicted>(entityOf(OTHER_SHIP)));
-    EXPECT_TRUE(registry.hasComponent<ecs::Interpolated>(entityOf(OTHER_SHIP)));
+    EXPECT_TRUE(registry.hasComponent<sq::ecs::Predicted>(entityOf(MY_SHIP)));
+    EXPECT_FALSE(registry.hasComponent<sq::ecs::Predicted>(entityOf(OTHER_SHIP)));
+    EXPECT_TRUE(registry.hasComponent<sq::ecs::Interpolated>(entityOf(OTHER_SHIP)));
 }
 
 TEST_F(RTypeNetworkPluginTest, LocalShipMovesAtOnceAndOnlyIt) {
     startGame(2);
     receive(twoShips(1), Channel::Unreliable);
     actions()[game::ACTION_MOVE_X].axis = 1.0F;
-    const auto& transforms = engine.registry().getComponents<ecs::Transform>();
+    const auto& transforms = engine.registry().getComponents<sq::ecs::Transform>();
     const float mine = transforms.get(entityOf(MY_SHIP)).x;
     const float other = transforms.get(entityOf(OTHER_SHIP)).x;
 

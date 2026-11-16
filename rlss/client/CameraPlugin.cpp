@@ -30,35 +30,35 @@ namespace rlss::client {
 
 namespace {
 
-game::CameraRig* rigOf(ecs::Registry& registry, const ecs::Entity camera) {
+game::CameraRig* rigOf(sq::ecs::Registry& registry, const sq::ecs::Entity camera) {
     auto& rigs = registry.getComponents<game::CameraRig>();
     return rigs.contains(camera) ? &rigs.get(camera) : nullptr;
 }
 
 }  // namespace
 
-void CameraPlugin::build(engine::PluginBuilder& builder) {
-    builder.require<render::RenderPlugin>();
+void CameraPlugin::build(sq::engine::PluginBuilder& builder) {
+    builder.require<sq::render::RenderPlugin>();
     builder.require<ArenaViewPlugin>();
     builder.require<CarViewPlugin>();
-    builder.require<ecs::net::NetworkPlugin>();
-    builder.require<ecs::net::ClientReplicationPlugin>();
+    builder.require<sq::net::NetworkPlugin>();
+    builder.require<sq::net::ClientReplicationPlugin>();
 }
 
-void CameraPlugin::init(engine::Engine& engine) {
-    ecs::Registry& registry = engine.registry();
-    const auto& window = engine.service<engine::IWindowService>();
+void CameraPlugin::init(sq::engine::Engine& engine) {
+    sq::ecs::Registry& registry = engine.registry();
+    const auto& window = engine.service<sq::engine::IWindowService>();
     const auto width = static_cast<float>(window.width());
     const auto height = static_cast<float>(window.height());
 
     _camera = registry.spawnEntity();
-    registry.addComponent(_camera, ecs::CameraComponent{
+    registry.addComponent(_camera, sq::ecs::CameraComponent{
                                        .targetX = (arena::LEFT + arena::RIGHT) / 2.0F,
                                        .targetY = (arena::TOP + arena::BOTTOM) / 2.0F,
                                        .offsetX = width / 2.0F,
                                        .offsetY = height / 2.0F,
                                    });
-    registry.addComponent(_camera, ecs::Tag{.name = std::string(game::CAMERA_TAG)});
+    registry.addComponent(_camera, sq::ecs::Tag{.name = std::string(game::CAMERA_TAG)});
     // What is drawn around the play area: the walls, and the goals on the sides.
     registry.addComponent(_camera, game::CameraRig{
                                        .viewWidth = width,
@@ -68,14 +68,14 @@ void CameraPlugin::init(engine::Engine& engine) {
                                        .boundsRight = arena::RIGHT + arena::GOAL_DEPTH + ARENA_WALL,
                                        .boundsBottom = arena::BOTTOM + ARENA_WALL,
                                    });
-    registry.addComponent(_camera, scripting::ScriptComponent{
+    registry.addComponent(_camera, sq::scripting::ScriptComponent{
                                        .moduleName = std::string(game::CAMERA_SCRIPT_MODULE),
                                        .className = "CameraDirector",
                                        .hasUpdate = true,
                                    });
 
     auto& events = engine.eventBus();
-    _packets = events.subscribe<ecs::net::PacketReceived>([this, &engine](const ecs::net::PacketReceived& packet) {
+    _packets = events.subscribe<sq::net::PacketReceived>([this, &engine](const sq::net::PacketReceived& packet) {
         const auto message = protocol::decode(packet.data);
         if (!message) {
             return;
@@ -88,8 +88,8 @@ void CameraPlugin::init(engine::Engine& engine) {
             }
         }
     });
-    _spawned = events.subscribe<ecs::net::ReplicatedEntitySpawned>(
-        [this, &engine](const ecs::net::ReplicatedEntitySpawned& event) {
+    _spawned = events.subscribe<sq::net::ReplicatedEntitySpawned>(
+        [this, &engine](const sq::net::ReplicatedEntitySpawned& event) {
             auto* rig = rigOf(engine.registry(), _camera);
             if (rig != nullptr && event.kind == game::KIND_BALL) {
                 rig->ball = static_cast<std::int64_t>(event.entity);
@@ -103,8 +103,8 @@ void CameraPlugin::init(engine::Engine& engine) {
             rig->phase = static_cast<int>(protocol::MatchPhase::Playing);
         }
     });
-    _despawned = events.subscribe<ecs::net::ReplicatedEntityDespawned>(
-        [this, &engine](const ecs::net::ReplicatedEntityDespawned& event) {
+    _despawned = events.subscribe<sq::net::ReplicatedEntityDespawned>(
+        [this, &engine](const sq::net::ReplicatedEntityDespawned& event) {
             auto* rig = rigOf(engine.registry(), _camera);
             if (rig != nullptr && std::cmp_equal(rig->ball, event.entity)) {
                 rig->ball = game::NO_ENTITY;
@@ -112,32 +112,32 @@ void CameraPlugin::init(engine::Engine& engine) {
         });
 }
 
-void CameraPlugin::update(engine::Engine& engine, const ecs::time::Time& /*time*/) {
-    ecs::Registry& registry = engine.registry();
+void CameraPlugin::update(sq::engine::Engine& engine, const sq::time::Time& /*time*/) {
+    sq::ecs::Registry& registry = engine.registry();
     auto* rig = rigOf(registry, _camera);
     if (rig == nullptr) {
         return;
     }
     rig->car = game::NO_ENTITY;
-    if (_localCar && registry.hasResource<ecs::net::NetworkEntityMap>()) {
-        if (const auto car = registry.getResource<ecs::net::NetworkEntityMap>().entityOf(*_localCar)) {
+    if (_localCar && registry.hasResource<sq::net::NetworkEntityMap>()) {
+        if (const auto car = registry.getResource<sq::net::NetworkEntityMap>().entityOf(*_localCar)) {
             rig->car = static_cast<std::int64_t>(*car);
         }
     }
 }
 
-void CameraPlugin::shutdown(engine::Engine& engine) {
+void CameraPlugin::shutdown(sq::engine::Engine& engine) {
     auto& events = engine.eventBus();
     if (_packets) {
-        events.unsubscribe<ecs::net::PacketReceived>(*_packets);
+        events.unsubscribe<sq::net::PacketReceived>(*_packets);
         _packets.reset();
     }
     if (_spawned) {
-        events.unsubscribe<ecs::net::ReplicatedEntitySpawned>(*_spawned);
+        events.unsubscribe<sq::net::ReplicatedEntitySpawned>(*_spawned);
         _spawned.reset();
     }
     if (_despawned) {
-        events.unsubscribe<ecs::net::ReplicatedEntityDespawned>(*_despawned);
+        events.unsubscribe<sq::net::ReplicatedEntityDespawned>(*_despawned);
         _despawned.reset();
     }
     if (_joined) {

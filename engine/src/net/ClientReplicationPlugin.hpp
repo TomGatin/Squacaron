@@ -17,11 +17,13 @@
 #include "net/NetworkEvents.hpp"
 #include "net/ReplicationEvents.hpp"
 
-namespace ecs::time {
-struct Time;
-}
+namespace sq::time {
 
-namespace ecs::net {
+struct Time;
+
+}  // namespace sq::time
+
+namespace sq::net {
 
 /** @brief Client resource: what the last applied snapshot said. Created by `ClientReplicationPlugin`. */
 struct SnapshotState {
@@ -71,7 +73,7 @@ inline constexpr std::size_t INPUT_RESEND_COUNT = 2;
  * The server tick is assumed to last `Engine::fixedDeltaTime()` seconds, like the client's.
  * Requires `NetworkPlugin`, which provides the events, the service and the `NetworkEntityMap`.
  */
-class ClientReplicationPlugin final : public engine::IPlugin {
+class ClientReplicationPlugin final : public sq::engine::IPlugin {
   public:
     /**
      * @brief Creates the plugin.
@@ -89,26 +91,26 @@ class ClientReplicationPlugin final : public engine::IPlugin {
      * @brief Declares the dependency on NetworkPlugin.
      * @param builder Dependency builder.
      */
-    void build(engine::PluginBuilder& builder) override;
+    void build(sq::engine::PluginBuilder& builder) override;
 
     /**
      * @brief Creates the `SnapshotState` and `ReplicationStats` resources and subscribes to packets and local inputs.
      * @param engine Host engine.
      */
-    void init(engine::Engine& engine) override;
+    void init(sq::engine::Engine& engine) override;
 
     /**
      * @brief Interpolates the `Interpolated` entities.
      * @param engine Host engine.
      * @param time Frame time.
      */
-    void update(engine::Engine& engine, const ecs::time::Time& time) override;
+    void update(sq::engine::Engine& engine, const sq::time::Time& time) override;
 
     /**
      * @brief Unsubscribes from the events.
      * @param engine Host engine.
      */
-    void shutdown(engine::Engine& engine) override;
+    void shutdown(sq::engine::Engine& engine) override;
 
     /**
      * @brief Forgets the current session, for instance when leaving a game to join another one.
@@ -118,7 +120,7 @@ class ClientReplicationPlugin final : public engine::IPlugin {
      * game), and the partial snapshot and the inputs waiting to be sent again are dropped.
      * @param engine Host engine.
      */
-    void reset(engine::Engine& engine);
+    void reset(sq::engine::Engine& engine);
 
   private:
     /** @brief An input already sent, kept to be sent again. */
@@ -142,26 +144,26 @@ class ClientReplicationPlugin final : public engine::IPlugin {
      * @param engine Host engine.
      * @param acknowledged Sequence of the last input applied by the server.
      */
-    void measureInputRtt(engine::Engine& engine, std::uint32_t acknowledged);
+    void measureInputRtt(sq::engine::Engine& engine, std::uint32_t acknowledged);
     /**
      * @brief Applies a packet if it is a part of a snapshot not older than the last one, and not received yet.
      * @param engine Host engine.
      * @param packet Received packet.
      */
-    void onPacket(engine::Engine& engine, const PacketReceived& packet);
+    void onPacket(sq::engine::Engine& engine, const PacketReceived& packet);
     /**
      * @brief Predicts a local input and sends it to the server, after the ones not acknowledged yet.
      * @param engine Host engine.
      * @param local The input.
      */
-    void onLocalInput(engine::Engine& engine, const LocalInput& local);
+    void onLocalInput(sq::engine::Engine& engine, const LocalInput& local);
 
     /** @brief Game wire format. */
     std::shared_ptr<IReplicationCodec> _codec;
     /** @brief Subscription to `PacketReceived`, while initialized. */
-    std::optional<ecs::EventBus::EventToken> _packets;
+    std::optional<sq::events::EventBus::EventToken> _packets;
     /** @brief Subscription to `LocalInput`, while initialized. */
-    std::optional<ecs::EventBus::EventToken> _inputs;
+    std::optional<sq::events::EventBus::EventToken> _inputs;
     /** @brief Last inputs sent, oldest first, at most `INPUT_RESEND_COUNT`. */
     std::deque<SentInput> _sentInputs;
     /** @brief Inputs not acknowledged yet, oldest first, at most `MAX_PENDING_INPUTS`. */
@@ -171,7 +173,7 @@ class ClientReplicationPlugin final : public engine::IPlugin {
     /** @brief Parts of the current snapshot received so far, one bit per `partIndex`. */
     std::uint64_t _partsReceived = 0;
     /** @brief Entities contained in the parts of the current snapshot received so far. */
-    std::unordered_set<ecs::Entity> _snapshotEntities;
+    std::unordered_set<sq::ecs::Entity> _snapshotEntities;
 };
 
-}  // namespace ecs::net
+}  // namespace sq::net

@@ -10,7 +10,7 @@
 #include "core/IPlugin.hpp"
 #include "core/PluginBuilder.hpp"
 
-namespace engine {
+namespace sq::engine {
 
 /**
  * @brief Implicit core plugin automatically managed by Engine.
@@ -62,4 +62,4 @@ class CorePlugin final : public IPlugin {
     void shutdown(Engine& engine) override;
 };
 
-}  // namespace engine
+}  // namespace sq::engine

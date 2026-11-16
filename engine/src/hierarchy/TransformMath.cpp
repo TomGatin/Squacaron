@@ -5,7 +5,7 @@
 #include "ecs/components/Transform.hpp"
 #include "hierarchy/HierarchyComponents.hpp"
 
-namespace hierarchy {
+namespace sq::hierarchy {
 
 namespace {
 
@@ -25,12 +25,12 @@ float divideByScale(float value, float scale, float fallback) noexcept {
 
 }  // namespace
 
-ecs::Transform compose(const ecs::Transform& parentWorld, const LocalTransform& local) noexcept {
+sq::ecs::Transform compose(const sq::ecs::Transform& parentWorld, const LocalTransform& local) noexcept {
     const float cosR = std::cos(parentWorld.rotation);
     const float sinR = std::sin(parentWorld.rotation);
     const float scaledX = local.x * parentWorld.scaleX;
     const float scaledY = local.y * parentWorld.scaleY;
-    return ecs::Transform{
+    return sq::ecs::Transform{
         .x = parentWorld.x + (cosR * scaledX) - (sinR * scaledY),
         .y = parentWorld.y + (sinR * scaledX) + (cosR * scaledY),
         .z = parentWorld.z + local.z,
@@ -40,7 +40,7 @@ ecs::Transform compose(const ecs::Transform& parentWorld, const LocalTransform& 
     };
 }
 
-LocalTransform toLocal(const ecs::Transform& parentWorld, const ecs::Transform& world) noexcept {
+LocalTransform toLocal(const sq::ecs::Transform& parentWorld, const sq::ecs::Transform& world) noexcept {
     const float cosR = std::cos(parentWorld.rotation);
     const float sinR = std::sin(parentWorld.rotation);
     const float dx = world.x - parentWorld.x;
@@ -58,4 +58,4 @@ LocalTransform toLocal(const ecs::Transform& parentWorld, const ecs::Transform& 
     };
 }
 
-}  // namespace hierarchy
+}  // namespace sq::hierarchy

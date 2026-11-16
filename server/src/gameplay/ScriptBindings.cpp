@@ -27,16 +27,16 @@ namespace rtype::server::gameplay {
 namespace {
 
 /**
- * @brief Binds `ecs::Transform` as `Position` in one VM.
+ * @brief Binds `sq::ecs::Transform` as `Position` in one VM.
  * @param vm Wren VM.
  * @return True if the generated class was interpreted.
  */
-bool bindPosition(scripting::WrenVM& vm) {
-    scripting::ComponentBinder<ecs::Transform> binder(vm, POSITION_MODULE, POSITION_CLASS);
-    binder.property<&ecs::Transform::x>("x").property<&ecs::Transform::y>("y");
+bool bindPosition(sq::scripting::WrenVM& vm) {
+    sq::scripting::ComponentBinder<sq::ecs::Transform> binder(vm, POSITION_MODULE, POSITION_CLASS);
+    binder.property<&sq::ecs::Transform::x>("x").property<&sq::ecs::Transform::y>("y");
     const auto result = vm.interpret(POSITION_MODULE, binder.generateWrenClass());
     if (!result) {
-        engine::log::error(LOG_TAG, "cannot bind ", POSITION_MODULE, " for the scripts: ", result.error());
+        sq::engine::log::error(LOG_TAG, "cannot bind ", POSITION_MODULE, " for the scripts: ", result.error());
         return false;
     }
     return true;
@@ -59,8 +59,8 @@ class Combat {
  * @param call Foreign call.
  * @return The registry, or null outside of a room VM.
  */
-ecs::Registry* registryOf(const scripting::ForeignCall& call) {
-    auto* scripts = call.userData<scripting::ScriptSystem>();
+sq::ecs::Registry* registryOf(const sq::scripting::ForeignCall& call) {
+    auto* scripts = call.userData<sq::scripting::ScriptSystem>();
     return scripts != nullptr ? scripts->getRegistry() : nullptr;
 }
 
@@ -68,9 +68,9 @@ ecs::Registry* registryOf(const scripting::ForeignCall& call) {
  * @brief `Combat.health(id)`: `[points, max]`, or null for an entity without hit points.
  * @param call Foreign call.
  */
-void combatHealth(scripting::ForeignCall& call) {
-    const auto id = call.arg<ecs::Entity>(1);
-    const ecs::Registry* registry = registryOf(call);
+void combatHealth(sq::scripting::ForeignCall& call) {
+    const auto id = call.arg<sq::ecs::Entity>(1);
+    const sq::ecs::Registry* registry = registryOf(call);
     if (!id || registry == nullptr || !registry->isAlive(*id) || !registry->hasComponent<::prefabs::Health>(*id)) {
         call.retNull();
         return;
@@ -85,9 +85,9 @@ void combatHealth(scripting::ForeignCall& call) {
  * @brief `Combat.parts(id)`: ids of the living parts of a boss.
  * @param call Foreign call.
  */
-void combatParts(scripting::ForeignCall& call) {
-    const auto id = call.arg<ecs::Entity>(1);
-    const ecs::Registry* registry = registryOf(call);
+void combatParts(sq::scripting::ForeignCall& call) {
+    const auto id = call.arg<sq::ecs::Entity>(1);
+    const sq::ecs::Registry* registry = registryOf(call);
     if (!id) {
         return;
     }
@@ -95,7 +95,7 @@ void combatParts(scripting::ForeignCall& call) {
     if (registry == nullptr || !registry->isAlive(*id)) {
         return;
     }
-    for (const ecs::Entity child : hierarchy::childrenOf(*registry, *id)) {
+    for (const sq::ecs::Entity child : sq::hierarchy::childrenOf(*registry, *id)) {
         if (registry->isAlive(child) && registry->hasComponent<::prefabs::BossPart>(child)) {
             call.listAppend(static_cast<double>(child));
         }
@@ -106,9 +106,9 @@ void combatParts(scripting::ForeignCall& call) {
  * @brief `Combat.partRole(id)`: the role name of a boss part, or null.
  * @param call Foreign call.
  */
-void combatPartRole(scripting::ForeignCall& call) {
-    const auto id = call.arg<ecs::Entity>(1);
-    const ecs::Registry* registry = registryOf(call);
+void combatPartRole(sq::scripting::ForeignCall& call) {
+    const auto id = call.arg<sq::ecs::Entity>(1);
+    const sq::ecs::Registry* registry = registryOf(call);
     if (!id || registry == nullptr || !registry->isAlive(*id) || !registry->hasComponent<::prefabs::BossPart>(*id)) {
         call.retNull();
         return;
@@ -130,10 +130,10 @@ void combatPartRole(scripting::ForeignCall& call) {
  * @brief `Combat.nearestShip(x, y)`: `[x, y]` of the nearest player ship that is not respawning, or null.
  * @param call Foreign call.
  */
-void combatNearestShip(scripting::ForeignCall& call) {
+void combatNearestShip(sq::scripting::ForeignCall& call) {
     const auto x = call.arg<double>(1);
     const auto y = call.arg<double>(2);
-    const ecs::Registry* registry = registryOf(call);
+    const sq::ecs::Registry* registry = registryOf(call);
     if (!x || !y) {
         return;
     }
@@ -156,7 +156,7 @@ void combatNearestShip(scripting::ForeignCall& call) {
  *
  * @param call Foreign call.
  */
-void combatFireAt(scripting::ForeignCall& call) {
+void combatFireAt(sq::scripting::ForeignCall& call) {
     const auto x = call.arg<double>(1);
     const auto y = call.arg<double>(2);
     const auto targetX = call.arg<double>(3);
@@ -164,8 +164,8 @@ void combatFireAt(scripting::ForeignCall& call) {
     const auto speed = call.arg<double>(5);
     // `fireAt(x, y, targetX, targetY, speed, look)`: the look of the missile, its subtype, within a byte.
     const std::optional<double> look = call.slotCount() > 6 ? call.arg<double>(6) : std::optional<double>{0.0};
-    auto* scripts = call.userData<scripting::ScriptSystem>();
-    auto* spawner = scripts != nullptr ? ::prefabs::ScriptPrefabSpawner::of(*scripts) : nullptr;
+    auto* scripts = call.userData<sq::scripting::ScriptSystem>();
+    auto* spawner = scripts != nullptr ? sq::prefabs::ScriptPrefabSpawner::of(*scripts) : nullptr;
     if (!x || !y || !targetX || !targetY || !speed || !look || spawner == nullptr) {
         return;
     }
@@ -173,11 +173,11 @@ void combatFireAt(scripting::ForeignCall& call) {
     const Velocity velocity =
         aimAt(static_cast<float>(*x), static_cast<float>(*y),
               AimPoint{.x = static_cast<float>(*targetX), .y = static_cast<float>(*targetY)}, clamped);
-    const ::prefabs::PrefabParams params{{"x", *x},
-                                         {"y", *y},
-                                         {"speed", velocity.x},
-                                         {"speed_y", velocity.y},
-                                         {"subtype", static_cast<std::int64_t>(std::clamp(*look, 0.0, 255.0))}};
+    const sq::prefabs::PrefabParams params{{"x", *x},
+                                           {"y", *y},
+                                           {"speed", velocity.x},
+                                           {"speed_y", velocity.y},
+                                           {"subtype", static_cast<std::int64_t>(std::clamp(*look, 0.0, 255.0))}};
     (void)spawner->spawn(::prefabs::MISSILE_PREFAB, params);
 }
 
@@ -186,7 +186,7 @@ void combatFireAt(scripting::ForeignCall& call) {
  * @param vm Wren VM.
  * @return True if the class was interpreted.
  */
-bool bindCombat(scripting::WrenVM& vm) {
+bool bindCombat(sq::scripting::WrenVM& vm) {
     vm.registerForeignMethod<&combatHealth>(COMBAT_MODULE, "Combat", true, "health(_)");
     vm.registerForeignMethod<&combatParts>(COMBAT_MODULE, "Combat", true, "parts(_)");
     vm.registerForeignMethod<&combatPartRole>(COMBAT_MODULE, "Combat", true, "partRole(_)");
@@ -195,7 +195,7 @@ bool bindCombat(scripting::WrenVM& vm) {
     vm.registerForeignMethod<&combatFireAt>(COMBAT_MODULE, "Combat", true, "fireAt(_,_,_,_,_,_)");
     const auto result = vm.interpret(COMBAT_MODULE, COMBAT_SOURCE);
     if (!result) {
-        engine::log::error(LOG_TAG, "cannot bind ", COMBAT_MODULE, " for the scripts: ", result.error());
+        sq::engine::log::error(LOG_TAG, "cannot bind ", COMBAT_MODULE, " for the scripts: ", result.error());
         return false;
     }
     return true;
@@ -206,7 +206,7 @@ bool bindCombat(scripting::WrenVM& vm) {
  * @param vm Wren VM.
  * @return True if every module was interpreted.
  */
-bool bindAll(scripting::WrenVM& vm) {
+bool bindAll(sq::scripting::WrenVM& vm) {
     const bool position = bindPosition(vm);
     const bool combat = bindCombat(vm);
     return position && combat;
@@ -214,8 +214,8 @@ bool bindAll(scripting::WrenVM& vm) {
 
 }  // namespace
 
-bool bindScriptComponents(scripting::ScriptSystem& scripts) {
-    scripts.addBinderReplay([](scripting::WrenVM& vm) { (void)bindAll(vm); });
+bool bindScriptComponents(sq::scripting::ScriptSystem& scripts) {
+    scripts.addBinderReplay([](sq::scripting::WrenVM& vm) { (void)bindAll(vm); });
     return bindAll(scripts.getVm());
 }
 

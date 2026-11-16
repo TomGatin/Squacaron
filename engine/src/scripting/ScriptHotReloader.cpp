@@ -20,7 +20,7 @@
 #include "scripting/detail/ScriptSupport.hpp"
 #include "utils/Paths.hpp"
 
-namespace scripting {
+namespace sq::scripting {
 
 using detail::LOG_TAG;
 
@@ -59,8 +59,9 @@ bool ScriptHotReloader::validate(const std::string_view module, const std::strin
     prepare(stagingVm);
     auto res = stagingVm.interpret(module, source);
     if (!res) {
-        engine::log::warning(LOG_TAG, "hot reload: script module ", utils::quoteForLog(module),
-                             " ignored, the previous version keeps running: ", detail::formatScriptError(res.error()));
+        sq::engine::log::warning(
+            LOG_TAG, "hot reload: script module ", sq::utils::quoteForLog(module),
+            " ignored, the previous version keeps running: ", detail::formatScriptError(res.error()));
         return false;
     }
     return true;
@@ -106,11 +107,11 @@ bool ScriptHotReloader::replay(WrenVM& vm) {
         auto const res = vm.interpret(module, watch.lastGoodSource);
         if (!res) {
             _lastReplaySucceeded = false;
-            engine::log::warning(LOG_TAG, "hot reload: script module ", utils::quoteForLog(module),
-                                 " failed: ", detail::formatScriptError(res.error()));
+            sq::engine::log::warning(LOG_TAG, "hot reload: script module ", sq::utils::quoteForLog(module),
+                                     " failed: ", detail::formatScriptError(res.error()));
         }
     }
     return _lastReplaySucceeded;
 }
 
-}  // namespace scripting
+}  // namespace sq::scripting

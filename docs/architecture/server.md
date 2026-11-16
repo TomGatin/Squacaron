@@ -19,8 +19,8 @@ entities does not slow down the others. The mutex of a room is only contended wh
 then waits for the step in progress. An exception in a simulation stops that room only.
 See [Network Architecture](network.md#6-threading-model).
 
-The server thread and the room threads run on `engine::FixedRateLoop` at 1000 passes per second (`SERVER_LOOP_RATE`,
-`ROOM_LOOP_RATE`): they sleep until the next pass instead of spinning. The loop holds an `ecs::time::PreciseSleepScope`,
+The server thread and the room threads run on `sq::engine::FixedRateLoop` at 1000 passes per second (`SERVER_LOOP_RATE`,
+`ROOM_LOOP_RATE`): they sleep until the next pass instead of spinning. The loop holds an `sq::time::PreciseSleepScope`,
 so this stays true on Windows, where a sleep lasts about 15.6 ms by default. Ctrl+C and SIGTERM stop the server loop
 (`ServerManager::stopOnSignals()`). See
 [Engine Clock — Sleeping between two passes](clock.md#sleeping-between-two-passes).
@@ -64,7 +64,7 @@ A room holds at most `MAX_PLAYERS_PER_ROOM` players: 2 for now, while the protoc
 
 ## `Room`
 
-One game: one `engine::Engine`, so one registry, event bus, clock and set of plugins. Games are isolated from each
+One game: one `sq::engine::Engine`, so one registry, event bus, clock and set of plugins. Games are isolated from each
 other.
 
 ```mermaid
@@ -88,7 +88,7 @@ flowchart LR
 
 ## Collisions
 
-The server classifies physics contacts with `rtype::server::collision::CollisionRouter` (`server/src/collision/`, target `rtype_collision`). It subscribes to the engine `events::CollisionBeginEvent` and uses the categories from `prefabs/CollisionCategories.hpp` to republish each contact as an R-Type event:
+The server classifies physics contacts with `rtype::server::collision::CollisionRouter` (`server/src/collision/`, target `rtype_collision`). It subscribes to the engine `sq::events::CollisionBeginEvent` and uses the categories from `prefabs/CollisionCategories.hpp` to republish each contact as an R-Type event:
 
 | Event | Pair |
 | ------- | ------ |
@@ -100,8 +100,8 @@ The router does not change any state: game rules (damage, kills, pickups) subscr
 
 ## Gameplay
 
-Each room's engine runs `systems::PhysicsPlugin`, `hierarchy::HierarchyPlugin`, `timeline::TimelinePlugin`, the gameplay plugins
-(`server/src/gameplay/`, target `rtype_gameplay`), `prefabs::PrefabPlugin` and `scripting::ScriptPlugin`. Every entity
+Each room's engine runs `sq::systems::PhysicsPlugin`, `sq::hierarchy::HierarchyPlugin`, `sq::timeline::TimelinePlugin`, the gameplay plugins
+(`server/src/gameplay/`, target `rtype_gameplay`), `sq::prefabs::PrefabPlugin` and `sq::scripting::ScriptPlugin`. Every entity
 they spawn is replicated: the client only draws what the server simulates.
 
 `gameplay::addGameplayPlugins()` adds the gameplay plugins. Each has one job, and they never call each other: they
@@ -115,8 +115,8 @@ talk through the events of `gameplay/GameplayEvents.hpp`.
 | `RespawnPlugin` | Brings destroyed ships back while they have lives | `ShipRespawnStarted`, `AllRespawnsOver`, `ShipEliminated`, `AllShipsEliminated` | `ShipDestroyed` |
 | `TerrainPlugin` | Builds and scrolls the terrain | | `LevelEventPlayed` (`terrain`), `LevelStarted` |
 | `CleanupPlugin` | Destroys what left the screen | | |
-| `EnemyFirePlugin` | Fires the guns of the enemies (`prefabs::EnemyGun`) at the nearest ships | | |
-| `EnemyMotionPlugin` | Moves the enemies that weave (`prefabs::SineWave`) | | |
+| `EnemyFirePlugin` | Fires the guns of the enemies (`sq::prefabs::EnemyGun`) at the nearest ships | | |
+| `EnemyMotionPlugin` | Moves the enemies that weave (`sq::prefabs::SineWave`) | | |
 
 - **Levels:** the server loads the campaign (`server/levels/level_*.toml`, by name) at start-up and every room plays it.
   `TimelinePlugin` moves
@@ -140,7 +140,7 @@ talk through the events of `gameplay/GameplayEvents.hpp`.
 - **Kills and scores:** a `ShotHitEvent` of a player shot on an enemy destroys both and gives 1 point to the shooter.
   Each player has their own score. An enemy with hit points (a boss, a turret) loses one per shot and dies at 0.
 - **Boss parts:** a boss may have parts, children of it in the entity hierarchy (the room runs
-  `hierarchy::HierarchyPlugin`). A shot on a weak point hurts the boss; armor, and the body of a boss that has a weak
+  `sq::hierarchy::HierarchyPlugin`). A shot on a weak point hurts the boss; armor, and the body of a boss that has a weak
   point, stop the shot. See [Boss Part](../prefabs/boss-part.md).
 - **Cleanup:** player bullets more than 64 px past the right edge, and enemies, enemy shots and power-ups more than
   64 px past the left one, are destroyed.

@@ -13,7 +13,7 @@ namespace client::gameplay {
  * @brief A strip of `frames` frames, each one a direction around the full turn, the shown one picked by aim.
  *
  * Frame `i` faces `firstAngle + i * 360 / frames` degrees: 0 points right, 90 down (screen coordinates), turning
- * clockwise. Set by the client instead of an `ecs::AnimationComponent` for a `directional` look.
+ * clockwise. Set by the client instead of an `sq::ecs::AnimationComponent` for a `directional` look.
  */
 struct AimedSprite {
     /** @brief Left of the first frame, in texture pixels. */
@@ -42,9 +42,9 @@ struct AimedSprite {
 
 /**
  * @brief Turns every `AimedSprite` towards the nearest player ship, by setting the source rectangle of its
- * `ecs::Renderable`. A sprite keeps its frame while no ship is on screen.
+ * `sq::ecs::Renderable`. A sprite keeps its frame while no ship is on screen.
  * @param registry Client registry.
  */
-void aimSprites(ecs::Registry& registry);
+void aimSprites(sq::ecs::Registry& registry);
 
 }  // namespace client::gameplay

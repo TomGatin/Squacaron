@@ -4,13 +4,13 @@
 #include <optional>
 #include <vector>
 
-#include "net/components/InputBuffer.hpp"
-#include "net/components/Replicated.hpp"
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
 #include "net/INetworkManager.hpp"
 #include "net/IReplicationCodec.hpp"
 #include "net/SnapshotApplier.hpp"
+#include "net/components/InputBuffer.hpp"
+#include "net/components/Replicated.hpp"
 #include "protocol/Messages.hpp"
 
 namespace rtype::game {
@@ -85,7 +85,7 @@ struct EntityNetState {
  *
  * Keeps the snapshot being written and the last one decoded, so an instance must not be shared between engines.
  */
-class ReplicationCodec final : public ecs::net::IReplicationCodec {
+class ReplicationCodec final : public sq::net::IReplicationCodec {
   public:
     /**
      * @brief Starts a snapshot.
@@ -100,32 +100,32 @@ class ReplicationCodec final : public ecs::net::IReplicationCodec {
      * @param id Its network id.
      * @param replicated Its kind.
      */
-    void writeEntity(const ecs::Registry& registry, ecs::Entity entity, std::uint32_t id,
-                     const ecs::Replicated& replicated) override;
+    void writeEntity(const sq::ecs::Registry& registry, sq::ecs::Entity entity, std::uint32_t id,
+                     const sq::ecs::Replicated& replicated) override;
     /**
      * @brief Encodes the snapshot, in as many parts as needed (`protocol::MAX_ENTITIES_PER_PART` entities each).
      * @param lastProcessedInput Sequence of the last input of the peer applied by the server.
      * @return The parts; nothing if the snapshot needs more than `protocol::MAX_SNAPSHOT_PARTS` parts.
      */
-    [[nodiscard]] std::vector<ecs::net::Bytes> encodeSnapshot(std::uint32_t lastProcessedInput) override;
+    [[nodiscard]] std::vector<sq::net::Bytes> encodeSnapshot(std::uint32_t lastProcessedInput) override;
     /**
      * @brief Reads an input.
      * @param data Untrusted payload.
      * @return The input, or nothing if the payload is not a valid `protocol::PlayerInput`.
      */
-    [[nodiscard]] std::optional<ecs::NetInput> decodeInput(const ecs::net::Bytes& data) override;
+    [[nodiscard]] std::optional<sq::ecs::NetInput> decodeInput(const sq::net::Bytes& data) override;
     /**
      * @brief Encodes an input.
      * @param input Input to send.
      * @return The payload.
      */
-    [[nodiscard]] ecs::net::Bytes encodeInput(const ecs::NetInput& input) override;
+    [[nodiscard]] sq::net::Bytes encodeInput(const sq::ecs::NetInput& input) override;
     /**
      * @brief Decodes a snapshot and keeps it for `applySnapshot()`.
      * @param data Untrusted payload.
      * @return Its header, or nothing if the payload is not a valid `protocol::WorldState`.
      */
-    [[nodiscard]] std::optional<ecs::net::SnapshotHeader> decodeSnapshot(const ecs::net::Bytes& data) override;
+    [[nodiscard]] std::optional<sq::net::SnapshotHeader> decodeSnapshot(const sq::net::Bytes& data) override;
     /**
      * @brief Writes the entities of the last decoded snapshot into the client world.
      *
@@ -134,7 +134,7 @@ class ReplicationCodec final : public ecs::net::IReplicationCodec {
      *
      * @param applier Access to the client world.
      */
-    void applySnapshot(ecs::net::SnapshotApplier& applier) override;
+    void applySnapshot(sq::net::SnapshotApplier& applier) override;
 
   private:
     /** @brief Snapshot being written (server). */

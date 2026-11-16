@@ -7,16 +7,16 @@ server does. The client sends the player's input, predicts the local ship, and d
 
 ```mermaid
 flowchart TD
-    Main["client/src/main.cpp"] --> Engine["engine::Engine"]
+    Main["client/src/main.cpp"] --> Engine["sq::engine::Engine"]
     Main -->|"addNetworkPlugins()"| Engine
-    Engine --> RenderPlugin["render::RenderPlugin (Raylib)"]
-    Engine --> InputPlugin["input::InputPlugin"]
-    Engine --> NetworkPlugin["ecs::net::NetworkPlugin"]
-    Engine --> Replication["ecs::net::ClientReplicationPlugin"]
+    Engine --> RenderPlugin["sq::render::RenderPlugin (Raylib)"]
+    Engine --> InputPlugin["sq::input::InputPlugin"]
+    Engine --> NetworkPlugin["sq::net::NetworkPlugin"]
+    Engine --> Replication["sq::net::ClientReplicationPlugin"]
     Engine --> NetPlugin["client::RTypeNetworkPlugin"]
     Engine --> Control["client::PlayerControlPlugin"]
     Engine --> GamePlugin["client::RTypeGamePlugin"]
-    Engine --> Scenes["client::ClientScenesPlugin (scene::ScenePlugin)"]
+    Engine --> Scenes["client::ClientScenesPlugin (sq::scene::ScenePlugin)"]
 
     Scenes -->|"ConnectRequest, JoinRoomRequest, SetReadyRequest..."| NetPlugin
     NetPlugin -->|"SessionConnected, RoomUpdated, GameStarted, LevelStarted, GameEnded..."| Scenes
@@ -38,12 +38,12 @@ last server saved in the settings. The client exits with code 84 only if the arg
 assembles the engine:
 
 ```cpp
-engine::Engine engine;
-engine.addPlugin<render::RenderPlugin>(render::WindowConfig{.escapeClosesWindow = false})
+sq::engine::Engine engine;
+engine.addPlugin<sq::render::RenderPlugin>(sq::render::WindowConfig{.escapeClosesWindow = false})
     // ... input, audio, physics, animation, prefabs, scripting, hierarchy, ui ...
-    .addPlugin<scene::ScenePlugin>()
-    .addPlugin<scene::SceneScriptingPlugin>()
-    .addPlugin<settings::SettingsPlugin>(config::userConfigDirectory("rtype") / "settings.toml")
+    .addPlugin<sq::scene::ScenePlugin>()
+    .addPlugin<sq::scene::SceneScriptingPlugin>()
+    .addPlugin<sq::settings::SettingsPlugin>(sq::config::userConfigDirectory("rtype") / "settings.toml")
     .addPlugin<client::RTypeGamePlugin>();
 client::addNetworkPlugins(engine);
 engine.addPlugin<client::ClientScenesPlugin>(options->host, options->port, args.size() > 1);
@@ -89,7 +89,7 @@ the screens and the session never call each other:
 - The last list of rooms, room, level and result are kept (`rooms()`, `room()`, `level()`, `lastResult()`), for a
   screen opened after the event.
 - **One transport per connection.** A transport connects only once, so each `ConnectRequest` builds a new one and puts
-  it in the shared `ecs::net::ClientConnection`. A failed connection can therefore be retried.
+  it in the shared `sq::net::ClientConnection`. A failed connection can therefore be retried.
 - **Clean games.** Leaving a game or receiving `GameOver` calls `ClientReplicationPlugin::reset()`. The next game,
   whose snapshot ticks start again from 1, is not dropped as stale.
 - **No forced exit.** A failure never stops the engine: the scenes go back to the connect screen, which shows the
@@ -99,18 +99,18 @@ the screens and the session never call each other:
 
 Also without window or rendering (`client/src/net/`, same tests).
 
-- **Inputs:** from `GameStarted` until the game ends or is left, once per fixed step, publishes `ecs::net::LocalInput`
+- **Inputs:** from `GameStarted` until the game ends or is left, once per fixed step, publishes `sq::net::LocalInput`
   with the actions held and the axes of the local `InputState`, unless `setPaused(true)` (local pause). The `ready`
   action is not a game input and is not sent.
-- **Replicated entities:** the ship whose `subtype` is the player's index becomes `ecs::Predicted`, and every other entity
-  `ecs::Interpolated`. On `InputApplied`, it moves the entity with `rtype::game::applyShipInput`, the same function as the
+- **Replicated entities:** the ship whose `subtype` is the player's index becomes `sq::ecs::Predicted`, and every other entity
+  `sq::ecs::Interpolated`. On `InputApplied`, it moves the entity with `rtype::game::applyShipInput`, the same function as the
   server.
 
 ### `ShipMetricsPlugin`: the game's line on the metrics board
 
-`client/src/metrics/`, tested by `test_client_metrics`. Every `metrics::REFRESH_PERIOD`, writes the position of the
-`ecs::Predicted` ship to the `Position` line of the `metrics::MetricsBoard`; there is no line before the game starts. It
-requires `metrics::MetricsPlugin`, and stays out of `PlayerControlPlugin`, which only handles the player's inputs and
+`client/src/metrics/`, tested by `test_client_metrics`. Every `sq::metrics::REFRESH_PERIOD`, writes the position of the
+`sq::ecs::Predicted` ship to the `Position` line of the `sq::metrics::MetricsBoard`; there is no line before the game starts. It
+requires `sq::metrics::MetricsPlugin`, and stays out of `PlayerControlPlugin`, which only handles the player's inputs and
 ship. See [In-Game Metrics](metrics.md).
 
 ### `RTypeGamePlugin`: what is on screen
@@ -248,10 +248,10 @@ stateDiagram-v2
 ## 4. Input & Rendering Pipelines
 
 1. **Input Pipeline**:
-   - `input::InputPlugin` queries hardware input state (keyboard, gamepad) once per frame in `preUpdate`, before the fixed-timestep ticks.
+   - `sq::input::InputPlugin` queries hardware input state (keyboard, gamepad) once per frame in `preUpdate`, before the fixed-timestep ticks.
    - Updates the `InputState` components of the local player, read by the game plugins.
    - Dispatches transition events (`InputActionEvent`) through the `EventBus`.
 2. **Rendering Pipeline**:
-   - `render::RenderPlugin` collects entities possessing both `ecs::Transform` and `ecs::Renderable`.
+   - `sq::render::RenderPlugin` collects entities possessing both `sq::ecs::Transform` and `sq::ecs::Renderable`.
    - Sorts draw items by layer, depth, and texture ID to minimize state changes.
    - Renders them through the camera using Raylib within `Window::beginFrame()` and `Window::endFrame()`.

@@ -16,11 +16,11 @@
 #include "render/api/components/AnimationComponent.hpp"
 #include "render/api/components/Renderable.hpp"
 
-namespace systems {
+namespace sq::systems {
 
-void AnimationSystem::update(ecs::Registry& registry, float deltaTime) {
-    registry.runSystem<ecs::AnimationComponent, ecs::Renderable>(
-        [deltaTime](ecs::Entity /*entity*/, ecs::AnimationComponent& anim, ecs::Renderable& renderable) {
+void AnimationSystem::update(sq::ecs::Registry& registry, float deltaTime) {
+    registry.runSystem<sq::ecs::AnimationComponent, sq::ecs::Renderable>(
+        [deltaTime](sq::ecs::Entity /*entity*/, sq::ecs::AnimationComponent& anim, sq::ecs::Renderable& renderable) {
             const bool varying = !anim.frameWidths.empty();
             const int count = varying ? static_cast<int>(anim.frameWidths.size()) : anim.frameCount;
             if (count <= 0) {
@@ -55,4 +55,4 @@ void AnimationSystem::update(ecs::Registry& registry, float deltaTime) {
         });
 }
 
-}  // namespace systems
+}  // namespace sq::systems

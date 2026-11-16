@@ -28,14 +28,14 @@
 
 namespace {
 
-using ecs::net::Bytes;
-using ecs::net::Channel;
-using ecs::net::EventType;
-using ecs::net::NetworkEvent;
-using ecs::net::PeerId;
+using sq::net::Bytes;
+using sq::net::Channel;
+using sq::net::EventType;
+using sq::net::NetworkEvent;
+using sq::net::PeerId;
 
 /** @brief Hands out the events pushed by the test, once each. */
-class FakeSource final : public ecs::net::INetworkEventSource {
+class FakeSource final : public sq::net::INetworkEventSource {
   public:
     std::vector<NetworkEvent> poll() override { return std::exchange(next, {}); }
 
@@ -43,7 +43,7 @@ class FakeSource final : public ecs::net::INetworkEventSource {
 };
 
 /** @brief Records every call instead of sending. */
-class FakeService final : public ecs::net::INetworkService {
+class FakeService final : public sq::net::INetworkService {
   public:
     struct Sent {
         PeerId peer;
@@ -64,11 +64,11 @@ class FakeService final : public ecs::net::INetworkService {
 };
 
 /** @brief Client transport recording what it is asked to send. */
-class FakeClient final : public ecs::net::INetworkClient {
+class FakeClient final : public sq::net::INetworkClient {
   public:
     bool connect(const std::string& /*host*/, std::uint16_t /*port*/) override { return true; }
-    [[nodiscard]] ecs::net::DisconnectReason disconnectReason() const override {
-        return ecs::net::DisconnectReason::ConnectionLost;
+    [[nodiscard]] sq::net::DisconnectReason disconnectReason() const override {
+        return sq::net::DisconnectReason::ConnectionLost;
     }
     bool openUdp(std::uint16_t /*port*/) override { return true; }
     void closeUdp() override {}
@@ -83,7 +83,7 @@ class FakeClient final : public ecs::net::INetworkClient {
 };
 
 /** @brief Server transport recording what it is asked to send. */
-class FakeServer final : public ecs::net::INetworkServer {
+class FakeServer final : public sq::net::INetworkServer {
   public:
     bool start(std::uint16_t /*port*/) override { return true; }
     void send(const PeerId peer, const Bytes& /*data*/, Channel /*channel*/) override { sentTo.push_back(peer); }
@@ -101,14 +101,14 @@ class FakeServer final : public ecs::net::INetworkServer {
 class NetworkPluginTest : public ::testing::Test {
   protected:
     void SetUp() override {
-        engine.addPlugin<engine::CorePlugin>();
-        engine.addPlugin<ecs::net::NetworkPlugin>(source, service);
+        engine.addPlugin<sq::engine::CorePlugin>();
+        engine.addPlugin<sq::net::NetworkPlugin>(source, service);
         engine.init();
     }
 
     std::shared_ptr<FakeSource> source = std::make_shared<FakeSource>();
     std::shared_ptr<FakeService> service = std::make_shared<FakeService>();
-    engine::Engine engine;
+    sq::engine::Engine engine;
 };
 
 }  // namespace
@@ -116,13 +116,13 @@ class NetworkPluginTest : public ::testing::Test {
 TEST_F(NetworkPluginTest, PublishesTransportEventsOnTheEventBus) {
     std::vector<PeerId> connected;
     std::vector<PeerId> disconnected;
-    std::vector<ecs::net::PacketReceived> packets;
-    engine.eventBus().subscribe<ecs::net::PeerConnected>(
-        [&](const ecs::net::PeerConnected& ev) { connected.push_back(ev.peer); });
-    engine.eventBus().subscribe<ecs::net::PeerDisconnected>(
-        [&](const ecs::net::PeerDisconnected& ev) { disconnected.push_back(ev.peer); });
-    engine.eventBus().subscribe<ecs::net::PacketReceived>(
-        [&](const ecs::net::PacketReceived& ev) { packets.push_back(ev); });
+    std::vector<sq::net::PacketReceived> packets;
+    engine.eventBus().subscribe<sq::net::PeerConnected>(
+        [&](const sq::net::PeerConnected& ev) { connected.push_back(ev.peer); });
+    engine.eventBus().subscribe<sq::net::PeerDisconnected>(
+        [&](const sq::net::PeerDisconnected& ev) { disconnected.push_back(ev.peer); });
+    engine.eventBus().subscribe<sq::net::PacketReceived>(
+        [&](const sq::net::PacketReceived& ev) { packets.push_back(ev); });
 
     source->next = {
         {.type = EventType::Connected, .peer = 3, .data = {}, .channel = Channel::Reliable},
@@ -141,9 +141,9 @@ TEST_F(NetworkPluginTest, PublishesTransportEventsOnTheEventBus) {
 
 TEST_F(NetworkPluginTest, KeepsTheArrivalOrder) {
     std::vector<int> order;
-    engine.eventBus().subscribe<ecs::net::PeerConnected>([&](const auto&) { order.push_back(0); });
-    engine.eventBus().subscribe<ecs::net::PacketReceived>([&](const auto&) { order.push_back(1); });
-    engine.eventBus().subscribe<ecs::net::PeerDisconnected>([&](const auto&) { order.push_back(2); });
+    engine.eventBus().subscribe<sq::net::PeerConnected>([&](const auto&) { order.push_back(0); });
+    engine.eventBus().subscribe<sq::net::PacketReceived>([&](const auto&) { order.push_back(1); });
+    engine.eventBus().subscribe<sq::net::PeerDisconnected>([&](const auto&) { order.push_back(2); });
 
     source->next = {
         {.type = EventType::Data, .peer = 1, .data = {0}, .channel = Channel::Reliable},
@@ -157,7 +157,7 @@ TEST_F(NetworkPluginTest, KeepsTheArrivalOrder) {
 
 TEST_F(NetworkPluginTest, PublishesEachEventOnce) {
     int count = 0;
-    engine.eventBus().subscribe<ecs::net::PeerConnected>([&](const auto&) { ++count; });
+    engine.eventBus().subscribe<sq::net::PeerConnected>([&](const auto&) { ++count; });
 
     source->next = {{.type = EventType::Connected, .peer = 1, .data = {}, .channel = Channel::Reliable}};
     engine.advance();
@@ -167,7 +167,7 @@ TEST_F(NetworkPluginTest, PublishesEachEventOnce) {
 }
 
 TEST_F(NetworkPluginTest, RegistersTheServiceInTheMediator) {
-    const auto found = engine.mediator().getService<ecs::net::INetworkService>();
+    const auto found = engine.mediator().getService<sq::net::INetworkService>();
     ASSERT_TRUE(found.has_value());
 
     found->get().send(4, {7}, Channel::Reliable);
@@ -179,16 +179,16 @@ TEST_F(NetworkPluginTest, RegistersTheServiceInTheMediator) {
 TEST_F(NetworkPluginTest, ShutdownUnregistersTheService) {
     engine.shutdown();
 
-    EXPECT_FALSE(engine.mediator().hasService<ecs::net::INetworkService>());
+    EXPECT_FALSE(engine.mediator().hasService<sq::net::INetworkService>());
 }
 
 TEST_F(NetworkPluginTest, CreatesTheEntityMapResource) {
-    EXPECT_TRUE(engine.registry().hasResource<ecs::net::NetworkEntityMap>());
+    EXPECT_TRUE(engine.registry().hasResource<sq::net::NetworkEntityMap>());
 }
 
 TEST_F(NetworkPluginTest, KillingAnEntityReleasesItsNetworkId) {
-    auto& map = engine.registry().getResource<ecs::net::NetworkEntityMap>();
-    const ecs::Entity entity = engine.registry().spawnEntity();
+    auto& map = engine.registry().getResource<sq::net::NetworkEntityMap>();
+    const sq::ecs::Entity entity = engine.registry().spawnEntity();
     const auto id = map.assign(entity);
     ASSERT_EQ(map.entityOf(id), entity);
 
@@ -199,8 +199,8 @@ TEST_F(NetworkPluginTest, KillingAnEntityReleasesItsNetworkId) {
 }
 
 TEST_F(NetworkPluginTest, ShutdownRemovesTheDestroyListener) {
-    auto& map = engine.registry().getResource<ecs::net::NetworkEntityMap>();
-    const ecs::Entity entity = engine.registry().spawnEntity();
+    auto& map = engine.registry().getResource<sq::net::NetworkEntityMap>();
+    const sq::ecs::Entity entity = engine.registry().spawnEntity();
     const auto id = map.assign(entity);
 
     engine.shutdown();
@@ -210,16 +210,16 @@ TEST_F(NetworkPluginTest, ShutdownRemovesTheDestroyListener) {
 }
 
 TEST(NetworkPlugin, ReusesAnEntityMapCreatedBeforeInit) {
-    engine::Engine engine;
-    auto& map = engine.registry().emplaceResource<ecs::net::NetworkEntityMap>();
-    const ecs::Entity entity = engine.registry().spawnEntity();
+    sq::engine::Engine engine;
+    auto& map = engine.registry().emplaceResource<sq::net::NetworkEntityMap>();
+    const sq::ecs::Entity entity = engine.registry().spawnEntity();
     const auto id = map.assign(entity);
 
-    engine.addPlugin<engine::CorePlugin>();
-    engine.addPlugin<ecs::net::NetworkPlugin>(std::make_shared<FakeSource>(), std::make_shared<FakeService>());
+    engine.addPlugin<sq::engine::CorePlugin>();
+    engine.addPlugin<sq::net::NetworkPlugin>(std::make_shared<FakeSource>(), std::make_shared<FakeService>());
     engine.init();
 
-    EXPECT_EQ(&engine.registry().getResource<ecs::net::NetworkEntityMap>(), &map);
+    EXPECT_EQ(&engine.registry().getResource<sq::net::NetworkEntityMap>(), &map);
     EXPECT_EQ(map.entityOf(id), entity) << "existing bindings are kept";
     engine.registry().killEntity(entity);
     EXPECT_FALSE(map.entityOf(id).has_value()) << "the existing map is maintained by the plugin";
@@ -227,9 +227,9 @@ TEST(NetworkPlugin, ReusesAnEntityMapCreatedBeforeInit) {
 
 TEST(ClientConnection, OnlySendsToTheServer) {
     const auto client = std::make_shared<FakeClient>();
-    ecs::net::ClientConnection connection(client);
+    sq::net::ClientConnection connection(client);
 
-    connection.send(ecs::net::SERVER_PEER, {1}, Channel::Reliable);
+    connection.send(sq::net::SERVER_PEER, {1}, Channel::Reliable);
     connection.send(5, {2}, Channel::Reliable);
     connection.broadcast({3}, Channel::Unreliable);
 
@@ -238,30 +238,29 @@ TEST(ClientConnection, OnlySendsToTheServer) {
 
 TEST(ClientConnection, ForwardsPollAndKick) {
     const auto client = std::make_shared<FakeClient>();
-    ecs::net::ClientConnection connection(client);
+    sq::net::ClientConnection connection(client);
     client->next = {
-        {.type = EventType::Connected, .peer = ecs::net::SERVER_PEER, .data = {}, .channel = Channel::Reliable}};
+        {.type = EventType::Connected, .peer = sq::net::SERVER_PEER, .data = {}, .channel = Channel::Reliable}};
 
     EXPECT_EQ(connection.poll().size(), 1U);
     EXPECT_TRUE(connection.poll().empty());
-    connection.kick(ecs::net::SERVER_PEER);
+    connection.kick(sq::net::SERVER_PEER);
     EXPECT_FALSE(client->isRunning());
 }
 
 TEST(ClientConnection, FeedsTheNetworkPlugin) {
     const auto client = std::make_shared<FakeClient>();
-    const auto connection = std::make_shared<ecs::net::ClientConnection>(client);
-    engine::Engine engine;
-    engine.addPlugin<engine::CorePlugin>();
-    engine.addPlugin<ecs::net::NetworkPlugin>(connection, connection);
+    const auto connection = std::make_shared<sq::net::ClientConnection>(client);
+    sq::engine::Engine engine;
+    engine.addPlugin<sq::engine::CorePlugin>();
+    engine.addPlugin<sq::net::NetworkPlugin>(connection, connection);
     int packets = 0;
-    engine.eventBus().subscribe<ecs::net::PacketReceived>([&](const auto&) { ++packets; });
+    engine.eventBus().subscribe<sq::net::PacketReceived>([&](const auto&) { ++packets; });
 
     client->next = {
-        {.type = EventType::Data, .peer = ecs::net::SERVER_PEER, .data = {9}, .channel = Channel::Unreliable}};
+        {.type = EventType::Data, .peer = sq::net::SERVER_PEER, .data = {9}, .channel = Channel::Unreliable}};
     engine.advance();
-    engine.mediator().getService<ecs::net::INetworkService>()->get().send(ecs::net::SERVER_PEER, {4},
-                                                                          Channel::Reliable);
+    engine.mediator().getService<sq::net::INetworkService>()->get().send(sq::net::SERVER_PEER, {4}, Channel::Reliable);
 
     EXPECT_EQ(packets, 1);
     EXPECT_EQ(client->sent, std::vector<Bytes>{{4}});
@@ -269,7 +268,7 @@ TEST(ClientConnection, FeedsTheNetworkPlugin) {
 
 TEST(PeerGroupConnection, OnlyReachesThePeersOfTheGroup) {
     FakeServer server;
-    ecs::net::PeerGroupConnection group(server);
+    sq::net::PeerGroupConnection group(server);
     group.addPeer(1);
     group.addPeer(2);
 
@@ -289,7 +288,7 @@ TEST(PeerGroupConnection, OnlyReachesThePeersOfTheGroup) {
 
 TEST(PeerGroupConnection, RemovedPeerIsNoLongerReachable) {
     FakeServer server;
-    ecs::net::PeerGroupConnection group(server);
+    sq::net::PeerGroupConnection group(server);
     group.addPeer(1);
     group.removePeer(1);
 
@@ -303,7 +302,7 @@ TEST(PeerGroupConnection, RemovedPeerIsNoLongerReachable) {
 
 TEST(PeerGroupConnection, HandsOutTheEventsOfItsPeersOnce) {
     FakeServer server;
-    ecs::net::PeerGroupConnection group(server);
+    sq::net::PeerGroupConnection group(server);
     group.addPeer(1);
 
     group.push({.type = EventType::Data, .peer = 1, .data = {7}, .channel = Channel::Unreliable});
@@ -317,7 +316,7 @@ TEST(PeerGroupConnection, HandsOutTheEventsOfItsPeersOnce) {
 
 TEST(PeerGroupConnection, FloodedPeerStaysAtTheCapAndKeepsItsDisconnect) {
     FakeServer server;
-    ecs::net::PeerGroupConnection group(server, 3);
+    sq::net::PeerGroupConnection group(server, 3);
     group.addPeer(1);
     group.addPeer(2);
 
@@ -341,32 +340,32 @@ TEST(PeerGroupConnection, FloodedPeerStaysAtTheCapAndKeepsItsDisconnect) {
 namespace {
 
 /** @brief Transport whose traffic is set by the test. */
-class StatsTransport final : public ecs::net::INetworkManager {
+class StatsTransport final : public sq::net::INetworkManager {
   public:
     std::vector<NetworkEvent> poll() override { return {}; }
     void stop() override {}
     [[nodiscard]] bool isRunning() const override { return true; }
-    [[nodiscard]] ecs::net::TransportStats stats() const override { return traffic; }
+    [[nodiscard]] sq::net::TransportStats stats() const override { return traffic; }
 
-    ecs::net::TransportStats traffic;
+    sq::net::TransportStats traffic;
 };
 
 /** @brief Engine with the network metrics, on a fake clock. */
 struct MetricsSide {
     MetricsSide() {
-        engine.addPlugin<metrics::MetricsPlugin>();
-        engine.addPlugin<ecs::net::NetworkMetricsPlugin>(transport);
+        engine.addPlugin<sq::metrics::MetricsPlugin>();
+        engine.addPlugin<sq::net::NetworkMetricsPlugin>(transport);
         engine.init();
     }
 
     /** @brief Lets a little more than one refresh period elapse, in one frame. */
     void refresh() {
-        now += static_cast<double>(metrics::REFRESH_PERIOD);
+        now += static_cast<double>(sq::metrics::REFRESH_PERIOD);
         engine.advance();
     }
 
-    [[nodiscard]] const metrics::Metric& line(const std::string& name) {
-        const metrics::Metric* metric = engine.registry().getResource<metrics::MetricsBoard>().find(name);
+    [[nodiscard]] const sq::metrics::Metric& line(const std::string& name) {
+        const sq::metrics::Metric* metric = engine.registry().getResource<sq::metrics::MetricsBoard>().find(name);
         if (metric == nullptr) {
             throw std::runtime_error("no metric named " + name);
         }
@@ -375,7 +374,7 @@ struct MetricsSide {
 
     double now = 0.0;
     std::shared_ptr<StatsTransport> transport = std::make_shared<StatsTransport>();
-    engine::Engine engine{[this]() -> double { return now; }};
+    sq::engine::Engine engine{[this]() -> double { return now; }};
 };
 
 }  // namespace
@@ -398,12 +397,12 @@ TEST(NetworkMetrics, NoReplicationLinesWithoutReplicationStats) {
     MetricsSide side;
     side.refresh();
 
-    EXPECT_EQ(side.engine.registry().getResource<metrics::MetricsBoard>().find("RTT"), nullptr);
+    EXPECT_EQ(side.engine.registry().getResource<sq::metrics::MetricsBoard>().find("RTT"), nullptr);
 }
 
 TEST(NetworkMetrics, RoundTripLevelFollowsItsValue) {
     MetricsSide side;
-    auto& stats = side.engine.registry().emplaceResource<ecs::net::ReplicationStats>();
+    auto& stats = side.engine.registry().emplaceResource<sq::net::ReplicationStats>();
 
     side.refresh();
     EXPECT_EQ(side.line("RTT").value, "--");
@@ -411,36 +410,36 @@ TEST(NetworkMetrics, RoundTripLevelFollowsItsValue) {
     stats.inputRttMs = 50.0F;
     side.refresh();
     EXPECT_EQ(side.line("RTT").value, "50 ms");
-    EXPECT_EQ(side.line("RTT").level, metrics::MetricLevel::Normal);
+    EXPECT_EQ(side.line("RTT").level, sq::metrics::MetricLevel::Normal);
 
     stats.inputRttMs = 150.0F;
     side.refresh();
-    EXPECT_EQ(side.line("RTT").level, metrics::MetricLevel::Warning);
+    EXPECT_EQ(side.line("RTT").level, sq::metrics::MetricLevel::Warning);
 
     stats.inputRttMs = 300.0F;
     side.refresh();
-    EXPECT_EQ(side.line("RTT").level, metrics::MetricLevel::Critical);
+    EXPECT_EQ(side.line("RTT").level, sq::metrics::MetricLevel::Critical);
 }
 
 TEST(NetworkMetrics, MissedIsAPercentageOverTheLastPeriod) {
     MetricsSide side;
-    auto& stats = side.engine.registry().emplaceResource<ecs::net::ReplicationStats>();
+    auto& stats = side.engine.registry().emplaceResource<sq::net::ReplicationStats>();
 
     stats.snapshotsReceived = 95;
     stats.snapshotsMissed = 5;
     side.refresh();
     EXPECT_EQ(side.line("Missed").value, "5.0 %");
-    EXPECT_EQ(side.line("Missed").level, metrics::MetricLevel::Warning);
+    EXPECT_EQ(side.line("Missed").level, sq::metrics::MetricLevel::Warning);
 
     stats.snapshotsReceived += 100;
     side.refresh();
     EXPECT_EQ(side.line("Missed").value, "0.0 %");
-    EXPECT_EQ(side.line("Missed").level, metrics::MetricLevel::Normal);
+    EXPECT_EQ(side.line("Missed").level, sq::metrics::MetricLevel::Normal);
 }
 
 TEST(NetworkMetrics, LateSnapshotIsNotCountedAsMissed) {
     MetricsSide side;
-    auto& stats = side.engine.registry().emplaceResource<ecs::net::ReplicationStats>();
+    auto& stats = side.engine.registry().emplaceResource<sq::net::ReplicationStats>();
 
     stats.snapshotsReceived = 99;
     stats.snapshotsMissed = 1;

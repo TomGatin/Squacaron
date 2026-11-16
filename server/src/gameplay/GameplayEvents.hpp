@@ -19,7 +19,7 @@ namespace rtype::server::gameplay {
  */
 struct LevelEventPlayed {
     /** @brief The event, as the level loader built it. */
-    timeline::TimelineEvent event;
+    sq::timeline::TimelineEvent event;
 };
 
 /** @brief The level starts, or restarts after its `end` event. */
@@ -47,19 +47,19 @@ struct BossFightEnded {};
 /** @brief A ship was hit by an enemy, an enemy shot or the terrain. */
 struct ShipDestroyed {
     /** @brief Player ship. */
-    ecs::Entity ship = 0;
+    sq::ecs::Entity ship = 0;
 };
 
 /** @brief A destroyed ship came back at its start position: it blinks, and the scroll waits until it is over. */
 struct ShipRespawnStarted {
     /** @brief Player ship. */
-    ecs::Entity ship = 0;
+    sq::ecs::Entity ship = 0;
 };
 
 /** @brief A ship lost its last life: it is out of the game. */
 struct ShipEliminated {
     /** @brief Player ship. */
-    ecs::Entity ship = 0;
+    sq::ecs::Entity ship = 0;
 };
 
 /** @brief Every player ship with lives lost its last one: the game is lost. */

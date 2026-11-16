@@ -10,7 +10,7 @@
 #include "ecs/time/Clock.hpp"
 #include "ecs/time/Time.hpp"
 
-namespace ecs::time {
+namespace sq::time {
 
 /**
  * @brief Advances a clock, storing the `Time` of each fixed step in `registry` before running it.
@@ -18,12 +18,12 @@ namespace ecs::time {
  * Calls `step(registry)` once per whole `fixedDt` contained in the accumulated time.
  * @param clock Clock to advance.
  * @param fixedDt Duration of one step in seconds (must be > 0).
- * @param registry Registry receiving the `ecs::time::Time` resource.
- * @param step Callable with signature `void(Registry&)`.
+ * @param registry Registry receiving the `sq::time::Time` resource.
+ * @param step Callable with signature `void(ecs::Registry&)`.
  * @return Number of steps executed.
  */
 template <typename Step>
-std::size_t tick(Clock& clock, float fixedDt, Registry& registry, Step step) {
+std::size_t tick(Clock& clock, float fixedDt, ecs::Registry& registry, Step step) {
     return clock.tick(fixedDt, [&registry, &step](const Time& timeData) {
         if (!registry.hasResource<Time>()) {
             registry.emplaceResource<Time>(timeData);
@@ -34,4 +34,4 @@ std::size_t tick(Clock& clock, float fixedDt, Registry& registry, Step step) {
     });
 }
 
-}  // namespace ecs::time
+}  // namespace sq::time

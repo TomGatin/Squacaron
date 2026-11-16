@@ -55,35 +55,40 @@
 // The client's menus, without a window: fake window, draw service and transport, the real scenes and session.
 namespace {
 
-using ecs::net::Bytes;
-using ecs::net::Channel;
-using ecs::net::EventType;
+using sq::net::Bytes;
+using sq::net::Channel;
+using sq::net::EventType;
 namespace protocol = rtype::protocol;
 
 constexpr float DT = 1.0F / 64.0F;
 constexpr std::uint32_t ROOM = 7;
 
 /** @brief Window with no input. */
-struct QuietWindow final : engine::IWindowService {
+struct QuietWindow final : sq::engine::IWindowService {
     [[nodiscard]] bool shouldClose() const noexcept override { return false; }
     void beginFrame() override {}
     void endFrame() override {}
     [[nodiscard]] int width() const noexcept override { return 1280; }
     [[nodiscard]] int height() const noexcept override { return 720; }
-    [[nodiscard]] bool isKeyDown(engine::Key key) const noexcept override {
+    [[nodiscard]] bool isKeyDown(sq::engine::Key key) const noexcept override {
         return keys.at(static_cast<std::size_t>(key));
     }
     [[nodiscard]] bool isGamepadAvailable(int /*gamepad*/) const noexcept override { return false; }
-    [[nodiscard]] bool isGamepadButtonDown(int /*gamepad*/, engine::GamepadButton /*button*/) const noexcept override {
+    [[nodiscard]] bool isGamepadButtonDown(int /*gamepad*/,
+                                           sq::engine::GamepadButton /*button*/) const noexcept override {
         return false;
     }
-    [[nodiscard]] float gamepadAxis(int /*gamepad*/, engine::GamepadAxis /*axis*/) const noexcept override {
+    [[nodiscard]] float gamepadAxis(int /*gamepad*/, sq::engine::GamepadAxis /*axis*/) const noexcept override {
         return 0.0F;
     }
-    [[nodiscard]] bool isMouseButtonDown(engine::MouseButton /*button*/) const noexcept override { return false; }
-    [[nodiscard]] bool isMouseButtonPressed(engine::MouseButton /*button*/) const noexcept override { return false; }
-    [[nodiscard]] bool isMouseButtonReleased(engine::MouseButton /*button*/) const noexcept override { return false; }
-    [[nodiscard]] engine::MousePosition mousePosition() const noexcept override { return {.x = -1.0F, .y = -1.0F}; }
+    [[nodiscard]] bool isMouseButtonDown(sq::engine::MouseButton /*button*/) const noexcept override { return false; }
+    [[nodiscard]] bool isMouseButtonPressed(sq::engine::MouseButton /*button*/) const noexcept override {
+        return false;
+    }
+    [[nodiscard]] bool isMouseButtonReleased(sq::engine::MouseButton /*button*/) const noexcept override {
+        return false;
+    }
+    [[nodiscard]] sq::engine::MousePosition mousePosition() const noexcept override { return {.x = -1.0F, .y = -1.0F}; }
     [[nodiscard]] float mouseWheelDelta() const noexcept override { return 0.0F; }
     [[nodiscard]] char32_t nextTypedCharacter() noexcept override { return U'\0'; }
 
@@ -91,43 +96,45 @@ struct QuietWindow final : engine::IWindowService {
 };
 
 /** @brief Draw service that draws nothing. */
-struct NullDraw final : engine::IScreenDrawService {
-    engine::FontId loadFont(const std::string& /*path*/) override { return engine::NO_FONT; }
-    [[nodiscard]] engine::TextSize measureText(std::string_view /*text*/, float size, float /*spacing*/,
-                                               engine::FontId /*font*/) const override {
+struct NullDraw final : sq::engine::IScreenDrawService {
+    sq::engine::FontId loadFont(const std::string& /*path*/) override { return sq::engine::NO_FONT; }
+    [[nodiscard]] sq::engine::TextSize measureText(std::string_view /*text*/, float size, float /*spacing*/,
+                                                   sq::engine::FontId /*font*/) const override {
         return {.width = size, .height = size};
     }
-    void fillRect(const engine::ScreenRect& /*rect*/, const ecs::Rgba& /*color*/) override {}
-    void strokeRect(const engine::ScreenRect& /*rect*/, float /*thickness*/, const ecs::Rgba& /*color*/) override {}
+    void fillRect(const sq::engine::ScreenRect& /*rect*/, const sq::ecs::Rgba& /*color*/) override {}
+    void strokeRect(const sq::engine::ScreenRect& /*rect*/, float /*thickness*/,
+                    const sq::ecs::Rgba& /*color*/) override {}
     void drawText(std::string_view /*text*/, float /*x*/, float /*y*/, float /*size*/, float /*spacing*/,
-                  const ecs::Rgba& /*color*/, engine::FontId /*font*/) override {}
-    void drawTexture(ecs::TextureId /*texture*/, const ecs::TextureRect& /*source*/, const engine::ScreenRect& /*dest*/,
-                     float /*rotation*/, const ecs::Rgba& /*tint*/) override {}
+                  const sq::ecs::Rgba& /*color*/, sq::engine::FontId /*font*/) override {}
+    void drawTexture(sq::ecs::TextureId /*texture*/, const sq::ecs::TextureRect& /*source*/,
+                     const sq::engine::ScreenRect& /*dest*/, float /*rotation*/,
+                     const sq::ecs::Rgba& /*tint*/) override {}
 };
 
 /** @brief Provides the window and draw services the UI needs, in place of the render plugin. */
-class FakeServicesPlugin final : public engine::IPlugin {
+class FakeServicesPlugin final : public sq::engine::IPlugin {
   public:
     [[nodiscard]] std::string_view name() const noexcept override { return "FakeServicesPlugin"; }
-    void build(engine::PluginBuilder& builder) override {
-        builder.provides<engine::IWindowService>();
-        builder.provides<engine::IScreenDrawService>();
+    void build(sq::engine::PluginBuilder& builder) override {
+        builder.provides<sq::engine::IWindowService>();
+        builder.provides<sq::engine::IScreenDrawService>();
     }
-    void init(engine::Engine& engine) override {
-        (void)engine.mediator().registerService<engine::IWindowService>(std::make_shared<QuietWindow>());
-        (void)engine.mediator().registerService<engine::IScreenDrawService>(std::make_shared<NullDraw>());
+    void init(sq::engine::Engine& engine) override {
+        (void)engine.mediator().registerService<sq::engine::IWindowService>(std::make_shared<QuietWindow>());
+        (void)engine.mediator().registerService<sq::engine::IScreenDrawService>(std::make_shared<NullDraw>());
     }
 };
 
 /** @brief Client transport the test talks through, in place of the server. */
-class FakeClient final : public ecs::net::INetworkClient {
+class FakeClient final : public sq::net::INetworkClient {
   public:
     bool connect(const std::string& host, std::uint16_t port) override {
         target = host + ":" + std::to_string(port);
         return true;
     }
-    [[nodiscard]] ecs::net::DisconnectReason disconnectReason() const override {
-        return ecs::net::DisconnectReason::ConnectionLost;
+    [[nodiscard]] sq::net::DisconnectReason disconnectReason() const override {
+        return sq::net::DisconnectReason::ConnectionLost;
     }
     bool openUdp(std::uint16_t /*port*/) override { return true; }
     void closeUdp() override {}
@@ -136,7 +143,7 @@ class FakeClient final : public ecs::net::INetworkClient {
             sent.push_back(std::move(*message));
         }
     }
-    std::vector<ecs::net::NetworkEvent> poll() override { return std::exchange(next, {}); }
+    std::vector<sq::net::NetworkEvent> poll() override { return std::exchange(next, {}); }
     void stop() override {}
     [[nodiscard]] bool isRunning() const override { return true; }
 
@@ -153,7 +160,7 @@ class FakeClient final : public ecs::net::INetworkClient {
 
     std::string target;
     std::vector<protocol::Message> sent;
-    std::vector<ecs::net::NetworkEvent> next;
+    std::vector<sq::net::NetworkEvent> next;
 };
 
 class ClientScenesTest : public ::testing::Test {
@@ -162,19 +169,19 @@ class ClientScenesTest : public ::testing::Test {
         // The scripted level transition is loaded from scripts/ at the project root.
         std::filesystem::current_path(RLSS_PROJECT_DIR);
         engine.setFixedDeltaTime(DT);
-        const auto connection = std::make_shared<ecs::net::ClientConnection>(nullptr);
+        const auto connection = std::make_shared<sq::net::ClientConnection>(nullptr);
         engine.addPlugin<FakeServicesPlugin>()
-            .addPlugin<input::InputPlugin>()
-            .addPlugin<hierarchy::HierarchyPlugin>()
-            .addPlugin<ui::UiPlugin>()
-            .addPlugin<scene::ScenePlugin>()
-            .addPlugin<scripting::ScriptPlugin>()
-            .addPlugin<scene::SceneScriptingPlugin>()
-            .addPlugin<prefabs::PrefabPlugin>()
-            .addPlugin<prefabs::PrefabScriptingPlugin>()
-            .addPlugin<settings::SettingsPlugin>(std::filesystem::path{})
-            .addPlugin<ecs::net::NetworkPlugin>(connection, connection)
-            .addPlugin<ecs::net::ClientReplicationPlugin>(std::make_shared<rtype::game::ReplicationCodec>())
+            .addPlugin<sq::input::InputPlugin>()
+            .addPlugin<sq::hierarchy::HierarchyPlugin>()
+            .addPlugin<sq::ui::UiPlugin>()
+            .addPlugin<sq::scene::ScenePlugin>()
+            .addPlugin<sq::scripting::ScriptPlugin>()
+            .addPlugin<sq::scene::SceneScriptingPlugin>()
+            .addPlugin<sq::prefabs::PrefabPlugin>()
+            .addPlugin<sq::prefabs::PrefabScriptingPlugin>()
+            .addPlugin<sq::settings::SettingsPlugin>(std::filesystem::path{})
+            .addPlugin<sq::net::NetworkPlugin>(connection, connection)
+            .addPlugin<sq::net::ClientReplicationPlugin>(std::make_shared<rtype::game::ReplicationCodec>())
             .addPlugin<client::RTypeNetworkPlugin>(connection,
                                                    [this] {
                                                        transport = std::make_shared<FakeClient>();
@@ -192,12 +199,12 @@ class ClientScenesTest : public ::testing::Test {
     }
 
     [[nodiscard]] std::string top() {
-        const auto& scenes = engine.getPlugin<scene::ScenePlugin>().manager();
-        return scenes.top() == scene::INVALID_SCENE ? "" : std::string(scenes.scene(scenes.top()).name());
+        const auto& scenes = engine.getPlugin<sq::scene::ScenePlugin>().manager();
+        return scenes.top() == sq::scene::INVALID_SCENE ? "" : std::string(scenes.scene(scenes.top()).name());
     }
 
     void click(std::string action) {
-        engine.eventBus().publish(ui::UiButtonClickedEvent{.entity = 0, .action = std::move(action)});
+        engine.eventBus().publish(sq::ui::UiButtonClickedEvent{.entity = 0, .action = std::move(action)});
         frame();
     }
 
@@ -218,24 +225,26 @@ class ClientScenesTest : public ::testing::Test {
         receive(protocol::LobbyUpdate{.roomId = ROOM, .slots = {{.clientId = 1, .ready = false}}});
     }
 
-    [[nodiscard]] config::Settings& settings() { return engine.getPlugin<settings::SettingsPlugin>().settings(); }
+    [[nodiscard]] sq::config::Settings& settings() {
+        return engine.getPlugin<sq::settings::SettingsPlugin>().settings();
+    }
 
-    void setKey(engine::Key key, bool down) {
-        auto& window = static_cast<QuietWindow&>(engine.service<engine::IWindowService>());
+    void setKey(sq::engine::Key key, bool down) {
+        auto& window = static_cast<QuietWindow&>(engine.service<sq::engine::IWindowService>());
         window.keys.at(static_cast<std::size_t>(key)) = down;
         frame();
     }
 
     [[nodiscard]] bool showsText(std::string_view text) {
         bool found = false;
-        engine.registry().runSystem<ui::UiText>(
-            [&](ecs::Entity /*entity*/, const ui::UiText& ui) { found = found || ui.text == text; });
+        engine.registry().runSystem<sq::ui::UiText>(
+            [&](sq::ecs::Entity /*entity*/, const sq::ui::UiText& ui) { found = found || ui.text == text; });
         return found;
     }
 
     double now = 0.0;
     std::shared_ptr<FakeClient> transport;
-    engine::Engine engine{[this]() -> double { return now; }};
+    sq::engine::Engine engine{[this]() -> double { return now; }};
 };
 
 }  // namespace
@@ -245,7 +254,7 @@ TEST_F(ClientScenesTest, OpensOnTheTitleScreen) { EXPECT_EQ(top(), "Title"); }
 TEST_F(ClientScenesTest, SettingsOpenOverTheTitleAndGoBack) {
     click("title.settings");
     EXPECT_EQ(top(), "Settings");
-    engine.eventBus().publish(ui::UiBackEvent{});
+    engine.eventBus().publish(sq::ui::UiBackEvent{});
     frame();
     EXPECT_EQ(top(), "Title");
 }
@@ -254,7 +263,7 @@ TEST_F(ClientScenesTest, TheControlsOpenFromTheSettingsAndGoBack) {
     click("title.settings");
     click("settings.controls");
     EXPECT_EQ(top(), "Controls");
-    engine.eventBus().publish(ui::UiBackEvent{});
+    engine.eventBus().publish(sq::ui::UiBackEvent{});
     frame();
     EXPECT_EQ(top(), "Settings");
 }
@@ -263,21 +272,21 @@ TEST_F(ClientScenesTest, AKeyPressedAfterChoosingAControlIsSaved) {
     click("title.settings");
     click("settings.controls");
     click("controls.key.shoot");
-    setKey(engine::Key::F, true);
-    setKey(engine::Key::F, false);
+    setKey(sq::engine::Key::F, true);
+    setKey(sq::engine::Key::F, false);
     EXPECT_EQ(settings().getString(client::settings_keys::controlKey(client::input::Control::Shoot)), "F");
-    EXPECT_TRUE(engine.service<engine::IInputService>().mapping().hasKey("shoot", engine::Key::F));
-    EXPECT_FALSE(engine.service<engine::IInputService>().mapping().hasKey("shoot", engine::Key::Space));
+    EXPECT_TRUE(engine.service<sq::engine::IInputService>().mapping().hasKey("shoot", sq::engine::Key::F));
+    EXPECT_FALSE(engine.service<sq::engine::IInputService>().mapping().hasKey("shoot", sq::engine::Key::Space));
 }
 
 TEST_F(ClientScenesTest, EscapeCancelsTheWaitForAKey) {
     click("title.settings");
     click("settings.controls");
     click("controls.key.shoot");
-    engine.eventBus().publish(ui::UiBackEvent{});
+    engine.eventBus().publish(sq::ui::UiBackEvent{});
     frame();
     EXPECT_EQ(top(), "Controls");
-    setKey(engine::Key::F, true);
+    setKey(sq::engine::Key::F, true);
     EXPECT_EQ(settings().getString(client::settings_keys::controlKey(client::input::Control::Shoot)), "Space");
 }
 
@@ -296,7 +305,7 @@ TEST_F(ClientScenesTest, TheTextSizeButtonScalesTheMenus) {
     EXPECT_FLOAT_EQ(static_cast<float>(settings().getNumber(client::settings_keys::UI_SCALE)), 1.15F);
     EXPECT_FLOAT_EQ(client::menu::scale(engine.registry()), 1.15F);
     bool scaledPanel = false;
-    engine.registry().runSystem<ui::UiRect>([&scaledPanel](ecs::Entity /*entity*/, const ui::UiRect& rect) {
+    engine.registry().runSystem<sq::ui::UiRect>([&scaledPanel](sq::ecs::Entity /*entity*/, const sq::ui::UiRect& rect) {
         scaledPanel = scaledPanel || std::abs(rect.width - (500.0F * 1.15F)) < 0.01F;
     });
     EXPECT_TRUE(scaledPanel);
@@ -305,7 +314,7 @@ TEST_F(ClientScenesTest, TheTextSizeButtonScalesTheMenus) {
 
 TEST_F(ClientScenesTest, TheAutoFireToggleReachesThePlayerControls) {
     click("title.settings");
-    engine.eventBus().publish(ui::UiToggleChangedEvent{.entity = 0, .action = "settings.autofire", .on = true});
+    engine.eventBus().publish(sq::ui::UiToggleChangedEvent{.entity = 0, .action = "settings.autofire", .on = true});
     frame();
     EXPECT_TRUE(engine.getPlugin<client::PlayerControlPlugin>().autoFire());
 }
@@ -358,12 +367,12 @@ TEST_F(ClientScenesTest, PauseIsLocalAndLeavingGoesBackToTheLobby) {
     frame();
     ASSERT_EQ(top(), "Game");
 
-    engine.eventBus().publish(ui::UiBackEvent{});
+    engine.eventBus().publish(sq::ui::UiBackEvent{});
     frame();
     EXPECT_EQ(top(), "Pause");
     EXPECT_TRUE(engine.getPlugin<client::PlayerControlPlugin>().paused());
-    EXPECT_TRUE(engine.getPlugin<scene::ScenePlugin>().manager().isRunning(
-        engine.getPlugin<scene::ScenePlugin>().manager().find("Game").value()))
+    EXPECT_TRUE(engine.getPlugin<sq::scene::ScenePlugin>().manager().isRunning(
+        engine.getPlugin<sq::scene::ScenePlugin>().manager().find("Game").value()))
         << "the game keeps running under the pause menu";
 
     click("pause.leave");
@@ -378,30 +387,32 @@ TEST_F(ClientScenesTest, TheBossHealthBarShowsWhileABossIsOnScreen) {
     receive(protocol::GameStart{.roomId = ROOM, .playerIndex = 0, .playerCount = 1});
     frame();
     ASSERT_EQ(top(), "Game");
-    const auto bar = [this]() -> std::optional<std::pair<ecs::Entity, ui::UiProgressBar>> {
-        std::optional<std::pair<ecs::Entity, ui::UiProgressBar>> found;
-        engine.registry().runSystem<ui::UiProgressBar>(
-            [&found](const ecs::Entity entity, const ui::UiProgressBar& progress) { found = {entity, progress}; });
+    const auto bar = [this]() -> std::optional<std::pair<sq::ecs::Entity, sq::ui::UiProgressBar>> {
+        std::optional<std::pair<sq::ecs::Entity, sq::ui::UiProgressBar>> found;
+        engine.registry().runSystem<sq::ui::UiProgressBar>(
+            [&found](const sq::ecs::Entity entity, const sq::ui::UiProgressBar& progress) {
+                found = {entity, progress};
+            });
         return found;
     };
     ASSERT_TRUE(bar().has_value());
-    EXPECT_TRUE(ecs::isHidden(engine.registry(), bar()->first)) << "no boss yet";
+    EXPECT_TRUE(sq::ecs::isHidden(engine.registry(), bar()->first)) << "no boss yet";
 
     // A boss as the replication and RTypeGamePlugin leave it: replicated, with its hit points and its flash.
-    ecs::Registry& registry = engine.registry();
-    const ecs::Entity boss = registry.spawnEntity();
-    registry.emplaceComponent<ecs::Replicated>(boss, rtype::game::KIND_BOSS_CORE);
+    sq::ecs::Registry& registry = engine.registry();
+    const sq::ecs::Entity boss = registry.spawnEntity();
+    registry.emplaceComponent<sq::ecs::Replicated>(boss, rtype::game::KIND_BOSS_CORE);
     registry.addComponent(boss, rtype::game::EntityNetState{.health = 30});
     registry.addComponent(boss, client::gameplay::HitFlash{.spawnHealth = 40, .lastHealth = 30});
     frame();
-    ASSERT_FALSE(ecs::isHidden(registry, bar()->first));
+    ASSERT_FALSE(sq::ecs::isHidden(registry, bar()->first));
     EXPECT_FLOAT_EQ(bar()->second.value, 30.0F);
     EXPECT_FLOAT_EQ(bar()->second.max, 40.0F);
     EXPECT_TRUE(showsText("BOSS"));
 
     registry.killEntity(boss);
     frame();
-    EXPECT_TRUE(ecs::isHidden(registry, bar()->first)) << "the boss is gone";
+    EXPECT_TRUE(sq::ecs::isHidden(registry, bar()->first)) << "the boss is gone";
 }
 
 TEST_F(ClientScenesTest, TheHudShowsTheTotalAndTheOwnScoreLive) {
@@ -424,18 +435,18 @@ TEST_F(ClientScenesTest, TheHudShowsOneShipPerLifeThenOut) {
     ASSERT_EQ(top(), "Game");
     const auto visibleLives = [this] {
         int count = 0;
-        engine.registry().runSystem<ui::UiImage>(
-            [this, &count](const ecs::Entity entity, const ui::UiImage& /*image*/) {
-                count += ecs::isHidden(engine.registry(), entity) ? 0 : 1;
+        engine.registry().runSystem<sq::ui::UiImage>(
+            [this, &count](const sq::ecs::Entity entity, const sq::ui::UiImage& /*image*/) {
+                count += sq::ecs::isHidden(engine.registry(), entity) ? 0 : 1;
             });
         return count;
     };
     EXPECT_EQ(visibleLives(), 3) << "three lives at the start";
 
     // The own ship, as the replication leaves it: its lives are its health.
-    ecs::Registry& registry = engine.registry();
-    const ecs::Entity ship = registry.spawnEntity();
-    registry.emplaceComponent<ecs::Replicated>(ship, rtype::game::KIND_PLAYER_SHIP);
+    sq::ecs::Registry& registry = engine.registry();
+    const sq::ecs::Entity ship = registry.spawnEntity();
+    registry.emplaceComponent<sq::ecs::Replicated>(ship, rtype::game::KIND_PLAYER_SHIP);
     registry.addComponent(ship, rtype::game::EntityNetState{.subtype = 0, .health = 2});
     frame();
     EXPECT_EQ(visibleLives(), 2);
@@ -446,8 +457,8 @@ TEST_F(ClientScenesTest, TheHudShowsOneShipPerLifeThenOut) {
     frame();
     EXPECT_EQ(visibleLives(), 0);
     bool out = false;
-    registry.runSystem<ui::UiText>([&](const ecs::Entity entity, const ui::UiText& text) {
-        out = out || (text.text == "OUT" && !ecs::isHidden(registry, entity));
+    registry.runSystem<sq::ui::UiText>([&](const sq::ecs::Entity entity, const sq::ui::UiText& text) {
+        out = out || (text.text == "OUT" && !sq::ecs::isHidden(registry, entity));
     });
     EXPECT_TRUE(out) << "OUT shows, then the client closes (Engine::stop, not observable without Engine::run)";
     frame(2.1);

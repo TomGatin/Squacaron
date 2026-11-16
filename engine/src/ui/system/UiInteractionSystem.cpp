@@ -26,7 +26,7 @@
 #include "ui/components/UiToggle.hpp"
 #include "ui/system/UiLayout.hpp"
 
-namespace ui {
+namespace sq::ui {
 
 namespace {
 
@@ -47,16 +47,17 @@ constexpr char32_t MAX_CODE_POINT = 0x10FFFF;
  * @param ignored Key not taken into account, if any.
  * @return `true` if one of them is held.
  */
-bool held(const engine::IWindowService& window, const UiNavBinding& binding, int gamepad,
-          std::optional<engine::Key> ignored = std::nullopt) {
-    if (std::ranges::any_of(binding.keys,
-                            [&window, ignored](engine::Key key) { return key != ignored && window.isKeyDown(key); })) {
+bool held(const sq::engine::IWindowService& window, const UiNavBinding& binding, int gamepad,
+          std::optional<sq::engine::Key> ignored = std::nullopt) {
+    if (std::ranges::any_of(binding.keys, [&window, ignored](sq::engine::Key key) {
+            return key != ignored && window.isKeyDown(key);
+        })) {
         return true;
     }
     if (binding.buttons.empty() || !window.isGamepadAvailable(gamepad)) {
         return false;
     }
-    return std::ranges::any_of(binding.buttons, [&window, gamepad](engine::GamepadButton button) {
+    return std::ranges::any_of(binding.buttons, [&window, gamepad](sq::engine::GamepadButton button) {
         return window.isGamepadButtonDown(gamepad, button);
     });
 }
@@ -67,7 +68,7 @@ bool held(const engine::IWindowService& window, const UiNavBinding& binding, int
  * @param position Point.
  * @return `true` if inside, edges included.
  */
-bool contains(const UiScreenRect& rect, engine::MousePosition position) {
+bool contains(const UiScreenRect& rect, sq::engine::MousePosition position) {
     return position.x >= rect.x && position.x <= rect.x + rect.width && position.y >= rect.y &&
            position.y <= rect.y + rect.height;
 }
@@ -148,7 +149,7 @@ bool accepts(const UiTextInput& input, char32_t& cp) {
  * @param slider Slider.
  * @param value New value.
  */
-void setSliderValue(ecs::EventBus& bus, ecs::Entity entity, UiSlider& slider, float value) {
+void setSliderValue(sq::events::EventBus& bus, sq::ecs::Entity entity, UiSlider& slider, float value) {
     const float clamped = std::clamp(value, std::min(slider.min, slider.max), std::max(slider.min, slider.max));
     if (clamped == slider.value) {
         return;
@@ -163,7 +164,7 @@ void setSliderValue(ecs::EventBus& bus, ecs::Entity entity, UiSlider& slider, fl
  * @param entity Toggle entity.
  * @param toggle Toggle.
  */
-void flip(ecs::EventBus& bus, ecs::Entity entity, UiToggle& toggle) {
+void flip(sq::events::EventBus& bus, sq::ecs::Entity entity, UiToggle& toggle) {
     toggle.on = !toggle.on;
     bus.publish(UiToggleChangedEvent{.entity = entity, .action = toggle.action, .on = toggle.on});
 }
@@ -176,7 +177,7 @@ void flip(ecs::EventBus& bus, ecs::Entity entity, UiToggle& toggle) {
  * @return The component, or null.
  */
 template <typename C>
-C* find(ecs::Registry& registry, ecs::Entity entity) {
+C* find(sq::ecs::Registry& registry, sq::ecs::Entity entity) {
     if (registry.findComponents<C>() == nullptr) {
         return nullptr;
     }
@@ -186,7 +187,7 @@ C* find(ecs::Registry& registry, ecs::Entity entity) {
 
 }  // namespace
 
-UiInteractionSystem::Commands UiInteractionSystem::readCommands(const engine::IWindowService& window,
+UiInteractionSystem::Commands UiInteractionSystem::readCommands(const sq::engine::IWindowService& window,
                                                                 const UiNavigation& navigation) {
     const int pad = navigation.gamepad;
     Commands commands{
@@ -198,12 +199,12 @@ UiInteractionSystem::Commands UiInteractionSystem::readCommands(const engine::IW
         .back = held(window, navigation.back, pad),
     };
     // Space confirms a button but types in a text input: only the other bindings submit a text input.
-    commands.confirmNotTyping = commands.confirm && held(window, navigation.confirm, pad, engine::Key::Space);
+    commands.confirmNotTyping = commands.confirm && held(window, navigation.confirm, pad, sq::engine::Key::Space);
     return commands;
 }
 
-void UiInteractionSystem::update(ecs::Registry& registry, std::span<const UiLayoutNode> layout,
-                                 engine::IWindowService& window, ecs::EventBus& bus, float dt) {
+void UiInteractionSystem::update(sq::ecs::Registry& registry, std::span<const UiLayoutNode> layout,
+                                 sq::engine::IWindowService& window, sq::events::EventBus& bus, float dt) {
     if (!registry.hasResource<UiFocus>()) {
         registry.emplaceResource<UiFocus>();
     }
@@ -213,9 +214,9 @@ void UiInteractionSystem::update(ecs::Registry& registry, std::span<const UiLayo
     auto& focus = registry.getResource<UiFocus>();
     const UiNavigation& navigation = registry.getResource<UiNavigation>();
 
-    if (focus.focused != ecs::NULL_ENTITY &&
-        (!registry.isAlive(focus.focused) || ecs::isHidden(registry, focus.focused))) {
-        focus.focused = ecs::NULL_ENTITY;
+    if (focus.focused != sq::ecs::NULL_ENTITY &&
+        (!registry.isAlive(focus.focused) || sq::ecs::isHidden(registry, focus.focused))) {
+        focus.focused = sq::ecs::NULL_ENTITY;
     }
 
     handleMouse(registry, layout, window, bus, focus);
@@ -249,16 +250,17 @@ void UiInteractionSystem::update(ecs::Registry& registry, std::span<const UiLayo
     _lastFocused = focus.focused;
 }
 
-void UiInteractionSystem::handleMouse(ecs::Registry& registry, std::span<const UiLayoutNode> layout,
-                                      const engine::IWindowService& window, ecs::EventBus& bus, UiFocus& focus) {
-    const engine::MousePosition mouse = window.mousePosition();
-    if (window.isMouseButtonPressed(engine::MouseButton::Left)) {
+void UiInteractionSystem::handleMouse(sq::ecs::Registry& registry, std::span<const UiLayoutNode> layout,
+                                      const sq::engine::IWindowService& window, sq::events::EventBus& bus,
+                                      UiFocus& focus) {
+    const sq::engine::MousePosition mouse = window.mousePosition();
+    if (window.isMouseButtonPressed(sq::engine::MouseButton::Left)) {
         handleClick(registry, layout, mouse, bus, focus);
     }
-    if (!window.isMouseButtonDown(engine::MouseButton::Left)) {
-        _dragged = ecs::NULL_ENTITY;
+    if (!window.isMouseButtonDown(sq::engine::MouseButton::Left)) {
+        _dragged = sq::ecs::NULL_ENTITY;
     }
-    if (_dragged != ecs::NULL_ENTITY) {
+    if (_dragged != sq::ecs::NULL_ENTITY) {
         drag(registry, layout, mouse, bus);
     }
     if (const float wheel = window.mouseWheelDelta(); wheel != 0.0F) {
@@ -266,14 +268,14 @@ void UiInteractionSystem::handleMouse(ecs::Registry& registry, std::span<const U
     }
 }
 
-void UiInteractionSystem::handleClick(ecs::Registry& registry, std::span<const UiLayoutNode> layout,
-                                      engine::MousePosition mouse, ecs::EventBus& bus, UiFocus& focus) {
+void UiInteractionSystem::handleClick(sq::ecs::Registry& registry, std::span<const UiLayoutNode> layout,
+                                      sq::engine::MousePosition mouse, sq::events::EventBus& bus, UiFocus& focus) {
     // The topmost widget under the cursor is the last one in draw order.
     const auto hit = std::ranges::find_if(layout.rbegin(), layout.rend(), [&](const UiLayoutNode& node) {
         return contains(node.rect, mouse) && registry.hasComponent<UiFocusable>(node.entity);
     });
     if (hit == layout.rend()) {
-        focus.focused = ecs::NULL_ENTITY;
+        focus.focused = sq::ecs::NULL_ENTITY;
         return;
     }
     focus.focused = hit->entity;
@@ -285,12 +287,12 @@ void UiInteractionSystem::handleClick(ecs::Registry& registry, std::span<const U
     }
 }
 
-void UiInteractionSystem::drag(ecs::Registry& registry, std::span<const UiLayoutNode> layout,
-                               engine::MousePosition mouse, ecs::EventBus& bus) {
+void UiInteractionSystem::drag(sq::ecs::Registry& registry, std::span<const UiLayoutNode> layout,
+                               sq::engine::MousePosition mouse, sq::events::EventBus& bus) {
     auto* slider = find<UiSlider>(registry, _dragged);
     const auto node = std::ranges::find(layout, _dragged, &UiLayoutNode::entity);
     if (slider == nullptr || node == layout.end()) {
-        _dragged = ecs::NULL_ENTITY;
+        _dragged = sq::ecs::NULL_ENTITY;
         return;
     }
     if (node->rect.width > 0.0F) {
@@ -299,8 +301,8 @@ void UiInteractionSystem::drag(ecs::Registry& registry, std::span<const UiLayout
     }
 }
 
-void UiInteractionSystem::scroll(ecs::Registry& registry, std::span<const UiLayoutNode> layout,
-                                 engine::MousePosition mouse, float wheel) {
+void UiInteractionSystem::scroll(sq::ecs::Registry& registry, std::span<const UiLayoutNode> layout,
+                                 sq::engine::MousePosition mouse, float wheel) {
     const auto list = std::ranges::find_if(layout.rbegin(), layout.rend(), [&](const UiLayoutNode& node) {
         return contains(node.rect, mouse) && registry.hasComponent<UiScrollList>(node.entity);
     });
@@ -308,7 +310,7 @@ void UiInteractionSystem::scroll(ecs::Registry& registry, std::span<const UiLayo
         return;
     }
     UiScrollList& rows = registry.getComponents<UiScrollList>().get(list->entity);
-    const std::size_t count = hierarchy::childrenOf(registry, list->entity).size();
+    const std::size_t count = sq::hierarchy::childrenOf(registry, list->entity).size();
     const std::size_t maxFirst = count > rows.visibleCount ? count - rows.visibleCount : 0;
     if (wheel > 0.0F && rows.first > 0) {
         --rows.first;
@@ -317,8 +319,8 @@ void UiInteractionSystem::scroll(ecs::Registry& registry, std::span<const UiLayo
     }
 }
 
-bool UiInteractionSystem::moveInList(ecs::Registry& registry, UiFocus& focus, bool forward) {
-    const std::optional<ecs::Entity> parent = hierarchy::parentOf(registry, focus.focused);
+bool UiInteractionSystem::moveInList(sq::ecs::Registry& registry, UiFocus& focus, bool forward) {
+    const std::optional<sq::ecs::Entity> parent = sq::hierarchy::parentOf(registry, focus.focused);
     if (!parent) {
         return false;
     }
@@ -326,7 +328,7 @@ bool UiInteractionSystem::moveInList(ecs::Registry& registry, UiFocus& focus, bo
     if (list == nullptr) {
         return false;
     }
-    const std::span<const ecs::Entity> rows = hierarchy::childrenOf(registry, *parent);
+    const std::span<const sq::ecs::Entity> rows = sq::hierarchy::childrenOf(registry, *parent);
     const auto it = std::ranges::find(rows, focus.focused);
     if (it == rows.end()) {
         return false;
@@ -334,7 +336,7 @@ bool UiInteractionSystem::moveInList(ecs::Registry& registry, UiFocus& focus, bo
     // Rows that cannot take the focus (a disabled entry, a separator) are skipped, scrolling past them.
     std::size_t next = static_cast<std::size_t>(it - rows.begin());
     const auto canFocus = [&registry, rows](std::size_t index) {
-        return registry.hasComponent<UiFocusable>(rows[index]) && !ecs::isHidden(registry, rows[index]);
+        return registry.hasComponent<UiFocusable>(rows[index]) && !sq::ecs::isHidden(registry, rows[index]);
     };
     for (;;) {
         if (forward ? next + 1 >= rows.size() : next == 0) {
@@ -354,9 +356,9 @@ bool UiInteractionSystem::moveInList(ecs::Registry& registry, UiFocus& focus, bo
     return true;
 }
 
-void UiInteractionSystem::moveFocus(ecs::Registry& registry, std::span<const UiLayoutNode> layout, UiFocus& focus,
+void UiInteractionSystem::moveFocus(sq::ecs::Registry& registry, std::span<const UiLayoutNode> layout, UiFocus& focus,
                                     bool forward) {
-    if (focus.focused != ecs::NULL_ENTITY && moveInList(registry, focus, forward)) {
+    if (focus.focused != sq::ecs::NULL_ENTITY && moveInList(registry, focus, forward)) {
         return;
     }
     _focusables.clear();
@@ -369,7 +371,7 @@ void UiInteractionSystem::moveFocus(ecs::Registry& registry, std::span<const UiL
         return;
     }
     const auto& ranks = registry.getComponents<UiFocusable>();
-    std::ranges::stable_sort(_focusables, std::less{}, [&ranks](ecs::Entity e) { return ranks.get(e).order; });
+    std::ranges::stable_sort(_focusables, std::less{}, [&ranks](sq::ecs::Entity e) { return ranks.get(e).order; });
 
     const auto current = std::ranges::find(_focusables, focus.focused);
     if (current == _focusables.end()) {
@@ -381,7 +383,7 @@ void UiInteractionSystem::moveFocus(ecs::Registry& registry, std::span<const UiL
     focus.focused = _focusables[forward ? (index + 1) % count : (index + count - 1) % count];
 }
 
-void UiInteractionSystem::activate(ecs::Registry& registry, ecs::EventBus& bus, ecs::Entity focused) {
+void UiInteractionSystem::activate(sq::ecs::Registry& registry, sq::events::EventBus& bus, sq::ecs::Entity focused) {
     if (const auto* button = find<UiButton>(registry, focused); button != nullptr) {
         bus.publish(UiButtonClickedEvent{.entity = focused, .action = button->action});
     } else if (auto* toggle = find<UiToggle>(registry, focused); toggle != nullptr) {
@@ -391,8 +393,8 @@ void UiInteractionSystem::activate(ecs::Registry& registry, ecs::EventBus& bus, 
     }
 }
 
-void UiInteractionSystem::editText(ecs::Registry& registry, engine::IWindowService& window, ecs::Entity focused,
-                                   UiFocus& focus, float dt) {
+void UiInteractionSystem::editText(sq::ecs::Registry& registry, sq::engine::IWindowService& window,
+                                   sq::ecs::Entity focused, UiFocus& focus, float dt) {
     UiTextInput& input = registry.getComponents<UiTextInput>().get(focused);
     bool edited = false;
 
@@ -403,7 +405,7 @@ void UiInteractionSystem::editText(ecs::Registry& registry, engine::IWindowServi
         }
     }
 
-    const bool backspace = window.isKeyDown(engine::Key::Backspace);
+    const bool backspace = window.isKeyDown(sq::engine::Key::Backspace);
     if (backspace && !_backspaceHeld) {
         popCodePoint(input.text);
         _backspaceTimer = BACKSPACE_DELAY;
@@ -430,4 +432,4 @@ void UiInteractionSystem::editText(ecs::Registry& registry, engine::IWindowServi
     }
 }
 
-}  // namespace ui
+}  // namespace sq::ui

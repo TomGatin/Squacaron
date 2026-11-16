@@ -80,7 +80,7 @@ constexpr float LEVEL_SPEED = 60.0F;
 constexpr float SLOW_SPEED = 30.0F;
 
 /** @brief Spawn event of an alien scout, as the level loader builds it. */
-timeline::TimelineEvent spawnAt(const float position, const float y) {
+sq::timeline::TimelineEvent spawnAt(const float position, const float y) {
     return {.position = position,
             .type = std::string(level::EVENT_SPAWN),
             .params = {{"prefab", std::string("alien_scout")}, {"x", 1328.0F}, {"y", y}}};
@@ -106,17 +106,17 @@ class GameplayTest : public ::testing::Test {
   protected:
     explicit GameplayTest(std::shared_ptr<const level::Level> played = testLevel()) : engine([this] { return now; }) {
         engine.setFixedDeltaTime(FIXED_DT);
-        engine.addPlugin<systems::PhysicsPlugin>();
-        engine.addPlugin<hierarchy::HierarchyPlugin>();
-        engine.addPlugin<timeline::TimelinePlugin>();
+        engine.addPlugin<sq::systems::PhysicsPlugin>();
+        engine.addPlugin<sq::hierarchy::HierarchyPlugin>();
+        engine.addPlugin<sq::timeline::TimelinePlugin>();
         rtype::server::gameplay::addGameplayPlugins(engine, played);
         engine.init();
         combat().setPlayerCount(2);
     }
 
     [[nodiscard]] CombatPlugin& combat() { return engine.getPlugin<CombatPlugin>(); }
-    [[nodiscard]] timeline::TimelinePlugin& player() { return engine.getPlugin<timeline::TimelinePlugin>(); }
-    [[nodiscard]] ecs::Registry& registry() { return engine.registry(); }
+    [[nodiscard]] sq::timeline::TimelinePlugin& player() { return engine.getPlugin<sq::timeline::TimelinePlugin>(); }
+    [[nodiscard]] sq::ecs::Registry& registry() { return engine.registry(); }
 
     /** @brief Runs the engine for some seconds of game time. */
     void run(const float seconds) {
@@ -128,25 +128,25 @@ class GameplayTest : public ::testing::Test {
     }
 
     /** @brief Spawns the ship of a player, as the room does: with the collider of the `player_ship` prefab. */
-    ecs::Entity spawnShip(const std::uint8_t playerIndex, const float x, const float y) {
-        const ecs::Entity ship = registry().spawnEntity();
+    sq::ecs::Entity spawnShip(const std::uint8_t playerIndex, const float x, const float y) {
+        const sq::ecs::Entity ship = registry().spawnEntity();
         ::prefabs::buildPlayerShip(ship, registry(), {{"x", x}, {"y", y}});
         registry().addComponent(ship, game::EntityNetState{.subtype = playerIndex});
-        ecs::net::replicate(registry(), ship, game::KIND_PLAYER_SHIP);
+        sq::net::replicate(registry(), ship, game::KIND_PLAYER_SHIP);
         return ship;
     }
 
     /** @brief Spawns a motionless enemy. */
-    ecs::Entity spawnEnemy(const float x, const float y) {
-        const ecs::Entity enemy = registry().spawnEntity();
+    sq::ecs::Entity spawnEnemy(const float x, const float y) {
+        const sq::ecs::Entity enemy = registry().spawnEntity();
         ::prefabs::buildAlienScout(enemy, registry(), {{"x", x}, {"y", y}, {"speed", 0.0F}});
-        ecs::net::replicate(registry(), enemy, game::KIND_ALIEN_SCOUT);
+        sq::net::replicate(registry(), enemy, game::KIND_ALIEN_SCOUT);
         return enemy;
     }
 
     /** @brief Applies an input holding the shoot button to a ship, as the replication plugin does. */
-    void shoot(const ecs::Entity ship) {
-        engine.eventBus().publish(ecs::net::InputApplied{
+    void shoot(const sq::ecs::Entity ship) {
+        engine.eventBus().publish(sq::net::InputApplied{
             .entity = ship,
             .input = {.sequence = 1, .held = {game::ACTION_SHOOT}, .axes = {}},
             .deltaTime = FIXED_DT,
@@ -154,18 +154,19 @@ class GameplayTest : public ::testing::Test {
     }
 
     /** @brief Replicated entities of a kind. */
-    [[nodiscard]] std::vector<ecs::Entity> entitiesOf(const std::uint32_t kind) {
-        std::vector<ecs::Entity> found;
-        registry().runSystem<ecs::Replicated>([&](const ecs::Entity entity, const ecs::Replicated& replicated) {
-            if (replicated.kind == kind) {
-                found.push_back(entity);
-            }
-        });
+    [[nodiscard]] std::vector<sq::ecs::Entity> entitiesOf(const std::uint32_t kind) {
+        std::vector<sq::ecs::Entity> found;
+        registry().runSystem<sq::ecs::Replicated>(
+            [&](const sq::ecs::Entity entity, const sq::ecs::Replicated& replicated) {
+                if (replicated.kind == kind) {
+                    found.push_back(entity);
+                }
+            });
         return found;
     }
 
     double now = 0.0;
-    engine::Engine engine;
+    sq::engine::Engine engine;
 };
 
 /** @brief Same room, without any level. */
@@ -203,7 +204,7 @@ class BossFightTest : public GameplayTest {
     BossFightTest() : GameplayTest(bossLevel()) {}
 
     /** @brief The boss, if alive. */
-    [[nodiscard]] std::vector<ecs::Entity> bosses() { return entitiesOf(game::KIND_BOSS_CORE); }
+    [[nodiscard]] std::vector<sq::ecs::Entity> bosses() { return entitiesOf(game::KIND_BOSS_CORE); }
 };
 
 /** @brief Offset of the weak point of `partsLevel()` from the boss center. */
@@ -239,30 +240,30 @@ class BossPartsTest : public GameplayTest {
     BossPartsTest() : GameplayTest(partsLevel()) {}
 
     /** @brief The boss, once spawned. */
-    [[nodiscard]] ecs::Entity boss() {
+    [[nodiscard]] sq::ecs::Entity boss() {
         const auto found = entitiesOf(game::KIND_BOSS_CORE);
-        return found.empty() ? ecs::NULL_ENTITY : found.front();
+        return found.empty() ? sq::ecs::NULL_ENTITY : found.front();
     }
 
     /** @brief The part of a role. */
-    [[nodiscard]] ecs::Entity part(const prefabs::BossPartRole role) {
-        for (const ecs::Entity entity : entitiesOf(game::KIND_BOSS_PART)) {
+    [[nodiscard]] sq::ecs::Entity part(const prefabs::BossPartRole role) {
+        for (const sq::ecs::Entity entity : entitiesOf(game::KIND_BOSS_PART)) {
             if (registry().getComponents<prefabs::BossPart>().get(entity).role == role) {
                 return entity;
             }
         }
-        return ecs::NULL_ENTITY;
+        return sq::ecs::NULL_ENTITY;
     }
 
     /** @brief Hits an entity with a player 1 shot, as the collision router reports it. */
-    void hit(const ecs::Entity target) {
-        const ecs::Entity shot = registry().spawnEntity();
+    void hit(const sq::ecs::Entity target) {
+        const sq::ecs::Entity shot = registry().spawnEntity();
         registry().addComponent(shot, game::EntityNetState{.subtype = 0});
         engine.eventBus().publish(rtype::server::collision::ShotHitEvent{
             .shot = shot, .target = target, .targetCategory = prefabs::collision::ENEMY, .byPlayer = true});
     }
 
-    [[nodiscard]] std::uint8_t health(const ecs::Entity entity) {
+    [[nodiscard]] std::uint8_t health(const sq::ecs::Entity entity) {
         return registry().getComponents<prefabs::Health>().get(entity).points;
     }
 };
@@ -291,7 +292,7 @@ class TerrainTest : public GameplayTest {
     TerrainTest() : GameplayTest(terrainLevel()) {}
 
     /** @brief The terrain columns on the screen or entering it. */
-    [[nodiscard]] std::vector<ecs::Entity> columns() { return entitiesOf(game::KIND_OBSTACLE); }
+    [[nodiscard]] std::vector<sq::ecs::Entity> columns() { return entitiesOf(game::KIND_OBSTACLE); }
 };
 
 /** @brief Bottom terrain at 1 s, then a boss at 2.5 s, while the terrain is on the screen. */
@@ -316,14 +317,14 @@ class RespawnTest : public GameplayTest {
         : GameplayTest(std::move(played)) {}
 
     /** @brief The terrain columns on the screen or entering it. */
-    [[nodiscard]] std::vector<ecs::Entity> columns() { return entitiesOf(game::KIND_OBSTACLE); }
+    [[nodiscard]] std::vector<sq::ecs::Entity> columns() { return entitiesOf(game::KIND_OBSTACLE); }
 
     /** @brief Puts the ship on the first terrain column, then runs until it is destroyed (at most 1 s). */
-    void crash(const ecs::Entity ship) {
+    void crash(const sq::ecs::Entity ship) {
         const auto built = columns();
         ASSERT_FALSE(built.empty());
-        const ecs::Transform column = registry().getComponents<ecs::Transform>().get(built.front());
-        auto& transform = registry().getComponents<ecs::Transform>().get(ship);
+        const sq::ecs::Transform column = registry().getComponents<sq::ecs::Transform>().get(built.front());
+        auto& transform = registry().getComponents<sq::ecs::Transform>().get(ship);
         transform.x = column.x;
         transform.y = column.y;
         for (int step = 0; step < 60 && !invulnerable(ship); ++step) {
@@ -333,7 +334,7 @@ class RespawnTest : public GameplayTest {
     }
 
     /** @brief Whether the ship carries the invulnerable flag. */
-    [[nodiscard]] bool invulnerable(const ecs::Entity ship) {
+    [[nodiscard]] bool invulnerable(const sq::ecs::Entity ship) {
         return (registry().getComponents<game::EntityNetState>().get(ship).flags & game::FLAG_INVULNERABLE) != 0;
     }
 };
@@ -363,7 +364,7 @@ class BossThenEndTest : public GameplayTest {
     BossThenEndTest() : GameplayTest(bossThenEndLevel()) {}
 
     /** @brief The bosses alive. */
-    [[nodiscard]] std::vector<ecs::Entity> bosses() { return entitiesOf(game::KIND_BOSS_CORE); }
+    [[nodiscard]] std::vector<sq::ecs::Entity> bosses() { return entitiesOf(game::KIND_BOSS_CORE); }
 };
 
 }  // namespace
@@ -376,8 +377,8 @@ TEST_F(GameplayTest, LevelSpawnsEnemiesAtTheirScrollDistance) {
     run(0.6F);
     const auto enemies = entitiesOf(game::KIND_ALIEN_SCOUT);
     ASSERT_EQ(enemies.size(), 1U);
-    EXPECT_TRUE(registry().hasComponent<ecs::RigidBody2D>(enemies.front()));
-    EXPECT_FLOAT_EQ(registry().getComponents<ecs::Transform>().get(enemies.front()).y, 160.0F);
+    EXPECT_TRUE(registry().hasComponent<sq::ecs::RigidBody2D>(enemies.front()));
+    EXPECT_FLOAT_EQ(registry().getComponents<sq::ecs::Transform>().get(enemies.front()).y, 160.0F);
 
     run(1.0F);
     EXPECT_EQ(entitiesOf(game::KIND_ALIEN_SCOUT).size(), 2U);
@@ -404,7 +405,7 @@ TEST_F(GameplayTest, EndOfLevelRestartsItBeforeTheGameStarts) {
 class GameFlowTest : public GameplayTest {
   protected:
     explicit GameFlowTest(std::shared_ptr<const level::Level> played = testLevel()) : GameplayTest(std::move(played)) {
-        ecs::EventBus& bus = engine.eventBus();
+        sq::events::EventBus& bus = engine.eventBus();
         bus.subscribe<protocol::LevelStart>([this](const protocol::LevelStart& message) {
             log.push_back("start " + std::to_string(message.levelIndex) + "/" + std::to_string(message.levelCount) +
                           " " + message.name);
@@ -476,7 +477,7 @@ TEST_F(CampaignTest, BeforeTheGameStartsTheFirstLevelLoops) {
 }
 
 TEST_F(GameFlowTest, LosingEveryLifeEndsTheGame) {
-    const ecs::Entity ship = spawnShip(1, 200.0F, LANE_Y);
+    const sq::ecs::Entity ship = spawnShip(1, 200.0F, LANE_Y);
     rtype::server::gameplay::giveLives(registry(), ship, 1);
     engine.getPlugin<LevelDirectorPlugin>().startGame();
     engine.eventBus().publish(rtype::server::gameplay::ShipDestroyed{.ship = ship});
@@ -486,8 +487,8 @@ TEST_F(GameFlowTest, LosingEveryLifeEndsTheGame) {
 }
 
 TEST_F(GameFlowTest, AnEliminatedShipNeitherShootsNorMoves) {
-    const ecs::Entity ship = spawnShip(0, 200.0F, LANE_Y);
-    const ecs::Entity other = spawnShip(1, 200.0F, LANE_Y + 300.0F);
+    const sq::ecs::Entity ship = spawnShip(0, 200.0F, LANE_Y);
+    const sq::ecs::Entity other = spawnShip(1, 200.0F, LANE_Y + 300.0F);
     rtype::server::gameplay::giveLives(registry(), ship, 1);
     rtype::server::gameplay::giveLives(registry(), other, 3);
     engine.eventBus().publish(rtype::server::gameplay::ShipDestroyed{.ship = ship});
@@ -509,7 +510,7 @@ TEST_F(GameFlowTest, StartGameAnnouncesTheLevel) {
 }
 
 TEST_F(GameFlowTest, EndOfLevelWinsTheGameWithTheScores) {
-    const ecs::Entity ship = spawnShip(1, 200.0F, LANE_Y);
+    const sq::ecs::Entity ship = spawnShip(1, 200.0F, LANE_Y);
     engine.getPlugin<LevelDirectorPlugin>().startGame();
     spawnEnemy(500.0F, LANE_Y);
     shoot(ship);
@@ -535,15 +536,15 @@ TEST_F(GameFlowTest, NothingIsPlayedAfterTheGameIsWon) {
 
 TEST_F(GameplayTest, AimedMissilesLeavingByAnyEdgeAreDestroyed) {
     const auto missile = [this](const float speedX, const float speedY) {
-        const ecs::Entity entity = registry().spawnEntity();
+        const sq::ecs::Entity entity = registry().spawnEntity();
         ::prefabs::buildMissile(entity, registry(),
                                 {{"x", 640.0F}, {"y", 360.0F}, {"speed", speedX}, {"speed_y", speedY}});
-        ecs::net::replicate(registry(), entity, game::KIND_MISSILE);
+        sq::net::replicate(registry(), entity, game::KIND_MISSILE);
         return entity;
     };
-    const ecs::Entity up = missile(0.0F, -900.0F);
-    const ecs::Entity down = missile(0.0F, 900.0F);
-    const ecs::Entity right = missile(900.0F, 0.0F);
+    const sq::ecs::Entity up = missile(0.0F, -900.0F);
+    const sq::ecs::Entity down = missile(0.0F, 900.0F);
+    const sq::ecs::Entity right = missile(900.0F, 0.0F);
     run(2.0F);
     EXPECT_FALSE(registry().isAlive(up));
     EXPECT_FALSE(registry().isAlive(down));
@@ -553,11 +554,11 @@ TEST_F(GameplayTest, AimedMissilesLeavingByAnyEdgeAreDestroyed) {
 namespace {
 
 /** @brief Spawns a motionless alien gunner, as the level director does. */
-ecs::Entity spawnGunner(ecs::Registry& registry, const float x, const float y) {
-    const ecs::Entity gunner = registry.spawnEntity();
+sq::ecs::Entity spawnGunner(sq::ecs::Registry& registry, const float x, const float y) {
+    const sq::ecs::Entity gunner = registry.spawnEntity();
     ::prefabs::buildAlienGunner(gunner, registry, {{"x", x}, {"y", y}, {"speed", 0.0F}});
     registry.addComponent(gunner, game::EntityNetState{});
-    ecs::net::replicate(registry, gunner, game::KIND_ALIEN_GUNNER);
+    sq::net::replicate(registry, gunner, game::KIND_ALIEN_GUNNER);
     return gunner;
 }
 
@@ -572,7 +573,7 @@ TEST_F(GameplayWithoutLevelTest, GunnerFiresAtTheNearestShip) {
     run(0.2F);
     const auto missiles = entitiesOf(game::KIND_MISSILE);
     ASSERT_EQ(missiles.size(), 1U);
-    const auto& body = registry().getComponents<ecs::RigidBody2D>().get(missiles.front());
+    const auto& body = registry().getComponents<sq::ecs::RigidBody2D>().get(missiles.front());
     EXPECT_LT(body.velocityX, 0.0F);
     EXPECT_GT(body.velocityY, 0.0F) << "down towards the ship";
     EXPECT_NEAR(std::hypot(body.velocityX, body.velocityY), ::prefabs::DEFAULT_ALIEN_GUNNER_SHOT_SPEED, 1.0);
@@ -589,7 +590,7 @@ TEST_F(GameplayWithoutLevelTest, GunnerFiresStraightAheadWithoutATarget) {
     run(::prefabs::DEFAULT_ALIEN_GUNNER_FIRE_INTERVAL);
     const auto missiles = entitiesOf(game::KIND_MISSILE);
     ASSERT_EQ(missiles.size(), 1U);
-    const auto& body = registry().getComponents<ecs::RigidBody2D>().get(missiles.front());
+    const auto& body = registry().getComponents<sq::ecs::RigidBody2D>().get(missiles.front());
     EXPECT_LT(body.velocityX, 0.0F);
     EXPECT_FLOAT_EQ(body.velocityY, 0.0F);
 }
@@ -602,8 +603,8 @@ TEST_F(GameplayWithoutLevelTest, GunnerHoldsItsFireOffScreen) {
 }
 
 TEST_F(GameplayWithoutLevelTest, GunnerDiesOnTheFirstHitAndScores) {
-    const ecs::Entity ship = spawnShip(1, 200.0F, LANE_Y);
-    const ecs::Entity gunner = spawnGunner(registry(), 500.0F, LANE_Y);
+    const sq::ecs::Entity ship = spawnShip(1, 200.0F, LANE_Y);
+    const sq::ecs::Entity gunner = spawnGunner(registry(), 500.0F, LANE_Y);
     shoot(ship);
     run(0.5F);
     EXPECT_FALSE(registry().isAlive(gunner));
@@ -613,29 +614,29 @@ TEST_F(GameplayWithoutLevelTest, GunnerDiesOnTheFirstHitAndScores) {
 namespace {
 
 /** @brief Spawns an alien elite, as the level director does; motionless unless a speed is given. */
-ecs::Entity spawnElite(ecs::Registry& registry, const float x, const float y, const float speed = 0.0F) {
-    const ecs::Entity elite = registry.spawnEntity();
+sq::ecs::Entity spawnElite(sq::ecs::Registry& registry, const float x, const float y, const float speed = 0.0F) {
+    const sq::ecs::Entity elite = registry.spawnEntity();
     ::prefabs::buildAlienElite(elite, registry, {{"x", x}, {"y", y}, {"speed", speed}});
     registry.addComponent(elite, game::EntityNetState{.health = ::prefabs::DEFAULT_ALIEN_ELITE_HEALTH});
-    ecs::net::replicate(registry, elite, game::KIND_ALIEN_ELITE);
+    sq::net::replicate(registry, elite, game::KIND_ALIEN_ELITE);
     return elite;
 }
 
 }  // namespace
 
 TEST_F(GameplayWithoutLevelTest, EliteWeavesAroundItsHeight) {
-    const ecs::Entity elite = spawnElite(registry(), 900.0F, 360.0F, -70.0F);
+    const sq::ecs::Entity elite = spawnElite(registry(), 900.0F, 360.0F, -70.0F);
     float lowest = 360.0F;
     float highest = 360.0F;
     for (int i = 0; i < 30; ++i) {
         run(0.1F);
-        const float y = registry().getComponents<ecs::Transform>().get(elite).y;
+        const float y = registry().getComponents<sq::ecs::Transform>().get(elite).y;
         lowest = std::min(lowest, y);
         highest = std::max(highest, y);
     }
     EXPECT_LT(lowest, 360.0F - (::prefabs::DEFAULT_ALIEN_ELITE_AMPLITUDE * 0.8F));
     EXPECT_GT(highest, 360.0F + (::prefabs::DEFAULT_ALIEN_ELITE_AMPLITUDE * 0.8F));
-    EXPECT_LT(registry().getComponents<ecs::Transform>().get(elite).x, 900.0F) << "and still flies to the left";
+    EXPECT_LT(registry().getComponents<sq::ecs::Transform>().get(elite).x, 900.0F) << "and still flies to the left";
 }
 
 TEST_F(GameplayWithoutLevelTest, EliteFiresAFanOfThreeShots) {
@@ -645,8 +646,8 @@ TEST_F(GameplayWithoutLevelTest, EliteFiresAFanOfThreeShots) {
     const auto missiles = entitiesOf(game::KIND_MISSILE);
     ASSERT_EQ(missiles.size(), 3U);
     std::vector<float> slopes;
-    for (const ecs::Entity missile : missiles) {
-        const auto& body = registry().getComponents<ecs::RigidBody2D>().get(missile);
+    for (const sq::ecs::Entity missile : missiles) {
+        const auto& body = registry().getComponents<sq::ecs::RigidBody2D>().get(missile);
         EXPECT_LT(body.velocityX, 0.0F);
         EXPECT_EQ(registry().getComponents<game::EntityNetState>().get(missile).subtype,
                   ::prefabs::ALIEN_ELITE_SHOT_LOOK);
@@ -658,9 +659,9 @@ TEST_F(GameplayWithoutLevelTest, EliteFiresAFanOfThreeShots) {
 }
 
 TEST_F(GameplayWithoutLevelTest, EliteTakesSeveralHitsThenDropsAPowerUp) {
-    const ecs::Entity elite = spawnElite(registry(), 600.0F, 360.0F);
+    const sq::ecs::Entity elite = spawnElite(registry(), 600.0F, 360.0F);
     const auto hit = [this, elite] {
-        const ecs::Entity shot = registry().spawnEntity();
+        const sq::ecs::Entity shot = registry().spawnEntity();
         registry().addComponent(shot, game::EntityNetState{.subtype = 0});
         engine.eventBus().publish(rtype::server::collision::ShotHitEvent{
             .shot = shot, .target = elite, .targetCategory = prefabs::collision::ENEMY, .byPlayer = true});
@@ -677,7 +678,7 @@ TEST_F(GameplayWithoutLevelTest, EliteTakesSeveralHitsThenDropsAPowerUp) {
     run(FIXED_DT * 2);
     const auto drops = entitiesOf(game::KIND_POWER_UP);
     ASSERT_EQ(drops.size(), 1U);
-    EXPECT_NEAR(registry().getComponents<ecs::Transform>().get(drops.front()).x, 600.0F, 5.0F);
+    EXPECT_NEAR(registry().getComponents<sq::ecs::Transform>().get(drops.front()).x, 600.0F, 5.0F);
 }
 
 TEST_F(GameplayWithoutLevelTest, ScoresAreSentWhenTheyChangeAtMostFourTimesASecond) {
@@ -685,8 +686,8 @@ TEST_F(GameplayWithoutLevelTest, ScoresAreSentWhenTheyChangeAtMostFourTimesASeco
     engine.eventBus().subscribe<protocol::ScoreUpdate>(
         [&updates](const protocol::ScoreUpdate& update) { updates.push_back(update); });
     const auto kill = [this](const std::uint8_t player) {
-        const ecs::Entity enemy = spawnEnemy(900.0F, 600.0F);
-        const ecs::Entity shot = registry().spawnEntity();
+        const sq::ecs::Entity enemy = spawnEnemy(900.0F, 600.0F);
+        const sq::ecs::Entity shot = registry().spawnEntity();
         registry().addComponent(shot, game::EntityNetState{.subtype = player});
         engine.eventBus().publish(rtype::server::collision::ShotHitEvent{
             .shot = shot, .target = enemy, .targetCategory = prefabs::collision::ENEMY, .byPlayer = true});
@@ -716,8 +717,8 @@ TEST_F(GameplayTest, EnemiesThatLeaveTheScreenAreDestroyed) {
     run(15.0F);
     const auto enemies = entitiesOf(game::KIND_ALIEN_SCOUT);
     EXPECT_LT(enemies.size(), 6U);
-    for (const ecs::Entity enemy : enemies) {
-        EXPECT_GE(registry().getComponents<ecs::Transform>().get(enemy).x, -64.0F);
+    for (const sq::ecs::Entity enemy : enemies) {
+        EXPECT_GE(registry().getComponents<sq::ecs::Transform>().get(enemy).x, -64.0F);
     }
 }
 
@@ -727,46 +728,46 @@ TEST_F(GameplayWithoutLevelTest, NoLevelSpawnsNoEnemy) {
 }
 
 TEST_F(GameplayWithoutLevelTest, MissileHittingAShipDestroysIt) {
-    const ecs::Entity ship = spawnShip(1, 600.0F, 360.0F);
-    const ecs::Entity missile = registry().spawnEntity();
+    const sq::ecs::Entity ship = spawnShip(1, 600.0F, 360.0F);
+    const sq::ecs::Entity missile = registry().spawnEntity();
     ::prefabs::buildMissile(missile, registry(), {{"x", 700.0F}, {"y", 360.0F}});
-    ecs::net::replicate(registry(), missile, game::KIND_MISSILE);
+    sq::net::replicate(registry(), missile, game::KIND_MISSILE);
     run(0.5F);
 
     EXPECT_FALSE(registry().isAlive(missile));
     ASSERT_TRUE(registry().isAlive(ship));
-    EXPECT_FLOAT_EQ(registry().getComponents<ecs::Transform>().get(ship).x, shipSpawnPoint(1).x);
+    EXPECT_FLOAT_EQ(registry().getComponents<sq::ecs::Transform>().get(ship).x, shipSpawnPoint(1).x);
     EXPECT_NE(registry().getComponents<game::EntityNetState>().get(ship).flags & game::FLAG_INVULNERABLE, 0);
 }
 
 TEST_F(GameplayWithoutLevelTest, MissileGoesThroughARespawningShip) {
     const ShipSpawnPoint spawn = shipSpawnPoint(0);
-    const ecs::Entity ship = spawnShip(0, 600.0F, spawn.y);
-    const ecs::Entity first = registry().spawnEntity();
+    const sq::ecs::Entity ship = spawnShip(0, 600.0F, spawn.y);
+    const sq::ecs::Entity first = registry().spawnEntity();
     ::prefabs::buildMissile(first, registry(), {{"x", 700.0F}, {"y", spawn.y}});
     run(0.5F);
-    ASSERT_FLOAT_EQ(registry().getComponents<ecs::Transform>().get(ship).x, spawn.x);
+    ASSERT_FLOAT_EQ(registry().getComponents<sq::ecs::Transform>().get(ship).x, spawn.x);
 
     // Fired at the respawned ship: it flies through.
-    const ecs::Entity second = registry().spawnEntity();
+    const sq::ecs::Entity second = registry().spawnEntity();
     ::prefabs::buildMissile(second, registry(), {{"x", spawn.x + 100.0F}, {"y", spawn.y}});
     run(0.5F);
     EXPECT_TRUE(registry().isAlive(second));
-    EXPECT_LT(registry().getComponents<ecs::Transform>().get(second).x, spawn.x);
+    EXPECT_LT(registry().getComponents<sq::ecs::Transform>().get(second).x, spawn.x);
 }
 
 TEST_F(GameplayWithoutLevelTest, EnemyTouchingAShipDestroysIt) {
-    const ecs::Entity ship = spawnShip(0, 600.0F, 360.0F);
-    const ecs::Entity enemy = spawnEnemy(600.0F, 360.0F);
+    const sq::ecs::Entity ship = spawnShip(0, 600.0F, 360.0F);
+    const sq::ecs::Entity enemy = spawnEnemy(600.0F, 360.0F);
     run(0.2F);
 
     EXPECT_TRUE(registry().isAlive(enemy));
-    EXPECT_FLOAT_EQ(registry().getComponents<ecs::Transform>().get(ship).x, shipSpawnPoint(0).x);
+    EXPECT_FLOAT_EQ(registry().getComponents<sq::ecs::Transform>().get(ship).x, shipSpawnPoint(0).x);
     EXPECT_NE(registry().getComponents<game::EntityNetState>().get(ship).flags & game::FLAG_INVULNERABLE, 0);
 }
 
 TEST_F(GameplayWithoutLevelTest, PowerUpGivesRapidFire) {
-    const ecs::Entity ship = spawnShip(0, 100.0F, 360.0F);
+    const sq::ecs::Entity ship = spawnShip(0, 100.0F, 360.0F);
     // Holds the shoot button for 0.5 s, then counts the bullets: none has left the screen yet (900 px/s from x = 100).
     // Waits first for the bullets of the previous burst to leave.
     const auto burst = [&] {
@@ -780,7 +781,7 @@ TEST_F(GameplayWithoutLevelTest, PowerUpGivesRapidFire) {
     // One shot every 0.2 s: at 0, 0.2 and 0.4 s.
     EXPECT_EQ(burst(), 3U);
 
-    const ecs::Entity powerUp = registry().spawnEntity();
+    const sq::ecs::Entity powerUp = registry().spawnEntity();
     ::prefabs::buildPowerUp(powerUp, registry(), {{"x", 100.0F}, {"y", 360.0F}, {"speed", 0.0F}});
     run(0.1F);
     EXPECT_FALSE(registry().isAlive(powerUp));
@@ -809,8 +810,8 @@ TEST_F(BossFightTest, BossGetsTheScriptOfItsEvent) {
     run(1.1F);
     const auto spawned = bosses();
     ASSERT_EQ(spawned.size(), 1U);
-    ASSERT_TRUE(registry().hasComponent<scripting::ScriptComponent>(spawned.front()));
-    const auto& script = registry().getComponents<scripting::ScriptComponent>().get(spawned.front());
+    ASSERT_TRUE(registry().hasComponent<sq::scripting::ScriptComponent>(spawned.front()));
+    const auto& script = registry().getComponents<sq::scripting::ScriptComponent>().get(spawned.front());
     EXPECT_EQ(script.moduleName, "scripts/Boss");
     EXPECT_EQ(script.className, "Boss");
     EXPECT_TRUE(script.hasUpdate);
@@ -821,20 +822,20 @@ TEST_F(BossFightTest, BossFliesInAndStopsAtItsPlace) {
     run(5.0F);
     const auto spawned = bosses();
     ASSERT_EQ(spawned.size(), 1U);
-    const float stoppedAt = registry().getComponents<ecs::Transform>().get(spawned.front()).x;
+    const float stoppedAt = registry().getComponents<sq::ecs::Transform>().get(spawned.front()).x;
     EXPECT_LE(stoppedAt, prefabs::DEFAULT_BOSS_CORE_STOP_X);
     EXPECT_GT(stoppedAt, prefabs::DEFAULT_BOSS_CORE_STOP_X - 10.0F);
 
     run(2.0F);
-    EXPECT_FLOAT_EQ(registry().getComponents<ecs::Transform>().get(spawned.front()).x, stoppedAt);
+    EXPECT_FLOAT_EQ(registry().getComponents<sq::ecs::Transform>().get(spawned.front()).x, stoppedAt);
 }
 
 TEST_F(BossFightTest, ShotsWearTheBossDownThenTheScrollResumes) {
     run(4.0F);
-    const ecs::Entity ship = spawnShip(0, 200.0F, BOSS_Y);
+    const sq::ecs::Entity ship = spawnShip(0, 200.0F, BOSS_Y);
     const auto spawned = bosses();
     ASSERT_EQ(spawned.size(), 1U);
-    const ecs::Entity boss = spawned.front();
+    const sq::ecs::Entity boss = spawned.front();
 
     std::int64_t lowestHealth = BOSS_HEALTH;
     for (int volley = 0; volley < 40 && registry().isAlive(boss); ++volley) {
@@ -856,32 +857,33 @@ TEST_F(BossFightTest, ShotsWearTheBossDownThenTheScrollResumes) {
 
 TEST_F(BossPartsTest, PartsSpawnAsChildrenOfTheBossAndMoveWithIt) {
     run(1.1F);
-    const ecs::Entity core = boss();
-    ASSERT_NE(core, ecs::NULL_ENTITY);
+    const sq::ecs::Entity core = boss();
+    ASSERT_NE(core, sq::ecs::NULL_ENTITY);
     EXPECT_EQ(entitiesOf(game::KIND_BOSS_PART).size(), 3U) << "the part with an unknown role is skipped";
-    const ecs::Entity weak = part(prefabs::BossPartRole::WeakPoint);
-    ASSERT_NE(weak, ecs::NULL_ENTITY);
-    EXPECT_EQ(hierarchy::parentOf(registry(), weak), core);
-    const ecs::Entity turret = part(prefabs::BossPartRole::Turret);
+    const sq::ecs::Entity weak = part(prefabs::BossPartRole::WeakPoint);
+    ASSERT_NE(weak, sq::ecs::NULL_ENTITY);
+    EXPECT_EQ(sq::hierarchy::parentOf(registry(), weak), core);
+    const sq::ecs::Entity turret = part(prefabs::BossPartRole::Turret);
     EXPECT_EQ(registry().getComponents<game::EntityNetState>().get(turret).subtype, 5);
     EXPECT_EQ(registry().getComponents<game::EntityNetState>().get(turret).health, 2);
 
     run(1.0F);
-    const ecs::Transform center = registry().getComponents<ecs::Transform>().get(core);
+    const sq::ecs::Transform center = registry().getComponents<sq::ecs::Transform>().get(core);
     EXPECT_LT(center.x, 1300.0F) << "the boss flies in";
-    EXPECT_NEAR(registry().getComponents<ecs::Transform>().get(weak).x, center.x + WEAK_POINT_X, 3.0);
+    EXPECT_NEAR(registry().getComponents<sq::ecs::Transform>().get(weak).x, center.x + WEAK_POINT_X, 3.0);
     // Every part keeps its offset, not only the first one spawned.
-    const ecs::Transform armor = registry().getComponents<ecs::Transform>().get(part(prefabs::BossPartRole::Armor));
+    const sq::ecs::Transform armor =
+        registry().getComponents<sq::ecs::Transform>().get(part(prefabs::BossPartRole::Armor));
     EXPECT_NEAR(armor.x, center.x, 3.0);
     EXPECT_NEAR(armor.y, center.y - 60.0F, 3.0);
-    const ecs::Transform gun = registry().getComponents<ecs::Transform>().get(turret);
+    const sq::ecs::Transform gun = registry().getComponents<sq::ecs::Transform>().get(turret);
     EXPECT_NEAR(gun.x, center.x, 3.0);
     EXPECT_NEAR(gun.y, center.y + 60.0F, 3.0);
 }
 
 TEST_F(BossPartsTest, OnlyTheWeakPointHurtsTheBoss) {
     run(1.1F);
-    const ecs::Entity core = boss();
+    const sq::ecs::Entity core = boss();
     hit(core);
     hit(part(prefabs::BossPartRole::Armor));
     EXPECT_EQ(health(core), BOSS_HEALTH) << "the body and the armor stop the shots";
@@ -893,7 +895,7 @@ TEST_F(BossPartsTest, OnlyTheWeakPointHurtsTheBoss) {
 
 TEST_F(BossPartsTest, TurretIsDestroyedAloneAndScores) {
     run(1.1F);
-    const ecs::Entity turret = part(prefabs::BossPartRole::Turret);
+    const sq::ecs::Entity turret = part(prefabs::BossPartRole::Turret);
     hit(turret);
     EXPECT_TRUE(registry().isAlive(turret));
     hit(turret);
@@ -907,7 +909,7 @@ TEST_F(BossPartsTest, KillingTheBossThroughItsWeakPointDestroysEveryPart) {
     for (std::int64_t i = 0; i < BOSS_HEALTH; ++i) {
         hit(part(prefabs::BossPartRole::WeakPoint));
     }
-    EXPECT_EQ(boss(), ecs::NULL_ENTITY);
+    EXPECT_EQ(boss(), sq::ecs::NULL_ENTITY);
     EXPECT_TRUE(entitiesOf(game::KIND_BOSS_PART).empty());
     EXPECT_EQ(combat().score(0), POINTS_PER_KILL);
     run(FIXED_DT * 2);
@@ -946,8 +948,8 @@ TEST_F(TerrainTest, TerrainEntersFromTheRightColumnByColumn) {
     const auto entering = columns();
     ASSERT_FALSE(entering.empty());
     EXPECT_LT(entering.size(), 3U) << "blocks are built as they enter the screen";
-    for (const ecs::Entity column : entering) {
-        const auto& transform = registry().getComponents<ecs::Transform>().get(column);
+    for (const sq::ecs::Entity column : entering) {
+        const auto& transform = registry().getComponents<sq::ecs::Transform>().get(column);
         EXPECT_GT(transform.x, 1280.0F);
         EXPECT_FLOAT_EQ(transform.y, 720.0F - (TERRAIN_HEIGHT / 2.0F));
         EXPECT_EQ(registry().getComponents<game::EntityNetState>().get(column).subtype,
@@ -963,16 +965,16 @@ TEST_F(TerrainTest, TerrainScrollsAtTheScrollSpeed) {
     run(1.1F);
     const auto entering = columns();
     ASSERT_FALSE(entering.empty());
-    const float before = registry().getComponents<ecs::Transform>().get(entering.front()).x;
+    const float before = registry().getComponents<sq::ecs::Transform>().get(entering.front()).x;
     run(1.0F);
-    const float after = registry().getComponents<ecs::Transform>().get(entering.front()).x;
+    const float after = registry().getComponents<sq::ecs::Transform>().get(entering.front()).x;
     EXPECT_NEAR(before - after, LEVEL_SPEED, 2.0F);
 }
 
 TEST_F(TerrainTest, ShipTouchingTheTerrainRespawnsAtItsStart) {
-    const ecs::Entity grounded = spawnShip(1, 1200.0F, 700.0F);
-    const ecs::Entity flying = spawnShip(0, 1200.0F, LANE_Y);
-    const auto& transforms = registry().getComponents<ecs::Transform>();
+    const sq::ecs::Entity grounded = spawnShip(1, 1200.0F, 700.0F);
+    const sq::ecs::Entity flying = spawnShip(0, 1200.0F, LANE_Y);
+    const auto& transforms = registry().getComponents<sq::ecs::Transform>();
     for (int step = 0; step < 400 && transforms.get(grounded).x == 1200.0F; ++step) {
         run(FIXED_DT);
     }
@@ -988,14 +990,14 @@ TEST_F(TerrainTest, ShipTouchingTheTerrainRespawnsAtItsStart) {
 
 TEST_F(RespawnTest, RespawnedShipCannotBeDestroyedForItsDuration) {
     run(1.5F);
-    const ecs::Entity ship = spawnShip(0, 200.0F, LANE_Y);
+    const sq::ecs::Entity ship = spawnShip(0, 200.0F, LANE_Y);
     crash(ship);
     const ShipSpawnPoint spawn = shipSpawnPoint(0);
-    ASSERT_FLOAT_EQ(registry().getComponents<ecs::Transform>().get(ship).x, spawn.x);
+    ASSERT_FLOAT_EQ(registry().getComponents<sq::ecs::Transform>().get(ship).x, spawn.x);
 
     // Back on the terrain while invulnerable: nothing happens.
-    const ecs::Transform column = registry().getComponents<ecs::Transform>().get(columns().front());
-    auto& transform = registry().getComponents<ecs::Transform>().get(ship);
+    const sq::ecs::Transform column = registry().getComponents<sq::ecs::Transform>().get(columns().front());
+    auto& transform = registry().getComponents<sq::ecs::Transform>().get(ship);
     transform.x = column.x;
     transform.y = column.y;
     run(RESPAWN_DURATION - 0.5F);
@@ -1010,12 +1012,12 @@ TEST_F(RespawnTest, RespawnedShipCannotBeDestroyedForItsDuration) {
 
 TEST_F(RespawnTest, ShipStillInTheTerrainWhenItsRespawnEndsIsDestroyedAgain) {
     run(1.5F);
-    const ecs::Entity ship = spawnShip(0, 200.0F, LANE_Y);
+    const sq::ecs::Entity ship = spawnShip(0, 200.0F, LANE_Y);
     crash(ship);
 
     // Parked in the terrain for the whole respawn: its contact began while it could not be hit.
-    const ecs::Transform block = registry().getComponents<ecs::Transform>().get(columns().front());
-    auto& transform = registry().getComponents<ecs::Transform>().get(ship);
+    const sq::ecs::Transform block = registry().getComponents<sq::ecs::Transform>().get(columns().front());
+    auto& transform = registry().getComponents<sq::ecs::Transform>().get(ship);
     transform.x = block.x;
     transform.y = block.y;
     run(RESPAWN_DURATION + 0.2F);
@@ -1026,17 +1028,17 @@ TEST_F(RespawnTest, ShipStillInTheTerrainWhenItsRespawnEndsIsDestroyedAgain) {
 
 TEST_F(RespawnTest, ScrollWaitsDuringTheRespawn) {
     run(1.5F);
-    const ecs::Entity ship = spawnShip(0, 200.0F, LANE_Y);
+    const sq::ecs::Entity ship = spawnShip(0, 200.0F, LANE_Y);
     crash(ship);
     EXPECT_FLOAT_EQ(player().speed(), 0.0F);
 
     // The columns take the new speed on the next step.
     run(FIXED_DT);
-    const ecs::Entity column = columns().front();
-    const float before = registry().getComponents<ecs::Transform>().get(column).x;
+    const sq::ecs::Entity column = columns().front();
+    const float before = registry().getComponents<sq::ecs::Transform>().get(column).x;
     run(RESPAWN_DURATION - 0.5F);
     EXPECT_FLOAT_EQ(player().speed(), 0.0F);
-    EXPECT_FLOAT_EQ(registry().getComponents<ecs::Transform>().get(column).x, before) << "the terrain waits too";
+    EXPECT_FLOAT_EQ(registry().getComponents<sq::ecs::Transform>().get(column).x, before) << "the terrain waits too";
 
     run(1.0F);
     EXPECT_FLOAT_EQ(player().speed(), LEVEL_SPEED);
@@ -1046,7 +1048,7 @@ TEST_F(RespawnDuringBossTest, RespawnAndBossFightBothHoldTheScroll) {
     run(2.6F);
     const auto bosses = entitiesOf(game::KIND_BOSS_CORE);
     ASSERT_EQ(bosses.size(), 1U);
-    const ecs::Entity ship = spawnShip(0, 200.0F, LANE_Y);
+    const sq::ecs::Entity ship = spawnShip(0, 200.0F, LANE_Y);
     crash(ship);
 
     // The boss dies first: the respawn still holds the scroll.
@@ -1101,7 +1103,8 @@ class ScriptedBossTest : public ::testing::Test {
      * @param extra Parameters added to the boss event, such as its parts.
      */
     explicit ScriptedBossTest(const std::optional<std::filesystem::path>& shipped = std::nullopt,
-                              const std::string_view source = TEST_BOSS_SCRIPT, const prefabs::PrefabParams& extra = {})
+                              const std::string_view source = TEST_BOSS_SCRIPT,
+                              const sq::prefabs::PrefabParams& extra = {})
         : tempDir(std::filesystem::temp_directory_path() /
                   ("rtype_test_boss_" + std::to_string(::testing::UnitTest::GetInstance()->random_seed()))),
           scriptPath(shipped.value_or(tempDir / "TestBoss.wren")),
@@ -1115,25 +1118,25 @@ class ScriptedBossTest : public ::testing::Test {
         auto built = std::make_shared<level::Level>();
         built->dataRoot = scriptPath.parent_path();
         built->scrollSpeed = LEVEL_SPEED;
-        prefabs::PrefabParams params{{"prefab", std::string("boss_core")},
-                                     {"x", 900.0},
-                                     {"y", 360.0},
-                                     {"script", scriptPath.filename().generic_string()}};
+        sq::prefabs::PrefabParams params{{"prefab", std::string("boss_core")},
+                                         {"x", 900.0},
+                                         {"y", 360.0},
+                                         {"script", scriptPath.filename().generic_string()}};
         params.merge(extra);
         built->timeline.add({.position = 0.0F, .type = std::string(level::EVENT_BOSS), .params = std::move(params)});
 
         engine.setFixedDeltaTime(FIXED_DT);
-        engine.addPlugin<systems::PhysicsPlugin>();
-        engine.addPlugin<hierarchy::HierarchyPlugin>();
-        engine.addPlugin<timeline::TimelinePlugin>();
+        engine.addPlugin<sq::systems::PhysicsPlugin>();
+        engine.addPlugin<sq::hierarchy::HierarchyPlugin>();
+        engine.addPlugin<sq::timeline::TimelinePlugin>();
         rtype::server::gameplay::addGameplayPlugins(engine, built);
-        engine.addPlugin<prefabs::PrefabPlugin>();
-        engine.addPlugin<scripting::ScriptPlugin>(scripting::ScriptTick::FixedStep);
-        engine.addPlugin<prefabs::PrefabScriptingPlugin>();
+        engine.addPlugin<sq::prefabs::PrefabPlugin>();
+        engine.addPlugin<sq::scripting::ScriptPlugin>(sq::scripting::ScriptTick::FixedStep);
+        engine.addPlugin<sq::prefabs::PrefabScriptingPlugin>();
         engine.init();
-        prefabs::PrefabManager& manager = engine.getPlugin<prefabs::PrefabPlugin>().manager();
+        sq::prefabs::PrefabManager& manager = engine.getPlugin<sq::prefabs::PrefabPlugin>().manager();
         rtype::server::gameplay::registerScriptPrefabs(manager);
-        scripting::ScriptSystem& scripts = engine.getPlugin<scripting::ScriptPlugin>().scriptSystem();
+        sq::scripting::ScriptSystem& scripts = engine.getPlugin<sq::scripting::ScriptPlugin>().scriptSystem();
         scripts.setScriptRoot(built->dataRoot);
         bound = rtype::server::gameplay::bindScriptComponents(scripts);
     }
@@ -1158,20 +1161,21 @@ class ScriptedBossTest : public ::testing::Test {
     }
 
     /** @brief Replicated entities of a kind. */
-    [[nodiscard]] std::vector<ecs::Entity> entitiesOf(const std::uint32_t kind) {
-        std::vector<ecs::Entity> found;
-        engine.registry().runSystem<ecs::Replicated>([&](const ecs::Entity entity, const ecs::Replicated& replicated) {
-            if (replicated.kind == kind) {
-                found.push_back(entity);
-            }
-        });
+    [[nodiscard]] std::vector<sq::ecs::Entity> entitiesOf(const std::uint32_t kind) {
+        std::vector<sq::ecs::Entity> found;
+        engine.registry().runSystem<sq::ecs::Replicated>(
+            [&](const sq::ecs::Entity entity, const sq::ecs::Replicated& replicated) {
+                if (replicated.kind == kind) {
+                    found.push_back(entity);
+                }
+            });
         return found;
     }
 
     std::filesystem::path tempDir;
     std::filesystem::path scriptPath;
     double now = 0.0;
-    engine::Engine engine;
+    sq::engine::Engine engine;
     bool bound = false;
 };
 
@@ -1181,7 +1185,7 @@ TEST_F(ScriptedBossTest, ScriptMovesItsBossAndItsSpawnsAreReplicated) {
 
     const auto bosses = entitiesOf(game::KIND_BOSS_CORE);
     ASSERT_EQ(bosses.size(), 1U);
-    EXPECT_FLOAT_EQ(engine.registry().getComponents<ecs::Transform>().get(bosses.front()).y, 200.0F);
+    EXPECT_FLOAT_EQ(engine.registry().getComponents<sq::ecs::Transform>().get(bosses.front()).y, 200.0F);
 
     const auto missiles = entitiesOf(rtype::protocol::makeEntityKind("missile"));
     ASSERT_EQ(missiles.size(), 1U);
@@ -1189,7 +1193,7 @@ TEST_F(ScriptedBossTest, ScriptMovesItsBossAndItsSpawnsAreReplicated) {
 }
 
 TEST_F(ScriptedBossTest, ScriptsCannotSpawnABoss) {
-    const prefabs::PrefabManager& manager = engine.getPlugin<prefabs::PrefabPlugin>().manager();
+    const sq::prefabs::PrefabManager& manager = engine.getPlugin<sq::prefabs::PrefabPlugin>().manager();
     EXPECT_TRUE(manager.has("missile"));
     EXPECT_TRUE(manager.has("alien_scout"));
     EXPECT_FALSE(manager.has("boss_core")) << "a boss fight only starts from a level boss event";
@@ -1199,7 +1203,7 @@ TEST_F(ScriptedBossTest, ScriptsOnlyRunOnFixedSteps) {
     run(0.2F);
     const auto bosses = entitiesOf(game::KIND_BOSS_CORE);
     ASSERT_EQ(bosses.size(), 1U);
-    auto& transform = engine.registry().getComponents<ecs::Transform>().get(bosses.front());
+    auto& transform = engine.registry().getComponents<sq::ecs::Transform>().get(bosses.front());
     transform.y = 360.0F;
 
     // The room loop advances the engine far more often than the simulation rate: no fixed step, no script update.
@@ -1268,8 +1272,8 @@ class CombatBindingTest : public ScriptedBossTest {
     /** @brief Heights of the probes the script spawned. */
     [[nodiscard]] std::vector<float> probes() {
         std::vector<float> heights;
-        for (const ecs::Entity scout : entitiesOf(game::KIND_ALIEN_SCOUT)) {
-            heights.push_back(engine.registry().getComponents<ecs::Transform>().get(scout).y);
+        for (const sq::ecs::Entity scout : entitiesOf(game::KIND_ALIEN_SCOUT)) {
+            heights.push_back(engine.registry().getComponents<sq::ecs::Transform>().get(scout).y);
         }
         std::ranges::sort(heights);
         return heights;
@@ -1285,14 +1289,14 @@ TEST_F(CombatBindingTest, ScriptsReadTheHitPointsAndThePartsOfTheirBoss) {
 TEST_F(CombatBindingTest, AimedShotFliesTowardsTheNearestShipAtAClampedSpeed) {
     ASSERT_TRUE(bound);
     // Below and to the left of the boss (900, 360).
-    const ecs::Entity ship = engine.registry().spawnEntity();
-    engine.registry().addComponent(ship, ecs::Transform{.x = 300.0F, .y = 600.0F});
-    ecs::net::replicate(engine.registry(), ship, game::KIND_PLAYER_SHIP);
+    const sq::ecs::Entity ship = engine.registry().spawnEntity();
+    engine.registry().addComponent(ship, sq::ecs::Transform{.x = 300.0F, .y = 600.0F});
+    sq::net::replicate(engine.registry(), ship, game::KIND_PLAYER_SHIP);
     run(0.2F);
 
     const auto missiles = entitiesOf(game::KIND_MISSILE);
     ASSERT_EQ(missiles.size(), 1U);
-    const auto& body = engine.registry().getComponents<ecs::RigidBody2D>().get(missiles.front());
+    const auto& body = engine.registry().getComponents<sq::ecs::RigidBody2D>().get(missiles.front());
     EXPECT_LT(body.velocityX, 0.0F);
     EXPECT_GT(body.velocityY, 0.0F);
     EXPECT_NEAR(std::hypot(body.velocityX, body.velocityY), rtype::server::gameplay::MAX_AIMED_SHOT_SPEED, 1.0);
@@ -1317,11 +1321,11 @@ TEST_F(ShippedBossScriptTest, BossScriptAttacksAndDropsAPowerUpWhenKilled) {
     run(1.0F);
     const auto bosses = entitiesOf(game::KIND_BOSS_CORE);
     ASSERT_EQ(bosses.size(), 1U);
-    ASSERT_TRUE(engine.getPlugin<scripting::ScriptPlugin>().scriptSystem().hasScriptInstance(bosses.front()));
-    const float startY = engine.registry().getComponents<ecs::Transform>().get(bosses.front()).y;
+    ASSERT_TRUE(engine.getPlugin<sq::scripting::ScriptPlugin>().scriptSystem().hasScriptInstance(bosses.front()));
+    const float startY = engine.registry().getComponents<sq::ecs::Transform>().get(bosses.front()).y;
 
     run(4.0F);
-    EXPECT_NE(engine.registry().getComponents<ecs::Transform>().get(bosses.front()).y, startY) << "the boss swings";
+    EXPECT_NE(engine.registry().getComponents<sq::ecs::Transform>().get(bosses.front()).y, startY) << "the boss swings";
     EXPECT_FALSE(entitiesOf(rtype::protocol::makeEntityKind("missile")).empty()) << "the boss fires";
 
     engine.registry().killEntity(bosses.front());
@@ -1343,18 +1347,18 @@ TEST(LevelDirectorPluginTest, EachEventTypeHasItsPrefabs) {
 }
 
 TEST_F(GameplayTest, ShootingSpawnsABulletTaggedWithItsShooter) {
-    const ecs::Entity ship = spawnShip(1, 200.0F, LANE_Y);
+    const sq::ecs::Entity ship = spawnShip(1, 200.0F, LANE_Y);
     shoot(ship);
     run(FIXED_DT * 2);
 
     const auto bullets = entitiesOf(game::KIND_PLAYER_BULLET);
     ASSERT_EQ(bullets.size(), 1U);
     EXPECT_EQ(registry().getComponents<game::EntityNetState>().get(bullets.front()).subtype, 1);
-    EXPECT_GT(registry().getComponents<ecs::Transform>().get(bullets.front()).x, 200.0F);
+    EXPECT_GT(registry().getComponents<sq::ecs::Transform>().get(bullets.front()).x, 200.0F);
 }
 
 TEST_F(GameplayTest, HoldingShootFiresAtTheCooldownRate) {
-    const ecs::Entity ship = spawnShip(0, 200.0F, LANE_Y);
+    const sq::ecs::Entity ship = spawnShip(0, 200.0F, LANE_Y);
     shoot(ship);
     shoot(ship);
     run(FIXED_DT * 2);
@@ -1367,8 +1371,8 @@ TEST_F(GameplayTest, HoldingShootFiresAtTheCooldownRate) {
 }
 
 TEST_F(GameplayTest, KillingAnEnemyScoresForTheShooterOnly) {
-    const ecs::Entity ship = spawnShip(1, 200.0F, LANE_Y);
-    const ecs::Entity enemy = spawnEnemy(500.0F, LANE_Y);
+    const sq::ecs::Entity ship = spawnShip(1, 200.0F, LANE_Y);
+    const sq::ecs::Entity enemy = spawnEnemy(500.0F, LANE_Y);
     shoot(ship);
     run(0.5F);
 
@@ -1379,8 +1383,8 @@ TEST_F(GameplayTest, KillingAnEnemyScoresForTheShooterOnly) {
 }
 
 TEST_F(GameplayTest, EachPlayerHasItsOwnScore) {
-    const ecs::Entity first = spawnShip(0, 200.0F, LANE_Y);
-    const ecs::Entity second = spawnShip(1, 200.0F, LANE_Y + 600.0F);
+    const sq::ecs::Entity first = spawnShip(0, 200.0F, LANE_Y);
+    const sq::ecs::Entity second = spawnShip(1, 200.0F, LANE_Y + 600.0F);
     spawnEnemy(500.0F, LANE_Y);
     spawnEnemy(700.0F, LANE_Y);
     spawnEnemy(500.0F, LANE_Y + 600.0F);
@@ -1397,8 +1401,8 @@ TEST_F(GameplayTest, EachPlayerHasItsOwnScore) {
 }
 
 TEST_F(GameplayTest, ShipWithoutNetStateCannotShoot) {
-    const ecs::Entity entity = registry().spawnEntity();
-    registry().addComponent(entity, ecs::Transform{.x = 200.0F, .y = LANE_Y});
+    const sq::ecs::Entity entity = registry().spawnEntity();
+    registry().addComponent(entity, sq::ecs::Transform{.x = 200.0F, .y = LANE_Y});
     shoot(entity);
     run(FIXED_DT * 2);
     EXPECT_TRUE(entitiesOf(game::KIND_PLAYER_BULLET).empty());
@@ -1421,14 +1425,14 @@ class GameplayPluginAloneTest : public ::testing::Test {
     }
 
     double now = 0.0;
-    engine::Engine engine;
+    sq::engine::Engine engine;
 };
 
 }  // namespace
 
 TEST_F(GameplayPluginAloneTest, BossFightPluginReportsTheStartAndTheEndOfAFight) {
-    engine.addPlugin<systems::PhysicsPlugin>();
-    engine.addPlugin<hierarchy::HierarchyPlugin>();
+    engine.addPlugin<sq::systems::PhysicsPlugin>();
+    engine.addPlugin<sq::hierarchy::HierarchyPlugin>();
     engine.addPlugin<rtype::server::gameplay::BossFightPlugin>();
     engine.init();
     int started = 0;
@@ -1447,17 +1451,17 @@ TEST_F(GameplayPluginAloneTest, BossFightPluginReportsTheStartAndTheEndOfAFight)
     EXPECT_EQ(ended, 0);
 
     engine.registry().runSystem<prefabs::BossCore>(
-        [this](const ecs::Entity boss, const prefabs::BossCore& /*core*/) { engine.registry().killEntity(boss); });
+        [this](const sq::ecs::Entity boss, const prefabs::BossCore& /*core*/) { engine.registry().killEntity(boss); });
     run(FIXED_DT * 2);
     EXPECT_EQ(ended, 1);
 }
 
 TEST_F(GameplayPluginAloneTest, LevelDirectorHoldsTheScrollUntilEveryHoldIsOver) {
-    engine.addPlugin<timeline::TimelinePlugin>();
+    engine.addPlugin<sq::timeline::TimelinePlugin>();
     engine.addPlugin<LevelDirectorPlugin>(testLevel());
     engine.init();
-    timeline::TimelinePlugin& player = engine.getPlugin<timeline::TimelinePlugin>();
-    ecs::EventBus& bus = engine.eventBus();
+    sq::timeline::TimelinePlugin& player = engine.getPlugin<sq::timeline::TimelinePlugin>();
+    sq::events::EventBus& bus = engine.eventBus();
 
     bus.publish(rtype::server::gameplay::BossFightStarted{});
     bus.publish(rtype::server::gameplay::ShipRespawnStarted{.ship = 0});
@@ -1479,20 +1483,20 @@ TEST_F(GameplayPluginAloneTest, AShipLosesALifeEachTimeThenIsEliminated) {
         [&eliminated](const rtype::server::gameplay::ShipEliminated& /*event*/) { ++eliminated; });
     engine.eventBus().subscribe<rtype::server::gameplay::AllShipsEliminated>(
         [&lost](const rtype::server::gameplay::AllShipsEliminated& /*event*/) { ++lost; });
-    ecs::Registry& registry = engine.registry();
+    sq::ecs::Registry& registry = engine.registry();
     const auto ship = [&registry](const std::uint8_t player) {
-        const ecs::Entity entity = registry.spawnEntity();
-        registry.addComponent(entity, ecs::Transform{.x = 500.0F, .y = 300.0F});
+        const sq::ecs::Entity entity = registry.spawnEntity();
+        registry.addComponent(entity, sq::ecs::Transform{.x = 500.0F, .y = 300.0F});
         registry.addComponent(entity, game::EntityNetState{.subtype = player});
         rtype::server::gameplay::giveLives(registry, entity);
         return entity;
     };
-    const ecs::Entity first = ship(0);
-    const ecs::Entity second = ship(1);
+    const sq::ecs::Entity first = ship(0);
+    const sq::ecs::Entity second = ship(1);
     EXPECT_EQ(registry.getComponents<game::EntityNetState>().get(first).health, rtype::server::gameplay::STARTING_LIVES)
         << "the lives are replicated as the health of the ship";
 
-    const auto destroy = [this](const ecs::Entity entity) {
+    const auto destroy = [this](const sq::ecs::Entity entity) {
         engine.eventBus().publish(rtype::server::gameplay::ShipDestroyed{.ship = entity});
         run(RESPAWN_DURATION + 0.1F);
     };
@@ -1507,7 +1511,8 @@ TEST_F(GameplayPluginAloneTest, AShipLosesALifeEachTimeThenIsEliminated) {
     const auto& state = registry.getComponents<game::EntityNetState>().get(first);
     EXPECT_EQ(state.health, 0);
     EXPECT_NE(state.flags & game::FLAG_ELIMINATED, 0);
-    EXPECT_FLOAT_EQ(registry.getComponents<ecs::Transform>().get(first).x, rtype::server::gameplay::ELIMINATED_SHIP_X);
+    EXPECT_FLOAT_EQ(registry.getComponents<sq::ecs::Transform>().get(first).x,
+                    rtype::server::gameplay::ELIMINATED_SHIP_X);
     EXPECT_FALSE(registry.hasComponent<rtype::server::gameplay::Respawning>(first)) << "no respawn";
 
     destroy(first);
@@ -1525,13 +1530,13 @@ TEST_F(GameplayPluginAloneTest, RespawnPluginBringsADestroyedShipBack) {
     int over = 0;
     engine.eventBus().subscribe<rtype::server::gameplay::AllRespawnsOver>(
         [&over](const rtype::server::gameplay::AllRespawnsOver& /*event*/) { ++over; });
-    ecs::Registry& registry = engine.registry();
-    const ecs::Entity ship = registry.spawnEntity();
-    registry.addComponent(ship, ecs::Transform{.x = 900.0F, .y = 500.0F});
+    sq::ecs::Registry& registry = engine.registry();
+    const sq::ecs::Entity ship = registry.spawnEntity();
+    registry.addComponent(ship, sq::ecs::Transform{.x = 900.0F, .y = 500.0F});
     registry.addComponent(ship, game::EntityNetState{.subtype = 2});
 
     engine.eventBus().publish(rtype::server::gameplay::ShipDestroyed{.ship = ship});
-    EXPECT_FLOAT_EQ(registry.getComponents<ecs::Transform>().get(ship).y, shipSpawnPoint(2).y);
+    EXPECT_FLOAT_EQ(registry.getComponents<sq::ecs::Transform>().get(ship).y, shipSpawnPoint(2).y);
     EXPECT_NE(registry.getComponents<game::EntityNetState>().get(ship).flags & game::FLAG_INVULNERABLE, 0);
 
     run(RESPAWN_DURATION + 0.1F);
@@ -1555,21 +1560,21 @@ class WardenTest : public ScriptedBossTest {
 
     /** @brief A ship far to the left, that the aimed shots go for. */
     void spawnTarget() {
-        const ecs::Entity ship = engine.registry().spawnEntity();
-        engine.registry().addComponent(ship, ecs::Transform{.x = 200.0F, .y = 600.0F});
-        ecs::net::replicate(engine.registry(), ship, game::KIND_PLAYER_SHIP);
+        const sq::ecs::Entity ship = engine.registry().spawnEntity();
+        engine.registry().addComponent(ship, sq::ecs::Transform{.x = 200.0F, .y = 600.0F});
+        sq::net::replicate(engine.registry(), ship, game::KIND_PLAYER_SHIP);
     }
 
     /** @brief Whether a missile flies downwards, as only an aimed shot at the target does. */
     [[nodiscard]] bool anAimedShotFlies() {
-        return std::ranges::any_of(entitiesOf(game::KIND_MISSILE), [this](const ecs::Entity missile) {
-            return engine.registry().getComponents<ecs::RigidBody2D>().get(missile).velocityY > 1.0F;
+        return std::ranges::any_of(entitiesOf(game::KIND_MISSILE), [this](const sq::ecs::Entity missile) {
+            return engine.registry().getComponents<sq::ecs::RigidBody2D>().get(missile).velocityY > 1.0F;
         });
     }
 
-    [[nodiscard]] std::vector<ecs::Entity> turrets() {
-        std::vector<ecs::Entity> found;
-        for (const ecs::Entity part : entitiesOf(game::KIND_BOSS_PART)) {
+    [[nodiscard]] std::vector<sq::ecs::Entity> turrets() {
+        std::vector<sq::ecs::Entity> found;
+        for (const sq::ecs::Entity part : entitiesOf(game::KIND_BOSS_PART)) {
             if (engine.registry().getComponents<prefabs::BossPart>().get(part).role == prefabs::BossPartRole::Turret) {
                 found.push_back(part);
             }
@@ -1594,9 +1599,9 @@ TEST_F(WardenTest, DriftsOnceInPlace) {
     run(3.2F);
     const auto bosses = entitiesOf(game::KIND_BOSS_CORE);
     ASSERT_EQ(bosses.size(), 1U);
-    const ecs::Transform before = engine.registry().getComponents<ecs::Transform>().get(bosses.front());
+    const sq::ecs::Transform before = engine.registry().getComponents<sq::ecs::Transform>().get(bosses.front());
     run(1.0F);
-    const ecs::Transform after = engine.registry().getComponents<ecs::Transform>().get(bosses.front());
+    const sq::ecs::Transform after = engine.registry().getComponents<sq::ecs::Transform>().get(bosses.front());
     EXPECT_GT(std::abs(after.y - before.y), 10.0F);
 }
 
@@ -1604,7 +1609,7 @@ TEST_F(WardenTest, WithoutTurretsTheCoreFiresItself) {
     ASSERT_TRUE(bound);
     spawnTarget();
     run(0.5F);
-    for (const ecs::Entity turret : turrets()) {
+    for (const sq::ecs::Entity turret : turrets()) {
         engine.registry().killEntity(turret);
     }
     run(5.0F);
@@ -1640,9 +1645,9 @@ class BastionTest : public ScriptedBossTest {
                             {"parts.4.role", std::string("turret")},
                             {"parts.4.y", 110.0}}) {}
 
-    [[nodiscard]] ecs::Entity boss() {
+    [[nodiscard]] sq::ecs::Entity boss() {
         const auto found = entitiesOf(game::KIND_BOSS_CORE);
-        return found.empty() ? ecs::NULL_ENTITY : found.front();
+        return found.empty() ? sq::ecs::NULL_ENTITY : found.front();
     }
 
     /** @brief Sets the hit points of the boss, as the shots on its weak point would. */
@@ -1652,12 +1657,13 @@ class BastionTest : public ScriptedBossTest {
 
     /** @brief Missiles flying in a direction: (sx, sy) are the signs of the velocity to look for, 0 for any. */
     [[nodiscard]] std::size_t missilesFlying(const int sx, const int sy) {
-        return static_cast<std::size_t>(std::ranges::count_if(entitiesOf(game::KIND_MISSILE), [&](const ecs::Entity m) {
-            const auto& body = engine.registry().getComponents<ecs::RigidBody2D>().get(m);
-            const bool xOk = sx == 0 || (sx > 0 ? body.velocityX > 1.0F : body.velocityX < -1.0F);
-            const bool yOk = sy == 0 || (sy > 0 ? body.velocityY > 1.0F : body.velocityY < -1.0F);
-            return xOk && yOk;
-        }));
+        return static_cast<std::size_t>(
+            std::ranges::count_if(entitiesOf(game::KIND_MISSILE), [&](const sq::ecs::Entity m) {
+                const auto& body = engine.registry().getComponents<sq::ecs::RigidBody2D>().get(m);
+                const bool xOk = sx == 0 || (sx > 0 ? body.velocityX > 1.0F : body.velocityX < -1.0F);
+                const bool yOk = sy == 0 || (sy > 0 ? body.velocityY > 1.0F : body.velocityY < -1.0F);
+                return xOk && yOk;
+            }));
     }
 };
 
@@ -1666,7 +1672,7 @@ TEST_F(BastionTest, SiegeFiresStraightLinesFromTheTurrets) {
     run(3.5F);
     EXPECT_GE(missilesFlying(-1, 0), 2U);
     EXPECT_EQ(missilesFlying(1, 0), 0U) << "nothing flies backwards yet";
-    for (const ecs::Entity missile : entitiesOf(game::KIND_MISSILE)) {
+    for (const sq::ecs::Entity missile : entitiesOf(game::KIND_MISSILE)) {
         EXPECT_EQ(engine.registry().getComponents<game::EntityNetState>().get(missile).subtype,
                   ::prefabs::ALIEN_GUNNER_SHOT_LOOK)
             << "red shots, like the turrets";
@@ -1676,14 +1682,14 @@ TEST_F(BastionTest, SiegeFiresStraightLinesFromTheTurrets) {
 TEST_F(BastionTest, AssaultChargesTowardsTheShipsAndComesBack) {
     ASSERT_TRUE(bound);
     run(3.2F);
-    const float home = engine.registry().getComponents<ecs::Transform>().get(boss()).x;
+    const float home = engine.registry().getComponents<sq::ecs::Transform>().get(boss()).x;
     setHealth(15);
     // The siege round in progress ends at 4.8 s; the charge goes out for 0.8 s, then comes back.
     run(2.5F);
-    const float charged = engine.registry().getComponents<ecs::Transform>().get(boss()).x;
+    const float charged = engine.registry().getComponents<sq::ecs::Transform>().get(boss()).x;
     EXPECT_LT(charged, home - 200.0F);
     run(1.3F);
-    EXPECT_NEAR(engine.registry().getComponents<ecs::Transform>().get(boss()).x, home, 60.0F);
+    EXPECT_NEAR(engine.registry().getComponents<sq::ecs::Transform>().get(boss()).x, home, 60.0F);
 }
 
 TEST_F(BastionTest, LastStandFiresAllAround) {
@@ -1709,15 +1715,15 @@ TEST_F(BastionAloneTest, WithoutTurretsItsLinesComeFromTheHullAndShotsHurtIt) {
     ASSERT_TRUE(bound);
     run(3.5F);
     std::size_t lines = 0;
-    for (const ecs::Entity missile : entitiesOf(game::KIND_MISSILE)) {
-        const auto& body = engine.registry().getComponents<ecs::RigidBody2D>().get(missile);
+    for (const sq::ecs::Entity missile : entitiesOf(game::KIND_MISSILE)) {
+        const auto& body = engine.registry().getComponents<sq::ecs::RigidBody2D>().get(missile);
         lines += body.velocityX < -1.0F && std::abs(body.velocityY) < 1.0F ? 1 : 0;
     }
     EXPECT_GE(lines, 2U);
 
     const auto bosses = entitiesOf(game::KIND_BOSS_CORE);
     ASSERT_EQ(bosses.size(), 1U);
-    const ecs::Entity shot = engine.registry().spawnEntity();
+    const sq::ecs::Entity shot = engine.registry().spawnEntity();
     engine.registry().addComponent(shot, game::EntityNetState{.subtype = 0});
     engine.eventBus().publish(rtype::server::collision::ShotHitEvent{
         .shot = shot, .target = bosses.front(), .targetCategory = prefabs::collision::ENEMY, .byPlayer = true});
@@ -1758,7 +1764,7 @@ LevelContent shippedLevel(const std::string& file) {
         return content;
     }
     EXPECT_EQ(loaded->timeline.events().back().type, level::EVENT_END) << file;
-    for (const timeline::TimelineEvent& event : loaded->timeline.events()) {
+    for (const sq::timeline::TimelineEvent& event : loaded->timeline.events()) {
         if (event.type == level::EVENT_SPAWN) {
             const auto prefab = event.params.get<std::string>("prefab", "");
             if (!std::ranges::contains(content.prefabs, prefab)) {

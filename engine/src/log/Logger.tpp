@@ -5,7 +5,7 @@
 
 #include "log/LogLevel.hpp"
 
-namespace engine::log {
+namespace sq::engine::log {
 
 template <typename... Args>
 void message(const Level level, const std::string_view tag, const Args&... args) {
@@ -38,4 +38,4 @@ void error(const std::string_view tag, const Args&... args) {
     message(Level::Error, tag, args...);
 }
 
-}  // namespace engine::log
+}  // namespace sq::engine::log

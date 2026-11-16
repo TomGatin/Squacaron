@@ -10,7 +10,7 @@
 
 #include "timeline/TimelineEvent.hpp"
 
-namespace timeline {
+namespace sq::timeline {
 
 namespace {
 
@@ -89,4 +89,4 @@ void Timeline::clear() noexcept {
     _cursor = 0.0;
 }
 
-}  // namespace timeline
+}  // namespace sq::timeline

@@ -13,7 +13,7 @@
 
 #include "assets/AssetKinds.hpp"
 
-namespace assets::detail {
+namespace sq::assets::detail {
 
 /** @brief Kind-independent operations of an `AssetCache`; handles are widened to 64 bits. */
 class IAssetCache {
@@ -126,4 +126,4 @@ class IAssetCache {
     virtual void keepStaleDeclarations() = 0;
 };
 
-}  // namespace assets::detail
+}  // namespace sq::assets::detail

@@ -8,7 +8,7 @@
 #include <cstdint>
 #include <limits>
 
-namespace scripting {
+namespace sq::scripting {
 
 /**
  * @brief Opaque identifier of what is running Wren code: a script entity, or anything an extension defines.
@@ -43,4 +43,4 @@ inline constexpr ScriptOwner EXTENSION_OWNER_BIT = ScriptOwner{1} << 63U;
     return (owner & EXTENSION_OWNER_BIT) == 0 && owner != NO_SCRIPT_OWNER;
 }
 
-}  // namespace scripting
+}  // namespace sq::scripting

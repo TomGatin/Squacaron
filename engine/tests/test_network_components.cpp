@@ -15,13 +15,13 @@
 
 namespace {
 
-ecs::NetInput input(const std::uint32_t sequence) {
-    return ecs::NetInput{.sequence = sequence, .held = {}, .axes = {}};
+sq::ecs::NetInput input(const std::uint32_t sequence) {
+    return sq::ecs::NetInput{.sequence = sequence, .held = {}, .axes = {}};
 }
 
 /** @brief Pops every pending input and returns the last processed sequence. */
-std::uint32_t drain(ecs::InputBuffer& buffer) {
-    while (ecs::net::popInput(buffer)) {
+std::uint32_t drain(sq::ecs::InputBuffer& buffer) {
+    while (sq::net::popInput(buffer)) {
     }
     return buffer.lastProcessed;
 }
@@ -29,27 +29,27 @@ std::uint32_t drain(ecs::InputBuffer& buffer) {
 }  // namespace
 
 TEST(NetworkComponents, DefaultValues) {
-    EXPECT_EQ(ecs::NetworkId{}.value, 0U);
-    EXPECT_EQ(ecs::NetworkOwner{}.client, 0U);
-    EXPECT_EQ(ecs::Replicated{}.kind, 0U);
-    const ecs::InputBuffer buffer;
+    EXPECT_EQ(sq::ecs::NetworkId{}.value, 0U);
+    EXPECT_EQ(sq::ecs::NetworkOwner{}.client, 0U);
+    EXPECT_EQ(sq::ecs::Replicated{}.kind, 0U);
+    const sq::ecs::InputBuffer buffer;
     EXPECT_TRUE(buffer.pending.empty());
     EXPECT_EQ(buffer.lastProcessed, 0U);
-    EXPECT_EQ(buffer.capacity, ecs::DEFAULT_MAX_PENDING_INPUTS);
+    EXPECT_EQ(buffer.capacity, sq::ecs::DEFAULT_MAX_PENDING_INPUTS);
 }
 
 TEST(NetworkComponents, WorkAsEcsComponents) {
-    ecs::Registry registry;
-    const ecs::Entity entity = registry.spawnEntity();
-    registry.emplaceComponent<ecs::NetworkId>(entity, 7U);
-    registry.emplaceComponent<ecs::NetworkOwner>(entity, 3U);
-    registry.emplaceComponent<ecs::Replicated>(entity, static_cast<std::uint32_t>(2));
-    registry.emplaceComponent<ecs::InputBuffer>(entity);
+    sq::ecs::Registry registry;
+    const sq::ecs::Entity entity = registry.spawnEntity();
+    registry.emplaceComponent<sq::ecs::NetworkId>(entity, 7U);
+    registry.emplaceComponent<sq::ecs::NetworkOwner>(entity, 3U);
+    registry.emplaceComponent<sq::ecs::Replicated>(entity, static_cast<std::uint32_t>(2));
+    registry.emplaceComponent<sq::ecs::InputBuffer>(entity);
 
     int visited = 0;
-    registry.runSystem<ecs::NetworkId, ecs::NetworkOwner, ecs::Replicated, ecs::InputBuffer>(
-        [&](ecs::Entity e, const ecs::NetworkId& id, const ecs::NetworkOwner& owner, const ecs::Replicated& replicated,
-            const ecs::InputBuffer&) {
+    registry.runSystem<sq::ecs::NetworkId, sq::ecs::NetworkOwner, sq::ecs::Replicated, sq::ecs::InputBuffer>(
+        [&](sq::ecs::Entity e, const sq::ecs::NetworkId& id, const sq::ecs::NetworkOwner& owner,
+            const sq::ecs::Replicated& replicated, const sq::ecs::InputBuffer&) {
             EXPECT_EQ(e, entity);
             EXPECT_EQ(id.value, 7U);
             EXPECT_EQ(owner.client, 3U);
@@ -60,35 +60,35 @@ TEST(NetworkComponents, WorkAsEcsComponents) {
 }
 
 TEST(InputQueue, PopsInSequenceOrder) {
-    ecs::InputBuffer buffer;
-    EXPECT_TRUE(ecs::net::pushInput(buffer, input(3)));
-    EXPECT_TRUE(ecs::net::pushInput(buffer, input(1)));
-    EXPECT_TRUE(ecs::net::pushInput(buffer, input(2)));
+    sq::ecs::InputBuffer buffer;
+    EXPECT_TRUE(sq::net::pushInput(buffer, input(3)));
+    EXPECT_TRUE(sq::net::pushInput(buffer, input(1)));
+    EXPECT_TRUE(sq::net::pushInput(buffer, input(2)));
 
     for (std::uint32_t expected = 1; expected <= 3; ++expected) {
-        const auto popped = ecs::net::popInput(buffer);
+        const auto popped = sq::net::popInput(buffer);
         ASSERT_TRUE(popped.has_value());
         EXPECT_EQ(popped->sequence, expected);
         EXPECT_EQ(buffer.lastProcessed, expected);
     }
-    EXPECT_FALSE(ecs::net::popInput(buffer).has_value());
+    EXPECT_FALSE(sq::net::popInput(buffer).has_value());
 }
 
 TEST(InputQueue, RejectsDuplicatesAndAlreadyProcessed) {
-    ecs::InputBuffer buffer;
-    EXPECT_TRUE(ecs::net::pushInput(buffer, input(5)));
-    EXPECT_FALSE(ecs::net::pushInput(buffer, input(5)));
-    (void)ecs::net::popInput(buffer);
+    sq::ecs::InputBuffer buffer;
+    EXPECT_TRUE(sq::net::pushInput(buffer, input(5)));
+    EXPECT_FALSE(sq::net::pushInput(buffer, input(5)));
+    (void)sq::net::popInput(buffer);
 
-    EXPECT_FALSE(ecs::net::pushInput(buffer, input(5)));
-    EXPECT_FALSE(ecs::net::pushInput(buffer, input(4)));
+    EXPECT_FALSE(sq::net::pushInput(buffer, input(5)));
+    EXPECT_FALSE(sq::net::pushInput(buffer, input(4)));
     EXPECT_TRUE(buffer.pending.empty());
 }
 
 TEST(InputQueue, OverflowDropsTheOldest) {
-    ecs::InputBuffer buffer{.capacity = 3};
+    sq::ecs::InputBuffer buffer{.capacity = 3};
     for (std::uint32_t seq = 1; seq <= 5; ++seq) {
-        ecs::net::pushInput(buffer, input(seq));
+        sq::net::pushInput(buffer, input(seq));
     }
     ASSERT_EQ(buffer.pending.size(), 3U);
     EXPECT_EQ(buffer.pending.front().sequence, 3U);
@@ -96,33 +96,33 @@ TEST(InputQueue, OverflowDropsTheOldest) {
 }
 
 TEST(InputQueue, FullQueueRejectsInputOlderThanAllPending) {
-    ecs::InputBuffer buffer{.capacity = 3};
+    sq::ecs::InputBuffer buffer{.capacity = 3};
     for (std::uint32_t seq = 5; seq <= 7; ++seq) {
-        ASSERT_TRUE(ecs::net::pushInput(buffer, input(seq)));
+        ASSERT_TRUE(sq::net::pushInput(buffer, input(seq)));
     }
 
-    EXPECT_FALSE(ecs::net::pushInput(buffer, input(4)));
+    EXPECT_FALSE(sq::net::pushInput(buffer, input(4)));
     ASSERT_EQ(buffer.pending.size(), 3U);
     EXPECT_EQ(buffer.pending.front().sequence, 5U);
 }
 
 TEST(InputQueue, FullQueueAcceptsInputNewerThanTheOldest) {
-    ecs::InputBuffer buffer{.capacity = 3};
-    ASSERT_TRUE(ecs::net::pushInput(buffer, input(5)));
-    ASSERT_TRUE(ecs::net::pushInput(buffer, input(7)));
-    ASSERT_TRUE(ecs::net::pushInput(buffer, input(8)));
+    sq::ecs::InputBuffer buffer{.capacity = 3};
+    ASSERT_TRUE(sq::net::pushInput(buffer, input(5)));
+    ASSERT_TRUE(sq::net::pushInput(buffer, input(7)));
+    ASSERT_TRUE(sq::net::pushInput(buffer, input(8)));
 
-    EXPECT_TRUE(ecs::net::pushInput(buffer, input(6)));
+    EXPECT_TRUE(sq::net::pushInput(buffer, input(6)));
     ASSERT_EQ(buffer.pending.size(), 3U);
     EXPECT_EQ(buffer.pending.front().sequence, 6U);
 }
 
 TEST(InputQueue, KeepsTheInputPayload) {
-    ecs::InputBuffer buffer;
-    ASSERT_TRUE(ecs::net::pushInput(
-        buffer, ecs::NetInput{.sequence = 1, .held = {42}, .axes = {{.action = 7, .value = 0.5F}}}));
+    sq::ecs::InputBuffer buffer;
+    ASSERT_TRUE(sq::net::pushInput(
+        buffer, sq::ecs::NetInput{.sequence = 1, .held = {42}, .axes = {{.action = 7, .value = 0.5F}}}));
 
-    const auto popped = ecs::net::popInput(buffer);
+    const auto popped = sq::net::popInput(buffer);
     ASSERT_TRUE(popped.has_value());
     EXPECT_EQ(popped->held, std::vector<std::uint32_t>{42});
     ASSERT_EQ(popped->axes.size(), 1U);
@@ -131,26 +131,26 @@ TEST(InputQueue, KeepsTheInputPayload) {
 }
 
 TEST(InputQueue, ZeroCapacityKeepsNothing) {
-    ecs::InputBuffer buffer{.capacity = 0};
-    EXPECT_FALSE(ecs::net::pushInput(buffer, input(1)));
+    sq::ecs::InputBuffer buffer{.capacity = 0};
+    EXPECT_FALSE(sq::net::pushInput(buffer, input(1)));
     EXPECT_TRUE(buffer.pending.empty());
 }
 
 TEST(NetworkEntityMap, AssignGivesUniqueIdsStartingAtOne) {
-    ecs::net::NetworkEntityMap map;
+    sq::net::NetworkEntityMap map;
     const auto first = map.assign(10);
     const auto second = map.assign(20);
 
     EXPECT_EQ(first, 1U);
     EXPECT_EQ(second, 2U);
     EXPECT_EQ(map.assign(10), first);  // already mapped: same id
-    EXPECT_EQ(map.entityOf(second), std::optional<ecs::Entity>{20});
+    EXPECT_EQ(map.entityOf(second), std::optional<sq::ecs::Entity>{20});
     EXPECT_EQ(map.idOf(10), std::optional<std::uint32_t>{first});
     EXPECT_EQ(map.size(), 2U);
 }
 
 TEST(NetworkEntityMap, IdsAreNotReusedAfterUnbind) {
-    ecs::net::NetworkEntityMap map;
+    sq::net::NetworkEntityMap map;
     const auto id = map.assign(10);
     map.unbindEntity(10);
 
@@ -159,12 +159,12 @@ TEST(NetworkEntityMap, IdsAreNotReusedAfterUnbind) {
 }
 
 TEST(NetworkEntityMap, BindReplacesPreviousMappings) {
-    ecs::net::NetworkEntityMap map;
+    sq::net::NetworkEntityMap map;
     EXPECT_FALSE(map.bind(0, 1));
     EXPECT_TRUE(map.bind(42, 1));
     EXPECT_TRUE(map.bind(42, 2));  // id moves to another entity
     EXPECT_FALSE(map.idOf(1).has_value());
-    EXPECT_EQ(map.entityOf(42), std::optional<ecs::Entity>{2});
+    EXPECT_EQ(map.entityOf(42), std::optional<sq::ecs::Entity>{2});
 
     EXPECT_TRUE(map.bind(43, 2));  // entity gets another id
     EXPECT_FALSE(map.entityOf(42).has_value());
@@ -175,13 +175,13 @@ TEST(NetworkEntityMap, BindReplacesPreviousMappings) {
 }
 
 TEST(NetworkEntityMap, WorksAsRegistryResource) {
-    ecs::Registry registry;
-    auto& map = registry.emplaceResource<ecs::net::NetworkEntityMap>();
-    const ecs::Entity entity = registry.spawnEntity();
-    registry.emplaceComponent<ecs::NetworkId>(entity, map.assign(entity));
+    sq::ecs::Registry registry;
+    auto& map = registry.emplaceResource<sq::net::NetworkEntityMap>();
+    const sq::ecs::Entity entity = registry.spawnEntity();
+    registry.emplaceComponent<sq::ecs::NetworkId>(entity, map.assign(entity));
 
-    const auto& id = registry.getComponents<ecs::NetworkId>().get(entity);
-    EXPECT_EQ(map.entityOf(id.value), std::optional<ecs::Entity>{entity});
+    const auto& id = registry.getComponents<sq::ecs::NetworkId>().get(entity);
+    EXPECT_EQ(map.entityOf(id.value), std::optional<sq::ecs::Entity>{entity});
 }
 
 int main(int argc, char** argv) {

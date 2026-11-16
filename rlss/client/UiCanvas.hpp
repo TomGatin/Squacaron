@@ -61,9 +61,9 @@ class Typeface {
     /**
      * @brief Uses a font.
      * @param draw Service drawing it; must outlive the typeface.
-     * @param font Font loaded by `draw` (`engine::NO_FONT`: the backend's default font).
+     * @param font Font loaded by `draw` (`sq::engine::NO_FONT`: the backend's default font).
      */
-    Typeface(engine::IScreenDrawService& draw, engine::FontId font) noexcept : _draw(&draw), _font(font) {}
+    Typeface(sq::engine::IScreenDrawService& draw, sq::engine::FontId font) noexcept : _draw(&draw), _font(font) {}
 
     /**
      * @brief Width of a text.
@@ -82,23 +82,23 @@ class Typeface {
      * @param color Color.
      * @param align What `x` is.
      */
-    void draw(std::string_view text, float x, float capTop, float capHeight, ecs::Rgba color, Align align) const;
+    void draw(std::string_view text, float x, float capTop, float capHeight, sq::ecs::Rgba color, Align align) const;
 
     /** @brief The drawing service, or null. */
-    [[nodiscard]] engine::IScreenDrawService* service() const noexcept { return _draw; }
+    [[nodiscard]] sq::engine::IScreenDrawService* service() const noexcept { return _draw; }
 
   private:
     /** @brief Service, or null. */
-    engine::IScreenDrawService* _draw = nullptr;
+    sq::engine::IScreenDrawService* _draw = nullptr;
     /** @brief Font. */
-    engine::FontId _font = engine::NO_FONT;
+    sq::engine::FontId _font = sq::engine::NO_FONT;
 };
 
 /** @brief Index of an element of a `UiCanvas`, to change its color later. */
 using UiHandle = std::size_t;
 
 /**
- * @brief Retained list of screen-space elements (menus, labels), drawn through `engine::IScreenDrawService`.
+ * @brief Retained list of screen-space elements (menus, labels), drawn through `sq::engine::IScreenDrawService`.
  *
  * Build the elements when the screen changes, then call `draw()` every frame: they are drawn in the order they were
  * added, on top of the world.
@@ -111,7 +111,7 @@ class UiCanvas {
      * @param color Fill color.
      * @return Its handle.
      */
-    UiHandle rect(const ScreenRect& rect, ecs::Rgba color);
+    UiHandle rect(const ScreenRect& rect, sq::ecs::Rgba color);
 
     /**
      * @brief Adds a rectangle outline (drawn inside the rectangle).
@@ -120,16 +120,16 @@ class UiCanvas {
      * @param color Line color.
      * @return Its handle.
      */
-    UiHandle outline(const ScreenRect& rect, float thickness, ecs::Rgba color);
+    UiHandle outline(const ScreenRect& rect, float thickness, sq::ecs::Rgba color);
 
     /**
      * @brief Adds a picture.
-     * @param texture Texture (`ecs::NO_TEXTURE` draws nothing).
+     * @param texture Texture (`sq::ecs::NO_TEXTURE` draws nothing).
      * @param rect Place on screen, the whole texture stretched over it.
      * @param tint Color multiplied with the texture.
      * @return Its handle.
      */
-    UiHandle image(ecs::TextureId texture, const ScreenRect& rect, ecs::Rgba tint);
+    UiHandle image(sq::ecs::TextureId texture, const ScreenRect& rect, sq::ecs::Rgba tint);
 
     /**
      * @brief Adds a text.
@@ -141,7 +141,7 @@ class UiCanvas {
      * @param align What `x` is.
      * @return Its handle.
      */
-    UiHandle text(std::string_view text, float x, float capTop, float capHeight, ecs::Rgba color,
+    UiHandle text(std::string_view text, float x, float capTop, float capHeight, sq::ecs::Rgba color,
                   Align align = Align::Center);
 
     /**
@@ -149,7 +149,7 @@ class UiCanvas {
      * @param handle Element; an unknown one is ignored.
      * @param color New color.
      */
-    void setColor(UiHandle handle, ecs::Rgba color);
+    void setColor(UiHandle handle, sq::ecs::Rgba color);
 
     /** @brief Removes every element. */
     void clear() noexcept { _items.clear(); }
@@ -181,7 +181,7 @@ class UiCanvas {
     /** @brief Picture. */
     struct Image {
         /** @brief Texture. */
-        ecs::TextureId texture = ecs::NO_TEXTURE;
+        sq::ecs::TextureId texture = sq::ecs::NO_TEXTURE;
         /** @brief Place. */
         ScreenRect rect;
     };
@@ -203,7 +203,7 @@ class UiCanvas {
         /** @brief What it is. */
         std::variant<Fill, Outline, Image, Text> shape;
         /** @brief Color or tint. */
-        ecs::Rgba color;
+        sq::ecs::Rgba color;
     };
 
     /** @brief Elements, in the order they are drawn. */

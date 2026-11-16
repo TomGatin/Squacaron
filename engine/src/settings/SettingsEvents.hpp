@@ -7,10 +7,10 @@
 
 #include <string>
 
-namespace settings {
+namespace sq::settings {
 
 /**
- * @brief A setting changed (by `config::Settings::set`, or by the file loaded at start-up).
+ * @brief A setting changed (by `sq::config::Settings::set`, or by the file loaded at start-up).
  *
  * Published once per changed key, at the next `SettingsPlugin::update`. Read the new value from the settings.
  */
@@ -19,4 +19,4 @@ struct SettingChanged {
     std::string key;
 };
 
-}  // namespace settings
+}  // namespace sq::settings

@@ -25,7 +25,7 @@ namespace client {
  *
  * Scenes never call the session: they publish requests and react to its results (`SessionEvents.hpp`).
  */
-class ClientScenesPlugin final : public engine::IPlugin {
+class ClientScenesPlugin final : public sq::engine::IPlugin {
   public:
     /**
      * @brief Creates the plugin.
@@ -45,20 +45,20 @@ class ClientScenesPlugin final : public engine::IPlugin {
      * @brief Declares the plugins the scenes use.
      * @param builder Dependency builder.
      */
-    void build(engine::PluginBuilder& builder) override;
+    void build(sq::engine::PluginBuilder& builder) override;
 
     /**
      * @brief Declares the settings, registers the prefab and the scenes, opens the title screen.
      * @param engine Host engine.
      */
-    void init(engine::Engine& engine) override;
+    void init(sq::engine::Engine& engine) override;
 
     /**
      * @brief Toggles the metrics setting on F3.
      * @param engine Host engine.
      * @param time Frame time.
      */
-    void update(engine::Engine& engine, const ecs::time::Time& time) override;
+    void update(sq::engine::Engine& engine, const sq::time::Time& time) override;
 
   private:
     /** @brief Server proposed on the connect screen. */

@@ -41,9 +41,9 @@
 // The RLSS menus without a window: fake window, draw service and transport, the real scenes and menu plugin.
 namespace {
 
-using ecs::net::Bytes;
-using ecs::net::Channel;
-using ecs::net::EventType;
+using sq::net::Bytes;
+using sq::net::Channel;
+using sq::net::EventType;
 namespace protocol = rlss::protocol;
 using rlss::client::MenuState;
 
@@ -51,26 +51,31 @@ constexpr float DT = 1.0F / 64.0F;
 constexpr std::uint16_t MATCH = 3;
 
 /** @brief Window with no input but the keys a test holds down. */
-struct QuietWindow final : engine::IWindowService {
+struct QuietWindow final : sq::engine::IWindowService {
     [[nodiscard]] bool shouldClose() const noexcept override { return false; }
     void beginFrame() override {}
     void endFrame() override {}
     [[nodiscard]] int width() const noexcept override { return 1280; }
     [[nodiscard]] int height() const noexcept override { return 720; }
-    [[nodiscard]] bool isKeyDown(engine::Key key) const noexcept override {
+    [[nodiscard]] bool isKeyDown(sq::engine::Key key) const noexcept override {
         return keys.at(static_cast<std::size_t>(key));
     }
     [[nodiscard]] bool isGamepadAvailable(int /*gamepad*/) const noexcept override { return false; }
-    [[nodiscard]] bool isGamepadButtonDown(int /*gamepad*/, engine::GamepadButton /*button*/) const noexcept override {
+    [[nodiscard]] bool isGamepadButtonDown(int /*gamepad*/,
+                                           sq::engine::GamepadButton /*button*/) const noexcept override {
         return false;
     }
-    [[nodiscard]] float gamepadAxis(int /*gamepad*/, engine::GamepadAxis /*axis*/) const noexcept override {
+    [[nodiscard]] float gamepadAxis(int /*gamepad*/, sq::engine::GamepadAxis /*axis*/) const noexcept override {
         return 0.0F;
     }
-    [[nodiscard]] bool isMouseButtonDown(engine::MouseButton /*button*/) const noexcept override { return false; }
-    [[nodiscard]] bool isMouseButtonPressed(engine::MouseButton /*button*/) const noexcept override { return false; }
-    [[nodiscard]] bool isMouseButtonReleased(engine::MouseButton /*button*/) const noexcept override { return false; }
-    [[nodiscard]] engine::MousePosition mousePosition() const noexcept override { return {.x = -1.0F, .y = -1.0F}; }
+    [[nodiscard]] bool isMouseButtonDown(sq::engine::MouseButton /*button*/) const noexcept override { return false; }
+    [[nodiscard]] bool isMouseButtonPressed(sq::engine::MouseButton /*button*/) const noexcept override {
+        return false;
+    }
+    [[nodiscard]] bool isMouseButtonReleased(sq::engine::MouseButton /*button*/) const noexcept override {
+        return false;
+    }
+    [[nodiscard]] sq::engine::MousePosition mousePosition() const noexcept override { return {.x = -1.0F, .y = -1.0F}; }
     [[nodiscard]] float mouseWheelDelta() const noexcept override { return 0.0F; }
     [[nodiscard]] char32_t nextTypedCharacter() noexcept override { return U'\0'; }
 
@@ -78,40 +83,42 @@ struct QuietWindow final : engine::IWindowService {
 };
 
 /** @brief Draw service that draws nothing. */
-struct NullDraw final : engine::IScreenDrawService {
-    engine::FontId loadFont(const std::string& /*path*/) override { return engine::NO_FONT; }
-    [[nodiscard]] engine::TextSize measureText(std::string_view /*text*/, float size, float /*spacing*/,
-                                               engine::FontId /*font*/) const override {
+struct NullDraw final : sq::engine::IScreenDrawService {
+    sq::engine::FontId loadFont(const std::string& /*path*/) override { return sq::engine::NO_FONT; }
+    [[nodiscard]] sq::engine::TextSize measureText(std::string_view /*text*/, float size, float /*spacing*/,
+                                                   sq::engine::FontId /*font*/) const override {
         return {.width = size, .height = size};
     }
-    void fillRect(const engine::ScreenRect& /*rect*/, const ecs::Rgba& /*color*/) override {}
-    void strokeRect(const engine::ScreenRect& /*rect*/, float /*thickness*/, const ecs::Rgba& /*color*/) override {}
+    void fillRect(const sq::engine::ScreenRect& /*rect*/, const sq::ecs::Rgba& /*color*/) override {}
+    void strokeRect(const sq::engine::ScreenRect& /*rect*/, float /*thickness*/,
+                    const sq::ecs::Rgba& /*color*/) override {}
     void drawText(std::string_view /*text*/, float /*x*/, float /*y*/, float /*size*/, float /*spacing*/,
-                  const ecs::Rgba& /*color*/, engine::FontId /*font*/) override {}
-    void drawTexture(ecs::TextureId /*texture*/, const ecs::TextureRect& /*source*/, const engine::ScreenRect& /*dest*/,
-                     float /*rotation*/, const ecs::Rgba& /*tint*/) override {}
+                  const sq::ecs::Rgba& /*color*/, sq::engine::FontId /*font*/) override {}
+    void drawTexture(sq::ecs::TextureId /*texture*/, const sq::ecs::TextureRect& /*source*/,
+                     const sq::engine::ScreenRect& /*dest*/, float /*rotation*/,
+                     const sq::ecs::Rgba& /*tint*/) override {}
 };
 
 /** @brief Provides the window and draw services the UI needs, in place of the render plugin. */
-class FakeServicesPlugin final : public engine::IPlugin {
+class FakeServicesPlugin final : public sq::engine::IPlugin {
   public:
     [[nodiscard]] std::string_view name() const noexcept override { return "FakeServicesPlugin"; }
-    void build(engine::PluginBuilder& builder) override {
-        builder.provides<engine::IWindowService>();
-        builder.provides<engine::IScreenDrawService>();
+    void build(sq::engine::PluginBuilder& builder) override {
+        builder.provides<sq::engine::IWindowService>();
+        builder.provides<sq::engine::IScreenDrawService>();
     }
-    void init(engine::Engine& engine) override {
-        (void)engine.mediator().registerService<engine::IWindowService>(std::make_shared<QuietWindow>());
-        (void)engine.mediator().registerService<engine::IScreenDrawService>(std::make_shared<NullDraw>());
+    void init(sq::engine::Engine& engine) override {
+        (void)engine.mediator().registerService<sq::engine::IWindowService>(std::make_shared<QuietWindow>());
+        (void)engine.mediator().registerService<sq::engine::IScreenDrawService>(std::make_shared<NullDraw>());
     }
 };
 
 /** @brief Client transport the test talks through, in place of the server. */
-class FakeClient final : public ecs::net::INetworkClient {
+class FakeClient final : public sq::net::INetworkClient {
   public:
     bool connect(const std::string& /*host*/, std::uint16_t /*port*/) override { return true; }
-    [[nodiscard]] ecs::net::DisconnectReason disconnectReason() const override {
-        return ecs::net::DisconnectReason::ConnectionLost;
+    [[nodiscard]] sq::net::DisconnectReason disconnectReason() const override {
+        return sq::net::DisconnectReason::ConnectionLost;
     }
     bool openUdp(std::uint16_t /*port*/) override { return true; }
     void closeUdp() override {}
@@ -120,7 +127,7 @@ class FakeClient final : public ecs::net::INetworkClient {
             sent.push_back(std::move(*message));
         }
     }
-    std::vector<ecs::net::NetworkEvent> poll() override { return std::exchange(next, {}); }
+    std::vector<sq::net::NetworkEvent> poll() override { return std::exchange(next, {}); }
     void stop() override {}
     [[nodiscard]] bool isRunning() const override { return true; }
 
@@ -134,22 +141,22 @@ class FakeClient final : public ecs::net::INetworkClient {
     }
 
     std::vector<protocol::Message> sent;
-    std::vector<ecs::net::NetworkEvent> next;
+    std::vector<sq::net::NetworkEvent> next;
 };
 
 class RlssMenuTest : public ::testing::Test {
   protected:
     RlssMenuTest() {
         engine.setFixedDeltaTime(DT);
-        const auto link = std::make_shared<rlss::client::ServerLink>(transport, std::vector<ecs::net::NetworkEvent>{});
+        const auto link = std::make_shared<rlss::client::ServerLink>(transport, std::vector<sq::net::NetworkEvent>{});
         engine.addPlugin<FakeServicesPlugin>()
-            .addPlugin<hierarchy::HierarchyPlugin>()
-            .addPlugin<ui::UiPlugin>()
-            .addPlugin<input::InputPlugin>(rlss::client::makeControls())
-            .addPlugin<scene::ScenePlugin>()
-            .addPlugin<settings::SettingsPlugin>(std::filesystem::path{})
-            .addPlugin<ecs::net::NetworkPlugin>(link, link)
-            .addPlugin<ecs::net::ClientReplicationPlugin>(std::make_shared<rlss::game::ReplicationCodec>())
+            .addPlugin<sq::hierarchy::HierarchyPlugin>()
+            .addPlugin<sq::ui::UiPlugin>()
+            .addPlugin<sq::input::InputPlugin>(rlss::client::makeControls())
+            .addPlugin<sq::scene::ScenePlugin>()
+            .addPlugin<sq::settings::SettingsPlugin>(std::filesystem::path{})
+            .addPlugin<sq::net::NetworkPlugin>(link, link)
+            .addPlugin<sq::net::ClientReplicationPlugin>(std::make_shared<rlss::game::ReplicationCodec>())
             .addPlugin<rlss::client::MenuScenesPlugin>(link);
         engine.init();
         frame();
@@ -163,13 +170,13 @@ class RlssMenuTest : public ::testing::Test {
     }
 
     [[nodiscard]] std::string top() {
-        const auto& scenes = engine.getPlugin<scene::ScenePlugin>().manager();
-        return scenes.top() == scene::INVALID_SCENE ? "" : std::string(scenes.scene(scenes.top()).name());
+        const auto& scenes = engine.getPlugin<sq::scene::ScenePlugin>().manager();
+        return scenes.top() == sq::scene::INVALID_SCENE ? "" : std::string(scenes.scene(scenes.top()).name());
     }
 
     /** @brief Publishes a click, without a frame: several clicks can land in the same frame. */
     void click(std::string action) {
-        engine.eventBus().publish(ui::UiButtonClickedEvent{.entity = 0, .action = std::move(action)});
+        engine.eventBus().publish(sq::ui::UiButtonClickedEvent{.entity = 0, .action = std::move(action)});
     }
 
     /** @brief Queues a message of the server, received at the next frame. */
@@ -183,9 +190,13 @@ class RlssMenuTest : public ::testing::Test {
 
     [[nodiscard]] MenuState& state() { return engine.registry().getResource<MenuState>(); }
 
-    [[nodiscard]] config::Settings& settings() { return engine.getPlugin<settings::SettingsPlugin>().settings(); }
+    [[nodiscard]] sq::config::Settings& settings() {
+        return engine.getPlugin<sq::settings::SettingsPlugin>().settings();
+    }
 
-    [[nodiscard]] const input::ActionMapping& mapping() { return engine.service<engine::IInputService>().mapping(); }
+    [[nodiscard]] const sq::input::ActionMapping& mapping() {
+        return engine.service<sq::engine::IInputService>().mapping();
+    }
 
     /** @brief Clicks and runs the two frames that deliver the click and apply a scene change. */
     void press(std::string action) {
@@ -194,8 +205,8 @@ class RlssMenuTest : public ::testing::Test {
         frame();
     }
 
-    void setKey(engine::Key key, bool down) {
-        auto& window = static_cast<QuietWindow&>(engine.service<engine::IWindowService>());
+    void setKey(sq::engine::Key key, bool down) {
+        auto& window = static_cast<QuietWindow&>(engine.service<sq::engine::IWindowService>());
         window.keys.at(static_cast<std::size_t>(key)) = down;
         frame();
     }
@@ -207,9 +218,9 @@ class RlssMenuTest : public ::testing::Test {
     }
 
     [[nodiscard]] std::string focusedAction() {
-        const ecs::Entity focused = engine.registry().getResource<ui::UiFocus>().focused;
-        return engine.registry().hasComponent<ui::UiButton>(focused)
-                   ? engine.registry().getComponents<ui::UiButton>().get(focused).action
+        const sq::ecs::Entity focused = engine.registry().getResource<sq::ui::UiFocus>().focused;
+        return engine.registry().hasComponent<sq::ui::UiButton>(focused)
+                   ? engine.registry().getComponents<sq::ui::UiButton>().get(focused).action
                    : std::string{};
     }
 
@@ -222,7 +233,7 @@ class RlssMenuTest : public ::testing::Test {
 
     double now = 0.0;
     std::shared_ptr<FakeClient> transport = std::make_shared<FakeClient>();
-    engine::Engine engine{[this]() -> double { return now; }};
+    sq::engine::Engine engine{[this]() -> double { return now; }};
 };
 
 }  // namespace
@@ -244,7 +255,7 @@ TEST_F(RlssMenuTest, BackCancelsTheRequestAndLeavesTheMatchItJoined) {
     frame();
     ASSERT_EQ(top(), "Joining");
 
-    engine.eventBus().publish(ui::UiBackEvent{});
+    engine.eventBus().publish(sq::ui::UiBackEvent{});
     frame();
     EXPECT_EQ(top(), "Menu");
     EXPECT_EQ(state().notice, "DEMANDE ANNULEE");
@@ -281,7 +292,7 @@ TEST_F(RlssMenuTest, MessagesInTheSamePollAsTheJoinResultAreKept) {
     EXPECT_EQ(state().team, protocol::Team::Orange);
     EXPECT_EQ(state().final.orangeScore, 2);
     EXPECT_EQ(top(), "Ended");
-    const auto& scenes = engine.getPlugin<scene::ScenePlugin>().manager();
+    const auto& scenes = engine.getPlugin<sq::scene::ScenePlugin>().manager();
     EXPECT_TRUE(scenes.isActive(*scenes.find("Match")));
 }
 
@@ -295,9 +306,9 @@ TEST_F(RlssMenuTest, TheBrowserKeepsTheFocusOnTheSameMatch) {
     EXPECT_EQ(focusedAction(), "browser.join.1");
 
     // Focus the second match, then the list changes order: the focus follows match 2.
-    engine.registry().runSystem<ui::UiButton>([this](ecs::Entity entity, const ui::UiButton& button) {
+    engine.registry().runSystem<sq::ui::UiButton>([this](sq::ecs::Entity entity, const sq::ui::UiButton& button) {
         if (button.action == "browser.join.2") {
-            engine.registry().getResource<ui::UiFocus>().focused = entity;
+            engine.registry().getResource<sq::ui::UiFocus>().focused = entity;
         }
     });
     queue(protocol::MatchList{.online = 3, .matches = {match(MATCH), match(2)}});
@@ -313,26 +324,26 @@ TEST_F(RlssMenuTest, TheBrowserKeepsTheFocusOnTheSameMatch) {
 TEST(RlssControls, AKeyTakenByAnotherControlIsSwapped) {
     using rlss::client::Control;
     rlss::client::ControlKeys keys = rlss::client::defaultControlKeys();
-    rlss::client::assignKey(keys, Control::Jump, engine::Key::LeftShift);
-    EXPECT_EQ(keys.at(static_cast<std::size_t>(Control::Jump)), engine::Key::LeftShift);
-    EXPECT_EQ(keys.at(static_cast<std::size_t>(Control::Boost)), engine::Key::Space);
+    rlss::client::assignKey(keys, Control::Jump, sq::engine::Key::LeftShift);
+    EXPECT_EQ(keys.at(static_cast<std::size_t>(Control::Jump)), sq::engine::Key::LeftShift);
+    EXPECT_EQ(keys.at(static_cast<std::size_t>(Control::Boost)), sq::engine::Key::Space);
 }
 
 TEST(RlssControls, ASecondKeyUsedAsAMainKeyIsNotBoundTwice) {
     using rlss::client::Control;
     rlss::client::ControlKeys keys = rlss::client::defaultControlKeys();
-    rlss::client::assignKey(keys, Control::Jump, engine::Key::Up);
-    input::ActionMapping mapping;
+    rlss::client::assignKey(keys, Control::Jump, sq::engine::Key::Up);
+    sq::input::ActionMapping mapping;
     rlss::client::setupBindings(mapping, keys);
-    EXPECT_TRUE(mapping.hasKey("jump", engine::Key::Up));
-    EXPECT_FALSE(mapping.hasKey("pitch", engine::Key::Up));
-    EXPECT_TRUE(mapping.hasKey("pitch", engine::Key::W));
-    EXPECT_TRUE(mapping.hasKey("boost", engine::Key::RightShift));
+    EXPECT_TRUE(mapping.hasKey("jump", sq::engine::Key::Up));
+    EXPECT_FALSE(mapping.hasKey("pitch", sq::engine::Key::Up));
+    EXPECT_TRUE(mapping.hasKey("pitch", sq::engine::Key::W));
+    EXPECT_TRUE(mapping.hasKey("boost", sq::engine::Key::RightShift));
 }
 
 TEST_F(RlssMenuTest, TheControlsOpenFromTheSettingsAndGoBack) {
     openControls();
-    engine.eventBus().publish(ui::UiBackEvent{});
+    engine.eventBus().publish(sq::ui::UiBackEvent{});
     frame();
     frame();
     EXPECT_EQ(top(), "Settings");
@@ -341,22 +352,22 @@ TEST_F(RlssMenuTest, TheControlsOpenFromTheSettingsAndGoBack) {
 TEST_F(RlssMenuTest, AKeyPressedAfterChoosingAControlIsSavedAndBound) {
     openControls();
     press("controls.key.jump");
-    setKey(engine::Key::F, true);
-    setKey(engine::Key::F, false);
+    setKey(sq::engine::Key::F, true);
+    setKey(sq::engine::Key::F, false);
     frame();
     EXPECT_EQ(settings().getString("controls.jump"), "F");
-    EXPECT_TRUE(mapping().hasKey("jump", engine::Key::F));
-    EXPECT_FALSE(mapping().hasKey("jump", engine::Key::Space));
+    EXPECT_TRUE(mapping().hasKey("jump", sq::engine::Key::F));
+    EXPECT_FALSE(mapping().hasKey("jump", sq::engine::Key::Space));
 }
 
 TEST_F(RlssMenuTest, EscapeCancelsTheWaitForAKey) {
     openControls();
     press("controls.key.jump");
-    engine.eventBus().publish(ui::UiBackEvent{});
+    engine.eventBus().publish(sq::ui::UiBackEvent{});
     frame();
     frame();
     EXPECT_EQ(top(), "Controls");
-    setKey(engine::Key::F, true);
+    setKey(sq::engine::Key::F, true);
     EXPECT_EQ(settings().getString("controls.jump"), "Space");
 }
 
@@ -370,8 +381,8 @@ TEST_F(RlssMenuTest, ResetPutsTheDefaultKeysBack) {
 TEST_F(RlssMenuTest, SavedKeysReplaceTheDefaultBindings) {
     (void)settings().set("controls.boost", std::string("B"));
     frame();
-    EXPECT_TRUE(mapping().hasKey("boost", engine::Key::B));
-    EXPECT_FALSE(mapping().hasKey("boost", engine::Key::LeftShift));
+    EXPECT_TRUE(mapping().hasKey("boost", sq::engine::Key::B));
+    EXPECT_FALSE(mapping().hasKey("boost", sq::engine::Key::LeftShift));
 }
 
 int main(int argc, char** argv) {

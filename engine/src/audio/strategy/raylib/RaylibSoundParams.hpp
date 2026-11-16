@@ -6,7 +6,7 @@
 #include "audio/types/AudioConstants.hpp"
 #include "audio/types/SoundParams.hpp"
 
-namespace audio::detail {
+namespace sq::audio::detail {
 
 /**
  * @brief Applies volume, pan and pitch to a raylib sound, clamping invalid values.
@@ -20,4 +20,4 @@ inline void applyParams(const Sound& sound, const SoundParams& params) {
     SetSoundPitch(sound, clampFinite(params.pitch, DEFAULT_PITCH, MIN_PITCH, MAX_PITCH));
 }
 
-}  // namespace audio::detail
+}  // namespace sq::audio::detail

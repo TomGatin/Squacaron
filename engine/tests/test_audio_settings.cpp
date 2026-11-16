@@ -14,8 +14,8 @@
 namespace {
 
 /** @brief Reads audio settings from TOML text. */
-audio::AudioSettings read(std::string_view toml, std::vector<std::string>& warnings) {
-    return audio::readAudioSettings(config::ConfigFile::parse(toml), warnings);
+sq::audio::AudioSettings read(std::string_view toml, std::vector<std::string>& warnings) {
+    return sq::audio::readAudioSettings(sq::config::ConfigFile::parse(toml), warnings);
 }
 
 /** @brief Tells whether one warning mentions `key`. */
@@ -28,11 +28,11 @@ bool mentions(const std::vector<std::string>& warnings, std::string_view key) {
 
 TEST(AudioSettings, EmptyConfigurationGivesTheDefaults) {
     std::vector<std::string> warnings;
-    const audio::AudioSettings settings = read("", warnings);
-    const audio::AudioSettings defaults;
+    const sq::audio::AudioSettings settings = read("", warnings);
+    const sq::audio::AudioSettings defaults;
 
     EXPECT_TRUE(warnings.empty());
-    EXPECT_EQ(settings.backend, audio::AudioBackendKind::Auto);
+    EXPECT_EQ(settings.backend, sq::audio::AudioBackendKind::Auto);
     EXPECT_EQ(settings.voices.voicesPerSound, defaults.voices.voicesPerSound);
     EXPECT_EQ(settings.voices.maxActiveVoices, defaults.voices.maxActiveVoices);
     EXPECT_FLOAT_EQ(settings.sfxVolume, defaults.sfxVolume);
@@ -42,7 +42,7 @@ TEST(AudioSettings, EmptyConfigurationGivesTheDefaults) {
 
 TEST(AudioSettings, ReadsEverySetting) {
     std::vector<std::string> warnings;
-    const audio::AudioSettings settings = read(R"(
+    const sq::audio::AudioSettings settings = read(R"(
         [audio]
         backend = "null"
         voices_per_sound = 2
@@ -59,10 +59,10 @@ TEST(AudioSettings, ReadsEverySetting) {
         max_distance = 400
         merge_distance = 64
     )",
-                                               warnings);
+                                                   warnings);
 
     EXPECT_TRUE(warnings.empty()) << warnings.front();
-    EXPECT_EQ(settings.backend, audio::AudioBackendKind::Null);
+    EXPECT_EQ(settings.backend, sq::audio::AudioBackendKind::Null);
     EXPECT_EQ(settings.voices.voicesPerSound, 2U);
     EXPECT_EQ(settings.voices.maxActiveVoices, 16U);
     EXPECT_FLOAT_EQ(settings.masterVolume, 0.5F);
@@ -78,7 +78,7 @@ TEST(AudioSettings, ReadsEverySetting) {
 
 TEST(AudioSettings, OutOfRangeValuesAreClampedAndReported) {
     std::vector<std::string> warnings;
-    const audio::AudioSettings settings = read(R"(
+    const sq::audio::AudioSettings settings = read(R"(
         [audio]
         voices_per_sound = 1000000
         max_active_voices = 0
@@ -87,12 +87,12 @@ TEST(AudioSettings, OutOfRangeValuesAreClampedAndReported) {
         [audio.spatial]
         max_pan = -1.0
     )",
-                                               warnings);
+                                                   warnings);
 
-    EXPECT_EQ(settings.voices.voicesPerSound, audio::VOICES_PER_SOUND_LIMIT);
+    EXPECT_EQ(settings.voices.voicesPerSound, sq::audio::VOICES_PER_SOUND_LIMIT);
     EXPECT_EQ(settings.voices.maxActiveVoices, 1U);
-    EXPECT_FLOAT_EQ(settings.masterVolume, audio::MAX_VOLUME);
-    EXPECT_FLOAT_EQ(settings.spatial.maxPan, audio::PAN_CENTER);
+    EXPECT_FLOAT_EQ(settings.masterVolume, sq::audio::MAX_VOLUME);
+    EXPECT_FLOAT_EQ(settings.spatial.maxPan, sq::audio::PAN_CENTER);
     EXPECT_EQ(warnings.size(), 4U);
     EXPECT_TRUE(mentions(warnings, "audio.voices_per_sound"));
     EXPECT_TRUE(mentions(warnings, "audio.volume.master"));
@@ -100,7 +100,7 @@ TEST(AudioSettings, OutOfRangeValuesAreClampedAndReported) {
 
 TEST(AudioSettings, WrongTypesKeepTheDefaultAndAreReported) {
     std::vector<std::string> warnings;
-    const audio::AudioSettings settings = read(R"(
+    const sq::audio::AudioSettings settings = read(R"(
         [audio]
         backend = 3
         voices_per_sound = 2.5
@@ -109,8 +109,8 @@ TEST(AudioSettings, WrongTypesKeepTheDefaultAndAreReported) {
         [audio.spatial]
         enabled = "yes"
     )",
-                                               warnings);
-    const audio::AudioSettings defaults;
+                                                   warnings);
+    const sq::audio::AudioSettings defaults;
 
     EXPECT_EQ(settings.backend, defaults.backend);
     EXPECT_EQ(settings.voices.voicesPerSound, defaults.voices.voicesPerSound);
@@ -121,24 +121,24 @@ TEST(AudioSettings, WrongTypesKeepTheDefaultAndAreReported) {
 
 TEST(AudioSettings, NonFiniteNumbersAreRejected) {
     std::vector<std::string> warnings;
-    const audio::AudioSettings settings = read("[audio.volume]\nmusic = nan\nsfx = inf\n", warnings);
+    const sq::audio::AudioSettings settings = read("[audio.volume]\nmusic = nan\nsfx = inf\n", warnings);
 
-    EXPECT_FLOAT_EQ(settings.musicVolume, audio::DEFAULT_VOLUME);
-    EXPECT_FLOAT_EQ(settings.sfxVolume, audio::DEFAULT_VOLUME);
+    EXPECT_FLOAT_EQ(settings.musicVolume, sq::audio::DEFAULT_VOLUME);
+    EXPECT_FLOAT_EQ(settings.sfxVolume, sq::audio::DEFAULT_VOLUME);
     EXPECT_EQ(warnings.size(), 2U);
 }
 
 TEST(AudioSettings, UnknownBackendFallsBackToAuto) {
     std::vector<std::string> warnings;
-    const audio::AudioSettings settings = read("[audio]\nbackend = \"fmod\"\n", warnings);
+    const sq::audio::AudioSettings settings = read("[audio]\nbackend = \"fmod\"\n", warnings);
 
-    EXPECT_EQ(settings.backend, audio::AudioBackendKind::Auto);
+    EXPECT_EQ(settings.backend, sq::audio::AudioBackendKind::Auto);
     EXPECT_TRUE(mentions(warnings, "audio.backend"));
 }
 
 TEST(AudioSettings, MaxDistanceBelowMinDistanceIsRaised) {
     std::vector<std::string> warnings;
-    const audio::AudioSettings settings =
+    const sq::audio::AudioSettings settings =
         read("[audio.spatial]\nmin_distance = 500.0\nmax_distance = 100.0\n", warnings);
 
     EXPECT_FLOAT_EQ(settings.spatial.maxDistance, 500.0F);

@@ -13,12 +13,12 @@
 #include "input/ActionMapping.hpp"
 #include "systems/input/InputSystem.hpp"
 
-namespace input {
+namespace sq::input {
 
 /**
  * @brief Plugin responsible for polling user inputs and publishing InputActionEvent transitions.
  */
-class InputPlugin final : public engine::IPlugin {
+class InputPlugin final : public sq::engine::IPlugin {
   public:
     /**
      * @brief Constructs InputPlugin with mapping and hardware indices.
@@ -53,31 +53,31 @@ class InputPlugin final : public engine::IPlugin {
      * @brief Declares plugin dependencies (requires CorePlugin and a window service).
      * @param builder Dependency builder.
      */
-    void build(engine::PluginBuilder& builder) override;
+    void build(sq::engine::PluginBuilder& builder) override;
 
     /**
      * @brief Registers IInputService in the engine Mediator.
      * @param engine Reference to host Engine.
      */
-    void init(engine::Engine& engine) override;
+    void init(sq::engine::Engine& engine) override;
 
     /**
      * @brief Polls hardware inputs once per frame, before the fixed-timestep ticks consume InputState.
      * @param engine Reference to host Engine.
      */
-    void preUpdate(engine::Engine& engine) override;
+    void preUpdate(sq::engine::Engine& engine) override;
 
     /**
      * @brief Unregisters services from Mediator.
      * @param engine Reference to host Engine.
      */
-    void shutdown(engine::Engine& engine) override;
+    void shutdown(sq::engine::Engine& engine) override;
 
     /** @brief Gets mutable reference to the underlying InputSystem. */
-    [[nodiscard]] systems::InputSystem& inputSystem() noexcept { return _inputSystem; }
+    [[nodiscard]] sq::systems::InputSystem& inputSystem() noexcept { return _inputSystem; }
 
     /** @brief Gets const reference to the underlying InputSystem. */
-    [[nodiscard]] const systems::InputSystem& inputSystem() const noexcept { return _inputSystem; }
+    [[nodiscard]] const sq::systems::InputSystem& inputSystem() const noexcept { return _inputSystem; }
 
     /** @brief Gets mutable reference to action mapping configuration. */
     [[nodiscard]] ActionMapping& mapping() noexcept { return _inputSystem.mapping(); }
@@ -86,9 +86,9 @@ class InputPlugin final : public engine::IPlugin {
     class InputServiceImpl;
 
     /** @brief Underlying input system monitoring hardware device states. */
-    systems::InputSystem _inputSystem;
+    sq::systems::InputSystem _inputSystem;
     /** @brief Shared pointer to abstract input service adapter registered in Mediator. */
     std::shared_ptr<InputServiceImpl> _inputService = nullptr;
 };
 
-}  // namespace input
+}  // namespace sq::input

@@ -1,6 +1,6 @@
 # Obstacle
 
-**Name:** `obstacle` (`prefabs::OBSTACLE_PREFAB`)
+**Name:** `obstacle` (`sq::prefabs::OBSTACLE_PREFAB`)
 **Source:** `server/src/prefabs/obstacle/`
 
 ## Purpose
@@ -36,16 +36,16 @@ Every transform key read by `makeTransform` (`x`, `y`, `z`, `rotation`, `scaleX`
 ## API
 
 ```cpp
-void buildObstacle(ecs::Entity e, ecs::Registry& registry, PrefabParams const& params);
+void buildObstacle(sq::ecs::Entity e, sq::ecs::Registry& registry, PrefabParams const& params);
 ```
 
 ```cpp
-manager.registerPrefab(prefabs::OBSTACLE_PREFAB, prefabs::buildObstacle);
-manager.spawn(prefabs::OBSTACLE_PREFAB, buffer, {{"x", 800.0F}, {"y", 300.0F}, {"halfWidth", 64.0F}, {"halfHeight", 64.0F}});
+manager.registerPrefab(sq::prefabs::OBSTACLE_PREFAB, sq::prefabs::buildObstacle);
+manager.spawn(sq::prefabs::OBSTACLE_PREFAB, buffer, {{"x", 800.0F}, {"y", 300.0F}, {"halfWidth", 64.0F}, {"halfHeight", 64.0F}});
 ```
 
 Variants are registered under another name with their own defaults:
 
 ```cpp
-manager.registerPrefab("obstacle_wide", prefabs::buildObstacle, {{"halfWidth", 128.0F}, {"halfHeight", 16.0F}});
+manager.registerPrefab("obstacle_wide", sq::prefabs::buildObstacle, {{"halfWidth", 128.0F}, {"halfHeight", 16.0F}});
 ```

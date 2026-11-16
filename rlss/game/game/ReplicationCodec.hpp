@@ -21,15 +21,14 @@
 namespace rlss::game {
 
 /**
- * @brief Translates between the ECS and the RLSS messages for `ecs::net::ServerReplicationPlugin` and
- * `ecs::net::ClientReplicationPlugin`.
+ * @brief Translates between the ECS and the RLSS messages for `sq::net::ServerReplicationPlugin` and
+ * `sq::net::ClientReplicationPlugin`.
  *
- * A replicated entity carries its `ecs::Transform` (facing = sign of `scaleX`); a car also its `CarLook`, `CarStatus`
- * and `CarCues`, the ball its `ShotGlow` and `BallCues` (the cues as sound cues, speeds rounded to 16 levels). On the
- * client, a new
- * entity also gets `ecs::Interpolated`, so that it moves smoothly between snapshots.
+ * A replicated entity carries its `sq::ecs::Transform` (facing = sign of `scaleX`); a car also its `CarLook`,
+ * `CarStatus` and `CarCues`, the ball its `ShotGlow` and `BallCues` (the cues as sound cues, speeds rounded to 16
+ * levels). On the client, a new entity also gets `sq::ecs::Interpolated`, so that it moves smoothly between snapshots.
  */
-class ReplicationCodec final : public ecs::net::IReplicationCodec {
+class ReplicationCodec final : public sq::net::IReplicationCodec {
   public:
     /**
      * @brief Creates the codec of one match.
@@ -44,21 +43,21 @@ class ReplicationCodec final : public ecs::net::IReplicationCodec {
     void beginSnapshot(std::uint32_t tick) override;
 
     /**
-     * @brief Server: adds one entity to the current snapshot (skipped if it has no `ecs::Transform`).
+     * @brief Server: adds one entity to the current snapshot (skipped if it has no `sq::ecs::Transform`).
      * @param registry Server world.
      * @param entity Replicated entity.
      * @param id Its network id.
      * @param replicated Its kind.
      */
-    void writeEntity(const ecs::Registry& registry, ecs::Entity entity, std::uint32_t id,
-                     const ecs::Replicated& replicated) override;
+    void writeEntity(const sq::ecs::Registry& registry, sq::ecs::Entity entity, std::uint32_t id,
+                     const sq::ecs::Replicated& replicated) override;
 
     /**
      * @brief Server: encodes the current snapshot, split into parts of at most `protocol::MAX_ENTITIES_PER_PART`.
      * @param lastProcessedInput Sequence of the last input of the receiving peer applied by the server.
      * @return The parts (at least one).
      */
-    [[nodiscard]] std::vector<ecs::net::Bytes> encodeSnapshot(std::uint32_t lastProcessedInput) override;
+    [[nodiscard]] std::vector<sq::net::Bytes> encodeSnapshot(std::uint32_t lastProcessedInput) override;
 
     /**
      * @brief Server: reads a `PlayerInput` message.
@@ -66,27 +65,27 @@ class ReplicationCodec final : public ecs::net::IReplicationCodec {
      * @return The input (`JUMP_ID` / `BOOST_ID` held, `STEER_ID` and `PITCH_ID` axes), or nothing for any other
      * payload.
      */
-    [[nodiscard]] std::optional<ecs::NetInput> decodeInput(const ecs::net::Bytes& data) override;
+    [[nodiscard]] std::optional<sq::ecs::NetInput> decodeInput(const sq::net::Bytes& data) override;
 
     /**
      * @brief Client: encodes the local input as a `PlayerInput` message.
      * @param input Input of this step.
      * @return Wire bytes.
      */
-    [[nodiscard]] ecs::net::Bytes encodeInput(const ecs::NetInput& input) override;
+    [[nodiscard]] sq::net::Bytes encodeInput(const sq::ecs::NetInput& input) override;
 
     /**
      * @brief Client: decodes a snapshot part and keeps it for `applySnapshot()`.
      * @param data Untrusted payload.
      * @return Its header, or nothing for any other payload.
      */
-    [[nodiscard]] std::optional<ecs::net::SnapshotHeader> decodeSnapshot(const ecs::net::Bytes& data) override;
+    [[nodiscard]] std::optional<sq::net::SnapshotHeader> decodeSnapshot(const sq::net::Bytes& data) override;
 
     /**
      * @brief Client: writes the entities of the last decoded part into the world.
      * @param applier Access to the client world.
      */
-    void applySnapshot(ecs::net::SnapshotApplier& applier) override;
+    void applySnapshot(sq::net::SnapshotApplier& applier) override;
 
   private:
     /** @brief Server: match written in the snapshots. */

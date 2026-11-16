@@ -25,7 +25,7 @@
 #include "scripting/WrenVM.hpp"
 #include "utils/Paths.hpp"
 
-namespace assets {
+namespace sq::assets {
 
 namespace {
 
@@ -40,8 +40,8 @@ constexpr double MAX_STEP_LOADS = 1'000'000.0;
  * @param call Foreign call.
  * @return The manager, or null when no `AssetPlugin` runs.
  */
-AssetManager* managerOf(const scripting::ForeignCall& call) {
-    auto* scripts = call.userData<scripting::ScriptSystem>();
+AssetManager* managerOf(const sq::scripting::ForeignCall& call) {
+    auto* scripts = call.userData<sq::scripting::ScriptSystem>();
     if (scripts == nullptr || scripts->getRegistry() == nullptr ||
         !scripts->getRegistry()->hasResource<AssetManager>()) {
         return nullptr;
@@ -58,9 +58,9 @@ AssetManager* managerOf(const scripting::ForeignCall& call) {
  * @param call Foreign call.
  * @return True for a call from another VM than the script system's live one.
  */
-bool isStagingCall(const scripting::ForeignCall& call) {
-    auto* scripts = call.userData<scripting::ScriptSystem>();
-    return scripts != nullptr && call.raw() != scripting::detail::raw(scripts->getVm());
+bool isStagingCall(const sq::scripting::ForeignCall& call) {
+    auto* scripts = call.userData<sq::scripting::ScriptSystem>();
+    return scripts != nullptr && call.raw() != sq::scripting::detail::raw(scripts->getVm());
 }
 
 /**
@@ -71,7 +71,7 @@ bool isStagingCall(const scripting::ForeignCall& call) {
  * @return The string.
  * @throws std::invalid_argument if it is not a string (aborts the fiber).
  */
-std::string_view stringArgument(const scripting::ForeignCall& call, const int slot, const std::string_view what) {
+std::string_view stringArgument(const sq::scripting::ForeignCall& call, const int slot, const std::string_view what) {
     const std::optional<std::string_view> value = call.arg<std::string_view>(slot);
     if (!value) {
         throw std::invalid_argument("Assets: the " + std::string(what) + " must be a string");
@@ -87,7 +87,7 @@ std::string_view stringArgument(const scripting::ForeignCall& call, const int sl
  * @return The boolean.
  * @throws std::invalid_argument if it is not a boolean (aborts the fiber).
  */
-bool boolArgument(const scripting::ForeignCall& call, const int slot, const std::string_view what) {
+bool boolArgument(const sq::scripting::ForeignCall& call, const int slot, const std::string_view what) {
     const std::optional<bool> value = call.arg<bool>(slot);
     if (!value) {
         throw std::invalid_argument("Assets: " + std::string(what) + " must be true or false");
@@ -102,10 +102,10 @@ bool boolArgument(const scripting::ForeignCall& call, const int slot, const std:
  * @return The kind name.
  * @throws std::invalid_argument for a non-string or a kind no one registered (aborts the fiber).
  */
-std::string_view kindArgument(const scripting::ForeignCall& call, const AssetManager* manager) {
+std::string_view kindArgument(const sq::scripting::ForeignCall& call, const AssetManager* manager) {
     const std::string_view kind = stringArgument(call, 1, "kind");
     if (manager != nullptr && !manager->hasKind(kind)) {
-        throw std::invalid_argument("Assets: unknown asset kind " + utils::quoteForLog(kind));
+        throw std::invalid_argument("Assets: unknown asset kind " + sq::utils::quoteForLog(kind));
     }
     return kind;
 }
@@ -118,14 +118,15 @@ std::string_view kindArgument(const scripting::ForeignCall& call, const AssetMan
  */
 std::optional<std::string> confinedPath(AssetManager& manager, const std::string_view path) {
     // The working directory itself, for a directory preload.
-    std::optional<std::string> normalized =
-        utils::fromUtf8(path).lexically_normal() == "." ? std::optional<std::string>(".") : utils::normalizePath(path);
+    std::optional<std::string> normalized = sq::utils::fromUtf8(path).lexically_normal() == "."
+                                                ? std::optional<std::string>(".")
+                                                : sq::utils::normalizePath(path);
     if (!normalized) {
-        manager.warn("invalid path " + utils::quoteForLog(path));
+        manager.warn("invalid path " + sq::utils::quoteForLog(path));
         return std::nullopt;
     }
-    if (!utils::isConfinedPath(*normalized)) {
-        manager.warn("path " + utils::quoteForLog(*normalized, MAX_PATH_LENGTH) +
+    if (!sq::utils::isConfinedPath(*normalized)) {
+        manager.warn("path " + sq::utils::quoteForLog(*normalized, MAX_PATH_LENGTH) +
                      " leaves the working directory: scripts may only name files under it");
         return std::nullopt;
     }
@@ -181,7 +182,7 @@ bool scriptMayRelease(AssetManager& manager, const std::string_view group) {
  * @brief `Assets.declare_(kind, alias, path, group, smooth)`: true if the declaration is valid.
  * @param call Foreign call.
  */
-void assetsDeclare(const scripting::ForeignCall& call) {
+void assetsDeclare(const sq::scripting::ForeignCall& call) {
     AssetManager* manager = managerOf(call);
     const std::string_view kind = kindArgument(call, manager);
     const std::string_view alias = stringArgument(call, 2, "alias");
@@ -204,7 +205,7 @@ void assetsDeclare(const scripting::ForeignCall& call) {
  * @brief `Assets.preload_(kind, directory, group, smooth)`: number of files declared.
  * @param call Foreign call.
  */
-void assetsPreload(const scripting::ForeignCall& call) {
+void assetsPreload(const sq::scripting::ForeignCall& call) {
     AssetManager* manager = managerOf(call);
     const std::string_view kind = kindArgument(call, manager);
     const std::string_view directory = stringArgument(call, 2, "directory");
@@ -220,14 +221,14 @@ void assetsPreload(const scripting::ForeignCall& call) {
         return;
     }
     call.ret(static_cast<double>(
-        manager->preloadDirectory(kind, utils::fromUtf8(*confined), group, optionsOf(kind, smooth))));
+        manager->preloadDirectory(kind, sq::utils::fromUtf8(*confined), group, optionsOf(kind, smooth))));
 }
 
 /**
  * @brief `Assets.undeclare(kind, alias)`: true if the alias was declared.
  * @param call Foreign call.
  */
-void assetsUndeclare(const scripting::ForeignCall& call) {
+void assetsUndeclare(const sq::scripting::ForeignCall& call) {
     AssetManager* manager = managerOf(call);
     const std::string_view kind = kindArgument(call, manager);
     const std::string_view alias = stringArgument(call, 2, "alias");
@@ -242,7 +243,7 @@ void assetsUndeclare(const scripting::ForeignCall& call) {
  * @brief `Assets.id(kind, alias)`: handle of a loaded asset, 0 otherwise.
  * @param call Foreign call.
  */
-void assetsId(const scripting::ForeignCall& call) {
+void assetsId(const sq::scripting::ForeignCall& call) {
     const AssetManager* manager = managerOf(call);
     const std::string_view kind = kindArgument(call, manager);
     const std::string_view alias = stringArgument(call, 2, "alias");
@@ -253,7 +254,7 @@ void assetsId(const scripting::ForeignCall& call) {
  * @brief `Assets.status(kind, alias)`: `"unknown"`, `"declared"`, `"loaded"` or `"failed"`.
  * @param call Foreign call.
  */
-void assetsStatus(const scripting::ForeignCall& call) {
+void assetsStatus(const sq::scripting::ForeignCall& call) {
     const AssetManager* manager = managerOf(call);
     const std::string_view kind = kindArgument(call, manager);
     const std::string_view alias = stringArgument(call, 2, "alias");
@@ -264,7 +265,7 @@ void assetsStatus(const scripting::ForeignCall& call) {
  * @brief `Assets.isLoaded(alias)`: whether an asset of any kind is loaded under that alias.
  * @param call Foreign call.
  */
-void assetsIsLoaded(const scripting::ForeignCall& call) {
+void assetsIsLoaded(const sq::scripting::ForeignCall& call) {
     const std::string_view alias = stringArgument(call, 1, "alias");
     const AssetManager* manager = managerOf(call);
     bool loaded = false;
@@ -280,7 +281,7 @@ void assetsIsLoaded(const scripting::ForeignCall& call) {
  * @brief `Assets.hasKind(kind)`.
  * @param call Foreign call.
  */
-void assetsHasKind(const scripting::ForeignCall& call) {
+void assetsHasKind(const sq::scripting::ForeignCall& call) {
     const std::string_view kind = stringArgument(call, 1, "kind");
     const AssetManager* manager = managerOf(call);
     call.ret(manager != nullptr && manager->hasKind(kind));
@@ -290,7 +291,7 @@ void assetsHasKind(const scripting::ForeignCall& call) {
  * @brief `Assets.loadGroup(group)`: true if every asset of the group is loaded.
  * @param call Foreign call.
  */
-void assetsLoadGroup(const scripting::ForeignCall& call) {
+void assetsLoadGroup(const sq::scripting::ForeignCall& call) {
     const std::string_view group = stringArgument(call, 1, "group");
     if (isStagingCall(call)) {
         call.ret(true);
@@ -304,7 +305,7 @@ void assetsLoadGroup(const scripting::ForeignCall& call) {
  * @brief `Assets.loadGroupStep(group, maxLoads)`: true once nothing more can be loaded.
  * @param call Foreign call.
  */
-void assetsLoadGroupStep(const scripting::ForeignCall& call) {
+void assetsLoadGroupStep(const sq::scripting::ForeignCall& call) {
     const std::string_view group = stringArgument(call, 1, "group");
     const std::optional<double> maxLoads = call.arg<double>(2);
     if (!maxLoads || !std::isfinite(*maxLoads) || *maxLoads < 0.0) {
@@ -323,7 +324,7 @@ void assetsLoadGroupStep(const scripting::ForeignCall& call) {
  * @brief `Assets.groupProgress(group)`: part of the group settled, from 0 to 1.
  * @param call Foreign call.
  */
-void assetsGroupProgress(const scripting::ForeignCall& call) {
+void assetsGroupProgress(const sq::scripting::ForeignCall& call) {
     const std::string_view group = stringArgument(call, 1, "group");
     const AssetManager* manager = managerOf(call);
     call.ret(manager != nullptr ? static_cast<double>(manager->groupProgress(group).ratio()) : 1.0);
@@ -333,7 +334,7 @@ void assetsGroupProgress(const scripting::ForeignCall& call) {
  * @brief `Assets.unloadGroup(group)`; refused for `"global"`.
  * @param call Foreign call.
  */
-void assetsUnloadGroup(const scripting::ForeignCall& call) {
+void assetsUnloadGroup(const sq::scripting::ForeignCall& call) {
     const std::string_view group = stringArgument(call, 1, "group");
     if (AssetManager* manager = managerOf(call);
         manager != nullptr && !isStagingCall(call) && scriptMayRelease(*manager, group)) {
@@ -346,7 +347,7 @@ void assetsUnloadGroup(const scripting::ForeignCall& call) {
  * @brief `Assets.forgetGroup(group)`; refused for `"global"`.
  * @param call Foreign call.
  */
-void assetsForgetGroup(const scripting::ForeignCall& call) {
+void assetsForgetGroup(const sq::scripting::ForeignCall& call) {
     const std::string_view group = stringArgument(call, 1, "group");
     if (AssetManager* manager = managerOf(call);
         manager != nullptr && !isStagingCall(call) && scriptMayRelease(*manager, group)) {
@@ -359,7 +360,7 @@ void assetsForgetGroup(const scripting::ForeignCall& call) {
  * @brief `Assets.isGroupLoaded(group)`.
  * @param call Foreign call.
  */
-void assetsIsGroupLoaded(const scripting::ForeignCall& call) {
+void assetsIsGroupLoaded(const sq::scripting::ForeignCall& call) {
     const std::string_view group = stringArgument(call, 1, "group");
     const AssetManager* manager = managerOf(call);
     call.ret(manager != nullptr && manager->isGroupLoaded(group));
@@ -369,7 +370,7 @@ void assetsIsGroupLoaded(const scripting::ForeignCall& call) {
  * @brief Binds the foreign methods of `core/Assets`; also replayed on the VM of each hot reload.
  * @param vm VM to bind.
  */
-void bindAssetsModule(scripting::WrenVM& vm) {
+void bindAssetsModule(sq::scripting::WrenVM& vm) {
     vm.registerForeignMethod<&assetsDeclare>(ASSETS_MODULE_NAME, ASSETS_CLASS, true, "declare_(_,_,_,_,_)");
     vm.registerForeignMethod<&assetsPreload>(ASSETS_MODULE_NAME, ASSETS_CLASS, true, "preload_(_,_,_,_)");
     vm.registerForeignMethod<&assetsUndeclare>(ASSETS_MODULE_NAME, ASSETS_CLASS, true, "undeclare(_,_)");
@@ -390,13 +391,13 @@ void bindAssetsModule(scripting::WrenVM& vm) {
 AssetScriptingPlugin::AssetScriptingPlugin(std::string declarationModule)
     : _declarationModule(std::move(declarationModule)) {}
 
-void AssetScriptingPlugin::build(engine::PluginBuilder& builder) {
+void AssetScriptingPlugin::build(sq::engine::PluginBuilder& builder) {
     builder.require<AssetPlugin>();
-    builder.require<scripting::ScriptPlugin>();
+    builder.require<sq::scripting::ScriptPlugin>();
 }
 
-void AssetScriptingPlugin::init(engine::Engine& engine) {
-    scripting::ScriptSystem& scripts = engine.getPlugin<scripting::ScriptPlugin>().scriptSystem();
+void AssetScriptingPlugin::init(sq::engine::Engine& engine) {
+    sq::scripting::ScriptSystem& scripts = engine.getPlugin<sq::scripting::ScriptPlugin>().scriptSystem();
     _scripts = &scripts;
     _registry = &engine.registry();
     scripts.addExtension(*this);
@@ -411,7 +412,7 @@ void AssetScriptingPlugin::init(engine::Engine& engine) {
     }
 }
 
-void AssetScriptingPlugin::shutdown(engine::Engine& /*engine*/) {
+void AssetScriptingPlugin::shutdown(sq::engine::Engine& /*engine*/) {
     if (_scripts != nullptr) {
         _scripts->removeExtension(*this);
     }
@@ -419,22 +420,22 @@ void AssetScriptingPlugin::shutdown(engine::Engine& /*engine*/) {
     _registry = nullptr;
 }
 
-std::vector<scripting::ModuleSource> AssetScriptingPlugin::modules() const {
+std::vector<sq::scripting::ModuleSource> AssetScriptingPlugin::modules() const {
     return {{.name = std::string(ASSETS_MODULE_NAME), .source = std::string(ASSETS_MODULE_SOURCE)}};
 }
 
-void AssetScriptingPlugin::bind(scripting::WrenVM& vm) { bindAssetsModule(vm); }
+void AssetScriptingPlugin::bind(sq::scripting::WrenVM& vm) { bindAssetsModule(vm); }
 
-void AssetScriptingPlugin::onVmReset(const scripting::VmResetPhase phase) {
+void AssetScriptingPlugin::onVmReset(const sq::scripting::VmResetPhase phase) {
     if (_registry == nullptr || _scripts == nullptr || !_registry->hasResource<AssetManager>()) {
         return;
     }
     auto& assets = _registry->getResource<AssetManager>();
-    if (phase == scripting::VmResetPhase::Before) {
+    if (phase == sq::scripting::VmResetPhase::Before) {
         assets.beginScriptDeclarations(true);
     } else {
         assets.endScriptDeclarations(_scripts->lastReplaySucceeded());
     }
 }
 
-}  // namespace assets
+}  // namespace sq::assets

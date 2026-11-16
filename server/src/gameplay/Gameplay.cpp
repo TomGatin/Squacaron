@@ -15,7 +15,7 @@
 
 namespace rtype::server::gameplay {
 
-void addGameplayPlugins(engine::Engine& engine, const std::shared_ptr<const level::Level>& level) {
+void addGameplayPlugins(sq::engine::Engine& engine, const std::shared_ptr<const level::Level>& level) {
     // Each plugin has one job; they talk through the events of GameplayEvents.hpp, never through direct calls.
     engine.addPlugin<LevelDirectorPlugin>(level);
     engine.addPlugin<CombatPlugin>();

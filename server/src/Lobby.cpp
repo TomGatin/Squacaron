@@ -26,12 +26,12 @@ void Lobby::removeClient(const ClientId client) {
 void Lobby::onMessage(const ClientId client, const protocol::Message& message) {
     if (isInGame(client)) {
         // TODO(protocol): Chat -> fill clientId, then send to the other players of the room (also valid in the lobby).
-        engine::log::debug(LOG_TAG, "client ", client, " sent a message out of phase (index ", message.index(),
-                           "): dropped");
+        sq::engine::log::debug(LOG_TAG, "client ", client, " sent a message out of phase (index ", message.index(),
+                               "): dropped");
         return;
     }
     if (std::holds_alternative<protocol::LobbyListRequest>(message)) {
-        _network->send(client, protocol::encode(lobbyList()), ecs::net::Channel::Reliable);
+        _network->send(client, protocol::encode(lobbyList()), sq::net::Channel::Reliable);
     } else if (std::holds_alternative<protocol::LobbyCreate>(message)) {
         onLobbyCreate(client);
     } else if (const auto* join = std::get_if<protocol::LobbyJoin>(&message)) {
@@ -39,14 +39,14 @@ void Lobby::onMessage(const ClientId client, const protocol::Message& message) {
     } else if (const auto* ready = std::get_if<protocol::LobbyReady>(&message)) {
         onLobbyReady(client, ready->ready);
     } else {
-        engine::log::debug(LOG_TAG, "client ", client, " sent an unhandled message (index ", message.index(), ")");
+        sq::engine::log::debug(LOG_TAG, "client ", client, " sent an unhandled message (index ", message.index(), ")");
     }
 }
 
-void Lobby::onUnreliableData(const ClientId client, const ecs::net::Bytes& data) {
+void Lobby::onUnreliableData(const ClientId client, const sq::net::Bytes& data) {
     const auto id = roomOf(client);
     if (!id) {
-        engine::log::debug(LOG_TAG, "client ", client, " is not in a room: UDP data ignored");
+        sq::engine::log::debug(LOG_TAG, "client ", client, " is not in a room: UDP data ignored");
         return;
     }
     if (const auto room = _rooms.find(*id); room != _rooms.end()) {
@@ -61,7 +61,7 @@ void Lobby::clear() {
             continue;
         }
         for (const RoomPlayer& player : room.players()) {
-            _network->send(player.client, shutdown, ecs::net::Channel::Reliable);
+            _network->send(player.client, shutdown, sq::net::Channel::Reliable);
         }
     }
     _rooms.clear();
@@ -79,7 +79,7 @@ void Lobby::update() {
         for (const RoomPlayer& player : it->second.players()) {
             _roomOf.erase(player.client);
         }
-        engine::log::info(LOG_TAG, "room ", it->first, " ended");
+        sq::engine::log::info(LOG_TAG, "room ", it->first, " ended");
         it = _rooms.erase(it);  // joins the room's thread
         reaped = true;
     }
@@ -90,15 +90,15 @@ void Lobby::update() {
 
 void Lobby::onLobbyCreate(const ClientId client) {
     if (roomOf(client) || _rooms.size() >= protocol::MAX_ROOMS) {
-        engine::log::debug(LOG_TAG, "client ", client, " cannot create a room: dropped");
+        sq::engine::log::debug(LOG_TAG, "client ", client, " cannot create a room: dropped");
         return;
     }
     const RoomId id = _nextRoomId++;
-    Room& room = _rooms.try_emplace(id, *_network, MAX_PLAYERS_PER_ROOM, ecs::time::DEFAULT_FIXED_DT, nullptr, _level)
+    Room& room = _rooms.try_emplace(id, *_network, MAX_PLAYERS_PER_ROOM, sq::time::DEFAULT_FIXED_DT, nullptr, _level)
                      .first->second;
     room.addPlayer(client);
     _roomOf[client] = id;
-    engine::log::debug(LOG_TAG, "client ", client, " created room ", id);
+    sq::engine::log::debug(LOG_TAG, "client ", client, " created room ", id);
     sendLobbyUpdate(id, room);
     broadcastLobbyList();
 }
@@ -106,12 +106,12 @@ void Lobby::onLobbyCreate(const ClientId client) {
 void Lobby::onLobbyJoin(const ClientId client, const RoomId id) {
     const auto it = _rooms.find(id);
     if (roomOf(client) || it == _rooms.end() || !it->second.addPlayer(client)) {
-        engine::log::debug(LOG_TAG, "client ", client, " cannot join room ", id, ": dropped");
+        sq::engine::log::debug(LOG_TAG, "client ", client, " cannot join room ", id, ": dropped");
         return;
     }
     _roomOf[client] = id;
-    engine::log::debug(LOG_TAG, "client ", client, " joined room ", id, " (", it->second.players().size(), '/',
-                       static_cast<int>(MAX_PLAYERS_PER_ROOM), " players)");
+    sq::engine::log::debug(LOG_TAG, "client ", client, " joined room ", id, " (", it->second.players().size(), '/',
+                           static_cast<int>(MAX_PLAYERS_PER_ROOM), " players)");
     sendLobbyUpdate(id, it->second);
     broadcastLobbyList();
 }
@@ -119,7 +119,7 @@ void Lobby::onLobbyJoin(const ClientId client, const RoomId id) {
 void Lobby::onLobbyReady(const ClientId client, const bool ready) {
     const auto id = roomOf(client);
     if (!id) {
-        engine::log::debug(LOG_TAG, "client ", client, " is not in a room: LobbyReady dropped");
+        sq::engine::log::debug(LOG_TAG, "client ", client, " is not in a room: LobbyReady dropped");
         return;
     }
     const auto it = _rooms.find(*id);
@@ -144,16 +144,16 @@ void Lobby::leaveRoom(const ClientId client) {
     }
     Room& room = it->second;
     room.removePlayer(client);
-    engine::log::debug(LOG_TAG, "client ", client, " left room ", *id);
+    sq::engine::log::debug(LOG_TAG, "client ", client, " left room ", *id);
     if (room.isEmpty()) {
         _rooms.erase(it);
-        engine::log::debug(LOG_TAG, "room ", *id, " destroyed (empty)");
+        sq::engine::log::debug(LOG_TAG, "room ", *id, " destroyed (empty)");
         broadcastLobbyList();
         return;
     }
     const auto left = protocol::encode(protocol::PlayerLeft{.clientId = client});
     for (const RoomPlayer& other : room.players()) {
-        _network->send(other.client, left, ecs::net::Channel::Reliable);
+        _network->send(other.client, left, sq::net::Channel::Reliable);
     }
     if (!room.isPlaying()) {
         sendLobbyUpdate(*id, room);
@@ -174,12 +174,12 @@ bool Lobby::startIfReady(const RoomId id, Room& room) {
     for (const RoomPlayer& player : room.players()) {
         _network->send(player.client,
                        protocol::encode(protocol::GameStart{.roomId = id, .playerIndex = index, .playerCount = count}),
-                       ecs::net::Channel::Reliable);
+                       sq::net::Channel::Reliable);
         ++index;
     }
     room.start();
     room.runInBackground();
-    engine::log::info(LOG_TAG, "room ", id, " started with ", room.players().size(), " players");
+    sq::engine::log::info(LOG_TAG, "room ", id, " started with ", room.players().size(), " players");
     broadcastLobbyList();
     return true;
 }
@@ -192,7 +192,7 @@ void Lobby::sendLobbyUpdate(const RoomId id, const Room& room) const {
     }
     const auto bytes = protocol::encode(update);
     for (const RoomPlayer& player : room.players()) {
-        _network->send(player.client, bytes, ecs::net::Channel::Reliable);
+        _network->send(player.client, bytes, sq::net::Channel::Reliable);
     }
 }
 
@@ -214,7 +214,7 @@ void Lobby::broadcastLobbyList() const {
     const auto bytes = protocol::encode(lobbyList());
     for (const ClientId client : _clients) {
         if (!isInGame(client)) {
-            _network->send(client, bytes, ecs::net::Channel::Reliable);
+            _network->send(client, bytes, sq::net::Channel::Reliable);
         }
     }
 }

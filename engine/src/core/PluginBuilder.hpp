@@ -9,7 +9,7 @@
 #include <typeindex>
 #include <vector>
 
-namespace engine {
+namespace sq::engine {
 
 /**
  * @brief Dependency metadata registered for a single required or optional dependency.
@@ -124,6 +124,6 @@ class PluginBuilder {
     std::vector<PluginDependency> _requiredServices;
 };
 
-}  // namespace engine
+}  // namespace sq::engine
 
 #include "core/PluginBuilder.tpp"  // IWYU pragma: export

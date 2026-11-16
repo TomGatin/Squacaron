@@ -37,25 +37,25 @@ constexpr const char* LOG_TAG = "match";
 constexpr const char* DEFAULT_NAME = "JOUEUR ";
 }  // namespace
 
-void RosterPlugin::build(engine::PluginBuilder& builder) {
-    builder.require<ecs::net::NetworkPlugin>();
+void RosterPlugin::build(sq::engine::PluginBuilder& builder) {
+    builder.require<sq::net::NetworkPlugin>();
     builder.require<CarSimulationPlugin>();
 }
 
-void RosterPlugin::init(engine::Engine& engine) {
+void RosterPlugin::init(sq::engine::Engine& engine) {
     auto& events = engine.eventBus();
-    _connected = events.subscribe<ecs::net::PeerConnected>([this, &engine](const ecs::net::PeerConnected& event) {
+    _connected = events.subscribe<sq::net::PeerConnected>([this, &engine](const sq::net::PeerConnected& event) {
         if (join(engine, event.peer)) {
-            engine::log::info(LOG_TAG, "player ", event.peer, " joined (", _players.size(), " playing)");
+            sq::engine::log::info(LOG_TAG, "player ", event.peer, " joined (", _players.size(), " playing)");
         }
     });
     _disconnected =
-        events.subscribe<ecs::net::PeerDisconnected>([this, &engine](const ecs::net::PeerDisconnected& event) {
+        events.subscribe<sq::net::PeerDisconnected>([this, &engine](const sq::net::PeerDisconnected& event) {
             if (leave(engine, event.peer)) {
-                engine::log::info(LOG_TAG, "player ", event.peer, " left (", _players.size(), " playing)");
+                sq::engine::log::info(LOG_TAG, "player ", event.peer, " left (", _players.size(), " playing)");
             }
         });
-    _packets = events.subscribe<ecs::net::PacketReceived>([this, &engine](const ecs::net::PacketReceived& packet) {
+    _packets = events.subscribe<sq::net::PacketReceived>([this, &engine](const sq::net::PacketReceived& packet) {
         const auto player = _players.find(packet.peer);
         if (player == _players.end()) {
             return;
@@ -69,26 +69,26 @@ void RosterPlugin::init(engine::Engine& engine) {
     });
 }
 
-void RosterPlugin::broadcastNames(engine::Engine& engine) const {
+void RosterPlugin::broadcastNames(sq::engine::Engine& engine) const {
     protocol::PlayerNames names;
     for (const auto& [peer, player] : _players) {
         names.players.push_back(protocol::PlayerName{.carId = player.carId, .name = player.name});
     }
-    engine.service<ecs::net::INetworkService>().broadcast(protocol::encode(names), ecs::net::Channel::Reliable);
+    engine.service<sq::net::INetworkService>().broadcast(protocol::encode(names), sq::net::Channel::Reliable);
 }
 
-void RosterPlugin::shutdown(engine::Engine& engine) {
+void RosterPlugin::shutdown(sq::engine::Engine& engine) {
     auto& events = engine.eventBus();
     if (_connected) {
-        events.unsubscribe<ecs::net::PeerConnected>(*_connected);
+        events.unsubscribe<sq::net::PeerConnected>(*_connected);
         _connected.reset();
     }
     if (_disconnected) {
-        events.unsubscribe<ecs::net::PeerDisconnected>(*_disconnected);
+        events.unsubscribe<sq::net::PeerDisconnected>(*_disconnected);
         _disconnected.reset();
     }
     if (_packets) {
-        events.unsubscribe<ecs::net::PacketReceived>(*_packets);
+        events.unsubscribe<sq::net::PacketReceived>(*_packets);
         _packets.reset();
     }
     _players.clear();
@@ -115,40 +115,40 @@ std::optional<std::size_t> RosterPlugin::freeSlot() const {
     return std::nullopt;
 }
 
-bool RosterPlugin::join(engine::Engine& engine, const ecs::net::PeerId peer) {
+bool RosterPlugin::join(sq::engine::Engine& engine, const sq::net::PeerId peer) {
     if (_players.contains(peer)) {
         return false;
     }
     const auto slot = freeSlot();
     if (!slot) {
         // The MatchServer never lets a fifth player in; refuse anyway rather than overflow the teams.
-        engine::log::warning(LOG_TAG, "match full, player ", peer, " refused");
+        sq::engine::log::warning(LOG_TAG, "match full, player ", peer, " refused");
         return false;
     }
     _slots.at(*slot) = true;
 
-    ecs::Registry& registry = engine.registry();
-    const ecs::Entity car = registry.spawnEntity();
+    sq::ecs::Registry& registry = engine.registry();
+    const sq::ecs::Entity car = registry.spawnEntity();
     // The `Car` script moves it to its kickoff spot (`placeAtKickoff`): Kickoff.wren owns the spots.
-    registry.addComponent(car, ecs::Transform{.x = (arena::LEFT + arena::RIGHT) / 2.0F, .y = arena::BOTTOM / 2.0F});
-    input::InputState controls;
+    registry.addComponent(car, sq::ecs::Transform{.x = (arena::LEFT + arena::RIGHT) / 2.0F, .y = arena::BOTTOM / 2.0F});
+    sq::input::InputState controls;
     controls.playerIndex = static_cast<int>(*slot);
     registry.addComponent(car, std::move(controls));
-    registry.addComponent(car, ecs::InputBuffer{});
-    registry.addComponent(car, ecs::NetworkOwner{.client = peer});
+    registry.addComponent(car, sq::ecs::InputBuffer{});
+    registry.addComponent(car, sq::ecs::NetworkOwner{.client = peer});
     registry.addComponent(car, game::CarLook{.color = static_cast<std::uint8_t>(*slot % PLAYER_COLORS.size())});
     registry.addComponent(car, game::CarStatus{.boost = 0.0F, .boosting = false, .placeAtKickoff = true});
     registry.addComponent(car, game::CarCues{});
     // Stepped by the `Match` script, not by its own update.
-    registry.addComponent(car, scripting::ScriptComponent{
+    registry.addComponent(car, sq::scripting::ScriptComponent{
                                    .moduleName = std::string(game::CAR_SCRIPT_MODULE),
                                    .className = "Car",
                                });
-    const std::uint32_t carId = ecs::net::replicate(registry, car, game::KIND_CAR);
+    const std::uint32_t carId = sq::net::replicate(registry, car, game::KIND_CAR);
     // The client needs to know which car is its own (its camera follows it) and its team (who won).
-    engine.service<ecs::net::INetworkService>().send(
+    engine.service<sq::net::INetworkService>().send(
         peer, protocol::encode(protocol::Welcome{.carId = carId, .team = static_cast<protocol::Team>(*slot % 2)}),
-        ecs::net::Channel::Reliable);
+        sq::net::Channel::Reliable);
     _players.emplace(peer, Player{
                                .slot = *slot,
                                .car = car,
@@ -159,13 +159,13 @@ bool RosterPlugin::join(engine::Engine& engine, const ecs::net::PeerId peer) {
     return true;
 }
 
-bool RosterPlugin::leave(engine::Engine& engine, const ecs::net::PeerId peer) {
+bool RosterPlugin::leave(sq::engine::Engine& engine, const sq::net::PeerId peer) {
     const auto it = _players.find(peer);
     if (it == _players.end()) {
         return false;
     }
     // Through the script system: it drops the script instance before the entity is killed.
-    engine.getPlugin<scripting::ScriptPlugin>().scriptSystem().queueDestroyEntity(it->second.car);
+    engine.getPlugin<sq::scripting::ScriptPlugin>().scriptSystem().queueDestroyEntity(it->second.car);
     _slots.at(it->second.slot) = false;
     _players.erase(it);
     broadcastNames(engine);

@@ -14,7 +14,7 @@
 // clang-format on
 #endif
 
-namespace ecs::time {
+namespace sq::time {
 
 namespace {
 
@@ -49,4 +49,4 @@ PreciseSleepScope::~PreciseSleepScope() {
     }
 }
 
-}  // namespace ecs::time
+}  // namespace sq::time

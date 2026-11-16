@@ -2,7 +2,7 @@
 
 #include "systems/render/RenderSystem.hpp"
 
-namespace render::detail {
+namespace sq::render::detail {
 
 /** @brief Orders draw items by visual depth, texture grouping, then entity identity. */
 inline bool drawsBefore(const DrawItem& lhs, const DrawItem& rhs) {
@@ -18,4 +18,4 @@ inline bool drawsBefore(const DrawItem& lhs, const DrawItem& rhs) {
     return lhs.entity < rhs.entity;
 }
 
-}  // namespace render::detail
+}  // namespace sq::render::detail

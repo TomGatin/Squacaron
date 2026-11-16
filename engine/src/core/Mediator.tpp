@@ -17,7 +17,7 @@
 #include "core/Mediator.hpp"  // NOLINT(misc-header-include-cycle)
 #include "core/MediatorError.hpp"
 
-namespace engine {
+namespace sq::engine {
 
 inline Mediator::~Mediator() {
     for (const std::type_index& key : std::views::reverse(_order)) {
@@ -88,4 +88,4 @@ void Mediator::removeService() {
     std::erase(_order, key);
 }
 
-}  // namespace engine
+}  // namespace sq::engine

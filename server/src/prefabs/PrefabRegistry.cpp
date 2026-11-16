@@ -14,7 +14,7 @@
 
 namespace prefabs {
 
-void registerRtypePrefabs(PrefabManager& manager) {
+void registerRtypePrefabs(sq::prefabs::PrefabManager& manager) {
     manager.registerPrefab(MISSILE_PREFAB, buildMissile);
     manager.registerPrefab(PLAYER_BULLET_PREFAB, buildPlayerBullet);
     manager.registerPrefab(ALIEN_SCOUT_PREFAB, buildAlienScout);

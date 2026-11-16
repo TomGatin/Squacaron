@@ -10,24 +10,24 @@
 #include "core/plugins/CorePlugin.hpp"
 #include "ecs/time/Time.hpp"
 
-namespace scripting {
+namespace sq::scripting {
 
-void ScriptPlugin::build(engine::PluginBuilder& builder) { builder.require<engine::CorePlugin>(); }
+void ScriptPlugin::build(sq::engine::PluginBuilder& builder) { builder.require<sq::engine::CorePlugin>(); }
 
-void ScriptPlugin::init(engine::Engine& engine) { _scriptSystem.init(engine.registry(), engine.eventBus()); }
+void ScriptPlugin::init(sq::engine::Engine& engine) { _scriptSystem.init(engine.registry(), engine.eventBus()); }
 
-void ScriptPlugin::update(engine::Engine& /*engine*/, const ecs::time::Time& time) {
+void ScriptPlugin::update(sq::engine::Engine& /*engine*/, const sq::time::Time& time) {
     if (_tick == ScriptTick::EveryFrame) {
         _scriptSystem.update(time.deltaTime);
     }
 }
 
-void ScriptPlugin::fixedUpdate(engine::Engine& /*engine*/, const ecs::time::Time& time) {
+void ScriptPlugin::fixedUpdate(sq::engine::Engine& /*engine*/, const sq::time::Time& time) {
     if (_tick == ScriptTick::FixedStep) {
         _scriptSystem.update(time.deltaTime);
     }
 }
 
-void ScriptPlugin::shutdown(engine::Engine& /*engine*/) { _scriptSystem.stopForwardingCollisions(); }
+void ScriptPlugin::shutdown(sq::engine::Engine& /*engine*/) { _scriptSystem.stopForwardingCollisions(); }
 
-}  // namespace scripting
+}  // namespace sq::scripting

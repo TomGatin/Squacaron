@@ -8,7 +8,7 @@
 #include "audio/types/AudioConfig.hpp"
 #include "audio/types/AudioTypes.hpp"
 
-namespace audio {
+namespace sq::audio {
 
 std::unique_ptr<IAudioBackend> makeAudioBackend(AudioBackendKind kind, AudioConfig config) {
     if (kind == AudioBackendKind::Null) {
@@ -22,4 +22,4 @@ std::unique_ptr<IAudioBackend> makeAudioBackend(AudioBackendKind kind, AudioConf
     return std::make_unique<NullAudioBackend>();
 }
 
-}  // namespace audio
+}  // namespace sq::audio

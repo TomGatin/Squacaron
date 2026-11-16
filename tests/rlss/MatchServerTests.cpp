@@ -16,16 +16,16 @@
 #include "protocol/Protocol.hpp"
 
 namespace protocol = rlss::protocol;
-using ecs::net::Bytes;
-using ecs::net::Channel;
-using ecs::net::EventType;
-using ecs::net::NetworkEvent;
-using ecs::net::PeerId;
+using sq::net::Bytes;
+using sq::net::Channel;
+using sq::net::EventType;
+using sq::net::NetworkEvent;
+using sq::net::PeerId;
 
 namespace {
 
 /** @brief In-memory transport: the test queues events, the server's sends are recorded. */
-class FakeTransport final : public ecs::net::INetworkServer {
+class FakeTransport final : public sq::net::INetworkServer {
   public:
     /** @brief A message sent by the server. */
     struct Sent {

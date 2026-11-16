@@ -12,11 +12,13 @@
 #include "scene/SceneTypes.hpp"
 #include "scripting/detail/WrenTypes.hpp"
 
-namespace scripting {
-class ScriptSystem;
-}
+namespace sq::scripting {
 
-namespace scene {
+class ScriptSystem;
+
+}  // namespace sq::scripting
+
+namespace sq::scene {
 
 /** @brief How a scripted scene is declared. */
 struct ScriptSceneOptions {
@@ -53,7 +55,7 @@ class ScriptScene final : public IScene {
      * @param scripts Script system running the class; must outlive the scene's time on the stack.
      */
     ScriptScene(std::string name, std::string module, std::string className, ScriptSceneOptions options,
-                scripting::ScriptSystem& scripts);
+                sq::scripting::ScriptSystem& scripts);
 
     /** @brief Destructor. */
     ~ScriptScene() override = default;
@@ -135,14 +137,14 @@ class ScriptScene final : public IScene {
      * @brief Calls a hook of `SceneHooks_` on the instance, with the scene as script owner.
      * @param hook Static method of `SceneHooks_` taking the instance (e.g. `enter(_)`).
      */
-    void callHook(const scripting::detail::UniqueWrenHandle& hook);
+    void callHook(const sq::scripting::detail::UniqueWrenHandle& hook);
 
     /**
      * @brief Calls `update(_)` or `fixedUpdate(_)` on the instance, with the scene as script owner.
      * @param method Cached call handle.
      * @param dt Time step in seconds.
      */
-    void callStep(const scripting::detail::UniqueWrenHandle& method, float dt);
+    void callStep(const sq::scripting::detail::UniqueWrenHandle& method, float dt);
 
     /** @brief Name of the scene. */
     std::string _name;
@@ -153,25 +155,25 @@ class ScriptScene final : public IScene {
     /** @brief Mode and per-frame hooks. */
     ScriptSceneOptions _options;
     /** @brief Script system running the class. */
-    scripting::ScriptSystem* _scripts;
+    sq::scripting::ScriptSystem* _scripts;
     /** @brief Id of the scene, known from the first enter. */
     SceneId _id = INVALID_SCENE;
     /** @brief `true` between enter and exit. */
     bool _active = false;
     /** @brief Wren instance of the class. */
-    scripting::detail::UniqueWrenHandle _instance;
+    sq::scripting::detail::UniqueWrenHandle _instance;
     /** @brief `SceneHooks_.enter(_)` and the other hook handles. */
-    scripting::detail::UniqueWrenHandle _enterHook;
+    sq::scripting::detail::UniqueWrenHandle _enterHook;
     /** @brief Handle of `SceneHooks_.exit(_)`. */
-    scripting::detail::UniqueWrenHandle _exitHook;
+    sq::scripting::detail::UniqueWrenHandle _exitHook;
     /** @brief Handle of `SceneHooks_.pause(_)`. */
-    scripting::detail::UniqueWrenHandle _pauseHook;
+    sq::scripting::detail::UniqueWrenHandle _pauseHook;
     /** @brief Handle of `SceneHooks_.resume(_)`. */
-    scripting::detail::UniqueWrenHandle _resumeHook;
+    sq::scripting::detail::UniqueWrenHandle _resumeHook;
     /** @brief Handle of `update(_)`. */
-    scripting::detail::UniqueWrenHandle _updateMethod;
+    sq::scripting::detail::UniqueWrenHandle _updateMethod;
     /** @brief Handle of `fixedUpdate(_)`. */
-    scripting::detail::UniqueWrenHandle _fixedUpdateMethod;
+    sq::scripting::detail::UniqueWrenHandle _fixedUpdateMethod;
 };
 
-}  // namespace scene
+}  // namespace sq::scene

@@ -15,10 +15,10 @@ struct Position {
 };
 
 TEST(ECS, LifecycleAndIteration) {
-    ecs::Registry registry;
+    sq::ecs::Registry registry;
     registry.registerComponent<Position>();
 
-    ecs::Entity const e1 = registry.spawnEntity();
+    sq::ecs::Entity const e1 = registry.spawnEntity();
     registry.addComponent<Position>(e1, Position{.x = 10.0F, .y = 20.0F});
 
     auto& positions = registry.getComponents<Position>();
@@ -30,30 +30,30 @@ TEST(ECS, LifecycleAndIteration) {
 }
 
 TEST(ECS, EntityRecycling) {
-    ecs::Registry registry;
+    sq::ecs::Registry registry;
 
-    ecs::Entity const e1 = registry.spawnEntity();
-    ecs::Entity const e2 = registry.spawnEntity();
+    sq::ecs::Entity const e1 = registry.spawnEntity();
+    sq::ecs::Entity const e2 = registry.spawnEntity();
 
     EXPECT_EQ(e1, 0);
     EXPECT_EQ(e2, 1);
 
     registry.killEntity(e1);
 
-    ecs::Entity const e3 = registry.spawnEntity();
-    EXPECT_EQ(ecs::entityIndex(e3), ecs::entityIndex(e1));  // Should recycle e1's slot...
-    EXPECT_NE(e3, e1);                                      // ...with a new generation
-    EXPECT_EQ(ecs::entityGeneration(e3), 1U);
+    sq::ecs::Entity const e3 = registry.spawnEntity();
+    EXPECT_EQ(sq::ecs::entityIndex(e3), sq::ecs::entityIndex(e1));  // Should recycle e1's slot...
+    EXPECT_NE(e3, e1);                                              // ...with a new generation
+    EXPECT_EQ(sq::ecs::entityGeneration(e3), 1U);
 }
 
 TEST(ECS, DestroyListenerRunsBeforeComponentsAreRemoved) {
-    ecs::Registry registry;
+    sq::ecs::Registry registry;
     registry.registerComponent<Position>();
-    const ecs::Entity entity = registry.spawnEntity();
+    const sq::ecs::Entity entity = registry.spawnEntity();
     registry.addComponent<Position>(entity, Position{.x = 1.0F, .y = 2.0F});
 
-    std::optional<ecs::Entity> notifiedEntity;
-    const std::size_t listenerId = registry.addDestroyListener([&](ecs::Entity destroyed) {
+    std::optional<sq::ecs::Entity> notifiedEntity;
+    const std::size_t listenerId = registry.addDestroyListener([&](sq::ecs::Entity destroyed) {
         EXPECT_TRUE(registry.hasComponent<Position>(destroyed));
         notifiedEntity = destroyed;
     });
@@ -66,23 +66,24 @@ TEST(ECS, DestroyListenerRunsBeforeComponentsAreRemoved) {
 }
 
 TEST(ECS, ThrowingDestroyListenerStillDestroysEntity) {
-    ecs::Registry registry;
+    sq::ecs::Registry registry;
     registry.registerComponent<Position>();
-    const ecs::Entity entity = registry.spawnEntity();
+    const sq::ecs::Entity entity = registry.spawnEntity();
     registry.addComponent<Position>(entity, Position{.x = 1.0F, .y = 2.0F});
 
     bool secondNotified = false;
-    const std::size_t throwingId =
-        registry.addDestroyListener([](ecs::Entity /*destroyed*/) { throw std::runtime_error("listener failure"); });
-    const std::size_t secondId = registry.addDestroyListener([&](ecs::Entity /*destroyed*/) { secondNotified = true; });
+    const std::size_t throwingId = registry.addDestroyListener(
+        [](sq::ecs::Entity /*destroyed*/) { throw std::runtime_error("listener failure"); });
+    const std::size_t secondId =
+        registry.addDestroyListener([&](sq::ecs::Entity /*destroyed*/) { secondNotified = true; });
 
     EXPECT_THROW(registry.killEntity(entity), std::runtime_error);
 
     EXPECT_TRUE(secondNotified);
     EXPECT_FALSE(registry.isAlive(entity));
     EXPECT_FALSE(registry.getComponents<Position>().contains(entity));
-    const ecs::Entity recycled = registry.spawnEntity();
-    EXPECT_EQ(ecs::entityIndex(recycled), ecs::entityIndex(entity));
+    const sq::ecs::Entity recycled = registry.spawnEntity();
+    EXPECT_EQ(sq::ecs::entityIndex(recycled), sq::ecs::entityIndex(entity));
     EXPECT_NE(recycled, entity);
 
     // The dispatch depth was restored: a listener removed now is compacted at once and no longer notified.
@@ -92,13 +93,13 @@ TEST(ECS, ThrowingDestroyListenerStillDestroysEntity) {
 }
 
 TEST(ECS, DestroyListenerCannotDestroyEntityRecursively) {
-    ecs::Registry registry;
+    sq::ecs::Registry registry;
     registry.registerComponent<Position>();
-    const ecs::Entity entity = registry.spawnEntity();
+    const sq::ecs::Entity entity = registry.spawnEntity();
     registry.addComponent<Position>(entity, Position{.x = 1.0F, .y = 2.0F});
 
     int calls = 0;
-    registry.addDestroyListener([&](ecs::Entity destroyed) {
+    registry.addDestroyListener([&](sq::ecs::Entity destroyed) {
         ++calls;
         EXPECT_FALSE(registry.isAlive(destroyed));
         EXPECT_TRUE(registry.hasComponent<Position>(destroyed));
@@ -110,54 +111,54 @@ TEST(ECS, DestroyListenerCannotDestroyEntityRecursively) {
     EXPECT_EQ(calls, 1);
     EXPECT_FALSE(registry.isAlive(entity));
     EXPECT_FALSE(registry.hasComponent<Position>(entity));
-    ecs::Entity const recycled = registry.spawnEntity();
-    EXPECT_EQ(ecs::entityIndex(recycled), ecs::entityIndex(entity));
+    sq::ecs::Entity const recycled = registry.spawnEntity();
+    EXPECT_EQ(sq::ecs::entityIndex(recycled), sq::ecs::entityIndex(entity));
     EXPECT_NE(recycled, entity);
-    EXPECT_NE(ecs::entityIndex(registry.spawnEntity()), ecs::entityIndex(entity));
+    EXPECT_NE(sq::ecs::entityIndex(registry.spawnEntity()), sq::ecs::entityIndex(entity));
 }
 
 TEST(ECS, ListenerRemovalDuringDispatchSkipsUnregisteredListeners) {
-    ecs::Registry registry;
-    const ecs::Entity entity = registry.spawnEntity();
+    sq::ecs::Registry registry;
+    const sq::ecs::Entity entity = registry.spawnEntity();
     int destroyCalls = 0;
     int componentRemoveCalls = 0;
 
     std::size_t firstDestroyListenerId = 0;
     std::size_t secondDestroyListenerId = 0;
-    firstDestroyListenerId = registry.addDestroyListener([&](ecs::Entity) {
+    firstDestroyListenerId = registry.addDestroyListener([&](sq::ecs::Entity) {
         ++destroyCalls;
         registry.removeDestroyListener(firstDestroyListenerId);
         registry.removeDestroyListener(secondDestroyListenerId);
     });
-    secondDestroyListenerId = registry.addDestroyListener([&](ecs::Entity) { ++destroyCalls; });
+    secondDestroyListenerId = registry.addDestroyListener([&](sq::ecs::Entity) { ++destroyCalls; });
 
     registry.killEntity(entity);
     EXPECT_EQ(destroyCalls, 1);
 
-    const ecs::Entity componentEntity = registry.spawnEntity();
+    const sq::ecs::Entity componentEntity = registry.spawnEntity();
     registry.addComponent<Position>(componentEntity, Position{.x = 1.0F, .y = 2.0F});
 
     std::size_t firstComponentListenerId = 0;
     std::size_t secondComponentListenerId = 0;
-    firstComponentListenerId = registry.addComponentRemoveListener([&](ecs::Entity, ecs::ComponentTypeId) {
+    firstComponentListenerId = registry.addComponentRemoveListener([&](sq::ecs::Entity, sq::ecs::ComponentTypeId) {
         ++componentRemoveCalls;
         registry.removeComponentRemoveListener(firstComponentListenerId);
         registry.removeComponentRemoveListener(secondComponentListenerId);
     });
     secondComponentListenerId =
-        registry.addComponentRemoveListener([&](ecs::Entity, ecs::ComponentTypeId) { ++componentRemoveCalls; });
+        registry.addComponentRemoveListener([&](sq::ecs::Entity, sq::ecs::ComponentTypeId) { ++componentRemoveCalls; });
 
     registry.removeComponent<Position>(componentEntity);
     EXPECT_EQ(componentRemoveCalls, 1);
 }
 
 TEST(ECS, SparseArraySwapAndPop) {
-    ecs::Registry registry;
+    sq::ecs::Registry registry;
     registry.registerComponent<Position>();
 
-    ecs::Entity const e1 = registry.spawnEntity();
-    ecs::Entity const e2 = registry.spawnEntity();
-    ecs::Entity const e3 = registry.spawnEntity();
+    sq::ecs::Entity const e1 = registry.spawnEntity();
+    sq::ecs::Entity const e2 = registry.spawnEntity();
+    sq::ecs::Entity const e3 = registry.spawnEntity();
 
     registry.addComponent<Position>(e1, Position{.x = 1.0F, .y = 1.0F});
     registry.addComponent<Position>(e2, Position{.x = 2.0F, .y = 2.0F});
@@ -183,12 +184,12 @@ struct Velocity {
 };
 
 TEST(ECS, RunSystemView) {
-    ecs::Registry registry;
+    sq::ecs::Registry registry;
     registry.registerComponent<Position>();
     registry.registerComponent<Velocity>();
 
-    ecs::Entity const e1 = registry.spawnEntity();
-    ecs::Entity const e2 = registry.spawnEntity();
+    sq::ecs::Entity const e1 = registry.spawnEntity();
+    sq::ecs::Entity const e2 = registry.spawnEntity();
 
     registry.addComponent<Position>(e1, Position{.x = 0.0F, .y = 0.0F});
     registry.addComponent<Velocity>(e1, Velocity{.dx = 1.0F, .dy = 2.0F});
@@ -196,7 +197,7 @@ TEST(ECS, RunSystemView) {
     registry.addComponent<Position>(e2, Position{.x = 10.0F, .y = 10.0F});
     // e2 has no Velocity
 
-    registry.runSystem<Position, Velocity>([]([[maybe_unused]] ecs::Entity e, Position& pos, Velocity& vel) {
+    registry.runSystem<Position, Velocity>([]([[maybe_unused]] sq::ecs::Entity e, Position& pos, Velocity& vel) {
         pos.x += vel.dx;
         pos.y += vel.dy;
     });
@@ -211,17 +212,17 @@ TEST(ECS, RunSystemView) {
 }
 
 TEST(ECS, RunSystemOptimizesIterationOnSmallestArray) {
-    ecs::Registry registry;
+    sq::ecs::Registry registry;
     for (int i = 0; i < 100; ++i) {
-        ecs::Entity const e = registry.spawnEntity();
+        sq::ecs::Entity const e = registry.spawnEntity();
         registry.addComponent<Position>(e, Position{.x = static_cast<float>(i), .y = 0.0F});
     }
 
-    ecs::Entity const rareEntity = 42;
+    sq::ecs::Entity const rareEntity = 42;
     registry.addComponent<Velocity>(rareEntity, Velocity{.dx = 100.0F, .dy = 200.0F});
 
     int matchCount = 0;
-    registry.runSystem<Position, Velocity>([&](ecs::Entity e, Position& pos, Velocity& vel) {
+    registry.runSystem<Position, Velocity>([&](sq::ecs::Entity e, Position& pos, Velocity& vel) {
         EXPECT_EQ(e, rareEntity);
         EXPECT_FLOAT_EQ(pos.x, 42.0F);
         EXPECT_FLOAT_EQ(vel.dx, 100.0F);
@@ -232,9 +233,9 @@ TEST(ECS, RunSystemOptimizesIterationOnSmallestArray) {
 }
 
 TEST(ECS, AutoRegistration) {
-    ecs::Registry registry;
+    sq::ecs::Registry registry;
     // Notice: no registerComponent call!
-    ecs::Entity const e = registry.spawnEntity();
+    sq::ecs::Entity const e = registry.spawnEntity();
     registry.addComponent<Position>(e, Position{.x = 42.0F, .y = 84.0F});
 
     EXPECT_TRUE(registry.hasComponent<Position>(e));
@@ -242,8 +243,8 @@ TEST(ECS, AutoRegistration) {
 }
 
 TEST(ECS, EmplaceAndRemoveComponent) {
-    ecs::Registry registry;
-    ecs::Entity const e = registry.spawnEntity();
+    sq::ecs::Registry registry;
+    sq::ecs::Entity const e = registry.spawnEntity();
 
     registry.emplaceComponent<Position>(e, Position{.x = 5.0F, .y = 15.0F});
     EXPECT_TRUE(registry.hasComponent<Position>(e));
@@ -254,16 +255,16 @@ TEST(ECS, EmplaceAndRemoveComponent) {
 }
 
 TEST(ECS, HighThroughputIteration) {
-    ecs::Registry registry;
+    sq::ecs::Registry registry;
     constexpr std::size_t entityCount = 10000;
 
     for (std::size_t i = 0; i < entityCount; ++i) {
-        ecs::Entity const e = registry.spawnEntity();
+        sq::ecs::Entity const e = registry.spawnEntity();
         registry.emplaceComponent<Position>(e, Position{.x = 0.0F, .y = 0.0F});
         registry.emplaceComponent<Velocity>(e, Velocity{.dx = 1.0F, .dy = 2.0F});
     }
 
-    registry.runSystem<Position, Velocity>([](ecs::Entity /*unused*/, Position& pos, Velocity const& vel) {
+    registry.runSystem<Position, Velocity>([](sq::ecs::Entity /*unused*/, Position& pos, Velocity const& vel) {
         pos.x += vel.dx;
         pos.y += vel.dy;
     });
@@ -278,12 +279,12 @@ TEST(ECS, HighThroughputIteration) {
 #include "events/EventBus.hpp"
 
 struct PlayerDamagedEvent {
-    ecs::Entity player;
+    sq::ecs::Entity player;
     int damage;
 };
 
 TEST(Events, EventBusPubSub) {
-    ecs::EventBus bus;
+    sq::events::EventBus bus;
     int totalDamage = 0;
 
     auto token =
@@ -300,9 +301,9 @@ TEST(Events, EventBusPubSub) {
 }
 
 TEST(Events, UnsubscribeInsideCallbackIsSafe) {
-    ecs::EventBus bus;
-    ecs::EventBus::EventToken token1 = 0;
-    ecs::EventBus::EventToken token2 = 0;
+    sq::events::EventBus bus;
+    sq::events::EventBus::EventToken token1 = 0;
+    sq::events::EventBus::EventToken token2 = 0;
     int calledCount1 = 0;
     int calledCount2 = 0;
 
@@ -325,7 +326,7 @@ TEST(Events, UnsubscribeInsideCallbackIsSafe) {
 }
 
 TEST(Events, SubscribeInsideCallbackDoesNotAffectCurrentDispatch) {
-    ecs::EventBus bus;
+    sq::events::EventBus bus;
     int callCountA = 0;
     int callCountB = 0;
 
@@ -346,7 +347,7 @@ TEST(Events, SubscribeInsideCallbackDoesNotAffectCurrentDispatch) {
 #include "ecs/CommandBuffer.hpp"
 
 TEST(ECS, EntityLivenessAndDoubleKill) {
-    ecs::Registry registry;
+    sq::ecs::Registry registry;
 
     EXPECT_FALSE(registry.isAlive(0));
     EXPECT_FALSE(registry.isAlive(999));
@@ -355,7 +356,7 @@ TEST(ECS, EntityLivenessAndDoubleKill) {
     registry.killEntity(999);
     EXPECT_FALSE(registry.isAlive(999));
 
-    ecs::Entity const e1 = registry.spawnEntity();
+    sq::ecs::Entity const e1 = registry.spawnEntity();
     EXPECT_TRUE(registry.isAlive(e1));
 
     registry.killEntity(e1);
@@ -365,22 +366,22 @@ TEST(ECS, EntityLivenessAndDoubleKill) {
     registry.killEntity(e1);
     EXPECT_FALSE(registry.isAlive(e1));
 
-    ecs::Entity const e2 = registry.spawnEntity();
-    EXPECT_EQ(ecs::entityIndex(e2), ecs::entityIndex(e1));
+    sq::ecs::Entity const e2 = registry.spawnEntity();
+    EXPECT_EQ(sq::ecs::entityIndex(e2), sq::ecs::entityIndex(e1));
     EXPECT_TRUE(registry.isAlive(e2));
     EXPECT_FALSE(registry.isAlive(e1));
 
     // Next spawn must use a new slot, NOT e1's slot again
-    ecs::Entity const e3 = registry.spawnEntity();
-    EXPECT_NE(ecs::entityIndex(e3), ecs::entityIndex(e1));
+    sq::ecs::Entity const e3 = registry.spawnEntity();
+    EXPECT_NE(sq::ecs::entityIndex(e3), sq::ecs::entityIndex(e1));
     EXPECT_TRUE(registry.isAlive(e3));
 }
 
 TEST(ECS, CommandBufferDeduplication) {
-    ecs::Registry registry;
-    ecs::CommandBuffer cmd;
+    sq::ecs::Registry registry;
+    sq::ecs::CommandBuffer cmd;
 
-    ecs::Entity const e1 = registry.spawnEntity();
+    sq::ecs::Entity const e1 = registry.spawnEntity();
     EXPECT_TRUE(registry.isAlive(e1));
 
     // Queue multiple destroy requests for the same entity
@@ -393,12 +394,12 @@ TEST(ECS, CommandBufferDeduplication) {
     EXPECT_FALSE(registry.isAlive(e1));
 
     // Recycle e1's slot once
-    ecs::Entity const e2 = registry.spawnEntity();
-    EXPECT_EQ(ecs::entityIndex(e2), ecs::entityIndex(e1));
+    sq::ecs::Entity const e2 = registry.spawnEntity();
+    EXPECT_EQ(sq::ecs::entityIndex(e2), sq::ecs::entityIndex(e1));
 
     // Ensure e1's slot was not recycled multiple times
-    ecs::Entity const e3 = registry.spawnEntity();
-    EXPECT_NE(ecs::entityIndex(e3), ecs::entityIndex(e1));
+    sq::ecs::Entity const e3 = registry.spawnEntity();
+    EXPECT_NE(sq::ecs::entityIndex(e3), sq::ecs::entityIndex(e1));
 }
 
 struct GameConfig {
@@ -408,7 +409,7 @@ struct GameConfig {
 };
 
 TEST(ECS, EmplaceAndGetResource) {
-    ecs::Registry registry;
+    sq::ecs::Registry registry;
 
     EXPECT_FALSE(registry.hasResource<GameConfig>());
 
@@ -426,7 +427,7 @@ TEST(ECS, EmplaceAndGetResource) {
 }
 
 TEST(ECS, AddResourceMoveAndCopy) {
-    ecs::Registry registry;
+    sq::ecs::Registry registry;
 
     GameConfig cfg{.width = 1280, .height = 720, .volume = 1.0F};
     registry.addResource(cfg);
@@ -440,7 +441,7 @@ TEST(ECS, AddResourceMoveAndCopy) {
 }
 
 TEST(ECS, HasAndRemoveResource) {
-    ecs::Registry registry;
+    sq::ecs::Registry registry;
 
     registry.emplaceResource<GameConfig>(GameConfig{.width = 640, .height = 480, .volume = 1.0F});
     EXPECT_TRUE(registry.hasResource<GameConfig>());
@@ -453,32 +454,32 @@ TEST(ECS, HasAndRemoveResource) {
 }
 
 TEST(ECS, ThrowOnMissingResource) {
-    ecs::Registry registry;
+    sq::ecs::Registry registry;
 
     EXPECT_THROW((void)registry.getResource<GameConfig>(), std::runtime_error);
 }
 
 TEST(ECS, ConstRegistryResourceAccess) {
-    ecs::Registry registry;
+    sq::ecs::Registry registry;
     registry.emplaceResource<GameConfig>(GameConfig{.width = 1024, .height = 768, .volume = 0.9F});
 
-    const ecs::Registry& constRef = registry;
+    const sq::ecs::Registry& constRef = registry;
     EXPECT_TRUE(constRef.hasResource<GameConfig>());
     EXPECT_EQ(constRef.getResource<GameConfig>().width, 1024);
     EXPECT_FLOAT_EQ(constRef.getResource<GameConfig>().volume, 0.9F);
 }
 
 TEST(ECS, DestroyListenerCanAddListenersDuringDispatch) {
-    ecs::Registry registry;
-    const ecs::Entity entity = registry.spawnEntity();
+    sq::ecs::Registry registry;
+    const sq::ecs::Entity entity = registry.spawnEntity();
     int added = 0;
     int addedCalls = 0;
     std::array<int, 16> capturedState{};
     capturedState.back() = 42;
 
-    registry.addDestroyListener([&registry, &added, &addedCalls, capturedState](ecs::Entity) {
+    registry.addDestroyListener([&registry, &added, &addedCalls, capturedState](sq::ecs::Entity) {
         for (; added < 64; ++added) {
-            registry.addDestroyListener([&addedCalls](ecs::Entity) { ++addedCalls; });
+            registry.addDestroyListener([&addedCalls](sq::ecs::Entity) { ++addedCalls; });
         }
         EXPECT_EQ(capturedState.back(), 42);
     });
@@ -491,8 +492,8 @@ TEST(ECS, DestroyListenerCanAddListenersDuringDispatch) {
 }
 
 TEST(ECS, ComponentRemoveListenerCanAddListenersDuringDispatch) {
-    ecs::Registry registry;
-    const ecs::Entity entity = registry.spawnEntity();
+    sq::ecs::Registry registry;
+    const sq::ecs::Entity entity = registry.spawnEntity();
     registry.addComponent<int>(entity, 1);
     int added = 0;
     int addedCalls = 0;
@@ -500,9 +501,10 @@ TEST(ECS, ComponentRemoveListenerCanAddListenersDuringDispatch) {
     capturedState.back() = 42;
 
     registry.addComponentRemoveListener(
-        [&registry, &added, &addedCalls, capturedState](ecs::Entity, ecs::ComponentTypeId) {
+        [&registry, &added, &addedCalls, capturedState](sq::ecs::Entity, sq::ecs::ComponentTypeId) {
             for (; added < 64; ++added) {
-                registry.addComponentRemoveListener([&addedCalls](ecs::Entity, ecs::ComponentTypeId) { ++addedCalls; });
+                registry.addComponentRemoveListener(
+                    [&addedCalls](sq::ecs::Entity, sq::ecs::ComponentTypeId) { ++addedCalls; });
             }
             EXPECT_EQ(capturedState.back(), 42);
         });
@@ -512,10 +514,10 @@ TEST(ECS, ComponentRemoveListenerCanAddListenersDuringDispatch) {
 }
 
 TEST(RegistryTest, AliveCountFollowsSpawnsAndKills) {
-    ecs::Registry registry;
+    sq::ecs::Registry registry;
     EXPECT_EQ(registry.aliveCount(), 0U);
 
-    const ecs::Entity first = registry.spawnEntity();
+    const sq::ecs::Entity first = registry.spawnEntity();
     registry.spawnEntity();
     EXPECT_EQ(registry.aliveCount(), 2U);
 
@@ -534,35 +536,35 @@ int main(int argc, char** argv) {
 }
 
 TEST(ECSGeneration, HandlePackingRoundTrips) {
-    constexpr ecs::Entity e = ecs::makeEntity(1234U, 56U);
-    static_assert(ecs::entityIndex(e) == 1234U);
-    static_assert(ecs::entityGeneration(e) == 56U);
-    static_assert(ecs::makeEntity(0U, ecs::MAX_ENTITY_GENERATION + 1U) == ecs::makeEntity(0U, 0U));
+    constexpr sq::ecs::Entity e = sq::ecs::makeEntity(1234U, 56U);
+    static_assert(sq::ecs::entityIndex(e) == 1234U);
+    static_assert(sq::ecs::entityGeneration(e) == 56U);
+    static_assert(sq::ecs::makeEntity(0U, sq::ecs::MAX_ENTITY_GENERATION + 1U) == sq::ecs::makeEntity(0U, 0U));
 
     // Every handle, NULL_ENTITY included, must be exact once converted to a Wren number (double).
-    static_assert(ecs::NULL_ENTITY < (ecs::Entity{1} << 53U));
-    EXPECT_EQ(static_cast<ecs::Entity>(static_cast<double>(ecs::NULL_ENTITY)), ecs::NULL_ENTITY);
+    static_assert(sq::ecs::NULL_ENTITY < (sq::ecs::Entity{1} << 53U));
+    EXPECT_EQ(static_cast<sq::ecs::Entity>(static_cast<double>(sq::ecs::NULL_ENTITY)), sq::ecs::NULL_ENTITY);
 }
 
 TEST(ECSGeneration, StaleHandleIsDeadAfterSlotReuse) {
-    ecs::Registry registry;
-    ecs::Entity const oldHandle = registry.spawnEntity();
+    sq::ecs::Registry registry;
+    sq::ecs::Entity const oldHandle = registry.spawnEntity();
     registry.killEntity(oldHandle);
-    ecs::Entity const newHandle = registry.spawnEntity();
+    sq::ecs::Entity const newHandle = registry.spawnEntity();
 
-    ASSERT_EQ(ecs::entityIndex(newHandle), ecs::entityIndex(oldHandle));
+    ASSERT_EQ(sq::ecs::entityIndex(newHandle), sq::ecs::entityIndex(oldHandle));
     EXPECT_FALSE(registry.isAlive(oldHandle));
     EXPECT_TRUE(registry.isAlive(newHandle));
-    EXPECT_FALSE(registry.isAlive(ecs::NULL_ENTITY));
+    EXPECT_FALSE(registry.isAlive(sq::ecs::NULL_ENTITY));
 }
 
 TEST(ECSGeneration, StaleHandleCannotReachNewOccupantComponents) {
-    ecs::Registry registry;
-    ecs::Entity const oldHandle = registry.spawnEntity();
+    sq::ecs::Registry registry;
+    sq::ecs::Entity const oldHandle = registry.spawnEntity();
     registry.addComponent<Position>(oldHandle, Position{.x = 1.0F, .y = 1.0F});
     registry.killEntity(oldHandle);
 
-    ecs::Entity const newHandle = registry.spawnEntity();
+    sq::ecs::Entity const newHandle = registry.spawnEntity();
     registry.addComponent<Position>(newHandle, Position{.x = 2.0F, .y = 2.0F});
 
     auto& positions = registry.getComponents<Position>();
@@ -585,9 +587,9 @@ TEST(ECSGeneration, StaleHandleCannotReachNewOccupantComponents) {
 }
 
 TEST(ECSGeneration, SparseArrayRejectsSlotTakeoverByAnotherHandle) {
-    ecs::SparseArray<Position> positions;
-    ecs::Entity const newHandle = ecs::makeEntity(3U, 1U);
-    ecs::Entity const staleHandle = ecs::makeEntity(3U, 0U);
+    sq::ecs::SparseArray<Position> positions;
+    sq::ecs::Entity const newHandle = sq::ecs::makeEntity(3U, 1U);
+    sq::ecs::Entity const staleHandle = sq::ecs::makeEntity(3U, 0U);
 
     positions.insertAt(newHandle, Position{.x = 2.0F, .y = 0.0F});
 
@@ -608,28 +610,28 @@ TEST(ECSGeneration, SparseArrayRejectsSlotTakeoverByAnotherHandle) {
 }
 
 TEST(ECSGeneration, RegistryRejectsComponentsOnDeadHandles) {
-    ecs::Registry registry;
-    ecs::Entity const killed = registry.spawnEntity();
+    sq::ecs::Registry registry;
+    sq::ecs::Entity const killed = registry.spawnEntity();
     registry.killEntity(killed);
 
     // Killed but slot not reused yet: the component would be orphaned and still visited by runSystem.
     EXPECT_THROW(registry.addComponent<Position>(killed, Position{.x = 1.0F, .y = 1.0F}), std::invalid_argument);
     EXPECT_THROW(registry.emplaceComponent<Position>(killed, 1.0F, 1.0F), std::invalid_argument);
     // Never spawned.
-    EXPECT_THROW(registry.addComponent<Position>(ecs::makeEntity(42U, 0U), Position{}), std::invalid_argument);
-    EXPECT_THROW(registry.addComponent<Position>(ecs::NULL_ENTITY, Position{}), std::invalid_argument);
+    EXPECT_THROW(registry.addComponent<Position>(sq::ecs::makeEntity(42U, 0U), Position{}), std::invalid_argument);
+    EXPECT_THROW(registry.addComponent<Position>(sq::ecs::NULL_ENTITY, Position{}), std::invalid_argument);
 
     int visited = 0;
-    registry.runSystem<Position>([&visited](ecs::Entity /*entity*/, Position& /*pos*/) { ++visited; });
+    registry.runSystem<Position>([&visited](sq::ecs::Entity /*entity*/, Position& /*pos*/) { ++visited; });
     EXPECT_EQ(visited, 0);
 }
 
 TEST(ECSGeneration, SwapAndPopKeepsGenerationalHandles) {
-    ecs::Registry registry;
-    ecs::Entity const recycledSource = registry.spawnEntity();
+    sq::ecs::Registry registry;
+    sq::ecs::Entity const recycledSource = registry.spawnEntity();
     registry.killEntity(recycledSource);
-    ecs::Entity const a = registry.spawnEntity();  // slot 0, generation 1
-    ecs::Entity const b = registry.spawnEntity();  // slot 1, generation 0
+    sq::ecs::Entity const a = registry.spawnEntity();  // slot 0, generation 1
+    sq::ecs::Entity const b = registry.spawnEntity();  // slot 1, generation 0
     registry.addComponent<Position>(a, Position{.x = 1.0F, .y = 0.0F});
     registry.addComponent<Position>(b, Position{.x = 2.0F, .y = 0.0F});
 
@@ -649,41 +651,41 @@ TEST(ECSGeneration, SwapAndPopKeepsGenerationalHandles) {
 }
 
 TEST(ECSGeneration, DestroyListenerReceivesFullHandle) {
-    ecs::Registry registry;
+    sq::ecs::Registry registry;
     registry.killEntity(registry.spawnEntity());
-    ecs::Entity const entity = registry.spawnEntity();
-    ASSERT_EQ(ecs::entityGeneration(entity), 1U);
+    sq::ecs::Entity const entity = registry.spawnEntity();
+    ASSERT_EQ(sq::ecs::entityGeneration(entity), 1U);
 
-    std::optional<ecs::Entity> notified;
-    registry.addDestroyListener([&](ecs::Entity destroyed) { notified = destroyed; });
+    std::optional<sq::ecs::Entity> notified;
+    registry.addDestroyListener([&](sq::ecs::Entity destroyed) { notified = destroyed; });
     registry.killEntity(entity);
 
     EXPECT_EQ(notified, entity);
 }
 
 TEST(ECSGeneration, GenerationWrapsAround) {
-    ecs::Registry registry;
-    ecs::Entity e = registry.spawnEntity();
-    std::uint32_t const index = ecs::entityIndex(e);
+    sq::ecs::Registry registry;
+    sq::ecs::Entity e = registry.spawnEntity();
+    std::uint32_t const index = sq::ecs::entityIndex(e);
 
-    for (std::uint32_t i = 0; i < ecs::MAX_ENTITY_GENERATION; ++i) {
+    for (std::uint32_t i = 0; i < sq::ecs::MAX_ENTITY_GENERATION; ++i) {
         registry.killEntity(e);
         e = registry.spawnEntity();
     }
-    EXPECT_EQ(ecs::entityIndex(e), index);
-    EXPECT_EQ(ecs::entityGeneration(e), ecs::MAX_ENTITY_GENERATION);
+    EXPECT_EQ(sq::ecs::entityIndex(e), index);
+    EXPECT_EQ(sq::ecs::entityGeneration(e), sq::ecs::MAX_ENTITY_GENERATION);
 
     registry.killEntity(e);
     e = registry.spawnEntity();
-    EXPECT_EQ(ecs::entityIndex(e), index);
-    EXPECT_EQ(ecs::entityGeneration(e), 0U);
+    EXPECT_EQ(sq::ecs::entityIndex(e), index);
+    EXPECT_EQ(sq::ecs::entityGeneration(e), 0U);
     EXPECT_TRUE(registry.isAlive(e));
 }
 
 TEST(ECSGeneration, HandleWithGarbageHighBitsIsNotAlive) {
-    ecs::Registry registry;
-    ecs::Entity const e = registry.spawnEntity();
-    ecs::Entity const forged = e | (ecs::Entity{1} << 60U);
+    sq::ecs::Registry registry;
+    sq::ecs::Entity const e = registry.spawnEntity();
+    sq::ecs::Entity const forged = e | (sq::ecs::Entity{1} << 60U);
 
     EXPECT_FALSE(registry.isAlive(forged));
     registry.killEntity(forged);
@@ -691,40 +693,40 @@ TEST(ECSGeneration, HandleWithGarbageHighBitsIsNotAlive) {
 }
 
 TEST(ECS, KillEntitiesDestroysEveryEntityOfTheBatch) {
-    ecs::Registry registry;
-    std::vector<ecs::Entity> destroyed;
-    registry.addDestroyListener([&](ecs::Entity e) { destroyed.push_back(e); });
+    sq::ecs::Registry registry;
+    std::vector<sq::ecs::Entity> destroyed;
+    registry.addDestroyListener([&](sq::ecs::Entity e) { destroyed.push_back(e); });
 
-    ecs::Entity const a = registry.spawnEntity();
-    ecs::Entity const b = registry.spawnEntity();
-    ecs::Entity const kept = registry.spawnEntity();
+    sq::ecs::Entity const a = registry.spawnEntity();
+    sq::ecs::Entity const b = registry.spawnEntity();
+    sq::ecs::Entity const kept = registry.spawnEntity();
     registry.addComponent<Position>(a, Position{.x = 1.0F, .y = 0.0F});
     registry.addComponent<Position>(b, Position{.x = 2.0F, .y = 0.0F});
     registry.addComponent<Position>(kept, Position{.x = 3.0F, .y = 0.0F});
 
-    std::array<ecs::Entity, 3> const batch{a, b, a};
+    std::array<sq::ecs::Entity, 3> const batch{a, b, a};
     registry.killEntities(batch);
 
     EXPECT_FALSE(registry.isAlive(a));
     EXPECT_FALSE(registry.isAlive(b));
     EXPECT_TRUE(registry.isAlive(kept));
-    EXPECT_EQ(destroyed, (std::vector<ecs::Entity>{a, b}));
+    EXPECT_EQ(destroyed, (std::vector<sq::ecs::Entity>{a, b}));
     EXPECT_EQ(registry.getComponents<Position>().getDense().size(), 1U);
 }
 
 TEST(ECS, KillEntitiesSkipsEntitiesKilledByAnEarlierListener) {
-    ecs::Registry registry;
-    ecs::Entity const parent = registry.spawnEntity();
-    ecs::Entity const child = registry.spawnEntity();
+    sq::ecs::Registry registry;
+    sq::ecs::Entity const parent = registry.spawnEntity();
+    sq::ecs::Entity const child = registry.spawnEntity();
     int calls = 0;
-    registry.addDestroyListener([&](ecs::Entity e) {
+    registry.addDestroyListener([&](sq::ecs::Entity e) {
         ++calls;
         if (e == parent) {
             registry.killEntity(child);
         }
     });
 
-    std::array<ecs::Entity, 2> const batch{parent, child};
+    std::array<sq::ecs::Entity, 2> const batch{parent, child};
     registry.killEntities(batch);
 
     EXPECT_FALSE(registry.isAlive(child));
@@ -732,25 +734,25 @@ TEST(ECS, KillEntitiesSkipsEntitiesKilledByAnEarlierListener) {
 }
 
 TEST(ECS, KillEntitiesFinishesTheBatchWhenAListenerThrows) {
-    ecs::Registry registry;
-    std::vector<ecs::Entity> seenAfter;
-    registry.addDestroyListener([](ecs::Entity /*e*/) { throw std::runtime_error("first"); });
-    registry.addDestroyListener([](ecs::Entity /*e*/) { throw std::logic_error("second"); });
-    registry.addDestroyListener([&seenAfter](ecs::Entity e) { seenAfter.push_back(e); });
-    ecs::Entity const a = registry.spawnEntity();
-    ecs::Entity const b = registry.spawnEntity();
+    sq::ecs::Registry registry;
+    std::vector<sq::ecs::Entity> seenAfter;
+    registry.addDestroyListener([](sq::ecs::Entity /*e*/) { throw std::runtime_error("first"); });
+    registry.addDestroyListener([](sq::ecs::Entity /*e*/) { throw std::logic_error("second"); });
+    registry.addDestroyListener([&seenAfter](sq::ecs::Entity e) { seenAfter.push_back(e); });
+    sq::ecs::Entity const a = registry.spawnEntity();
+    sq::ecs::Entity const b = registry.spawnEntity();
     registry.addComponent(a, Position{.x = 1.0F, .y = 2.0F});
     registry.addComponent(b, Position{.x = 3.0F, .y = 4.0F});
 
-    std::array<ecs::Entity, 2> const batch{a, b};
+    std::array<sq::ecs::Entity, 2> const batch{a, b};
     EXPECT_THROW(registry.killEntities(batch), std::runtime_error);
     EXPECT_FALSE(registry.isAlive(a));
     EXPECT_FALSE(registry.isAlive(b));
-    EXPECT_EQ(seenAfter, (std::vector<ecs::Entity>{a, b}));
+    EXPECT_EQ(seenAfter, (std::vector<sq::ecs::Entity>{a, b}));
     EXPECT_TRUE(registry.getComponents<Position>().getDense().empty());
     // Both slots are recycled, with a new generation.
-    ecs::Entity const c = registry.spawnEntity();
-    ecs::Entity const d = registry.spawnEntity();
+    sq::ecs::Entity const c = registry.spawnEntity();
+    sq::ecs::Entity const d = registry.spawnEntity();
     EXPECT_NE(c, a);
     EXPECT_NE(d, b);
     EXPECT_FALSE(registry.hasComponent<Position>(c));
@@ -758,15 +760,15 @@ TEST(ECS, KillEntitiesFinishesTheBatchWhenAListenerThrows) {
 }
 
 TEST(ECS, KillEntitiesAcceptsTheDenseEntitiesOfAComponent) {
-    ecs::Registry registry;
-    std::vector<ecs::Entity> spawned;
+    sq::ecs::Registry registry;
+    std::vector<sq::ecs::Entity> spawned;
     for (int i = 0; i < 5; ++i) {
         spawned.push_back(registry.spawnEntity());
         registry.addComponent(spawned.back(), Position{});
     }
-    const auto& dense = static_cast<const ecs::Registry&>(registry).findComponents<Position>()->getDenseEntities();
+    const auto& dense = static_cast<const sq::ecs::Registry&>(registry).findComponents<Position>()->getDenseEntities();
     registry.killEntities(dense);
-    for (const ecs::Entity e : spawned) {
+    for (const sq::ecs::Entity e : spawned) {
         EXPECT_FALSE(registry.isAlive(e));
     }
 }

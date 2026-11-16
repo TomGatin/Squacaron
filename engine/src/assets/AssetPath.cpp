@@ -2,7 +2,7 @@
 
 #include <string_view>
 
-namespace assets {
+namespace sq::assets {
 
 bool isValidAssetName(const std::string_view name) noexcept {
     return !name.empty() && name.size() <= MAX_NAME_LENGTH && !name.contains('\0');
@@ -16,4 +16,4 @@ bool looksLikeAssetPath(const std::string_view aliasOrPath) noexcept {
     return aliasOrPath.find_first_of("/\\.") != std::string_view::npos;
 }
 
-}  // namespace assets
+}  // namespace sq::assets

@@ -16,7 +16,7 @@
 #include "ui/components/UiNavigation.hpp"
 #include "ui/system/UiLayout.hpp"
 
-namespace ui {
+namespace sq::ui {
 
 /**
  * @brief Runs every UI interaction that is not a plain mouse click on a button (see `UiButtonSystem` for those).
@@ -50,8 +50,8 @@ class UiInteractionSystem {
      * @param bus Bus receiving the UI events.
      * @param dt Frame time in seconds (key repeat, caret blink).
      */
-    void update(ecs::Registry& registry, std::span<const UiLayoutNode> layout, engine::IWindowService& window,
-                ecs::EventBus& bus, float dt);
+    void update(sq::ecs::Registry& registry, std::span<const UiLayoutNode> layout, sq::engine::IWindowService& window,
+                sq::events::EventBus& bus, float dt);
 
   private:
     /** @brief State of the navigation commands for one frame. */
@@ -78,7 +78,8 @@ class UiInteractionSystem {
      * @param navigation Bindings.
      * @return Held commands.
      */
-    [[nodiscard]] static Commands readCommands(const engine::IWindowService& window, const UiNavigation& navigation);
+    [[nodiscard]] static Commands readCommands(const sq::engine::IWindowService& window,
+                                               const UiNavigation& navigation);
 
     /**
      * @brief Handles clicks, drags and the wheel.
@@ -88,8 +89,8 @@ class UiInteractionSystem {
      * @param bus Event bus.
      * @param focus Focus resource.
      */
-    void handleMouse(ecs::Registry& registry, std::span<const UiLayoutNode> layout,
-                     const engine::IWindowService& window, ecs::EventBus& bus, UiFocus& focus);
+    void handleMouse(sq::ecs::Registry& registry, std::span<const UiLayoutNode> layout,
+                     const sq::engine::IWindowService& window, sq::events::EventBus& bus, UiFocus& focus);
 
     /**
      * @brief Focuses the widget under a click (or clears the focus), flips toggles, starts slider drags.
@@ -99,8 +100,8 @@ class UiInteractionSystem {
      * @param bus Event bus.
      * @param focus Focus resource.
      */
-    void handleClick(ecs::Registry& registry, std::span<const UiLayoutNode> layout, engine::MousePosition mouse,
-                     ecs::EventBus& bus, UiFocus& focus);
+    void handleClick(sq::ecs::Registry& registry, std::span<const UiLayoutNode> layout, sq::engine::MousePosition mouse,
+                     sq::events::EventBus& bus, UiFocus& focus);
 
     /**
      * @brief Moves the dragged slider under the cursor.
@@ -109,8 +110,8 @@ class UiInteractionSystem {
      * @param mouse Cursor position.
      * @param bus Event bus.
      */
-    void drag(ecs::Registry& registry, std::span<const UiLayoutNode> layout, engine::MousePosition mouse,
-              ecs::EventBus& bus);
+    void drag(sq::ecs::Registry& registry, std::span<const UiLayoutNode> layout, sq::engine::MousePosition mouse,
+              sq::events::EventBus& bus);
 
     /**
      * @brief Scrolls the list under the cursor by one row.
@@ -119,8 +120,8 @@ class UiInteractionSystem {
      * @param mouse Cursor position.
      * @param wheel Wheel movement; positive scrolls up.
      */
-    static void scroll(ecs::Registry& registry, std::span<const UiLayoutNode> layout, engine::MousePosition mouse,
-                       float wheel);
+    static void scroll(sq::ecs::Registry& registry, std::span<const UiLayoutNode> layout,
+                       sq::engine::MousePosition mouse, float wheel);
 
     /**
      * @brief Moves the focus by one step.
@@ -129,7 +130,7 @@ class UiInteractionSystem {
      * @param focus Focus resource.
      * @param forward `true` for next, `false` for previous.
      */
-    void moveFocus(ecs::Registry& registry, std::span<const UiLayoutNode> layout, UiFocus& focus, bool forward);
+    void moveFocus(sq::ecs::Registry& registry, std::span<const UiLayoutNode> layout, UiFocus& focus, bool forward);
 
     /**
      * @brief Moves the focus to the next or previous row of the scroll list holding the focused widget.
@@ -138,7 +139,7 @@ class UiInteractionSystem {
      * @param forward `true` for the next row.
      * @return `true` if the focus moved inside a list.
      */
-    static bool moveInList(ecs::Registry& registry, UiFocus& focus, bool forward);
+    static bool moveInList(sq::ecs::Registry& registry, UiFocus& focus, bool forward);
 
     /**
      * @brief Activates the focused widget (confirm).
@@ -146,7 +147,7 @@ class UiInteractionSystem {
      * @param bus Event bus.
      * @param focused Focused widget.
      */
-    static void activate(ecs::Registry& registry, ecs::EventBus& bus, ecs::Entity focused);
+    static void activate(sq::ecs::Registry& registry, sq::events::EventBus& bus, sq::ecs::Entity focused);
 
     /**
      * @brief Edits the focused text input from typed characters and Backspace.
@@ -156,15 +157,15 @@ class UiInteractionSystem {
      * @param focus Focus resource (caret).
      * @param dt Frame time.
      */
-    void editText(ecs::Registry& registry, engine::IWindowService& window, ecs::Entity focused, UiFocus& focus,
-                  float dt);
+    void editText(sq::ecs::Registry& registry, sq::engine::IWindowService& window, sq::ecs::Entity focused,
+                  UiFocus& focus, float dt);
 
     /** @brief Commands held during the previous frame, for edge detection. */
     Commands _previous;
     /** @brief Focusable widgets of the frame, in navigation order; capacity kept between frames. */
-    std::vector<ecs::Entity> _focusables;
+    std::vector<sq::ecs::Entity> _focusables;
     /** @brief Slider being dragged with the mouse. */
-    ecs::Entity _dragged = ecs::NULL_ENTITY;
+    sq::ecs::Entity _dragged = sq::ecs::NULL_ENTITY;
     /** @brief Backspace held during the previous frame. */
     bool _backspaceHeld = false;
     /** @brief Time until the next repeated Backspace. */
@@ -172,7 +173,7 @@ class UiInteractionSystem {
     /** @brief Time since the caret last changed phase. */
     float _caretTimer = 0.0F;
     /** @brief Widget focused during the previous frame, to restart the caret on a focus change. */
-    ecs::Entity _lastFocused = ecs::NULL_ENTITY;
+    sq::ecs::Entity _lastFocused = sq::ecs::NULL_ENTITY;
 };
 
-}  // namespace ui
+}  // namespace sq::ui

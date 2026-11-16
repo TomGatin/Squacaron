@@ -1,6 +1,6 @@
 #pragma once
 
-namespace ecs {
+namespace sq::ecs {
 
 /**
  * @brief Spatial state of an entity: position, rotation and scale.
@@ -28,4 +28,4 @@ struct Transform {
     float scaleY = 1.0F;
 };
 
-}  // namespace ecs
+}  // namespace sq::ecs

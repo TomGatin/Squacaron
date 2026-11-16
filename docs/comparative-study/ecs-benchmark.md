@@ -3,7 +3,7 @@
 [Algorithms](algorithms.md) explains why the engine stores components in sparse sets. This page measures it: the same
 data and the same work, stored three ways.
 
-- **Sparse set**: the engine's `ecs::SparseArray`, iterated with `Registry::runSystem`.
+- **Sparse set**: the engine's `sq::ecs::SparseArray`, iterated with `Registry::runSystem`.
 - **`std::unordered_map`**: one `std::unordered_map<Entity, Component>` per component type.
 - **OOP**: a `std::vector<std::unique_ptr<GameObject>>`, where each object holds its position, its velocity and 48 bytes
   of other state, and has a virtual `update()`. The objects are allocated between unrelated allocations, and the

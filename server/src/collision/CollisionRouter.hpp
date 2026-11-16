@@ -25,10 +25,10 @@ using GameCollision = std::variant<ShotHitEvent, ShipContactEvent, PowerUpTouche
  * @param contact Contact published by the physics system.
  * @return The matching R-Type event, if any.
  */
-[[nodiscard]] std::optional<GameCollision> classify(const events::CollisionBeginEvent& contact) noexcept;
+[[nodiscard]] std::optional<GameCollision> classify(const sq::events::CollisionBeginEvent& contact) noexcept;
 
 /**
- * @brief Subscribes to `events::CollisionBeginEvent` and republishes each contact as an R-Type event.
+ * @brief Subscribes to `sq::events::CollisionBeginEvent` and republishes each contact as an R-Type event.
  *
  * It does not change any state: rules (damage, kills, pickups) subscribe to the events it publishes.
  * The event bus must outlive the router.
@@ -39,7 +39,7 @@ class CollisionRouter {
      * @brief Subscribes to the contact events of a bus.
      * @param bus Bus receiving both the contact events and the R-Type events.
      */
-    explicit CollisionRouter(ecs::EventBus& bus);
+    explicit CollisionRouter(sq::events::EventBus& bus);
 
     /** @brief Unsubscribes from the bus. */
     ~CollisionRouter();
@@ -55,12 +55,12 @@ class CollisionRouter {
 
   private:
     /** @brief Classifies a contact, logs it and publishes the matching R-Type event. */
-    void onContact(const events::CollisionBeginEvent& contact);
+    void onContact(const sq::events::CollisionBeginEvent& contact);
 
     /** @brief Bus the router is subscribed to. */
-    ecs::EventBus* _bus;
+    sq::events::EventBus* _bus;
     /** @brief Subscription token of `onContact`. */
-    ecs::EventBus::EventToken _token;
+    sq::events::EventBus::EventToken _token;
 };
 
 }  // namespace rtype::server::collision

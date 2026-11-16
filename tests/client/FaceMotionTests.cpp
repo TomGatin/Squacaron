@@ -16,11 +16,11 @@ constexpr float PI = std::numbers::pi_v<float>;
 }  // namespace
 
 TEST(FaceMotion, TurnsTowardsTheMove) {
-    ecs::Registry registry;
-    const ecs::Entity shot = registry.spawnEntity();
-    registry.addComponent(shot, ecs::Transform{.x = 100.0F, .y = 100.0F});
+    sq::ecs::Registry registry;
+    const sq::ecs::Entity shot = registry.spawnEntity();
+    registry.addComponent(shot, sq::ecs::Transform{.x = 100.0F, .y = 100.0F});
     registry.addComponent(shot, gameplay::FaceMotion{});
-    auto& transform = registry.getComponents<ecs::Transform>().get(shot);
+    auto& transform = registry.getComponents<sq::ecs::Transform>().get(shot);
 
     gameplay::faceMotion(registry);
     EXPECT_FLOAT_EQ(transform.rotation, 0.0F) << "no previous position yet";
@@ -34,11 +34,11 @@ TEST(FaceMotion, TurnsTowardsTheMove) {
 }
 
 TEST(FaceMotion, AMirroredSpriteTurnsItsLeftSideTowardsTheMove) {
-    ecs::Registry registry;
-    const ecs::Entity shot = registry.spawnEntity();
-    registry.addComponent(shot, ecs::Transform{.x = 100.0F, .y = 100.0F});
+    sq::ecs::Registry registry;
+    const sq::ecs::Entity shot = registry.spawnEntity();
+    registry.addComponent(shot, sq::ecs::Transform{.x = 100.0F, .y = 100.0F});
     registry.addComponent(shot, gameplay::FaceMotion{.forward = PI});
-    auto& transform = registry.getComponents<ecs::Transform>().get(shot);
+    auto& transform = registry.getComponents<sq::ecs::Transform>().get(shot);
     gameplay::faceMotion(registry);
 
     transform.x -= 5.0F;  // straight left: the way the mirrored sheet already faces

@@ -5,7 +5,7 @@
 
 #include "Entity.hpp"
 
-namespace ecs {
+namespace sq::ecs {
 
 /**
  * @brief Type-erased base interface for component sparse arrays.
@@ -167,6 +167,6 @@ class SparseArray : public ISparseArray {
     std::vector<Component> _components;
 };
 
-}  // namespace ecs
+}  // namespace sq::ecs
 
 #include "SparseArray.tpp"  // IWYU pragma: export

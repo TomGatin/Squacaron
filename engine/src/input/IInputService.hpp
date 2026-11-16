@@ -5,11 +5,13 @@
 
 #pragma once
 
-namespace input {
-class ActionMapping;
-}
+namespace sq::input {
 
-namespace engine {
+class ActionMapping;
+
+}  // namespace sq::input
+
+namespace sq::engine {
 
 /**
  * @brief Abstract input service exposed through the Mediator.
@@ -38,13 +40,13 @@ class IInputService {
      * @brief Gets mutable reference to the active action mapping configuration.
      * @return Reference to ActionMapping.
      */
-    [[nodiscard]] virtual input::ActionMapping& mapping() noexcept = 0;
+    [[nodiscard]] virtual sq::input::ActionMapping& mapping() noexcept = 0;
 
     /**
      * @brief Gets const reference to the active action mapping configuration.
      * @return Const reference to ActionMapping.
      */
-    [[nodiscard]] virtual const input::ActionMapping& mapping() const noexcept = 0;
+    [[nodiscard]] virtual const sq::input::ActionMapping& mapping() const noexcept = 0;
 
     /**
      * @brief Gets the logical player index handled by this input service.
@@ -59,4 +61,4 @@ class IInputService {
     [[nodiscard]] virtual int gamepadIndex() const noexcept = 0;
 };
 
-}  // namespace engine
+}  // namespace sq::engine

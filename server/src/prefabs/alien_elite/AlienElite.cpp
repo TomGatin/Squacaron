@@ -29,7 +29,7 @@ namespace {
  * @param high Largest value.
  * @return The value, within [low, high].
  */
-double clampedParam(PrefabParams const& params, const char* key, const double fallback, const double low,
+double clampedParam(sq::prefabs::PrefabParams const& params, const char* key, const double fallback, const double low,
                     const double high) {
     const double requested = params.get(key, fallback);
     return std::isnan(requested) ? fallback : std::clamp(requested, low, high);
@@ -37,26 +37,26 @@ double clampedParam(PrefabParams const& params, const char* key, const double fa
 
 }  // namespace
 
-void buildAlienElite(ecs::Entity e, ecs::Registry& registry, PrefabParams const& params) {
-    const ecs::Transform transform = makeTransform(params);
+void buildAlienElite(sq::ecs::Entity e, sq::ecs::Registry& registry, sq::prefabs::PrefabParams const& params) {
+    const sq::ecs::Transform transform = sq::prefabs::makeTransform(params);
     const auto health = static_cast<std::uint8_t>(
         clampedParam(params, "health", static_cast<double>(DEFAULT_ALIEN_ELITE_HEALTH), 1.0, 255.0));
     const auto interval =
         static_cast<float>(clampedParam(params, "fire_interval", DEFAULT_ALIEN_ELITE_FIRE_INTERVAL, 0.3, 10.0));
 
-    registry.addComponent<ecs::Transform>(e, transform);
-    registry.addComponent<ecs::Renderable>(e, ecs::Renderable{.layer = 1});
-    registry.addComponent<ecs::RigidBody2D>(e, ecs::RigidBody2D{
-                                                   .bodyType = ecs::BodyType::Kinematic,
-                                                   .velocityX = params.get("speed", DEFAULT_ALIEN_ELITE_SPEED),
-                                               });
-    registry.addComponent<ecs::Collider2D>(e, ecs::Collider2D{
-                                                  .halfWidth = ALIEN_ELITE_HALF_SIZE,
-                                                  .halfHeight = ALIEN_ELITE_HALF_SIZE,
-                                                  .categoryBits = collision::ENEMY,
-                                                  .maskBits = collision::ENEMY_MASK,
-                                                  .isSensor = true,
-                                              });
+    registry.addComponent<sq::ecs::Transform>(e, transform);
+    registry.addComponent<sq::ecs::Renderable>(e, sq::ecs::Renderable{.layer = 1});
+    registry.addComponent<sq::ecs::RigidBody2D>(e, sq::ecs::RigidBody2D{
+                                                       .bodyType = sq::ecs::BodyType::Kinematic,
+                                                       .velocityX = params.get("speed", DEFAULT_ALIEN_ELITE_SPEED),
+                                                   });
+    registry.addComponent<sq::ecs::Collider2D>(e, sq::ecs::Collider2D{
+                                                      .halfWidth = ALIEN_ELITE_HALF_SIZE,
+                                                      .halfHeight = ALIEN_ELITE_HALF_SIZE,
+                                                      .categoryBits = collision::ENEMY,
+                                                      .maskBits = collision::ENEMY_MASK,
+                                                      .isSensor = true,
+                                                  });
     registry.addComponent<Health>(e, Health{.points = health, .max = health});
     registry.addComponent<SineWave>(
         e,

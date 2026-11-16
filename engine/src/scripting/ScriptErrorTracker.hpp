@@ -13,7 +13,7 @@
 
 #include "scripting/ScriptOwner.hpp"
 
-namespace scripting {
+namespace sq::scripting {
 
 /** @brief Consecutive failed calls after which the script of an entity is disabled until the next hot reload. */
 inline constexpr std::uint32_t MAX_CONSECUTIVE_SCRIPT_FAILURES = 30;
@@ -101,4 +101,4 @@ class ScriptErrorTracker {
     float _elapsed = 0.0F;
 };
 
-}  // namespace scripting
+}  // namespace sq::scripting

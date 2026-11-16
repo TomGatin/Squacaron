@@ -20,16 +20,16 @@ constexpr int CIRCLE_SEGMENTS = 64;
 
 }  // namespace
 
-ecs::Renderable makeRenderable(const ecs::Rgba color, const int layer) {
-    ecs::Renderable renderable;
+sq::ecs::Renderable makeRenderable(const sq::ecs::Rgba color, const int layer) {
+    sq::ecs::Renderable renderable;
     renderable.tint = color;
     renderable.layer = layer;
     return renderable;
 }
 
-ecs::Entity spawnRect(ecs::Registry& registry, const Rect& rect, const ecs::Rgba color, const int layer) {
-    const ecs::Entity entity = registry.spawnEntity();
-    registry.addComponent(entity, ecs::Transform{
+sq::ecs::Entity spawnRect(sq::ecs::Registry& registry, const Rect& rect, const sq::ecs::Rgba color, const int layer) {
+    const sq::ecs::Entity entity = registry.spawnEntity();
+    registry.addComponent(entity, sq::ecs::Transform{
                                       .x = (rect.left + rect.right) / 2.0F,
                                       .y = (rect.top + rect.bottom) / 2.0F,
                                       .scaleX = (rect.right - rect.left) / PLACEHOLDER_SIZE,
@@ -39,7 +39,7 @@ ecs::Entity spawnRect(ecs::Registry& registry, const Rect& rect, const ecs::Rgba
     return entity;
 }
 
-void fillRoundedRect(ecs::Registry& registry, const Rect& rect, const float radius, const ecs::Rgba color,
+void fillRoundedRect(sq::ecs::Registry& registry, const Rect& rect, const float radius, const sq::ecs::Rgba color,
                      const int layer, const RoundedCorners rounded) {
     const float r = radius;
     spawnRect(registry, {.left = rect.left, .top = rect.top + r, .right = rect.right, .bottom = rect.bottom - r}, color,
@@ -124,14 +124,14 @@ void fillRoundedRect(ecs::Registry& registry, const Rect& rect, const float radi
     }
 }
 
-void strokeCircle(ecs::Registry& registry, const float centerX, const float centerY, const float radius,
-                  const float thickness, const ecs::Rgba color, const int layer) {
+void strokeCircle(sq::ecs::Registry& registry, const float centerX, const float centerY, const float radius,
+                  const float thickness, const sq::ecs::Rgba color, const int layer) {
     const float step = 2.0F * std::numbers::pi_v<float> / static_cast<float>(CIRCLE_SEGMENTS);
     const float length = radius * step * 1.1F;
     for (int i = 0; i < CIRCLE_SEGMENTS; ++i) {
         const float angle = static_cast<float>(i) * step;
-        const ecs::Entity entity = registry.spawnEntity();
-        registry.addComponent(entity, ecs::Transform{
+        const sq::ecs::Entity entity = registry.spawnEntity();
+        registry.addComponent(entity, sq::ecs::Transform{
                                           .x = centerX + (radius * std::cos(angle)),
                                           .y = centerY + (radius * std::sin(angle)),
                                           .rotation = angle + (std::numbers::pi_v<float> / 2.0F),

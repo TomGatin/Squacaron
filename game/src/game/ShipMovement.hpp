@@ -1,17 +1,17 @@
 #pragma once
 
-#include "net/components/InputBuffer.hpp"
 #include "ecs/components/Transform.hpp"
 #include "input/ActionId.hpp"
+#include "net/components/InputBuffer.hpp"
 
 namespace rtype::game {
 
 /** @brief Horizontal axis action of a ship: its value is in `NetInput::axes`. */
-inline constexpr input::ActionId ACTION_MOVE_X = input::makeActionId("move_x");
+inline constexpr sq::input::ActionId ACTION_MOVE_X = sq::input::makeActionId("move_x");
 /** @brief Vertical axis action of a ship: its value is in `NetInput::axes`. */
-inline constexpr input::ActionId ACTION_MOVE_Y = input::makeActionId("move_y");
+inline constexpr sq::input::ActionId ACTION_MOVE_Y = sq::input::makeActionId("move_y");
 /** @brief Button action firing a shot: the server fires while it is in `NetInput::held`. */
-inline constexpr input::ActionId ACTION_SHOOT = input::makeActionId("shoot");
+inline constexpr sq::input::ActionId ACTION_SHOOT = sq::input::makeActionId("shoot");
 
 /** @brief Speed of a ship, in world units per second. */
 inline constexpr float SHIP_SPEED = 350.0F;
@@ -34,6 +34,6 @@ inline constexpr float SHIP_MAX_Y = 688.0F;
  * @param input Input to apply; actions other than `ACTION_MOVE_X` and `ACTION_MOVE_Y` are ignored.
  * @param deltaTime Duration covered by the input, in seconds.
  */
-void applyShipInput(ecs::Transform& transform, const ecs::NetInput& input, float deltaTime);
+void applyShipInput(sq::ecs::Transform& transform, const sq::ecs::NetInput& input, float deltaTime);
 
 }  // namespace rtype::game

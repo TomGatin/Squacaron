@@ -15,7 +15,7 @@
 #include "tools/cvars/CVarRef.hpp"
 #include "tools/cvars/CVarTypes.hpp"
 
-namespace tools {
+namespace sq::tools {
 
 template <CVarType T>
 CVarRef<T> CVarManager::add(std::string name, T defaultValue, std::string description, CVarOptions options) {
@@ -32,4 +32,4 @@ std::optional<CVarRef<T>> CVarManager::ref(std::string_view name) noexcept {
     return CVarRef<T>{this, &it->second};
 }
 
-}  // namespace tools
+}  // namespace sq::tools

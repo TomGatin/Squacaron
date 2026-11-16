@@ -8,7 +8,7 @@
 #include "audio/types/AudioTypes.hpp"
 #include "audio/types/SoundParams.hpp"
 
-namespace audio {
+namespace sq::audio {
 
 /**
  * @brief Muted backend: accepts every call and outputs nothing.
@@ -81,4 +81,4 @@ class NullAudioBackend final : public IAudioBackend {
     [[nodiscard]] std::size_t activeVoiceCount() const override { return 0; }
 };
 
-}  // namespace audio
+}  // namespace sq::audio

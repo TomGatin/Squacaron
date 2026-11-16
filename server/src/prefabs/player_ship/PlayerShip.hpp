@@ -32,12 +32,12 @@ inline constexpr float PLAYER_SHIP_HALF_HEIGHT = 8.0F;
  *
  * The collider belongs to the `PLAYER` category: it touches enemies, enemy shots, obstacles and power-ups.
  *
- * Parameters: the transform keys (see `makeTransform`).
+ * Parameters: the transform keys (see `sq::prefabs::makeTransform`).
  *
  * @param e Freshly spawned entity.
  * @param registry Registry owning the entity.
  * @param params Spawn parameters.
  */
-void buildPlayerShip(ecs::Entity e, ecs::Registry& registry, PrefabParams const& params);
+void buildPlayerShip(sq::ecs::Entity e, sq::ecs::Registry& registry, sq::prefabs::PrefabParams const& params);
 
 }  // namespace prefabs

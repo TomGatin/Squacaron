@@ -13,7 +13,7 @@
 #include "scripting/detail/LogTag.hpp"
 #include "scripting/detail/ScriptSupport.hpp"
 
-namespace scripting {
+namespace sq::scripting {
 
 using detail::LOG_TAG;
 
@@ -46,10 +46,10 @@ bool ScriptErrorTracker::recordFailure(const ScriptOwner owner, const std::strin
     if (!state.logged || _elapsed - state.lastLogTime >= SCRIPT_ERROR_LOG_INTERVAL) {
         std::string const who = isEntity ? "entity " + std::to_string(owner) : "script owner " + std::to_string(owner);
         if (state.suppressed > 0) {
-            engine::log::warning(LOG_TAG, who, ": ", hook, " failed: ", detail::formatScriptError(error), " (",
-                                 state.suppressed, " similar errors not shown)");
+            sq::engine::log::warning(LOG_TAG, who, ": ", hook, " failed: ", detail::formatScriptError(error), " (",
+                                     state.suppressed, " similar errors not shown)");
         } else {
-            engine::log::warning(LOG_TAG, who, ": ", hook, " failed: ", detail::formatScriptError(error));
+            sq::engine::log::warning(LOG_TAG, who, ": ", hook, " failed: ", detail::formatScriptError(error));
         }
         state.logged = true;
         state.lastLogTime = _elapsed;
@@ -60,11 +60,11 @@ bool ScriptErrorTracker::recordFailure(const ScriptOwner owner, const std::strin
 
     if (isEntity && state.consecutive >= MAX_CONSECUTIVE_SCRIPT_FAILURES) {
         state.disabled = true;
-        engine::log::error(LOG_TAG, "script of entity ", owner, " disabled after ", state.consecutive,
-                           " consecutive failures (enabled again by the next hot reload)");
+        sq::engine::log::error(LOG_TAG, "script of entity ", owner, " disabled after ", state.consecutive,
+                               " consecutive failures (enabled again by the next hot reload)");
         return true;
     }
     return false;
 }
 
-}  // namespace scripting
+}  // namespace sq::scripting

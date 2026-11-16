@@ -7,7 +7,7 @@
 
 #include <string_view>
 
-namespace scripting {
+namespace sq::scripting {
 
 std::string_view getCoreModuleSource(std::string_view moduleName) noexcept {
     if (moduleName == "core/Engine") {
@@ -25,4 +25,4 @@ std::string_view getCoreModuleSource(std::string_view moduleName) noexcept {
     return {};
 }
 
-}  // namespace scripting
+}  // namespace sq::scripting

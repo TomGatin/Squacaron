@@ -16,45 +16,45 @@
 
 namespace {
 
-class LifecycleRecorderPlugin final : public engine::IPlugin {
+class LifecycleRecorderPlugin final : public sq::engine::IPlugin {
   public:
     explicit LifecycleRecorderPlugin(std::vector<std::string>& log) : _log(log) {}
 
     [[nodiscard]] std::string_view name() const noexcept override { return "LifecycleRecorderPlugin"; }
 
-    void build(engine::PluginBuilder& /*builder*/) override { _log.push_back("build"); }
+    void build(sq::engine::PluginBuilder& /*builder*/) override { _log.push_back("build"); }
 
-    void init(engine::Engine& /*engine*/) override { _log.push_back("init"); }
+    void init(sq::engine::Engine& /*engine*/) override { _log.push_back("init"); }
 
-    void preUpdate(engine::Engine& /*engine*/) override { _log.push_back("preUpdate"); }
+    void preUpdate(sq::engine::Engine& /*engine*/) override { _log.push_back("preUpdate"); }
 
-    void fixedUpdate(engine::Engine& /*engine*/, const ecs::time::Time& /*time*/) override {
+    void fixedUpdate(sq::engine::Engine& /*engine*/, const sq::time::Time& /*time*/) override {
         _log.push_back("fixedUpdate");
     }
 
-    void update(engine::Engine& /*engine*/, const ecs::time::Time& /*time*/) override { _log.push_back("update"); }
+    void update(sq::engine::Engine& /*engine*/, const sq::time::Time& /*time*/) override { _log.push_back("update"); }
 
-    void lateUpdate(engine::Engine& /*engine*/, const ecs::time::Time& /*time*/) override {
+    void lateUpdate(sq::engine::Engine& /*engine*/, const sq::time::Time& /*time*/) override {
         _log.push_back("lateUpdate");
     }
 
-    void render(engine::Engine& /*engine*/) override { _log.push_back("render"); }
+    void render(sq::engine::Engine& /*engine*/) override { _log.push_back("render"); }
 
-    void shutdown(engine::Engine& /*engine*/) override { _log.push_back("shutdown"); }
+    void shutdown(sq::engine::Engine& /*engine*/) override { _log.push_back("shutdown"); }
 
   private:
     std::vector<std::string>& _log;
 };
 
-class FrameTimeRecorderPlugin final : public engine::IPlugin {
+class FrameTimeRecorderPlugin final : public sq::engine::IPlugin {
   public:
     explicit FrameTimeRecorderPlugin(float& recordedDt) : _recordedDt(recordedDt) {}
 
     [[nodiscard]] std::string_view name() const noexcept override { return "FrameTimeRecorderPlugin"; }
 
-    void build(engine::PluginBuilder& /*builder*/) override {}
+    void build(sq::engine::PluginBuilder& /*builder*/) override {}
 
-    void update(engine::Engine& engine, const ecs::time::Time& time) override {
+    void update(sq::engine::Engine& engine, const sq::time::Time& time) override {
         _recordedDt = time.deltaTime;
         engine.stop();
     }
@@ -63,35 +63,35 @@ class FrameTimeRecorderPlugin final : public engine::IPlugin {
     float& _recordedDt;
 };
 
-class FailingInitPlugin final : public engine::IPlugin {
+class FailingInitPlugin final : public sq::engine::IPlugin {
   public:
     [[nodiscard]] std::string_view name() const noexcept override { return "FailingInitPlugin"; }
-    void build(engine::PluginBuilder& /*builder*/) override {}
-    void init(engine::Engine& /*engine*/) override { throw std::runtime_error("Simulated init failure"); }
+    void build(sq::engine::PluginBuilder& /*builder*/) override {}
+    void init(sq::engine::Engine& /*engine*/) override { throw std::runtime_error("Simulated init failure"); }
 };
 
-class FailingShutdownPlugin final : public engine::IPlugin {
+class FailingShutdownPlugin final : public sq::engine::IPlugin {
   public:
     [[nodiscard]] std::string_view name() const noexcept override { return "FailingShutdownPlugin"; }
-    void build(engine::PluginBuilder& /*builder*/) override {}
-    void shutdown(engine::Engine& /*engine*/) override { throw std::runtime_error("shutdown"); }
+    void build(sq::engine::PluginBuilder& /*builder*/) override {}
+    void shutdown(sq::engine::Engine& /*engine*/) override { throw std::runtime_error("shutdown"); }
 };
 
-class IndependentUserPlugin final : public engine::IPlugin {
+class IndependentUserPlugin final : public sq::engine::IPlugin {
   public:
     [[nodiscard]] std::string_view name() const noexcept override { return "IndependentUserPlugin"; }
 };
 
-class LowPriorityPlugin final : public engine::IPlugin {
+class LowPriorityPlugin final : public sq::engine::IPlugin {
   public:
     [[nodiscard]] std::string_view name() const noexcept override { return "LowPriorityPlugin"; }
     [[nodiscard]] int priority() const noexcept override { return -1; }
 };
 
-class DependsOnLowPriorityPlugin final : public engine::IPlugin {
+class DependsOnLowPriorityPlugin final : public sq::engine::IPlugin {
   public:
     [[nodiscard]] std::string_view name() const noexcept override { return "DependsOnLowPriorityPlugin"; }
-    void build(engine::PluginBuilder& builder) override { builder.require<LowPriorityPlugin>(); }
+    void build(sq::engine::PluginBuilder& builder) override { builder.require<LowPriorityPlugin>(); }
 };
 
 /** @brief Number of times `phase` was recorded. */
@@ -111,28 +111,28 @@ class EngineAdvanceTest : public ::testing::Test {
 
     double now = 0.0;
     std::vector<std::string> log;
-    engine::Engine engine{[this]() -> double { return now; }};
+    sq::engine::Engine engine{[this]() -> double { return now; }};
 };
 
 }  // namespace
 
 TEST(Engine, AutomaticallyLoadsImplicitPlugins) {
-    engine::Engine engineInstance;
-    EXPECT_FALSE(engineInstance.hasPlugin<engine::CorePlugin>());
-    EXPECT_FALSE(engineInstance.hasPlugin<engine::TimePlugin>());
+    sq::engine::Engine engineInstance;
+    EXPECT_FALSE(engineInstance.hasPlugin<sq::engine::CorePlugin>());
+    EXPECT_FALSE(engineInstance.hasPlugin<sq::engine::TimePlugin>());
 
     engineInstance.init();
 
-    EXPECT_TRUE(engineInstance.hasPlugin<engine::CorePlugin>());
-    EXPECT_TRUE(engineInstance.hasPlugin<engine::TimePlugin>());
-    EXPECT_TRUE(engineInstance.registry().hasResource<ecs::time::Time>());
+    EXPECT_TRUE(engineInstance.hasPlugin<sq::engine::CorePlugin>());
+    EXPECT_TRUE(engineInstance.hasPlugin<sq::engine::TimePlugin>());
+    EXPECT_TRUE(engineInstance.registry().hasResource<sq::time::Time>());
 }
 
 TEST(Engine, RunExecutesPhasesInSequence) {
     std::vector<std::string> log;
     double now = 0.0;
     float recordedDt = 0.0F;
-    engine::Engine engineInstance([&now]() -> double { return now; });
+    sq::engine::Engine engineInstance([&now]() -> double { return now; });
     engineInstance.addPlugin<LifecycleRecorderPlugin>(log);
     engineInstance.addPlugin<FrameTimeRecorderPlugin>(recordedDt);  // stops the engine after one frame
 
@@ -150,7 +150,7 @@ TEST(Engine, RunPassesRealDeltaTimeToUpdate) {
     auto fakeSource = [&now]() -> double { return now; };
 
     float recordedDt = 0.0F;
-    engine::Engine engineInstance(fakeSource);
+    sq::engine::Engine engineInstance(fakeSource);
     engineInstance.addPlugin<FrameTimeRecorderPlugin>(recordedDt);
 
     // Simulate a 144 Hz frame (approx 0.006944s) where dt < fixedDt
@@ -163,7 +163,7 @@ TEST(Engine, RunPassesRealDeltaTimeToUpdate) {
 
 TEST(Engine, ShutdownReachesEveryPluginWhenOneThrows) {
     std::vector<std::string> log;
-    engine::Engine engineInstance;
+    sq::engine::Engine engineInstance;
     engineInstance.addPlugin<FailingShutdownPlugin>();
     engineInstance.addPlugin<LifecycleRecorderPlugin>(log);
     engineInstance.init();
@@ -175,7 +175,7 @@ TEST(Engine, ShutdownReachesEveryPluginWhenOneThrows) {
 
 TEST(Engine, InitFailureReleasesAlreadyInitializedPlugins) {
     std::vector<std::string> log;
-    engine::Engine engineInstance;
+    sq::engine::Engine engineInstance;
     engineInstance.addPlugin<LifecycleRecorderPlugin>(log);
     engineInstance.addPlugin<FailingInitPlugin>();
 
@@ -200,7 +200,7 @@ TEST_F(EngineAdvanceTest, AccumulatesTicksAndElapsedTime) {
 }
 
 TEST(Engine, ImplicitPluginsOrderedBeforeIndependentUserPlugins) {
-    engine::Engine engineInstance;
+    sq::engine::Engine engineInstance;
     engineInstance.addPlugin<IndependentUserPlugin>();
 
     engineInstance.init();
@@ -213,7 +213,7 @@ TEST(Engine, ImplicitPluginsOrderedBeforeIndependentUserPlugins) {
 }
 
 TEST(Engine, ALowPriorityPluginRunsAfterTheIndependentPluginsAddedLater) {
-    engine::Engine engineInstance;
+    sq::engine::Engine engineInstance;
     engineInstance.addPlugin<LowPriorityPlugin>();
     engineInstance.addPlugin<IndependentUserPlugin>();
 
@@ -226,7 +226,7 @@ TEST(Engine, ALowPriorityPluginRunsAfterTheIndependentPluginsAddedLater) {
 }
 
 TEST(Engine, DependenciesComeBeforeTheirDependentsWhateverThePriority) {
-    engine::Engine engineInstance;
+    sq::engine::Engine engineInstance;
     engineInstance.addPlugin<DependsOnLowPriorityPlugin>();
     engineInstance.addPlugin<LowPriorityPlugin>();
 
@@ -293,8 +293,8 @@ TEST_F(EngineAdvanceTest, ReturnsZeroWhenNoTimeElapsed) {
 TEST_F(EngineAdvanceTest, CapsTheBacklog) {
     now = 100.0;
 
-    EXPECT_EQ(engine.advance(), ecs::time::Clock::DEFAULT_MAX_STEPS_PER_TICK);
-    EXPECT_EQ(countOf(log, "fixedUpdate"), ecs::time::Clock::DEFAULT_MAX_STEPS_PER_TICK);
+    EXPECT_EQ(engine.advance(), sq::time::Clock::DEFAULT_MAX_STEPS_PER_TICK);
+    EXPECT_EQ(countOf(log, "fixedUpdate"), sq::time::Clock::DEFAULT_MAX_STEPS_PER_TICK);
 
     now = 100.25;
     EXPECT_EQ(engine.advance(), 1U) << "the dropped backlog is not replayed later";

@@ -10,7 +10,7 @@
 #include "ecs/Registry.hpp"
 #include "prefabs/PrefabParams.hpp"
 
-namespace prefabs {
+namespace sq::prefabs {
 
 void PrefabManager::registerPrefab(std::string_view name, Factory factory, PrefabParams defaults) {
     _prefabs.insert_or_assign(std::string{name},
@@ -19,11 +19,11 @@ void PrefabManager::registerPrefab(std::string_view name, Factory factory, Prefa
 
 bool PrefabManager::has(std::string_view name) const { return _prefabs.contains(name); }
 
-bool PrefabManager::spawn(std::string_view name, ecs::CommandBuffer& buffer, PrefabParams const& params) const {
+bool PrefabManager::spawn(std::string_view name, sq::ecs::CommandBuffer& buffer, PrefabParams const& params) const {
     return spawn(name, buffer, params, AfterSpawn{});
 }
 
-bool PrefabManager::spawn(std::string_view name, ecs::CommandBuffer& buffer, PrefabParams const& params,
+bool PrefabManager::spawn(std::string_view name, sq::ecs::CommandBuffer& buffer, PrefabParams const& params,
                           AfterSpawn after) const {
     auto const it = _prefabs.find(name);
     if (it == _prefabs.end()) {
@@ -33,7 +33,7 @@ bool PrefabManager::spawn(std::string_view name, ecs::CommandBuffer& buffer, Pre
     PrefabParams merged = it->second.defaults;
     merged.merge(params);
     buffer.deferSpawn([factory = it->second.factory, merged = std::move(merged), after = std::move(after)](
-                          ecs::Entity e, ecs::Registry& registry) mutable {
+                          sq::ecs::Entity e, sq::ecs::Registry& registry) mutable {
         factory(e, registry, merged);
         if (after) {
             after(e, registry);
@@ -42,4 +42,4 @@ bool PrefabManager::spawn(std::string_view name, ecs::CommandBuffer& buffer, Pre
     return true;
 }
 
-}  // namespace prefabs
+}  // namespace sq::prefabs

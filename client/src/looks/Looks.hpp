@@ -128,6 +128,6 @@ struct Looks {
  * @param warnings Receives one message per ignored or corrected value.
  * @return The looks.
  */
-[[nodiscard]] Looks readLooks(const config::ConfigFile& file, std::vector<std::string>& warnings);
+[[nodiscard]] Looks readLooks(const sq::config::ConfigFile& file, std::vector<std::string>& warnings);
 
 }  // namespace client::looks

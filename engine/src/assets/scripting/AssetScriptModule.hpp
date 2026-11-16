@@ -7,7 +7,7 @@
 
 #include <string_view>
 
-namespace assets {
+namespace sq::assets {
 
 /** @brief Import name of the assets module. */
 inline constexpr std::string_view ASSETS_MODULE_NAME = "core/Assets";
@@ -63,4 +63,4 @@ class Assets {
 }
 )wren";
 
-}  // namespace assets
+}  // namespace sq::assets

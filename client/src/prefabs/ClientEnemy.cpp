@@ -30,39 +30,39 @@ constexpr float HALF_HEIGHT = 15.0F;
 
 }  // namespace
 
-void buildClientEnemy(ecs::Entity e, ecs::Registry& registry, ::prefabs::PrefabParams const& params) {
-    const ecs::TextureId texId = prefabTexture(registry, params);
+void buildClientEnemy(sq::ecs::Entity e, sq::ecs::Registry& registry, sq::prefabs::PrefabParams const& params) {
+    const sq::ecs::TextureId texId = prefabTexture(registry, params);
     const float speed = params.get("speed", DEFAULT_CLIENT_ENEMY_SPEED);
 
-    registry.addComponent<ecs::Transform>(e, ::prefabs::makeTransform(params));
-    registry.addComponent<ecs::Renderable>(
-        e, ecs::Renderable{
+    registry.addComponent<sq::ecs::Transform>(e, sq::prefabs::makeTransform(params));
+    registry.addComponent<sq::ecs::Renderable>(
+        e, sq::ecs::Renderable{
                .textureId = texId,
                .sourceRect = {.x = 0, .y = 0, .width = FRAME_WIDTH, .height = FRAME_HEIGHT},
                .origin = {.x = 0.5F, .y = 0.5F},
                .tint = {.r = 255, .g = 255, .b = 255, .a = 255},
                .layer = 2,
            });
-    registry.addComponent<ecs::AnimationComponent>(e, ecs::AnimationComponent{
-                                                          .frameWidth = FRAME_WIDTH,
-                                                          .frameHeight = FRAME_HEIGHT,
-                                                          .frameCount = 8,
-                                                          .startX = 0,
-                                                          .startY = 0,
-                                                          .frameDuration = 0.12F,
-                                                      });
-    registry.addComponent<ecs::RigidBody2D>(e, ecs::RigidBody2D{
-                                                   .bodyType = ecs::BodyType::Kinematic,
-                                                   .velocityX = -speed,
-                                                   .fixedRotation = true,
-                                               });
-    registry.addComponent<ecs::Collider2D>(e, ecs::Collider2D{
-                                                  .halfWidth = HALF_WIDTH,
-                                                  .halfHeight = HALF_HEIGHT,
-                                                  .categoryBits = ::prefabs::collision::ENEMY,
-                                                  .maskBits = ::prefabs::collision::ENEMY_MASK,
-                                                  .isSensor = true,
-                                              });
+    registry.addComponent<sq::ecs::AnimationComponent>(e, sq::ecs::AnimationComponent{
+                                                              .frameWidth = FRAME_WIDTH,
+                                                              .frameHeight = FRAME_HEIGHT,
+                                                              .frameCount = 8,
+                                                              .startX = 0,
+                                                              .startY = 0,
+                                                              .frameDuration = 0.12F,
+                                                          });
+    registry.addComponent<sq::ecs::RigidBody2D>(e, sq::ecs::RigidBody2D{
+                                                       .bodyType = sq::ecs::BodyType::Kinematic,
+                                                       .velocityX = -speed,
+                                                       .fixedRotation = true,
+                                                   });
+    registry.addComponent<sq::ecs::Collider2D>(e, sq::ecs::Collider2D{
+                                                      .halfWidth = HALF_WIDTH,
+                                                      .halfHeight = HALF_HEIGHT,
+                                                      .categoryBits = ::prefabs::collision::ENEMY,
+                                                      .maskBits = ::prefabs::collision::ENEMY_MASK,
+                                                      .isSensor = true,
+                                                  });
     registry.addComponent<ClientEnemy>(e, ClientEnemy{});
 }
 

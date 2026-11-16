@@ -7,9 +7,9 @@
 
 #include "net/components/InputBuffer.hpp"
 
-namespace ecs::net {
+namespace sq::net {
 
-bool pushInput(InputBuffer& buffer, NetInput input) {
+bool pushInput(ecs::InputBuffer& buffer, ecs::NetInput input) {
     if (input.sequence <= buffer.lastProcessed || buffer.capacity == 0) {
         return false;
     }
@@ -17,7 +17,7 @@ bool pushInput(InputBuffer& buffer, NetInput input) {
     if (queue.size() >= buffer.capacity && input.sequence < queue.front().sequence) {
         return false;
     }
-    const auto pos = std::ranges::upper_bound(queue, input.sequence, {}, &NetInput::sequence);
+    const auto pos = std::ranges::upper_bound(queue, input.sequence, {}, &ecs::NetInput::sequence);
     if (pos != queue.begin() && std::prev(pos)->sequence == input.sequence) {
         return false;
     }
@@ -28,14 +28,14 @@ bool pushInput(InputBuffer& buffer, NetInput input) {
     return true;
 }
 
-std::optional<NetInput> popInput(InputBuffer& buffer) {
+std::optional<ecs::NetInput> popInput(ecs::InputBuffer& buffer) {
     if (buffer.pending.empty()) {
         return std::nullopt;
     }
-    NetInput input = std::move(buffer.pending.front());
+    ecs::NetInput input = std::move(buffer.pending.front());
     buffer.pending.pop_front();
     buffer.lastProcessed = input.sequence;
     return input;
 }
 
-}  // namespace ecs::net
+}  // namespace sq::net

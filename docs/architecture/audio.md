@@ -3,7 +3,7 @@
 ## Purpose
 
 The audio module plays sound effects and streamed music for a game without the game code ever touching an audio
-library. Gameplay systems publish events on the `EventBus` or attach components to entities; `systems::AudioSystem`
+library. Gameplay systems publish events on the `EventBus` or attach components to entities; `sq::systems::AudioSystem`
 turns them into calls to an audio backend.
 
 It provides:
@@ -63,20 +63,20 @@ backend, or with the recording backend used in tests. Only `strategy/raylib/` in
 #include "audio/AudioEvents.hpp"
 #include "systems/audio/AudioSystem.hpp"
 
-ecs::EventBus eventBus;
-ecs::Registry registry;
+sq::events::EventBus eventBus;
+sq::ecs::Registry registry;
 
 // Opens the audio device, or returns a muted backend if there is none.
-const std::unique_ptr<audio::IAudioBackend> backend = audio::makeAudioBackend();
-const audio::SoundId laser = backend->loadSound("assets/sfx/laser.ogg");
-const audio::MusicId theme = backend->loadMusic("assets/music/theme.ogg");
+const std::unique_ptr<sq::audio::IAudioBackend> backend = sq::audio::makeAudioBackend();
+const sq::audio::SoundId laser = backend->loadSound("assets/sfx/laser.ogg");
+const sq::audio::MusicId theme = backend->loadMusic("assets/music/theme.ogg");
 
-systems::AudioSystem audioSystem(*backend, eventBus);
-eventBus.publish(events::PlayMusicEvent{.music = theme});
+sq::systems::AudioSystem audioSystem(*backend, eventBus);
+eventBus.publish(sq::events::PlayMusicEvent{.music = theme});
 
 while (running) {
     // ... gameplay publishes events and moves entities ...
-    eventBus.publish(events::PlaySoundEvent{.sound = laser, .position = audio::SoundPosition{.x = x, .y = y}});
+    eventBus.publish(sq::events::PlaySoundEvent{.sound = laser, .position = sq::audio::SoundPosition{.x = x, .y = y}});
 
     audioSystem.update(registry);  // once per frame, after the entities have moved
 }
@@ -104,10 +104,10 @@ Leave `position` empty for sounds that have no place in the world, such as menu 
 ### Moving Sound Sources
 
 A `PlaySoundEvent` computes its pan once, when the sound starts. For a long or looping sound attached to something
-that moves (an engine hum, a buzzing enemy), add an `ecs::AudioEmitter` to an entity that has an `ecs::Transform`:
+that moves (an engine hum, a buzzing enemy), add an `sq::ecs::AudioEmitter` to an entity that has an `sq::ecs::Transform`:
 
 ```cpp
-registry.addComponent<ecs::AudioEmitter>(ship, ecs::AudioEmitter{.sound = engineHum, .volume = 0.6F});
+registry.addComponent<sq::ecs::AudioEmitter>(ship, sq::ecs::AudioEmitter{.sound = engineHum, .volume = 0.6F});
 ```
 
 | Field | Default | Description |
@@ -145,7 +145,7 @@ sounds already playing: one-shot sounds at once, emitters on the next update.
 
 ### Listener
 
-`ecs::AudioListener` marks the entity whose `Transform` sounds are heard from, usually the camera or the player. The
+`sq::ecs::AudioListener` marks the entity whose `Transform` sounds are heard from, usually the camera or the player. The
 first active listener is used. Without one, positioned sounds play centered at full volume.
 
 ### Pan and Attenuation
@@ -160,7 +160,7 @@ attenuation = 1                                              if distance ≤ min
 ```
 
 These computations are pure functions in `audio/spatial/AudioSpatial.hpp` (`computePan`, `computeAttenuation`,
-`computeSpatial`). They are configured with `audio::SpatialConfig`:
+`computeSpatial`). They are configured with `sq::audio::SpatialConfig`:
 
 | Field | Default | Description |
 |-------|---------|-------------|
@@ -199,7 +199,7 @@ This order gives the following guarantees:
 
 ### Interface
 
-`audio::IAudioBackend` loads sounds and musics and plays them. Every method must be safe to call when no device is
+`sq::audio::IAudioBackend` loads sounds and musics and plays them. Every method must be safe to call when no device is
 available.
 
 | Method | Description |
@@ -229,29 +229,29 @@ loaded sound.
 
 ### Factory
 
-`audio::makeAudioBackend(kind, config)` never returns null:
+`sq::audio::makeAudioBackend(kind, config)` never returns null:
 
 | `AudioBackendKind` | Result |
 |--------------------|--------|
 | `Auto`, `Raylib` | A raylib backend if an audio device could be opened, a `NullAudioBackend` otherwise. |
 | `Null` | A `NullAudioBackend`, without opening any device. |
 
-`audio::AudioConfig` sets the voice limits: `voicesPerSound` (default 4) and `maxActiveVoices` (default 32).
+`sq::audio::AudioConfig` sets the voice limits: `voicesPerSound` (default 4) and `maxActiveVoices` (default 32).
 
 ## Configuration File
 
-`engine_config` reads TOML files into dotted keys (`config::ConfigFile`) and provides `config::ConfigReader`, which
+`engine_config` reads TOML files into dotted keys (`sq::config::ConfigFile`) and provides `sq::config::ConfigReader`, which
 reads typed and bounded values and reports every correction; any module can use it for its own table.
-`audio::readAudioSettings()` uses it to turn the `[audio]` table into an `audio::AudioSettings`, used to create the
+`sq::audio::readAudioSettings()` uses it to turn the `[audio]` table into an `sq::audio::AudioSettings`, used to create the
 backend and passed to `AudioSystem::applySettings()`:
 
 ```cpp
-const config::ConfigFile file = config::ConfigFile::load("client/config/client.toml");
+const sq::config::ConfigFile file = sq::config::ConfigFile::load("client/config/client.toml");
 std::vector<std::string> warnings;
-const audio::AudioSettings settings = audio::readAudioSettings(file, warnings);
+const sq::audio::AudioSettings settings = sq::audio::readAudioSettings(file, warnings);
 
-auto backend = audio::makeAudioBackend(settings.backend, settings.voices);
-systems::AudioSystem audioSystem(*backend, eventBus);
+auto backend = sq::audio::makeAudioBackend(settings.backend, settings.voices);
+sq::systems::AudioSystem audioSystem(*backend, eventBus);
 audioSystem.applySettings(settings);  // volumes and spatial settings
 ```
 
@@ -303,10 +303,10 @@ The R-Type client reads `client/config/client.toml`, which documents every key.
 
 ## Adding a Backend
 
-1. Implement `audio::IAudioBackend` in `engine/src/audio/strategy/<library>/`, keeping the library types out of public
+1. Implement `sq::audio::IAudioBackend` in `engine/src/audio/strategy/<library>/`, keeping the library types out of public
    headers.
 2. Add the library with `add_requires` in `xmake.lua` and `add_packages` in `engine/src/audio/xmake.lua`.
-3. Add a value to `audio::AudioBackendKind`, handle it in `makeAudioBackend()`, and accept its name in
+3. Add a value to `sq::audio::AudioBackendKind`, handle it in `makeAudioBackend()`, and accept its name in
    `readAudioSettings()`.
 4. Add tests next to `tests/test_audio.cpp`.
 

@@ -60,11 +60,11 @@ std::filesystem::path writeSineWav(const std::string& name, float seconds) {
 }  // namespace
 
 TEST(RaylibAudioBackend, UnknownHandlesAreIgnored) {
-    audio::detail::RaylibAudioBackend backend;
+    sq::audio::detail::RaylibAudioBackend backend;
 
-    EXPECT_EQ(backend.playSound(audio::NO_SOUND, {}), audio::NO_VOICE);
-    EXPECT_EQ(backend.playSound(42, {}), audio::NO_VOICE);
-    backend.playMusic(audio::NO_MUSIC, true);
+    EXPECT_EQ(backend.playSound(sq::audio::NO_SOUND, {}), sq::audio::NO_VOICE);
+    EXPECT_EQ(backend.playSound(42, {}), sq::audio::NO_VOICE);
+    backend.playMusic(sq::audio::NO_MUSIC, true);
     backend.playMusic(42, true);
     backend.stopMusic();
     backend.stopAllSounds();
@@ -73,14 +73,14 @@ TEST(RaylibAudioBackend, UnknownHandlesAreIgnored) {
 }
 
 TEST(RaylibAudioBackend, MissingFilesReturnInvalidHandles) {
-    audio::detail::RaylibAudioBackend backend;
+    sq::audio::detail::RaylibAudioBackend backend;
 
-    EXPECT_EQ(backend.loadSound("does/not/exist.wav"), audio::NO_SOUND);
-    EXPECT_EQ(backend.loadMusic("does/not/exist.ogg"), audio::NO_MUSIC);
+    EXPECT_EQ(backend.loadSound("does/not/exist.wav"), sq::audio::NO_SOUND);
+    EXPECT_EQ(backend.loadMusic("does/not/exist.ogg"), sq::audio::NO_MUSIC);
 }
 
 TEST(RaylibAudioBackend, InvalidVolumesDoNotCrash) {
-    audio::detail::RaylibAudioBackend backend;
+    sq::audio::detail::RaylibAudioBackend backend;
 
     backend.setMasterVolume(std::numeric_limits<float>::quiet_NaN());
     backend.setMasterVolume(-3.0F);
@@ -90,22 +90,22 @@ TEST(RaylibAudioBackend, InvalidVolumesDoNotCrash) {
 
 TEST(RaylibAudioBackend, OnlyOneInstanceAtATime) {
     {
-        const audio::detail::RaylibAudioBackend backend;
-        EXPECT_THROW(audio::detail::RaylibAudioBackend{}, std::logic_error);
+        const sq::audio::detail::RaylibAudioBackend backend;
+        EXPECT_THROW(sq::audio::detail::RaylibAudioBackend{}, std::logic_error);
     }
-    EXPECT_NO_THROW(audio::detail::RaylibAudioBackend{});
+    EXPECT_NO_THROW(sq::audio::detail::RaylibAudioBackend{});
 }
 
 TEST(RaylibAudioBackend, VoicesPerSoundAreBounded) {
-    audio::detail::RaylibAudioBackend backend(audio::AudioConfig{.voicesPerSound = 2, .maxActiveVoices = 8});
+    sq::audio::detail::RaylibAudioBackend backend(sq::audio::AudioConfig{.voicesPerSound = 2, .maxActiveVoices = 8});
     if (!backend.isAvailable()) {
         GTEST_SKIP() << "No audio device available";
     }
-    const audio::SoundId sound = backend.loadSound(writeSineWav("squacaron_voices.wav", 1.0F).string());
-    ASSERT_NE(sound, audio::NO_SOUND);
+    const sq::audio::SoundId sound = backend.loadSound(writeSineWav("squacaron_voices.wav", 1.0F).string());
+    ASSERT_NE(sound, sq::audio::NO_SOUND);
 
     for (int i = 0; i < 5; ++i) {
-        EXPECT_NE(backend.playSound(sound, {.volume = 0.0F}), audio::NO_VOICE);
+        EXPECT_NE(backend.playSound(sound, {.volume = 0.0F}), sq::audio::NO_VOICE);
     }
     EXPECT_EQ(backend.activeVoiceCount(), 2U);
 
@@ -114,30 +114,30 @@ TEST(RaylibAudioBackend, VoicesPerSoundAreBounded) {
 }
 
 TEST(RaylibAudioBackend, ActiveVoicesAreBoundedAcrossSounds) {
-    audio::detail::RaylibAudioBackend backend(audio::AudioConfig{.voicesPerSound = 4, .maxActiveVoices = 3});
+    sq::audio::detail::RaylibAudioBackend backend(sq::audio::AudioConfig{.voicesPerSound = 4, .maxActiveVoices = 3});
     if (!backend.isAvailable()) {
         GTEST_SKIP() << "No audio device available";
     }
     const std::string path = writeSineWav("squacaron_cap.wav", 1.0F).string();
-    const audio::SoundId first = backend.loadSound(path);
-    const audio::SoundId second = backend.loadSound(path);
-    ASSERT_NE(first, audio::NO_SOUND);
-    ASSERT_NE(second, audio::NO_SOUND);
+    const sq::audio::SoundId first = backend.loadSound(path);
+    const sq::audio::SoundId second = backend.loadSound(path);
+    ASSERT_NE(first, sq::audio::NO_SOUND);
+    ASSERT_NE(second, sq::audio::NO_SOUND);
 
     for (int i = 0; i < 3; ++i) {
-        EXPECT_NE(backend.playSound(first, {.volume = 0.0F}), audio::NO_VOICE);
-        EXPECT_NE(backend.playSound(second, {.volume = 0.0F}), audio::NO_VOICE);
+        EXPECT_NE(backend.playSound(first, {.volume = 0.0F}), sq::audio::NO_VOICE);
+        EXPECT_NE(backend.playSound(second, {.volume = 0.0F}), sq::audio::NO_VOICE);
     }
     EXPECT_EQ(backend.activeVoiceCount(), 3U);
 }
 
 TEST(RaylibAudioBackend, MusicCanBePlayedAndStopped) {
-    audio::detail::RaylibAudioBackend backend;
+    sq::audio::detail::RaylibAudioBackend backend;
     if (!backend.isAvailable()) {
         GTEST_SKIP() << "No audio device available";
     }
-    const audio::MusicId music = backend.loadMusic(writeSineWav("squacaron_music.wav", 1.0F).string());
-    ASSERT_NE(music, audio::NO_MUSIC);
+    const sq::audio::MusicId music = backend.loadMusic(writeSineWav("squacaron_music.wav", 1.0F).string());
+    ASSERT_NE(music, sq::audio::NO_MUSIC);
 
     backend.setMusicVolume(0.0F);
     backend.playMusic(music, true);
@@ -148,103 +148,103 @@ TEST(RaylibAudioBackend, MusicCanBePlayedAndStopped) {
 }
 
 TEST(RaylibAudioBackend, VoicesCanBeUpdatedAndStopped) {
-    audio::detail::RaylibAudioBackend backend(audio::AudioConfig{.voicesPerSound = 1});
+    sq::audio::detail::RaylibAudioBackend backend(sq::audio::AudioConfig{.voicesPerSound = 1});
     if (!backend.isAvailable()) {
         GTEST_SKIP() << "No audio device available";
     }
-    const audio::SoundId sound = backend.loadSound(writeSineWav("squacaron_voice.wav", 1.0F).string());
-    ASSERT_NE(sound, audio::NO_SOUND);
+    const sq::audio::SoundId sound = backend.loadSound(writeSineWav("squacaron_voice.wav", 1.0F).string());
+    ASSERT_NE(sound, sq::audio::NO_SOUND);
 
-    const audio::VoiceId first = backend.playSound(sound, {.volume = 0.0F});
-    ASSERT_NE(first, audio::NO_VOICE);
-    EXPECT_EQ(backend.updateVoice(first, {.volume = 0.0F, .pan = audio::PAN_LEFT}), audio::VoiceState::Playing);
+    const sq::audio::VoiceId first = backend.playSound(sound, {.volume = 0.0F});
+    ASSERT_NE(first, sq::audio::NO_VOICE);
+    EXPECT_EQ(backend.updateVoice(first, {.volume = 0.0F, .pan = sq::audio::PAN_LEFT}), sq::audio::VoiceState::Playing);
 
-    const audio::VoiceId second = backend.playSound(sound, {.volume = 0.0F});
+    const sq::audio::VoiceId second = backend.playSound(sound, {.volume = 0.0F});
     EXPECT_NE(second, first);
-    EXPECT_EQ(backend.updateVoice(first, {.volume = 0.0F}), audio::VoiceState::Stolen)
+    EXPECT_EQ(backend.updateVoice(first, {.volume = 0.0F}), sq::audio::VoiceState::Stolen)
         << "the only voice now plays the second instance";
-    EXPECT_EQ(backend.updateVoice(second, {.volume = 0.0F}), audio::VoiceState::Playing);
-    EXPECT_EQ(backend.playSoundWithoutStealing(sound, {.volume = 0.0F}), audio::NO_VOICE)
+    EXPECT_EQ(backend.updateVoice(second, {.volume = 0.0F}), sq::audio::VoiceState::Playing);
+    EXPECT_EQ(backend.playSoundWithoutStealing(sound, {.volume = 0.0F}), sq::audio::NO_VOICE)
         << "the only voice is busy and must not be taken";
 
     backend.stopVoice(second);
-    EXPECT_EQ(backend.updateVoice(second, {.volume = 0.0F}), audio::VoiceState::Ended);
-    EXPECT_NE(backend.playSoundWithoutStealing(sound, {.volume = 0.0F}), audio::NO_VOICE);
+    EXPECT_EQ(backend.updateVoice(second, {.volume = 0.0F}), sq::audio::VoiceState::Ended);
+    EXPECT_NE(backend.playSoundWithoutStealing(sound, {.volume = 0.0F}), sq::audio::NO_VOICE);
     backend.stopAllSounds();
     EXPECT_EQ(backend.activeVoiceCount(), 0U);
 }
 
 TEST(RaylibAudioBackend, EveryReplacedInstanceReportsItWasStolen) {
-    audio::detail::RaylibAudioBackend backend(audio::AudioConfig{.voicesPerSound = 1});
+    sq::audio::detail::RaylibAudioBackend backend(sq::audio::AudioConfig{.voicesPerSound = 1});
     if (!backend.isAvailable()) {
         GTEST_SKIP() << "No audio device available";
     }
-    const audio::SoundId sound = backend.loadSound(writeSineWav("squacaron_steals.wav", 1.0F).string());
-    ASSERT_NE(sound, audio::NO_SOUND);
+    const sq::audio::SoundId sound = backend.loadSound(writeSineWav("squacaron_steals.wav", 1.0F).string());
+    ASSERT_NE(sound, sq::audio::NO_SOUND);
 
-    const audio::VoiceId first = backend.playSound(sound, {.volume = 0.0F});
-    const audio::VoiceId second = backend.playSound(sound, {.volume = 0.0F});
-    const audio::VoiceId third = backend.playSound(sound, {.volume = 0.0F});
+    const sq::audio::VoiceId first = backend.playSound(sound, {.volume = 0.0F});
+    const sq::audio::VoiceId second = backend.playSound(sound, {.volume = 0.0F});
+    const sq::audio::VoiceId third = backend.playSound(sound, {.volume = 0.0F});
 
-    EXPECT_EQ(backend.updateVoice(first, {.volume = 0.0F}), audio::VoiceState::Stolen);
-    EXPECT_EQ(backend.updateVoice(second, {.volume = 0.0F}), audio::VoiceState::Stolen);
-    EXPECT_EQ(backend.updateVoice(third, {.volume = 0.0F}), audio::VoiceState::Playing);
+    EXPECT_EQ(backend.updateVoice(first, {.volume = 0.0F}), sq::audio::VoiceState::Stolen);
+    EXPECT_EQ(backend.updateVoice(second, {.volume = 0.0F}), sq::audio::VoiceState::Stolen);
+    EXPECT_EQ(backend.updateVoice(third, {.volume = 0.0F}), sq::audio::VoiceState::Playing);
 }
 
 TEST(RaylibAudioBackend, GlobalLimitStealsTheOldestInstance) {
-    audio::detail::RaylibAudioBackend backend(audio::AudioConfig{.voicesPerSound = 2, .maxActiveVoices = 2});
+    sq::audio::detail::RaylibAudioBackend backend(sq::audio::AudioConfig{.voicesPerSound = 2, .maxActiveVoices = 2});
     if (!backend.isAvailable()) {
         GTEST_SKIP() << "No audio device available";
     }
     const std::string path = writeSineWav("squacaron_global.wav", 1.0F).string();
-    const audio::SoundId first = backend.loadSound(path);
-    const audio::SoundId second = backend.loadSound(path);
+    const sq::audio::SoundId first = backend.loadSound(path);
+    const sq::audio::SoundId second = backend.loadSound(path);
 
-    const audio::VoiceId oldest = backend.playSound(first, {.volume = 0.0F});
-    const audio::VoiceId middle = backend.playSound(first, {.volume = 0.0F});
-    const audio::VoiceId newest = backend.playSound(second, {.volume = 0.0F});
+    const sq::audio::VoiceId oldest = backend.playSound(first, {.volume = 0.0F});
+    const sq::audio::VoiceId middle = backend.playSound(first, {.volume = 0.0F});
+    const sq::audio::VoiceId newest = backend.playSound(second, {.volume = 0.0F});
 
-    EXPECT_EQ(backend.updateVoice(oldest, {.volume = 0.0F}), audio::VoiceState::Stolen);
-    EXPECT_EQ(backend.updateVoice(middle, {.volume = 0.0F}), audio::VoiceState::Playing);
-    EXPECT_EQ(backend.updateVoice(newest, {.volume = 0.0F}), audio::VoiceState::Playing);
+    EXPECT_EQ(backend.updateVoice(oldest, {.volume = 0.0F}), sq::audio::VoiceState::Stolen);
+    EXPECT_EQ(backend.updateVoice(middle, {.volume = 0.0F}), sq::audio::VoiceState::Playing);
+    EXPECT_EQ(backend.updateVoice(newest, {.volume = 0.0F}), sq::audio::VoiceState::Playing);
     EXPECT_EQ(backend.activeVoiceCount(), 2U);
-    EXPECT_EQ(backend.playSoundWithoutStealing(first, {.volume = 0.0F}), audio::NO_VOICE)
+    EXPECT_EQ(backend.playSoundWithoutStealing(first, {.volume = 0.0F}), sq::audio::NO_VOICE)
         << "the global limit is reached";
 }
 
 TEST(RaylibAudioBackend, UnloadedSoundStopsAndCannotPlay) {
-    audio::detail::RaylibAudioBackend backend;
+    sq::audio::detail::RaylibAudioBackend backend;
     if (!backend.isAvailable()) {
         GTEST_SKIP() << "No audio device available";
     }
     const std::string path = writeSineWav("squacaron_unload.wav", 1.0F).string();
-    const audio::SoundId sound = backend.loadSound(path);
-    const audio::VoiceId voice = backend.playSound(sound, {.volume = 0.0F});
-    ASSERT_NE(voice, audio::NO_VOICE);
+    const sq::audio::SoundId sound = backend.loadSound(path);
+    const sq::audio::VoiceId voice = backend.playSound(sound, {.volume = 0.0F});
+    ASSERT_NE(voice, sq::audio::NO_VOICE);
 
     backend.unloadSound(sound);
     EXPECT_EQ(backend.activeVoiceCount(), 0U);
-    EXPECT_EQ(backend.updateVoice(voice, {.volume = 0.0F}), audio::VoiceState::Ended);
-    EXPECT_EQ(backend.playSound(sound, {.volume = 0.0F}), audio::NO_VOICE);
+    EXPECT_EQ(backend.updateVoice(voice, {.volume = 0.0F}), sq::audio::VoiceState::Ended);
+    EXPECT_EQ(backend.playSound(sound, {.volume = 0.0F}), sq::audio::NO_VOICE);
     backend.unloadSound(sound);
 
     // The freed voices are reused, but neither the old sound handle nor the old voice handle reaches them.
-    const audio::SoundId reloaded = backend.loadSound(path);
+    const sq::audio::SoundId reloaded = backend.loadSound(path);
     EXPECT_NE(reloaded, sound);
-    const audio::VoiceId fresh = backend.playSound(reloaded, {.volume = 0.0F});
+    const sq::audio::VoiceId fresh = backend.playSound(reloaded, {.volume = 0.0F});
     EXPECT_NE(fresh, voice);
-    EXPECT_EQ(backend.updateVoice(voice, {.volume = 0.0F}), audio::VoiceState::Ended);
+    EXPECT_EQ(backend.updateVoice(voice, {.volume = 0.0F}), sq::audio::VoiceState::Ended);
     backend.stopVoice(voice);
-    EXPECT_EQ(backend.updateVoice(fresh, {.volume = 0.0F}), audio::VoiceState::Playing);
+    EXPECT_EQ(backend.updateVoice(fresh, {.volume = 0.0F}), sq::audio::VoiceState::Playing);
 }
 
 TEST(RaylibAudioBackend, UnloadedMusicStopsAndCannotPlay) {
-    audio::detail::RaylibAudioBackend backend;
+    sq::audio::detail::RaylibAudioBackend backend;
     if (!backend.isAvailable()) {
         GTEST_SKIP() << "No audio device available";
     }
-    const audio::MusicId music = backend.loadMusic(writeSineWav("squacaron_music_unload.wav", 1.0F).string());
-    ASSERT_NE(music, audio::NO_MUSIC);
+    const sq::audio::MusicId music = backend.loadMusic(writeSineWav("squacaron_music_unload.wav", 1.0F).string());
+    ASSERT_NE(music, sq::audio::NO_MUSIC);
     backend.setMusicVolume(0.0F);
     backend.playMusic(music, true);
 
@@ -255,17 +255,17 @@ TEST(RaylibAudioBackend, UnloadedMusicStopsAndCannotPlay) {
 }
 
 TEST(NullAudioBackend, IsMutedAndIgnoresEverything) {
-    audio::NullAudioBackend backend;
+    sq::audio::NullAudioBackend backend;
 
     EXPECT_FALSE(backend.isAvailable());
-    EXPECT_EQ(backend.loadSound("laser.wav"), audio::NO_SOUND);
-    EXPECT_EQ(backend.loadMusic("theme.ogg"), audio::NO_MUSIC);
-    EXPECT_EQ(backend.playSound(1, {}), audio::NO_VOICE);
+    EXPECT_EQ(backend.loadSound("laser.wav"), sq::audio::NO_SOUND);
+    EXPECT_EQ(backend.loadMusic("theme.ogg"), sq::audio::NO_MUSIC);
+    EXPECT_EQ(backend.playSound(1, {}), sq::audio::NO_VOICE);
     backend.playMusic(1, true);
     backend.setMasterVolume(0.5F);
     backend.update();
-    EXPECT_EQ(backend.updateVoice(1, {}), audio::VoiceState::Ended);
-    EXPECT_EQ(backend.playSoundWithoutStealing(1, {}), audio::NO_VOICE);
+    EXPECT_EQ(backend.updateVoice(1, {}), sq::audio::VoiceState::Ended);
+    EXPECT_EQ(backend.playSoundWithoutStealing(1, {}), sq::audio::NO_VOICE);
     backend.stopVoice(1);
     backend.unloadSound(1);
     backend.unloadMusic(1);
@@ -273,25 +273,26 @@ TEST(NullAudioBackend, IsMutedAndIgnoresEverything) {
 }
 
 TEST(AudioBackendFactory, AlwaysReturnsABackend) {
-    const std::unique_ptr<audio::IAudioBackend> backend = audio::makeAudioBackend();
+    const std::unique_ptr<sq::audio::IAudioBackend> backend = sq::audio::makeAudioBackend();
 
     ASSERT_NE(backend, nullptr);
-    EXPECT_EQ(backend->playSound(audio::NO_SOUND, {}), audio::NO_VOICE);
+    EXPECT_EQ(backend->playSound(sq::audio::NO_SOUND, {}), sq::audio::NO_VOICE);
 }
 
 TEST(AudioBackendFactory, NullKindOpensNoDevice) {
-    const std::unique_ptr<audio::IAudioBackend> muted = audio::makeAudioBackend(audio::AudioBackendKind::Null);
+    const std::unique_ptr<sq::audio::IAudioBackend> muted =
+        sq::audio::makeAudioBackend(sq::audio::AudioBackendKind::Null);
     EXPECT_FALSE(muted->isAvailable());
 
     // No device was claimed, so a real backend can still be created alongside.
-    EXPECT_NO_THROW(audio::detail::RaylibAudioBackend{});
+    EXPECT_NO_THROW(sq::audio::detail::RaylibAudioBackend{});
 }
 
 TEST(AudioBackendFactory, ReleasesTheDeviceWithTheBackend) {
     {
-        const auto backend = audio::makeAudioBackend();
+        const auto backend = sq::audio::makeAudioBackend();
     }
-    EXPECT_NO_THROW({ const auto again = audio::makeAudioBackend(); });
+    EXPECT_NO_THROW({ const auto again = sq::audio::makeAudioBackend(); });
 }
 
 int main(int argc, char** argv) {

@@ -77,6 +77,11 @@ jobs:
         if: runner.os == 'Linux'
         run: python3 scripts/check_module_boundaries.py --strict
 
+      # Every engine namespace is under `sq`, written flat (`namespace sq::ecs::detail {`).
+      - name: Check the engine namespaces
+        if: runner.os == 'Linux'
+        run: test "$(grep -rhoE '^namespace [a-z_]+' engine/src | sort -u)" = "namespace sq"
+
   # ECS core under AddressSanitizer, UndefinedBehaviorSanitizer and Valgrind, plus a short benchmark run (issue #40).
   # Only runs on pushes to main, not on every pull request.
   ecs-memory:

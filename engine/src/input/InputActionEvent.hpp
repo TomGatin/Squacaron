@@ -2,7 +2,7 @@
 
 #include "input/ActionId.hpp"
 
-namespace events {
+namespace sq::events {
 
 /**
  * @brief Event published when an action transitions state.
@@ -11,10 +11,10 @@ namespace events {
  */
 struct InputActionEvent {
     /** @brief The logical input action identifier triggered. */
-    input::ActionId action = 0;
+    sq::input::ActionId action = 0;
 
     /** @brief Transition state of the action. */
-    input::ActionState state = input::ActionState::Pressed;
+    sq::input::ActionState state = sq::input::ActionState::Pressed;
 
     /** @brief Analog or digital magnitude of the action. */
     float value = 1.0F;
@@ -23,4 +23,4 @@ struct InputActionEvent {
     int playerIndex = 0;
 };
 
-}  // namespace events
+}  // namespace sq::events

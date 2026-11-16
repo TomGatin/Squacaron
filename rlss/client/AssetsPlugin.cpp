@@ -29,29 +29,29 @@ std::string tileAlias(const int row, const int column) {
 
 }  // namespace
 
-void AssetsPlugin::build(engine::PluginBuilder& builder) {
-    builder.require<render::RenderPlugin>();
-    builder.require<assets::AssetScriptingPlugin>();
+void AssetsPlugin::build(sq::engine::PluginBuilder& builder) {
+    builder.require<sq::render::RenderPlugin>();
+    builder.require<sq::assets::AssetScriptingPlugin>();
     // The texture and font loaders: without them the global group would only load once they are installed.
-    builder.require<assets::RenderAssetsPlugin>();
+    builder.require<sq::assets::RenderAssetsPlugin>();
 }
 
-void AssetsPlugin::init(engine::Engine& engine) {
-    auto& manager = engine.registry().getResource<assets::AssetManager>();
-    manager.loadGroup(assets::AssetManager::GLOBAL_GROUP);
+void AssetsPlugin::init(sq::engine::Engine& engine) {
+    auto& manager = engine.registry().getResource<sq::assets::AssetManager>();
+    manager.loadGroup(sq::assets::AssetManager::GLOBAL_GROUP);
     // A missing file is drawn as the checkerboard (the game stays playable), but always reported. A file absent
     // from its directory is not even declared by the preload: it gets the checkerboard too.
     const auto texture = [&manager](const std::string_view alias) {
-        const assets::AssetStatus status = manager.status<assets::Texture>(alias);
-        if (status != assets::AssetStatus::Loaded) {
-            engine::log::warning(LOG_TAG, "texture '", alias,
-                                 "' not loaded (are rlss/scripts/Assets.wren and assets/ next to the executable?)");
+        const sq::assets::AssetStatus status = manager.status<sq::assets::Texture>(alias);
+        if (status != sq::assets::AssetStatus::Loaded) {
+            sq::engine::log::warning(LOG_TAG, "texture '", alias,
+                                     "' not loaded (are rlss/scripts/Assets.wren and assets/ next to the executable?)");
         }
-        return status == assets::AssetStatus::Unknown ? manager.fallback<assets::Texture>()
-                                                      : manager.get<assets::Texture>(alias);
+        return status == sq::assets::AssetStatus::Unknown ? manager.fallback<sq::assets::Texture>()
+                                                          : manager.get<sq::assets::Texture>(alias);
     };
     const auto isDeclared = [&manager](const std::string& alias) {
-        return manager.status<assets::Texture>(alias) != assets::AssetStatus::Unknown;
+        return manager.status<sq::assets::Texture>(alias) != sq::assets::AssetStatus::Unknown;
     };
 
     GameAssets loaded;
@@ -62,7 +62,7 @@ void AssetsPlugin::init(engine::Engine& engine) {
         }
     }
     if (loaded.arena.empty()) {
-        engine::log::warning(LOG_TAG, "no arena texture");
+        sq::engine::log::warning(LOG_TAG, "no arena texture");
     }
     loaded.carBody = texture("car_body");
     loaded.carDetails = texture("car_details");
@@ -81,9 +81,9 @@ void AssetsPlugin::init(engine::Engine& engine) {
     loaded.explosionOrange = texture("goal_explosion_orange");
     loaded.shockwave = texture("shockwave");
     loaded.spark = texture("spark");
-    loaded.font = manager.get<assets::Font>(FONT_ALIAS);
-    if (loaded.font == engine::NO_FONT) {
-        engine::log::warning(LOG_TAG, "no font '", FONT_ALIAS, "', using the default font");
+    loaded.font = manager.get<sq::assets::Font>(FONT_ALIAS);
+    if (loaded.font == sq::engine::NO_FONT) {
+        sq::engine::log::warning(LOG_TAG, "no font '", FONT_ALIAS, "', using the default font");
     }
     engine.registry().addResource(std::move(loaded));
 }

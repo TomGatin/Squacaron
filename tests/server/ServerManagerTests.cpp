@@ -21,11 +21,11 @@
 
 namespace {
 
-using ecs::net::Bytes;
-using ecs::net::Channel;
-using ecs::net::EventType;
-using ecs::net::NetworkEvent;
-using ClientId = ecs::net::PeerId;
+using sq::net::Bytes;
+using sq::net::Channel;
+using sq::net::EventType;
+using sq::net::NetworkEvent;
+using ClientId = sq::net::PeerId;
 using rtype::server::ServerManager;
 namespace protocol = rtype::protocol;
 
@@ -52,7 +52,7 @@ struct NetworkState {
 };
 
 /** @brief In-memory network: the test pushes events, the server polls them and its sends are recorded. */
-class FakeNetwork : public ecs::net::INetworkServer {
+class FakeNetwork : public sq::net::INetworkServer {
   public:
     explicit FakeNetwork(std::shared_ptr<NetworkState> state) : _state(std::move(state)) {}
 

@@ -30,10 +30,10 @@ std::uint8_t blinkAlpha(const std::uint8_t flags, const float seconds) noexcept 
     return phase < BLINK_PERIOD / 2.0F ? OPAQUE_ALPHA : BLINK_FADED_ALPHA;
 }
 
-void blinkInvulnerableShips(ecs::Registry& registry, const float seconds) {
-    registry.runSystem<ecs::Replicated, rtype::game::EntityNetState, ecs::Renderable>(
-        [seconds](ecs::Entity /*entity*/, const ecs::Replicated& replicated, const rtype::game::EntityNetState& state,
-                  ecs::Renderable& renderable) {
+void blinkInvulnerableShips(sq::ecs::Registry& registry, const float seconds) {
+    registry.runSystem<sq::ecs::Replicated, rtype::game::EntityNetState, sq::ecs::Renderable>(
+        [seconds](sq::ecs::Entity /*entity*/, const sq::ecs::Replicated& replicated,
+                  const rtype::game::EntityNetState& state, sq::ecs::Renderable& renderable) {
             if (replicated.kind == rtype::game::KIND_PLAYER_SHIP) {
                 renderable.tint.a = blinkAlpha(state.flags, seconds);
             }

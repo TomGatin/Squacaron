@@ -40,7 +40,7 @@ class Lobby {
      * @param network Transport shared by every room; must outlive the lobby.
      * @param level Level played by every room, shared; `nullptr` plays no level.
      */
-    explicit Lobby(ecs::net::INetworkServer& network, std::shared_ptr<const level::Level> level = nullptr)
+    explicit Lobby(sq::net::INetworkServer& network, std::shared_ptr<const level::Level> level = nullptr)
         : _network(&network), _level(std::move(level)) {}
 
     /** @brief A client's `Hello` was accepted: it can now use the lobby. @param client The client. */
@@ -61,7 +61,7 @@ class Lobby {
      * @param client Sender.
      * @param data Untrusted payload.
      */
-    void onUnreliableData(ClientId client, const ecs::net::Bytes& data);
+    void onUnreliableData(ClientId client, const sq::net::Bytes& data);
     /**
      * @brief Removes a client from its room: destroys the room if it becomes empty, and otherwise tells the others.
      *
@@ -108,7 +108,7 @@ class Lobby {
     [[nodiscard]] std::optional<RoomId> roomOf(ClientId client) const;
 
     /** @brief Transport, to reach the clients. */
-    ecs::net::INetworkServer* _network;
+    sq::net::INetworkServer* _network;
     /** @brief Level given to every new room. */
     std::shared_ptr<const level::Level> _level;
     /**

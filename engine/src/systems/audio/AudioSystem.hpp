@@ -18,7 +18,7 @@
 #include "events/EventBus.hpp"
 #include "utils/MoveOnlyFunction.hpp"
 
-namespace systems {
+namespace sq::systems {
 
 /**
  * @brief Plays the sounds and musics requested through the `EventBus`.
@@ -42,7 +42,7 @@ class AudioSystem {
      * @param backend Audio output used to play the sounds.
      * @param eventBus Bus the audio events are published on.
      */
-    AudioSystem(audio::IAudioBackend& backend, ecs::EventBus& eventBus);
+    AudioSystem(sq::audio::IAudioBackend& backend, sq::events::EventBus& eventBus);
 
     /** @brief Unsubscribes from the audio events and stops the sounds of the emitters. */
     ~AudioSystem();
@@ -66,7 +66,7 @@ class AudioSystem {
      *
      * @param registry Registry holding the `AudioListener` and `AudioEmitter` entities.
      */
-    void update(ecs::Registry& registry);
+    void update(sq::ecs::Registry& registry);
 
     /**
      * @brief Sets the gain of a bus immediately.
@@ -74,20 +74,20 @@ class AudioSystem {
      * @param bus Bus to change.
      * @param volume Linear gain, clamped to [`MIN_VOLUME`, `MAX_VOLUME`].
      */
-    void setVolume(audio::AudioBus bus, float volume);
+    void setVolume(sq::audio::AudioBus bus, float volume);
 
     /**
      * @brief Reads the gain of a bus.
      * @param bus Bus to read.
      * @return Linear gain in [`MIN_VOLUME`, `MAX_VOLUME`].
      */
-    [[nodiscard]] float volume(audio::AudioBus bus) const noexcept;
+    [[nodiscard]] float volume(sq::audio::AudioBus bus) const noexcept;
 
     /**
      * @brief Changes how positioned sounds are panned and attenuated.
      * @param config Pan and attenuation settings, in world units.
      */
-    void setSpatialConfig(const audio::SpatialConfig& config) noexcept { _spatial = config; }
+    void setSpatialConfig(const sq::audio::SpatialConfig& config) noexcept { _spatial = config; }
 
     /**
      * @brief Applies the volumes and the spatial settings of a configuration.
@@ -96,40 +96,41 @@ class AudioSystem {
      *
      * @param settings Settings to apply, usually read with `readAudioSettings`.
      */
-    void applySettings(const audio::AudioSettings& settings);
+    void applySettings(const sq::audio::AudioSettings& settings);
 
     /** @brief Reads the pan and attenuation settings. */
-    [[nodiscard]] const audio::SpatialConfig& spatialConfig() const noexcept { return _spatial; }
+    [[nodiscard]] const sq::audio::SpatialConfig& spatialConfig() const noexcept { return _spatial; }
 
   private:
     /** @brief Any audio event waiting for the next update. */
-    using AudioCommand = std::variant<events::PlaySoundEvent, events::PlayMusicEvent, events::StopMusicEvent,
-                                      events::StopAllSoundsEvent, events::SetAudioVolumeEvent>;
+    using AudioCommand =
+        std::variant<sq::events::PlaySoundEvent, sq::events::PlayMusicEvent, sq::events::StopMusicEvent,
+                     sq::events::StopAllSoundsEvent, sq::events::SetAudioVolumeEvent>;
 
     /** @brief A sound to start at the end of the current update. */
     struct PendingSound {
         /** @brief Sound to play. */
-        audio::SoundId id = audio::NO_SOUND;
+        sq::audio::SoundId id = sq::audio::NO_SOUND;
         /** @brief Volume before the SFX bus, pan and pitch. */
-        audio::SoundParams base;
+        sq::audio::SoundParams base;
         /** @brief Where it is heard from, if it is spatialized; used to merge requests that are close. */
-        std::optional<audio::SoundPosition> position;
+        std::optional<sq::audio::SoundPosition> position;
     };
 
     /** @brief A one-shot sound started by a `PlaySoundEvent`, kept to apply SFX volume changes while it plays. */
     struct PlayingSound {
         /** @brief Instance in the backend. */
-        audio::VoiceId voice = audio::NO_VOICE;
+        sq::audio::VoiceId voice = sq::audio::NO_VOICE;
         /** @brief Volume before the SFX bus, pan and pitch. */
-        audio::SoundParams base;
+        sq::audio::SoundParams base;
     };
 
     /** @brief Playback state of an `AudioEmitter` entity. */
     struct EmitterState {
         /** @brief Instance currently or last played, or `NO_VOICE`. */
-        audio::VoiceId voice = audio::NO_VOICE;
+        sq::audio::VoiceId voice = sq::audio::NO_VOICE;
         /** @brief Sound of that instance, to restart it if the component changes sound. */
-        audio::SoundId sound = audio::NO_SOUND;
+        sq::audio::SoundId sound = sq::audio::NO_SOUND;
         /** @brief Whether the sound was started once, so a non-looping emitter plays only once. */
         bool started = false;
         /** @brief Whether its voice was taken by another sound; it then resumes only on a free voice. */
@@ -139,43 +140,43 @@ class AudioSystem {
     };
 
     /** @brief Computes a sound's volume (before the SFX bus), pan and pitch from where it is emitted. */
-    [[nodiscard]] audio::SoundParams resolveParams(float volume, float pitch,
-                                                   const std::optional<audio::SoundPosition>& position) const;
+    [[nodiscard]] sq::audio::SoundParams resolveParams(float volume, float pitch,
+                                                       const std::optional<sq::audio::SoundPosition>& position) const;
 
     /** @brief Applies the SFX bus to settings returned by `resolveParams`. */
-    [[nodiscard]] audio::SoundParams applySfxBus(audio::SoundParams base) const noexcept;
+    [[nodiscard]] sq::audio::SoundParams applySfxBus(sq::audio::SoundParams base) const noexcept;
 
     /** @brief Returns `position` if the sound is spatialized (position, listener and spatialization enabled). */
-    [[nodiscard]] std::optional<audio::SoundPosition> heardFrom(
-        const std::optional<audio::SoundPosition>& position) const;
+    [[nodiscard]] std::optional<sq::audio::SoundPosition> heardFrom(
+        const std::optional<sq::audio::SoundPosition>& position) const;
 
     /** @brief Applies the current SFX volume to the playing one-shot sounds and forgets the finished ones. */
     void refreshPlayingSounds();
 
     /** @brief Starts, follows and stops the sounds of the `AudioEmitter` entities. */
-    void updateEmitters(ecs::Registry& registry);
+    void updateEmitters(sq::ecs::Registry& registry);
 
     /** @brief Queues a sound request, unless it is invalid or the queue is full. */
-    void enqueue(const events::PlaySoundEvent& event);
+    void enqueue(const sq::events::PlaySoundEvent& event);
 
     /** @brief Queues any other audio event; these are never dropped. */
     void enqueue(const AudioCommand& command);
 
     /** @brief Resolves a sound's final settings and keeps it for the end of the update. */
-    void execute(const events::PlaySoundEvent& event);
+    void execute(const sq::events::PlaySoundEvent& event);
     /** @brief Starts a music stream. */
-    void execute(const events::PlayMusicEvent& event);
+    void execute(const sq::events::PlayMusicEvent& event);
     /** @brief Stops the music stream. */
-    void execute(const events::StopMusicEvent& event);
+    void execute(const sq::events::StopMusicEvent& event);
     /** @brief Stops every sound effect, including the ones requested earlier in this update. */
-    void execute(const events::StopAllSoundsEvent& event);
+    void execute(const sq::events::StopAllSoundsEvent& event);
     /** @brief Changes a bus gain. */
-    void execute(const events::SetAudioVolumeEvent& event);
+    void execute(const sq::events::SetAudioVolumeEvent& event);
 
     /** @brief Audio output; never null. */
-    audio::IAudioBackend* _backend;
+    sq::audio::IAudioBackend* _backend;
     /** @brief Undo the event subscriptions when the system is destroyed. */
-    std::vector<ecs::MoveOnlyFunction<void()>> _unsubscribers;
+    std::vector<sq::ecs::MoveOnlyFunction<void()>> _unsubscribers;
     /** @brief Events received since the last update, in arrival order. */
     std::vector<AudioCommand> _queue;
     /** @brief Number of `PlaySoundEvent` in `_queue`, bounded by `MAX_QUEUED_SOUNDS`. */
@@ -185,17 +186,17 @@ class AudioSystem {
     /** @brief One-shot sounds started by events that may still be playing. */
     std::vector<PlayingSound> _playingSounds;
     /** @brief Playback state of each emitter entity. */
-    std::unordered_map<ecs::Entity, EmitterState> _emitters;
+    std::unordered_map<sq::ecs::Entity, EmitterState> _emitters;
     /** @brief Where sounds are heard from during the current update, if a listener exists. */
-    std::optional<audio::SoundPosition> _listener;
+    std::optional<sq::audio::SoundPosition> _listener;
     /** @brief Pan and attenuation settings. */
-    audio::SpatialConfig _spatial;
+    sq::audio::SpatialConfig _spatial;
     /** @brief Global gain. */
-    float _masterVolume = audio::DEFAULT_VOLUME;
+    float _masterVolume = sq::audio::DEFAULT_VOLUME;
     /** @brief Music gain. */
-    float _musicVolume = audio::DEFAULT_VOLUME;
+    float _musicVolume = sq::audio::DEFAULT_VOLUME;
     /** @brief Sound effect gain. */
-    float _sfxVolume = audio::DEFAULT_VOLUME;
+    float _sfxVolume = sq::audio::DEFAULT_VOLUME;
 };
 
-}  // namespace systems
+}  // namespace sq::systems

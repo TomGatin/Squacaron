@@ -7,7 +7,7 @@
 
 #include "config/ConfigFile.hpp"
 
-namespace config {
+namespace sq::config {
 
 /**
  * @brief Reads typed, bounded settings from a `ConfigFile` and reports every correction.
@@ -92,4 +92,4 @@ class ConfigReader {
     std::vector<std::string> _read;
 };
 
-}  // namespace config
+}  // namespace sq::config

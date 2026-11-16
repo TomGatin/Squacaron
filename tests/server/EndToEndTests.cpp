@@ -51,8 +51,8 @@
 // A real ServerManager and real clients, talking over loopback sockets: everything the other suites replace with fakes.
 namespace {
 
-using ecs::net::Channel;
 using rtype::server::ServerManager;
+using sq::net::Channel;
 namespace protocol = rtype::protocol;
 namespace game = rtype::game;
 
@@ -62,16 +62,16 @@ constexpr auto DEADLINE = std::chrono::seconds(10);
 /** @brief The client of the game, without its window: same network plugins, and the test plays the input devices. */
 class GameClient {
   public:
-    GameClient() : _connection(std::make_shared<ecs::net::ClientConnection>(nullptr)) {
-        engine.addPlugin<ecs::net::NetworkPlugin>(_connection, _connection);
-        engine.addPlugin<ecs::net::ClientReplicationPlugin>(std::make_shared<game::ReplicationCodec>());
+    GameClient() : _connection(std::make_shared<sq::net::ClientConnection>(nullptr)) {
+        engine.addPlugin<sq::net::NetworkPlugin>(_connection, _connection);
+        engine.addPlugin<sq::net::ClientReplicationPlugin>(std::make_shared<game::ReplicationCodec>());
         engine.addPlugin<client::RTypeNetworkPlugin>(
-            _connection, [] { return ecs::net::createClient({.protocolId = protocol::TRANSPORT_PROTOCOL_ID}); });
+            _connection, [] { return sq::net::createClient({.protocolId = protocol::TRANSPORT_PROTOCOL_ID}); });
         engine.addPlugin<client::PlayerControlPlugin>();
-        engine.addPlugin<metrics::MetricsPlugin>();
-        engine.addPlugin<ecs::net::NetworkMetricsPlugin>([this] { return _connection->stats(); });
+        engine.addPlugin<sq::metrics::MetricsPlugin>();
+        engine.addPlugin<sq::net::NetworkMetricsPlugin>([this] { return _connection->stats(); });
         engine.addPlugin<client::ShipMetricsPlugin>();
-        engine.eventBus().subscribe<ecs::net::PacketReceived>([this](const ecs::net::PacketReceived& packet) {
+        engine.eventBus().subscribe<sq::net::PacketReceived>([this](const sq::net::PacketReceived& packet) {
             const auto message = protocol::decode(packet.data);
             if (packet.channel != Channel::Reliable || !message) {
                 return;
@@ -86,7 +86,7 @@ class GameClient {
         });
         engine.init();
         _input = engine.registry().spawnEntity();
-        engine.registry().addComponent(_input, ::input::InputState{.playerIndex = 0, .actions = {}});
+        engine.registry().addComponent(_input, sq::input::InputState{.playerIndex = 0, .actions = {}});
     }
 
     /** @brief Asks the session to connect to the local server, as the connect screen does. */
@@ -108,11 +108,11 @@ class GameClient {
     void setMoveX(const float value) { actions()[game::ACTION_MOVE_X].axis = value; }
 
     /** @brief Position of the ship of a player, as this client sees it. */
-    [[nodiscard]] std::optional<ecs::Transform> shipOf(const std::uint8_t playerIndex) {
-        std::optional<ecs::Transform> found;
-        engine.registry().runSystem<ecs::Replicated, game::EntityNetState, ecs::Transform>(
-            [&](ecs::Entity /*entity*/, const ecs::Replicated& replicated, const game::EntityNetState& state,
-                const ecs::Transform& transform) {
+    [[nodiscard]] std::optional<sq::ecs::Transform> shipOf(const std::uint8_t playerIndex) {
+        std::optional<sq::ecs::Transform> found;
+        engine.registry().runSystem<sq::ecs::Replicated, game::EntityNetState, sq::ecs::Transform>(
+            [&](sq::ecs::Entity /*entity*/, const sq::ecs::Replicated& replicated, const game::EntityNetState& state,
+                const sq::ecs::Transform& transform) {
                 if (replicated.kind == game::KIND_PLAYER_SHIP && state.subtype == playerIndex) {
                     found = transform;
                 }
@@ -122,34 +122,34 @@ class GameClient {
 
     /** @brief Value of a line of the metrics board, empty if it does not exist yet. */
     [[nodiscard]] std::string metric(const std::string_view name) {
-        const metrics::Metric* line = engine.registry().getResource<metrics::MetricsBoard>().find(name);
+        const sq::metrics::Metric* line = engine.registry().getResource<sq::metrics::MetricsBoard>().find(name);
         return line == nullptr ? std::string{} : line->value;
     }
 
     /** @brief Number of replicated entities in this client's world. */
     [[nodiscard]] std::size_t entityCount() {
-        return engine.registry().getResource<ecs::net::NetworkEntityMap>().size();
+        return engine.registry().getResource<sq::net::NetworkEntityMap>().size();
     }
 
-    engine::Engine engine;
+    sq::engine::Engine engine;
     std::optional<protocol::LobbyUpdate> lobbyUpdate;
     std::optional<protocol::GameStart> gameStart;
     std::optional<protocol::PlayerLeft> playerLeft;
 
   private:
-    std::unordered_map<::input::ActionId, ::input::ActionData>& actions() {
-        return engine.registry().getComponents<::input::InputState>().get(_input).actions;
+    std::unordered_map<sq::input::ActionId, sq::input::ActionData>& actions() {
+        return engine.registry().getComponents<sq::input::InputState>().get(_input).actions;
     }
 
-    std::shared_ptr<ecs::net::ClientConnection> _connection;
-    ecs::Entity _input = 0;
+    std::shared_ptr<sq::net::ClientConnection> _connection;
+    sq::ecs::Entity _input = 0;
 };
 
 /** @brief Runs the real server on its own thread, with the real transport. */
 class EndToEndTest : public ::testing::Test {
   protected:
     EndToEndTest()
-        : server(ecs::net::createServer({.protocolId = protocol::TRANSPORT_PROTOCOL_ID})),
+        : server(sq::net::createServer({.protocolId = protocol::TRANSPORT_PROTOCOL_ID})),
           loop([this] { server.run(PORT); }) {}
 
     ~EndToEndTest() override {
@@ -247,8 +247,8 @@ TEST_F(EndToEndTest, TwoClientsPlayTogetherAndSurviveACrash) {
     second.reset();
     ASSERT_TRUE(pump(frame, [&] { return first.playerLeft.has_value() && first.entityCount() == 1; }));
     EXPECT_FALSE(first.shipOf(1).has_value());
-    const auto tick = first.engine.registry().getResource<ecs::net::SnapshotState>().tick;
-    EXPECT_TRUE(pump(frame, [&] { return first.engine.registry().getResource<ecs::net::SnapshotState>().tick > tick; }))
+    const auto tick = first.engine.registry().getResource<sq::net::SnapshotState>().tick;
+    EXPECT_TRUE(pump(frame, [&] { return first.engine.registry().getResource<sq::net::SnapshotState>().tick > tick; }))
         << "snapshots keep coming";
 }
 
@@ -272,7 +272,7 @@ TEST_F(EndToEndTest, ClientMeasuresItsConnection) {
         return !down.empty() && down != "0.0 KB/s";
     })) << "no traffic was measured";
     EXPECT_TRUE(pump(frame, [&] { return !client.metric("Position").empty(); })) << "the game adds its own metric";
-    EXPECT_GT(client.engine.registry().getResource<ecs::net::ReplicationStats>().snapshotsReceived, 0U);
+    EXPECT_GT(client.engine.registry().getResource<sq::net::ReplicationStats>().snapshotsReceived, 0U);
 }
 
 int main(int argc, char** argv) {

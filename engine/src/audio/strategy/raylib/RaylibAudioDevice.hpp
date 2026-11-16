@@ -2,7 +2,7 @@
 
 #include <atomic>
 
-namespace audio::detail {
+namespace sq::audio::detail {
 
 /**
  * @brief Flag set while a `RaylibAudioBackend` owns raylib's global audio device.
@@ -17,4 +17,4 @@ inline std::atomic_bool& deviceClaimed() {
     return claimed;
 }
 
-}  // namespace audio::detail
+}  // namespace sq::audio::detail

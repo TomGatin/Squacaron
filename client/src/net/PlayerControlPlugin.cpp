@@ -26,12 +26,12 @@ namespace client {
 
 namespace protocol = rtype::protocol;
 
-void PlayerControlPlugin::build(engine::PluginBuilder& builder) {
-    builder.require<ecs::net::ClientReplicationPlugin>();
+void PlayerControlPlugin::build(sq::engine::PluginBuilder& builder) {
+    builder.require<sq::net::ClientReplicationPlugin>();
     builder.require<RTypeNetworkPlugin>();
 }
 
-void PlayerControlPlugin::init(engine::Engine& engine) {
+void PlayerControlPlugin::init(sq::engine::Engine& engine) {
     auto& events = engine.eventBus();
     _started = events.subscribe<GameStarted>([this](const GameStarted& event) {
         _playerIndex = event.playerIndex;
@@ -48,38 +48,38 @@ void PlayerControlPlugin::init(engine::Engine& engine) {
         [&events, closed] { events.unsubscribe<SessionClosed>(closed); },
     };
     // UDP only opens at GameStart, so a snapshot never arrives before the index of this player's ship is known.
-    _spawned = events.subscribe<ecs::net::ReplicatedEntitySpawned>(
-        [this, &engine](const ecs::net::ReplicatedEntitySpawned& event) { onEntitySpawned(engine, event); });
+    _spawned = events.subscribe<sq::net::ReplicatedEntitySpawned>(
+        [this, &engine](const sq::net::ReplicatedEntitySpawned& event) { onEntitySpawned(engine, event); });
     // Same movement as the server: the prediction and the replay after a snapshot compute what the server computes.
-    _inputs = events.subscribe<ecs::net::InputApplied>([&engine](const ecs::net::InputApplied& event) {
-        ecs::Registry& registry = engine.registry();
-        if (registry.hasComponent<ecs::Transform>(event.entity)) {
-            rtype::game::applyShipInput(registry.getComponents<ecs::Transform>().get(event.entity), event.input,
+    _inputs = events.subscribe<sq::net::InputApplied>([&engine](const sq::net::InputApplied& event) {
+        sq::ecs::Registry& registry = engine.registry();
+        if (registry.hasComponent<sq::ecs::Transform>(event.entity)) {
+            rtype::game::applyShipInput(registry.getComponents<sq::ecs::Transform>().get(event.entity), event.input,
                                         event.deltaTime);
         }
     });
 }
 
-void PlayerControlPlugin::onEntitySpawned(engine::Engine& engine,
-                                          const ecs::net::ReplicatedEntitySpawned& event) const {
-    ecs::Registry& registry = engine.registry();
+void PlayerControlPlugin::onEntitySpawned(sq::engine::Engine& engine,
+                                          const sq::net::ReplicatedEntitySpawned& event) const {
+    sq::ecs::Registry& registry = engine.registry();
     const bool isLocalShip =
         _playerIndex && event.kind == rtype::game::KIND_PLAYER_SHIP &&
         registry.getComponents<rtype::game::EntityNetState>().get(event.entity).subtype == *_playerIndex;
     if (isLocalShip) {
-        registry.addComponent(event.entity, ecs::Predicted{});
+        registry.addComponent(event.entity, sq::ecs::Predicted{});
     } else {
-        registry.addComponent(event.entity, ecs::Interpolated{});
+        registry.addComponent(event.entity, sq::ecs::Interpolated{});
     }
 }
 
-void PlayerControlPlugin::fixedUpdate(engine::Engine& engine, const ecs::time::Time& /*time*/) {
+void PlayerControlPlugin::fixedUpdate(sq::engine::Engine& engine, const sq::time::Time& /*time*/) {
     if (!_playerIndex || _paused) {
         return;
     }
-    ecs::NetInput input{.sequence = ++_sequence, .held = {}, .axes = {}};
+    sq::ecs::NetInput input{.sequence = ++_sequence, .held = {}, .axes = {}};
     bool shootHeld = false;
-    withLocalInput(engine.registry(), [this, &input, &shootHeld](const ::input::InputState& state) {
+    withLocalInput(engine.registry(), [this, &input, &shootHeld](const sq::input::InputState& state) {
         for (const auto& [action, data] : state.actions) {
             if (action == input::ACTION_READY) {
                 continue;
@@ -100,21 +100,21 @@ void PlayerControlPlugin::fixedUpdate(engine::Engine& engine, const ecs::time::T
     if (_autoFire && _autoFireLatch.update(shootHeld) && input.held.size() < protocol::MAX_INPUT_BUTTONS) {
         input.held.push_back(rtype::game::ACTION_SHOOT);
     }
-    engine.eventBus().publish(ecs::net::LocalInput{.input = std::move(input)});
+    engine.eventBus().publish(sq::net::LocalInput{.input = std::move(input)});
 }
 
-void PlayerControlPlugin::shutdown(engine::Engine& engine) {
+void PlayerControlPlugin::shutdown(sq::engine::Engine& engine) {
     auto& events = engine.eventBus();
     if (_started) {
         events.unsubscribe<GameStarted>(*_started);
         _started.reset();
     }
     if (_spawned) {
-        events.unsubscribe<ecs::net::ReplicatedEntitySpawned>(*_spawned);
+        events.unsubscribe<sq::net::ReplicatedEntitySpawned>(*_spawned);
         _spawned.reset();
     }
     if (_inputs) {
-        events.unsubscribe<ecs::net::InputApplied>(*_inputs);
+        events.unsubscribe<sq::net::InputApplied>(*_inputs);
         _inputs.reset();
     }
     for (const auto& unsubscribe : _endings) {

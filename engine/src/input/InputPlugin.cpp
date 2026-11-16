@@ -17,18 +17,18 @@
 #include "render/api/IWindowService.hpp"
 #include "systems/input/InputSystem.hpp"
 
-namespace input {
+namespace sq::input {
 
 /**
  * @brief Concrete adapter implementing IInputService via InputSystem.
  */
-class InputPlugin::InputServiceImpl final : public engine::IInputService {
+class InputPlugin::InputServiceImpl final : public sq::engine::IInputService {
   public:
     /**
      * @brief Constructs InputServiceImpl wrapping an InputSystem reference.
      * @param system Reference to the active InputSystem.
      */
-    explicit InputServiceImpl(systems::InputSystem& system) : _system(&system) {}
+    explicit InputServiceImpl(sq::systems::InputSystem& system) : _system(&system) {}
 
     [[nodiscard]] ActionMapping& mapping() noexcept override { return _system->mapping(); }
 
@@ -40,7 +40,7 @@ class InputPlugin::InputServiceImpl final : public engine::IInputService {
 
   private:
     /** @brief Pointer to wrapped InputSystem. */
-    systems::InputSystem* _system;
+    sq::systems::InputSystem* _system;
 };
 
 InputPlugin::InputPlugin(ActionMapping mapping, int playerIndex, int gamepadIndex)
@@ -48,28 +48,28 @@ InputPlugin::InputPlugin(ActionMapping mapping, int playerIndex, int gamepadInde
 
 InputPlugin::~InputPlugin() = default;
 
-void InputPlugin::build(engine::PluginBuilder& builder) {
-    builder.require<engine::CorePlugin>();
-    builder.requireService<engine::IWindowService>();
-    builder.provides<engine::IInputService>();
+void InputPlugin::build(sq::engine::PluginBuilder& builder) {
+    builder.require<sq::engine::CorePlugin>();
+    builder.requireService<sq::engine::IWindowService>();
+    builder.provides<sq::engine::IInputService>();
 }
 
-void InputPlugin::init(engine::Engine& engine) {
+void InputPlugin::init(sq::engine::Engine& engine) {
     _inputService = std::make_shared<InputServiceImpl>(_inputSystem);
-    if (const auto res = engine.mediator().registerService<engine::IInputService>(_inputService); !res) {
-        throw engine::MediatorError(res.error());
+    if (const auto res = engine.mediator().registerService<sq::engine::IInputService>(_inputService); !res) {
+        throw sq::engine::MediatorError(res.error());
     }
 }
 
-void InputPlugin::preUpdate(engine::Engine& engine) {
-    _inputSystem.update(engine.service<engine::IWindowService>(), engine.registry(), &engine.eventBus());
+void InputPlugin::preUpdate(sq::engine::Engine& engine) {
+    _inputSystem.update(engine.service<sq::engine::IWindowService>(), engine.registry(), &engine.eventBus());
 }
 
-void InputPlugin::shutdown(engine::Engine& engine) {
-    if (engine.mediator().hasService<engine::IInputService>()) {
-        engine.mediator().removeService<engine::IInputService>();
+void InputPlugin::shutdown(sq::engine::Engine& engine) {
+    if (engine.mediator().hasService<sq::engine::IInputService>()) {
+        engine.mediator().removeService<sq::engine::IInputService>();
     }
     _inputService.reset();
 }
 
-}  // namespace input
+}  // namespace sq::input

@@ -13,7 +13,7 @@
 #include "tools/console/ConsoleTypes.hpp"
 #include "tools/devconsole/DevConsoleTypes.hpp"
 
-namespace tools {
+namespace sq::tools {
 
 class DevConsole;
 
@@ -21,7 +21,7 @@ class DevConsole;
  * @brief Draws the developer console: a panel across the top of the window with the output log (newest line at the
  * bottom, coloured by kind), a scroll hint, and the input line with its cursor.
  *
- * Draws through `engine::IScreenDrawService` only, so it holds no graphics-library code.
+ * Draws through `sq::engine::IScreenDrawService` only, so it holds no graphics-library code.
  */
 class DevConsoleView {
   public:
@@ -33,9 +33,9 @@ class DevConsoleView {
 
     /**
      * @brief Sets the font of the text.
-     * @param font Font loaded through the screen draw service, or `engine::NO_FONT` for the default one.
+     * @param font Font loaded through the screen draw service, or `sq::engine::NO_FONT` for the default one.
      */
-    void setFont(engine::FontId font) noexcept { _font = font; }
+    void setFont(sq::engine::FontId font) noexcept { _font = font; }
 
     /**
      * @brief Computes how many output lines fit in the panel.
@@ -52,7 +52,7 @@ class DevConsoleView {
      * @param screenHeight Window height in pixels.
      * @param caretVisible Whether the cursor is shown (it blinks).
      */
-    void draw(engine::IScreenDrawService& screen, const DevConsole& console, float screenWidth, float screenHeight,
+    void draw(sq::engine::IScreenDrawService& screen, const DevConsole& console, float screenWidth, float screenHeight,
               bool caretVisible) const;
 
   private:
@@ -63,12 +63,12 @@ class DevConsoleView {
     [[nodiscard]] float panelHeight(float screenHeight) const noexcept;
 
     /** @brief Colour of an output line. */
-    [[nodiscard]] const ecs::Rgba& colorOf(OutputLevel level) const noexcept;
+    [[nodiscard]] const sq::ecs::Rgba& colorOf(OutputLevel level) const noexcept;
 
     /** @brief Layout, font and colours. */
     DevConsoleConfig _config;
     /** @brief Font of the text. */
-    engine::FontId _font = engine::NO_FONT;
+    sq::engine::FontId _font = sq::engine::NO_FONT;
 };
 
-}  // namespace tools
+}  // namespace sq::tools

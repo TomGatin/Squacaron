@@ -34,7 +34,7 @@ std::optional<std::vector<std::string>> knownPrefab(std::string_view type, std::
 }
 
 level::Level build(std::string_view toml, std::vector<std::string>& warnings) {
-    return level::buildLevel(config::ConfigFile::parse(toml), knownPrefab, warnings);
+    return level::buildLevel(sq::config::ConfigFile::parse(toml), knownPrefab, warnings);
 }
 
 level::Level build(std::string_view toml) {
@@ -42,7 +42,7 @@ level::Level build(std::string_view toml) {
     return build(toml, warnings);
 }
 
-const timeline::TimelineEvent& eventAt(const level::Level& built, std::size_t index) {
+const sq::timeline::TimelineEvent& eventAt(const level::Level& built, std::size_t index) {
     return built.timeline.events()[index];
 }
 
@@ -89,7 +89,7 @@ TEST(LevelLoader, ReadsASpawnEvent) {
     )");
 
     ASSERT_EQ(built.timeline.events().size(), 1U);
-    const timeline::TimelineEvent& spawn = eventAt(built, 0);
+    const sq::timeline::TimelineEvent& spawn = eventAt(built, 0);
     EXPECT_FLOAT_EQ(spawn.position, 400.0F);
     EXPECT_EQ(spawn.type, level::EVENT_SPAWN);
     EXPECT_EQ(spawn.params.find<std::string>("prefab"), "alien_scout");
@@ -127,7 +127,7 @@ TEST(LevelLoader, WaveIsExpandedIntoOneSpawnPerEnemy) {
 
     ASSERT_EQ(built.timeline.events().size(), 3U);
     for (std::size_t i = 0; i < 3; ++i) {
-        const timeline::TimelineEvent& spawn = eventAt(built, i);
+        const sq::timeline::TimelineEvent& spawn = eventAt(built, i);
         // 0.5 s apart at 100 px/s: 50 px of scroll between two enemies.
         EXPECT_FLOAT_EQ(spawn.position, 1000.0F + (50.0F * static_cast<float>(i)));
         EXPECT_DOUBLE_EQ(spawn.params.find<double>("y").value_or(0.0), 200.0 + (50.0 * static_cast<double>(i)));
@@ -177,7 +177,7 @@ TEST(LevelLoader, WaveFollowsTheScrollEventsInItsMiddle) {
 
     // 1 s at 100 px/s; then 0.5 s at 100 px/s and 0.5 s at 20 px/s; then 1 s at 20 px/s, twice.
     std::vector<float> spawns;
-    for (const timeline::TimelineEvent& event : built.timeline.events()) {
+    for (const sq::timeline::TimelineEvent& event : built.timeline.events()) {
         if (event.type == level::EVENT_SPAWN) {
             spawns.push_back(event.position);
         }
@@ -210,7 +210,7 @@ TEST(LevelLoader, WaveDeclaredBeforeAScrollStillSeesIt) {
     )");
 
     std::vector<float> spawns;
-    for (const timeline::TimelineEvent& event : built.timeline.events()) {
+    for (const sq::timeline::TimelineEvent& event : built.timeline.events()) {
         if (event.type == level::EVENT_SPAWN) {
             spawns.push_back(event.position);
         }
@@ -233,7 +233,7 @@ TEST(LevelLoader, PrefabParametersArePassedToThePrefab) {
     )");
 
     ASSERT_EQ(built.timeline.events().size(), 1U);
-    const timeline::TimelineEvent& spawn = eventAt(built, 0);
+    const sq::timeline::TimelineEvent& spawn = eventAt(built, 0);
     EXPECT_EQ(spawn.params.find<std::string>("pattern"), "sine");
     EXPECT_DOUBLE_EQ(spawn.params.find<double>("amplitude").value_or(0.0), 40.0);
     EXPECT_DOUBLE_EQ(spawn.params.find<double>("speed").value_or(0.0), -200.0);
@@ -513,7 +513,7 @@ TEST(LevelLoader, ReadsABossEvent) {
                                      warnings);
 
     ASSERT_EQ(built.timeline.events().size(), 1U);
-    const timeline::TimelineEvent& boss = eventAt(built, 0);
+    const sq::timeline::TimelineEvent& boss = eventAt(built, 0);
     EXPECT_FLOAT_EQ(boss.position, 6000.0F);
     EXPECT_EQ(boss.type, level::EVENT_BOSS);
     EXPECT_EQ(boss.params.find<std::string>("prefab"), "boss_core");
@@ -667,7 +667,7 @@ TEST(LevelLoader, ReadsTerrainSections) {
                                      warnings);
 
     ASSERT_EQ(built.timeline.events().size(), 2U);
-    const timeline::TimelineEvent& top = eventAt(built, 0);
+    const sq::timeline::TimelineEvent& top = eventAt(built, 0);
     EXPECT_FLOAT_EQ(top.position, 500.0F);
     EXPECT_EQ(top.type, level::EVENT_TERRAIN);
     EXPECT_EQ(top.params.find<std::string>("side"), level::TERRAIN_TOP);
@@ -675,7 +675,7 @@ TEST(LevelLoader, ReadsTerrainSections) {
     // Rounded up to whole terrain blocks.
     EXPECT_DOUBLE_EQ(top.params.find<double>("length").value_or(0.0), 2.0 * rtype::game::TERRAIN_BLOCK_WIDTH);
 
-    const timeline::TimelineEvent& bottom = eventAt(built, 1);
+    const sq::timeline::TimelineEvent& bottom = eventAt(built, 1);
     EXPECT_FLOAT_EQ(bottom.position, 1800.0F);
     EXPECT_EQ(bottom.params.find<std::string>("side"), level::TERRAIN_BOTTOM);
     EXPECT_DOUBLE_EQ(bottom.params.find<double>("height").value_or(0.0), 120.0);

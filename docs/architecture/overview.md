@@ -4,7 +4,8 @@
 
 The project is structured into three primary tiers:
 
-1. **Modular Engine:** An agnostic standalone set of link-time sub-libraries and plugins:
+1. **Modular Engine:** An agnostic standalone set of link-time sub-libraries and plugins. Every engine name lives under the root namespace `sq` (`sq::ecs::Registry`,
+   `sq::events::EventBus`, `sq::net::NetworkPlugin`, `sq::time::Clock`...), so it never collides with a game's own names:
     - **`engine_utils`**: helpers with no dependency: move-only callables, stable id slots, portable path handling.
     - **`engine_core`**: Lightweight ECS Core (Registry, Sparse Arrays, Entity, CommandBuffer, Resources), central **
       `Engine`** coordinator, **`Mediator`** service registry, and **`PluginGraph`** dependency resolver.
@@ -24,7 +25,7 @@ The project is structured into three primary tiers:
     - **`engine_network`**: Transport interfaces (`INetworkServer`, `INetworkClient`), `NetworkConfig`, `NetworkPlugin` and
       the replication plugins (snapshots, input queue, prediction, interpolation), around a codec provided by the game.
       No Asio.
-    - **`engine_network_asio`**: Asio implementation of the transport, created through `ecs::net::createServer()` /
+    - **`engine_network_asio`**: Asio implementation of the transport, created through `sq::net::createServer()` /
       `createClient()`.
     - **`engine_metrics`**, **`engine_metrics_overlay`**, **`engine_network_metrics`**: in-game measures on a
       `MetricsBoard` (frame rate, process, then network), and the HUD panel showing them. See
@@ -36,7 +37,7 @@ The project is structured into three primary tiers:
     audio, input or windows (`Engine::run()` stops on `Engine::stop()`, which the render plugin calls when its window
     closes). `scripts/check_module_boundaries.py --strict` (CI) checks that each module only includes headers of its
     own module and of its `add_deps`.
-2. **Authoritative Server:** Hosts game simulation sessions, one `engine::Engine` per room, runs logical systems, enforces
+2. **Authoritative Server:** Hosts game simulation sessions, one `sq::engine::Engine` per room, runs logical systems, enforces
    validation, and synchronizes states.
 3. **Graphical Client:** Renders the world, handles local inputs, and queries user devices. Interpolation and client-side
    prediction come from the engine's replication plugins.

@@ -5,7 +5,7 @@
 
 #pragma once
 
-namespace tools {
+namespace sq::tools {
 
 /**
  * @brief Turns the held state of a key into presses: one when it goes down, then one every `interval` seconds once it
@@ -46,4 +46,4 @@ class KeyRepeater {
     float _timer = 0.0F;
 };
 
-}  // namespace tools
+}  // namespace sq::tools

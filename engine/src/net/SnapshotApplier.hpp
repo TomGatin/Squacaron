@@ -10,12 +10,12 @@
 #include "ecs/components/Transform.hpp"
 #include "net/NetworkEntityMap.hpp"
 
-namespace ecs::net {
+namespace sq::net {
 
 /** @brief An entity created while applying a snapshot. */
 struct SpawnedEntity {
     /** @brief New local entity. */
-    ecs::Entity entity{};
+    sq::ecs::Entity entity{};
     /** @brief Its network id. */
     std::uint32_t id = 0;
     /** @brief Its game-defined kind. */
@@ -37,7 +37,7 @@ class SnapshotApplier {
      * @param map Network id of each replicated entity.
      * @param interval Seconds covered by this snapshot since the previous one, used to interpolate.
      */
-    SnapshotApplier(ecs::Registry& registry, NetworkEntityMap& map, float interval);
+    SnapshotApplier(sq::ecs::Registry& registry, NetworkEntityMap& map, float interval);
 
     /**
      * @brief Local entity of a network id; created with `NetworkId` and `Replicated` if it is unknown.
@@ -45,7 +45,7 @@ class SnapshotApplier {
      * @param kind Game-defined kind, used when the entity is created.
      * @return The entity, or nothing if `id` is 0 (invalid).
      */
-    [[nodiscard]] std::optional<ecs::Entity> entity(std::uint32_t id, std::uint32_t kind);
+    [[nodiscard]] std::optional<sq::ecs::Entity> entity(std::uint32_t id, std::uint32_t kind);
 
     /**
      * @brief Writes the server position of an entity.
@@ -56,29 +56,29 @@ class SnapshotApplier {
      * @param entity Entity returned by `entity()`.
      * @param transform State received from the server.
      */
-    void setTransform(ecs::Entity entity, const ecs::Transform& transform);
+    void setTransform(sq::ecs::Entity entity, const sq::ecs::Transform& transform);
 
     /** @brief Client world, to write the components the engine does not know about. */
-    [[nodiscard]] ecs::Registry& registry() noexcept { return *_registry; }
+    [[nodiscard]] sq::ecs::Registry& registry() noexcept { return *_registry; }
 
     /** @brief True if the snapshot contained this entity (returned by `entity()`). */
-    [[nodiscard]] bool contains(ecs::Entity entity) const { return _seen.contains(entity); }
+    [[nodiscard]] bool contains(sq::ecs::Entity entity) const { return _seen.contains(entity); }
     /** @brief Entities the snapshot contained (returned by `entity()`). */
-    [[nodiscard]] const std::unordered_set<ecs::Entity>& seen() const noexcept { return _seen; }
+    [[nodiscard]] const std::unordered_set<sq::ecs::Entity>& seen() const noexcept { return _seen; }
     /** @brief Entities created by this snapshot, in creation order. */
     [[nodiscard]] const std::vector<SpawnedEntity>& spawned() const noexcept { return _spawned; }
 
   private:
     /** @brief Client world. */
-    ecs::Registry* _registry;
+    sq::ecs::Registry* _registry;
     /** @brief Network ids of the client world. */
     NetworkEntityMap* _map;
     /** @brief Seconds since the previous snapshot. */
     float _interval;
     /** @brief Entities present in the snapshot. */
-    std::unordered_set<ecs::Entity> _seen;
+    std::unordered_set<sq::ecs::Entity> _seen;
     /** @brief Entities created by the snapshot. */
     std::vector<SpawnedEntity> _spawned;
 };
 
-}  // namespace ecs::net
+}  // namespace sq::net

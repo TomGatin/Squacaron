@@ -12,37 +12,37 @@
 #include "core/PluginBuilder.hpp"
 #include "ecs/Registry.hpp"
 
-namespace assets {
+namespace sq::assets {
 
-void AudioAssetsPlugin::build(engine::PluginBuilder& builder) {
-    builder.require<audio::AudioPlugin>();
+void AudioAssetsPlugin::build(sq::engine::PluginBuilder& builder) {
+    builder.require<sq::audio::AudioPlugin>();
     builder.require<AssetPlugin>();
 }
 
-void AudioAssetsPlugin::init(engine::Engine& engine) {
-    audio::IAudioBackend* backend = engine.getPlugin<audio::AudioPlugin>().backend();
+void AudioAssetsPlugin::init(sq::engine::Engine& engine) {
+    sq::audio::IAudioBackend* backend = engine.getPlugin<sq::audio::AudioPlugin>().backend();
     if (backend == nullptr || !backend->isAvailable()) {
         return;
     }
     auto& manager = engine.registry().getResource<AssetManager>();
     manager.setLoader<Sound>(AssetLoader<Sound>{
         .load = [backend](const std::string& path, const LoadOptions& /*options*/,
-                          const audio::SoundId preferred) { return backend->loadSoundAs(path, preferred); },
-        .unload = [backend](const audio::SoundId id) { backend->unloadSound(id); },
+                          const sq::audio::SoundId preferred) { return backend->loadSoundAs(path, preferred); },
+        .unload = [backend](const sq::audio::SoundId id) { backend->unloadSound(id); },
         .fallback = {},
-        .reserve = [backend](const audio::SoundId last) { backend->reserveSounds(last); },
+        .reserve = [backend](const sq::audio::SoundId last) { backend->reserveSounds(last); },
     });
     manager.setLoader<Music>(AssetLoader<Music>{
         .load = [backend](const std::string& path, const LoadOptions& /*options*/,
-                          const audio::MusicId preferred) { return backend->loadMusicAs(path, preferred); },
-        .unload = [backend](const audio::MusicId id) { backend->unloadMusic(id); },
+                          const sq::audio::MusicId preferred) { return backend->loadMusicAs(path, preferred); },
+        .unload = [backend](const sq::audio::MusicId id) { backend->unloadMusic(id); },
         .fallback = {},
-        .reserve = [backend](const audio::MusicId last) { backend->reserveMusics(last); },
+        .reserve = [backend](const sq::audio::MusicId last) { backend->reserveMusics(last); },
     });
     _attached = true;
 }
 
-void AudioAssetsPlugin::shutdown(engine::Engine& engine) {
+void AudioAssetsPlugin::shutdown(sq::engine::Engine& engine) {
     if (!_attached) {
         return;
     }
@@ -55,4 +55,4 @@ void AudioAssetsPlugin::shutdown(engine::Engine& engine) {
     manager.detachLoader<Music>();
 }
 
-}  // namespace assets
+}  // namespace sq::assets

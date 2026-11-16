@@ -20,7 +20,7 @@
 #include "ecs/time/Time.hpp"
 #include "events/EventBus.hpp"
 
-namespace engine {
+namespace sq::engine {
 
 /**
  * @brief Core engine coordinator integrating Registry, EventBus, Mediator, and Plugins.
@@ -31,7 +31,7 @@ class Engine {
      * @brief Constructs Engine with optional custom time source for Clock.
      * @param timeSource Monotonic time query function (defaults to real steady time).
      */
-    explicit Engine(ecs::time::Clock::TimeSource timeSource = nullptr);
+    explicit Engine(sq::time::Clock::TimeSource timeSource = nullptr);
 
     /** @brief Destroys Engine and shuts down plugins if initialized. */
     ~Engine();
@@ -96,13 +96,13 @@ class Engine {
     }
 
     /** @brief Gets mutable reference to the central ECS Registry. */
-    [[nodiscard]] ecs::Registry& registry() noexcept { return _registry; }
+    [[nodiscard]] sq::ecs::Registry& registry() noexcept { return _registry; }
 
     /** @brief Gets const reference to the central ECS Registry. */
-    [[nodiscard]] const ecs::Registry& registry() const noexcept { return _registry; }
+    [[nodiscard]] const sq::ecs::Registry& registry() const noexcept { return _registry; }
 
     /** @brief Gets mutable reference to the central EventBus. */
-    [[nodiscard]] ecs::EventBus& eventBus() noexcept { return _eventBus; }
+    [[nodiscard]] sq::events::EventBus& eventBus() noexcept { return _eventBus; }
 
     /** @brief Gets mutable reference to the Mediator service registry. */
     [[nodiscard]] Mediator& mediator() noexcept { return _mediator; }
@@ -111,7 +111,7 @@ class Engine {
     [[nodiscard]] const Mediator& mediator() const noexcept { return _mediator; }
 
     /** @brief Gets mutable reference to the simulation clock. */
-    [[nodiscard]] ecs::time::Clock& clock() noexcept { return _clock; }
+    [[nodiscard]] sq::time::Clock& clock() noexcept { return _clock; }
 
     /**
      * @brief Sets the duration of fixed physics/simulation steps.
@@ -207,17 +207,17 @@ class Engine {
     void ensureDefaultPlugins();
 
     /** @brief Central ECS registry holding all components and resources. */
-    ecs::Registry _registry;
+    sq::ecs::Registry _registry;
     /** @brief Event dispatch bus coordinating intra-engine and game events. */
-    ecs::EventBus _eventBus;
+    sq::events::EventBus _eventBus;
     /** @brief Mediator service locator decoupling plugin service interactions. */
     Mediator _mediator;
     /** @brief Dependency resolution graph determining plugin execution sequence. */
     PluginGraph _pluginGraph;
     /** @brief High-precision monotonic simulation clock. */
-    ecs::time::Clock _clock;
+    sq::time::Clock _clock;
     /** @brief Fixed timestep duration in seconds for physics and fixed update. */
-    float _fixedDt = ecs::time::DEFAULT_FIXED_DT;
+    float _fixedDt = sq::time::DEFAULT_FIXED_DT;
     /** @brief Flag indicating whether plugins have completed the init phase. */
     bool _initialized = false;
     /** @brief Flag set by `shutdown()`: plugins are released for good and must not be initialized again. */
@@ -228,6 +228,6 @@ class Engine {
     bool _externallyPaced = false;
 };
 
-}  // namespace engine
+}  // namespace sq::engine
 
 #include "core/Engine.tpp"  // IWYU pragma: export

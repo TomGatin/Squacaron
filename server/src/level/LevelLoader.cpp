@@ -81,8 +81,8 @@ std::string eventKey(std::size_t index, std::string_view field) { return std::fo
  * @param name Parameter name.
  * @param params Receives the value.
  */
-void copyValue(const config::ConfigFile& file, std::string_view key, std::string_view name,
-               prefabs::PrefabParams& params) {
+void copyValue(const sq::config::ConfigFile& file, std::string_view key, std::string_view name,
+               sq::prefabs::PrefabParams& params) {
     if (const auto value = file.getBool(key)) {
         params.set(name, *value);
     } else if (const auto value = file.getInteger(key)) {
@@ -107,10 +107,10 @@ void copyValue(const config::ConfigFile& file, std::string_view key, std::string
  * @param warnings Receives a message per ignored key.
  * @return The extra parameters.
  */
-prefabs::PrefabParams extraParams(const config::ConfigFile& file, std::size_t index,
-                                  std::span<const std::string_view> readKeys, const EventPrefab& prefab,
-                                  std::vector<std::string>& warnings) {
-    prefabs::PrefabParams params;
+sq::prefabs::PrefabParams extraParams(const sq::config::ConfigFile& file, std::size_t index,
+                                      std::span<const std::string_view> readKeys, const EventPrefab& prefab,
+                                      std::vector<std::string>& warnings) {
+    sq::prefabs::PrefabParams params;
     const std::string prefix = std::format("events.{}.", index);
     for (const std::string& key : file.keysUnder(std::format("events.{}", index))) {
         const std::string_view name = std::string_view(key).substr(prefix.size());
@@ -141,8 +141,8 @@ prefabs::PrefabParams extraParams(const config::ConfigFile& file, std::size_t in
  * @param keys Keys the event type reads.
  * @param warnings Receives a message per unknown key.
  */
-void reportUnknownEventKeys(const config::ConfigFile& file, std::size_t index, std::span<const std::string_view> keys,
-                            std::vector<std::string>& warnings) {
+void reportUnknownEventKeys(const sq::config::ConfigFile& file, std::size_t index,
+                            std::span<const std::string_view> keys, std::vector<std::string>& warnings) {
     const std::string prefix = std::format("events.{}.", index);
     for (const std::string& key : file.keysUnder(std::format("events.{}", index))) {
         if (std::ranges::find(keys, std::string_view(key).substr(prefix.size())) == keys.end()) {
@@ -157,7 +157,7 @@ void reportUnknownEventKeys(const config::ConfigFile& file, std::size_t index, s
  * @param key Dotted key.
  * @return False if the key is missing, is not a number, or is `nan` / `inf`.
  */
-bool isFiniteNumber(const config::ConfigFile& file, std::string_view key) {
+bool isFiniteNumber(const sq::config::ConfigFile& file, std::string_view key) {
     const std::optional<double> value = file.getNumber(key);
     return value.has_value() && std::isfinite(*value);
 }
@@ -169,7 +169,7 @@ bool isFiniteNumber(const config::ConfigFile& file, std::string_view key) {
  * @param warnings Receives a message per skipped event.
  * @return The events, sorted by position (ties keep the file order).
  */
-std::vector<RawEvent> readEvents(const config::ConfigFile& file, config::ConfigReader& reader,
+std::vector<RawEvent> readEvents(const sq::config::ConfigFile& file, sq::config::ConfigReader& reader,
                                  std::vector<std::string>& warnings) {
     std::size_t count = file.arraySize("events");
     if (count > MAX_EVENTS) {
@@ -206,7 +206,7 @@ std::vector<RawEvent> readEvents(const config::ConfigFile& file, config::ConfigR
  * @param warnings Receives a message if the prefab is missing, unknown, or not for this event type.
  * @return The prefab and the parameters it reads, or nothing if the event must be skipped.
  */
-std::optional<EventPrefab> readPrefab(const config::ConfigFile& file, const RawEvent& event,
+std::optional<EventPrefab> readPrefab(const sq::config::ConfigFile& file, const RawEvent& event,
                                       const PrefabCatalog& prefabs, std::vector<std::string>& warnings) {
     const std::optional<std::string> prefab = file.getString(eventKey(event.index, "prefab"));
     if (!prefab.has_value()) {
@@ -254,8 +254,8 @@ bool isValidScriptPath(std::string_view path) {
  * @param params Receives the parts.
  * @param warnings Receives a message per part skipped and per unknown key.
  */
-void readBossParts(const config::ConfigFile& file, config::ConfigReader& reader, const std::size_t index,
-                   prefabs::PrefabParams& params, std::vector<std::string>& warnings) {
+void readBossParts(const sq::config::ConfigFile& file, sq::config::ConfigReader& reader, const std::size_t index,
+                   sq::prefabs::PrefabParams& params, std::vector<std::string>& warnings) {
     const std::string array = eventKey(index, "parts");
     std::size_t count = file.arraySize(array);
     if (count > MAX_BOSS_PARTS) {
@@ -303,15 +303,15 @@ void readBossParts(const config::ConfigFile& file, config::ConfigReader& reader,
  * @param out Receives the event.
  * @param warnings Receives a message if the event is skipped or its script ignored.
  */
-void addBoss(const config::ConfigFile& file, config::ConfigReader& reader, const RawEvent& event,
-             const PrefabCatalog& prefabs, std::vector<timeline::TimelineEvent>& out,
+void addBoss(const sq::config::ConfigFile& file, sq::config::ConfigReader& reader, const RawEvent& event,
+             const PrefabCatalog& prefabs, std::vector<sq::timeline::TimelineEvent>& out,
              std::vector<std::string>& warnings) {
     const std::size_t i = event.index;
     const std::optional<EventPrefab> prefab = readPrefab(file, event, prefabs, warnings);
     if (!prefab.has_value()) {
         return;
     }
-    prefabs::PrefabParams params = extraParams(file, i, BOSS_KEYS, *prefab, warnings);
+    sq::prefabs::PrefabParams params = extraParams(file, i, BOSS_KEYS, *prefab, warnings);
     params.set("prefab", prefab->name);
     if (const auto className = file.getString(eventKey(i, "class"))) {
         params.set("class", *className);
@@ -330,7 +330,7 @@ void addBoss(const config::ConfigFile& file, config::ConfigReader& reader, const
         }
     }
     readBossParts(file, reader, i, params, warnings);
-    out.push_back(timeline::TimelineEvent{
+    out.push_back(sq::timeline::TimelineEvent{
         .position = event.at,
         .type = std::string(EVENT_BOSS),
         .params = std::move(params),
@@ -381,9 +381,9 @@ float scrollAfter(const std::vector<SpeedChange>& speeds, float from, float seco
  * @param out Receives the events.
  * @param warnings Receives a message if the wave is skipped.
  */
-void addWave(const config::ConfigFile& file, config::ConfigReader& reader, const RawEvent& event,
+void addWave(const sq::config::ConfigFile& file, sq::config::ConfigReader& reader, const RawEvent& event,
              const std::vector<SpeedChange>& speeds, const PrefabCatalog& prefabs,
-             std::vector<timeline::TimelineEvent>& out, std::vector<std::string>& warnings) {
+             std::vector<sq::timeline::TimelineEvent>& out, std::vector<std::string>& warnings) {
     const std::size_t i = event.index;
     const std::optional<EventPrefab> prefab = readPrefab(file, event, prefabs, warnings);
     if (!prefab.has_value()) {
@@ -394,17 +394,17 @@ void addWave(const config::ConfigFile& file, config::ConfigReader& reader, const
     const float x = reader.number(eventKey(i, "x"), DEFAULT_SPAWN_X, -MAX_SPAWN_COORDINATE, MAX_SPAWN_COORDINATE);
     const float y = reader.number(eventKey(i, "y"), DEFAULT_SPAWN_Y, -MAX_SPAWN_COORDINATE, MAX_SPAWN_COORDINATE);
     const float spacingY = reader.number(eventKey(i, "spacing_y"), 0.0F, -MAX_SPAWN_COORDINATE, MAX_SPAWN_COORDINATE);
-    const prefabs::PrefabParams extra = extraParams(file, i, SPAWN_KEYS, *prefab, warnings);
+    const sq::prefabs::PrefabParams extra = extraParams(file, i, SPAWN_KEYS, *prefab, warnings);
 
     float position = event.at;
     for (std::size_t n = 0; n < count; ++n) {
         const auto rank = static_cast<float>(n);
-        prefabs::PrefabParams params = extra;
+        sq::prefabs::PrefabParams params = extra;
         params.set("prefab", prefab->name);
         params.set("x", static_cast<double>(x));
         params.set("y",
                    static_cast<double>(std::clamp(y + (rank * spacingY), -MAX_SPAWN_COORDINATE, MAX_SPAWN_COORDINATE)));
-        out.push_back(timeline::TimelineEvent{
+        out.push_back(sq::timeline::TimelineEvent{
             .position = position,
             .type = std::string(EVENT_SPAWN),
             .params = std::move(params),
@@ -469,8 +469,8 @@ bool fitTerrain(TerrainSpan& section, std::span<const TerrainSpan> accepted, std
  * @param out Receives the events.
  * @param warnings Receives a message per skipped section.
  */
-void addTerrain(const config::ConfigFile& file, config::ConfigReader& reader, std::vector<timeline::TimelineEvent>& out,
-                std::vector<std::string>& warnings) {
+void addTerrain(const sq::config::ConfigFile& file, sq::config::ConfigReader& reader,
+                std::vector<sq::timeline::TimelineEvent>& out, std::vector<std::string>& warnings) {
     std::size_t count = file.arraySize("terrain");
     if (count > MAX_TERRAIN_SECTIONS) {
         warnings.push_back(
@@ -511,7 +511,7 @@ void addTerrain(const config::ConfigFile& file, config::ConfigReader& reader, st
             continue;
         }
         accepted.push_back(section);
-        out.push_back(timeline::TimelineEvent{
+        out.push_back(sq::timeline::TimelineEvent{
             .position = from,
             .type = std::string(EVENT_TERRAIN),
             .params = {{"side", side},
@@ -523,10 +523,10 @@ void addTerrain(const config::ConfigFile& file, config::ConfigReader& reader, st
 
 }  // namespace
 
-Level buildLevel(const config::ConfigFile& file, const PrefabCatalog& prefabs, std::vector<std::string>& warnings) {
-    config::ConfigReader reader(file, warnings);
+Level buildLevel(const sq::config::ConfigFile& file, const PrefabCatalog& prefabs, std::vector<std::string>& warnings) {
+    sq::config::ConfigReader reader(file, warnings);
     Level level;
-    std::vector<timeline::TimelineEvent> events;
+    std::vector<sq::timeline::TimelineEvent> events;
     level.name = reader.text("level.name", "Unnamed level");
     level.scrollSpeed = reader.number("level.scroll_speed", DEFAULT_SCROLL_SPEED, MIN_SCROLL_SPEED, MAX_SCROLL_SPEED);
     reader.reportUnknownKeys("level");
@@ -547,7 +547,7 @@ Level buildLevel(const config::ConfigFile& file, const PrefabCatalog& prefabs, s
             scrollSpeed =
                 reader.number(eventKey(event.index, "speed"), scrollSpeed, MIN_SCROLL_SPEED, MAX_SCROLL_SPEED);
             speeds.push_back({.at = event.at, .speed = scrollSpeed});
-            events.push_back(timeline::TimelineEvent{
+            events.push_back(sq::timeline::TimelineEvent{
                 .position = event.at,
                 .type = std::string(EVENT_SCROLL),
                 .params = {{"speed", static_cast<double>(scrollSpeed)}},
@@ -557,7 +557,7 @@ Level buildLevel(const config::ConfigFile& file, const PrefabCatalog& prefabs, s
         } else if (event.type == EVENT_END) {
             reportUnknownEventKeys(file, event.index, END_KEYS, warnings);
             events.push_back(
-                timeline::TimelineEvent{.position = event.at, .type = std::string(EVENT_END), .params = {}});
+                sq::timeline::TimelineEvent{.position = event.at, .type = std::string(EVENT_END), .params = {}});
         } else {
             warnings.push_back(std::format("events.{}: unknown type '{}', event skipped", event.index, event.type));
         }
@@ -573,7 +573,7 @@ Level buildLevel(const config::ConfigFile& file, const PrefabCatalog& prefabs, s
 
 std::expected<Level, std::string> loadLevel(const std::filesystem::path& path, const PrefabCatalog& prefabs,
                                             std::vector<std::string>& warnings) {
-    const config::ConfigFile file = config::ConfigFile::load(path);
+    const sq::config::ConfigFile file = sq::config::ConfigFile::load(path);
     if (file.error().has_value()) {
         return std::unexpected(*file.error());
     }

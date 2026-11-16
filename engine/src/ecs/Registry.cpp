@@ -10,7 +10,7 @@
 
 #include "ecs/Entity.hpp"
 
-namespace ecs {
+namespace sq::ecs {
 
 bool Registry::isAlive(Entity e) const noexcept {
     std::uint32_t const idx = entityIndex(e);
@@ -138,4 +138,4 @@ void Registry::removeComponentRemoveListener(std::size_t listenerId) {
     }
 }
 
-}  // namespace ecs
+}  // namespace sq::ecs

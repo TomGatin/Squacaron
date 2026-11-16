@@ -11,16 +11,17 @@
 
 namespace prefabs {
 
-void buildObstacle(ecs::Entity e, ecs::Registry& registry, PrefabParams const& params) {
-    registry.addComponent<ecs::Transform>(e, makeTransform(params));
-    registry.addComponent<ecs::Renderable>(e, ecs::Renderable{});
-    registry.addComponent<ecs::RigidBody2D>(e, ecs::RigidBody2D{.bodyType = ecs::BodyType::Static});
-    registry.addComponent<ecs::Collider2D>(e, ecs::Collider2D{
-                                                  .halfWidth = params.get("halfWidth", DEFAULT_OBSTACLE_HALF_WIDTH),
-                                                  .halfHeight = params.get("halfHeight", DEFAULT_OBSTACLE_HALF_HEIGHT),
-                                                  .categoryBits = collision::OBSTACLE,
-                                                  .maskBits = collision::OBSTACLE_MASK,
-                                              });
+void buildObstacle(sq::ecs::Entity e, sq::ecs::Registry& registry, sq::prefabs::PrefabParams const& params) {
+    registry.addComponent<sq::ecs::Transform>(e, sq::prefabs::makeTransform(params));
+    registry.addComponent<sq::ecs::Renderable>(e, sq::ecs::Renderable{});
+    registry.addComponent<sq::ecs::RigidBody2D>(e, sq::ecs::RigidBody2D{.bodyType = sq::ecs::BodyType::Static});
+    registry.addComponent<sq::ecs::Collider2D>(e,
+                                               sq::ecs::Collider2D{
+                                                   .halfWidth = params.get("halfWidth", DEFAULT_OBSTACLE_HALF_WIDTH),
+                                                   .halfHeight = params.get("halfHeight", DEFAULT_OBSTACLE_HALF_HEIGHT),
+                                                   .categoryBits = collision::OBSTACLE,
+                                                   .maskBits = collision::OBSTACLE_MASK,
+                                               });
 }
 
 }  // namespace prefabs

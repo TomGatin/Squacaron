@@ -14,7 +14,7 @@
 #include "input/ActionMapping.hpp"
 #include "render/api/InputCodes.hpp"
 
-namespace config {
+namespace sq::config {
 class Settings;
 }
 
@@ -40,7 +40,7 @@ enum class Control : std::uint8_t {
 inline constexpr std::size_t CONTROL_COUNT = 6;
 
 /** @brief Main key of each control, indexed by `Control`. */
-using ControlKeys = std::array<engine::Key, CONTROL_COUNT>;
+using ControlKeys = std::array<sq::engine::Key, CONTROL_COUNT>;
 
 /** @brief Every control, in the order of the controls screen. */
 inline constexpr std::array<Control, CONTROL_COUNT> CONTROLS = {
@@ -82,27 +82,27 @@ inline constexpr std::string_view CONTROLS_PREFIX = "controls.";
  * @param control Control to rebind.
  * @param key New key.
  */
-void assignKey(ControlKeys& keys, Control control, engine::Key key) noexcept;
+void assignKey(ControlKeys& keys, Control control, sq::engine::Key key) noexcept;
 
 /**
  * @brief Declares a setting per control, holding its default key.
  * @param settings Settings.
  */
-void defineControlSettings(config::Settings& settings);
+void defineControlSettings(sq::config::Settings& settings);
 
 /**
  * @brief Reads the key of each control; a missing or unknown id keeps the default key.
  * @param settings Settings.
  * @return The keys.
  */
-[[nodiscard]] ControlKeys readControlKeys(const config::Settings& settings);
+[[nodiscard]] ControlKeys readControlKeys(const sq::config::Settings& settings);
 
 /**
  * @brief Saves the key of each control.
  * @param settings Settings.
  * @param keys Keys.
  */
-void writeControlKeys(config::Settings& settings, const ControlKeys& keys);
+void writeControlKeys(sq::config::Settings& settings, const ControlKeys& keys);
 
 /**
  * @brief Rebuilds the bindings: the main keys, the arrows and right Shift as second keys (unless a main key uses
@@ -110,14 +110,14 @@ void writeControlKeys(config::Settings& settings, const ControlKeys& keys);
  * @param mapping Mapping to fill; its old bindings are removed.
  * @param keys Main keys.
  */
-void setupBindings(input::ActionMapping& mapping, const ControlKeys& keys);
+void setupBindings(sq::input::ActionMapping& mapping, const ControlKeys& keys);
 
 /**
  * @brief Default controls (`defaultControlKeys`): steer with A/D or the arrows, aim the nose with W/S or the arrows,
  * jump with Space, boost with either Shift; on a gamepad, the left stick, the bottom face button (jump) and the right
  * face button or right trigger (boost). `MenuScenesPlugin` replaces them with the keys saved in the settings.
- * @return The mapping, for `input::InputPlugin`.
+ * @return The mapping, for `sq::input::InputPlugin`.
  */
-[[nodiscard]] input::ActionMapping makeControls();
+[[nodiscard]] sq::input::ActionMapping makeControls();
 
 }  // namespace rlss::client

@@ -10,7 +10,7 @@
 #include "core/IPlugin.hpp"
 #include "core/PluginBuilder.hpp"
 
-namespace engine {
+namespace sq::engine {
 
 /**
  * @brief Time management plugin providing fixed and variable simulation time resources.
@@ -58,14 +58,14 @@ class TimePlugin final : public IPlugin {
      * @param engine Reference to host Engine.
      * @param time Current simulation step timing.
      */
-    void fixedUpdate(Engine& engine, const ecs::time::Time& time) override;
+    void fixedUpdate(Engine& engine, const sq::time::Time& time) override;
 
     /**
      * @brief Synchronizes the Time resource for variable-rate frame updates.
      * @param engine Reference to host Engine.
      * @param time Frame timing.
      */
-    void update(Engine& engine, const ecs::time::Time& time) override;
+    void update(Engine& engine, const sq::time::Time& time) override;
 };
 
-}  // namespace engine
+}  // namespace sq::engine

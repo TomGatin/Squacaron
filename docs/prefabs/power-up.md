@@ -1,6 +1,6 @@
 # Power-Up
 
-**Name:** `power_up` (`prefabs::POWER_UP_PREFAB`)
+**Name:** `power_up` (`sq::prefabs::POWER_UP_PREFAB`)
 **Source:** `server/src/prefabs/power_up/`
 
 ## Purpose
@@ -42,10 +42,10 @@ Every transform key read by `makeTransform` (`x`, `y`, `z`, `rotation`, `scaleX`
 ## API
 
 ```cpp
-void buildPowerUp(ecs::Entity e, ecs::Registry& registry, PrefabParams const& params);
+void buildPowerUp(sq::ecs::Entity e, sq::ecs::Registry& registry, PrefabParams const& params);
 ```
 
 ```cpp
-manager.registerPrefab(prefabs::POWER_UP_PREFAB, prefabs::buildPowerUp);
-manager.spawn(prefabs::POWER_UP_PREFAB, buffer, {{"x", 800.0F}, {"y", 300.0F}, {"speed", -400.0F}});
+manager.registerPrefab(sq::prefabs::POWER_UP_PREFAB, sq::prefabs::buildPowerUp);
+manager.spawn(sq::prefabs::POWER_UP_PREFAB, buffer, {{"x", 800.0F}, {"y", 300.0F}, {"speed", -400.0F}});
 ```

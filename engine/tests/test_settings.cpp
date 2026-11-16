@@ -52,14 +52,14 @@ void writeFile(const std::filesystem::path& path, std::string_view text) {
 }
 
 TEST(ConfigFileWrite, NestedKeysRoundTripThroughToml) {
-    config::ConfigFile file;
+    sq::config::ConfigFile file;
     file.set("audio.master", 0.5);
     file.set("audio.muted", false);
     file.set("net.last_port", std::int64_t{4242});
     file.set("player.name", std::string("Ripley"));
     file.set("top", true);
 
-    const config::ConfigFile back = config::ConfigFile::parse(file.toToml());
+    const sq::config::ConfigFile back = sq::config::ConfigFile::parse(file.toToml());
     ASSERT_FALSE(back.error().has_value());
     EXPECT_EQ(back.getNumber("audio.master"), 0.5);
     EXPECT_EQ(back.getBool("audio.muted"), false);
@@ -74,20 +74,20 @@ TEST(ConfigFileWrite, NestedKeysRoundTripThroughToml) {
 TEST(ConfigFileWrite, SaveCreatesDirectoriesAndLeavesNoTemporaryFile) {
     const TempDir dir;
     const std::filesystem::path path = dir.path() / "deep" / "settings.toml";
-    config::ConfigFile file;
+    sq::config::ConfigFile file;
     file.set("a.b", std::int64_t{1});
     ASSERT_TRUE(file.save(path).has_value());
     EXPECT_TRUE(std::filesystem::exists(path));
     EXPECT_FALSE(std::filesystem::exists(path.string() + ".tmp"));
-    EXPECT_EQ(config::ConfigFile::load(path).getInteger("a.b"), 1);
+    EXPECT_EQ(sq::config::ConfigFile::load(path).getInteger("a.b"), 1);
 
     file.set("a.b", std::int64_t{2});
     ASSERT_TRUE(file.save(path).has_value());
-    EXPECT_EQ(config::ConfigFile::load(path).getInteger("a.b"), 2);
+    EXPECT_EQ(sq::config::ConfigFile::load(path).getInteger("a.b"), 2);
 }
 
 TEST(Settings, DefaultsTypesAndChanges) {
-    config::Settings settings;
+    sq::config::Settings settings;
     settings.define("audio.master", 1.0);
     settings.define("debug.metrics", true);
     settings.define("player.name", std::string("Player"));
@@ -121,7 +121,7 @@ TEST(Settings, LoadAppliesValuesWarnsOnWrongTypesAndKeepsUnknownKeys) {
     const std::filesystem::path path = dir.path() / "settings.toml";
     writeFile(path, "future = \"kept\"\n[audio]\nmaster = 0.25\nmusic = \"loud\"\n");
 
-    config::Settings settings(path);
+    sq::config::Settings settings(path);
     settings.define("audio.master", 1.0);
     settings.define("audio.music", 1.0);
     ASSERT_TRUE(settings.load().has_value());
@@ -135,7 +135,7 @@ TEST(Settings, LoadAppliesValuesWarnsOnWrongTypesAndKeepsUnknownKeys) {
     ASSERT_TRUE(settings.save().has_value());
     EXPECT_FALSE(settings.dirty());
 
-    const config::ConfigFile saved = config::ConfigFile::load(path);
+    const sq::config::ConfigFile saved = sq::config::ConfigFile::load(path);
     EXPECT_EQ(saved.getString("future"), "kept");
     EXPECT_EQ(saved.getNumber("audio.master"), 0.75);
     EXPECT_EQ(saved.getString("player.name"), "Player");
@@ -145,7 +145,7 @@ TEST(Settings, DeclaringAfterLoadUsesTheLoadedValue) {
     const TempDir dir;
     const std::filesystem::path path = dir.path() / "settings.toml";
     writeFile(path, "[net]\nlast_host = \"10.0.0.2\"\n");
-    config::Settings settings(path);
+    sq::config::Settings settings(path);
     ASSERT_TRUE(settings.load().has_value());
     settings.define("net.last_host", std::string("127.0.0.1"));
     EXPECT_EQ(settings.getString("net.last_host"), "10.0.0.2");
@@ -153,14 +153,14 @@ TEST(Settings, DeclaringAfterLoadUsesTheLoadedValue) {
 
 TEST(Settings, MissingFileIsAFirstLaunchAndCorruptFileKeepsDefaults) {
     const TempDir dir;
-    config::Settings fresh(dir.path() / "none.toml");
+    sq::config::Settings fresh(dir.path() / "none.toml");
     fresh.define("a", true);
     EXPECT_TRUE(fresh.load().has_value());
     EXPECT_TRUE(fresh.getBool("a"));
 
     const std::filesystem::path path = dir.path() / "broken.toml";
     writeFile(path, "this is [ not toml");
-    config::Settings broken(path);
+    sq::config::Settings broken(path);
     broken.define("a", true);
     EXPECT_FALSE(broken.load().has_value());
     EXPECT_TRUE(broken.getBool("a"));
@@ -171,7 +171,7 @@ TEST(Settings, UserConfigDirectoryFollowsXdg) {
     const char* previous = std::getenv("XDG_CONFIG_HOME");
     const std::string saved = previous != nullptr ? previous : "";
     ::setenv("XDG_CONFIG_HOME", "/tmp/xdg-test", 1);
-    EXPECT_EQ(config::userConfigDirectory("rtype"), std::filesystem::path("/tmp/xdg-test/rtype"));
+    EXPECT_EQ(sq::config::userConfigDirectory("rtype"), std::filesystem::path("/tmp/xdg-test/rtype"));
     if (previous != nullptr) {
         ::setenv("XDG_CONFIG_HOME", saved.c_str(), 1);
     } else {
@@ -185,30 +185,30 @@ TEST(SettingsPlugin, PublishesChangesAndSavesAfterTheQuietTime) {
     const std::filesystem::path path = dir.path() / "settings.toml";
     writeFile(path, "[audio]\nmaster = 0.5\n");
 
-    engine::Engine engine;
-    engine.addPlugin<settings::SettingsPlugin>(path, 1.0F);
-    auto& plugin = engine.getPlugin<settings::SettingsPlugin>();
+    sq::engine::Engine engine;
+    engine.addPlugin<sq::settings::SettingsPlugin>(path, 1.0F);
+    auto& plugin = engine.getPlugin<sq::settings::SettingsPlugin>();
     plugin.settings().define("audio.master", 1.0);
     std::vector<std::string> events;
-    (void)engine.eventBus().subscribe<settings::SettingChanged>(
-        [&](const settings::SettingChanged& e) { events.push_back(e.key); });
+    (void)engine.eventBus().subscribe<sq::settings::SettingChanged>(
+        [&](const sq::settings::SettingChanged& e) { events.push_back(e.key); });
     engine.init();
 
-    EXPECT_EQ(&engine.service<config::Settings>(), &plugin.settings());
-    plugin.update(engine, ecs::time::Time{.deltaTime = 0.1F});
+    EXPECT_EQ(&engine.service<sq::config::Settings>(), &plugin.settings());
+    plugin.update(engine, sq::time::Time{.deltaTime = 0.1F});
     EXPECT_EQ(events, (std::vector<std::string>{"audio.master"}));  // the loaded value differs from the default
 
     ASSERT_TRUE(plugin.settings().set("audio.master", 0.2));
-    plugin.update(engine, ecs::time::Time{.deltaTime = 0.4F});
-    plugin.update(engine, ecs::time::Time{.deltaTime = 0.4F});
-    EXPECT_EQ(config::ConfigFile::load(path).getNumber("audio.master"), 0.5);  // not quiet long enough yet
-    plugin.update(engine, ecs::time::Time{.deltaTime = 0.4F});
-    EXPECT_EQ(config::ConfigFile::load(path).getNumber("audio.master"), 0.2);
+    plugin.update(engine, sq::time::Time{.deltaTime = 0.4F});
+    plugin.update(engine, sq::time::Time{.deltaTime = 0.4F});
+    EXPECT_EQ(sq::config::ConfigFile::load(path).getNumber("audio.master"), 0.5);  // not quiet long enough yet
+    plugin.update(engine, sq::time::Time{.deltaTime = 0.4F});
+    EXPECT_EQ(sq::config::ConfigFile::load(path).getNumber("audio.master"), 0.2);
     EXPECT_FALSE(plugin.settings().dirty());
 
     ASSERT_TRUE(plugin.settings().set("audio.master", 0.3));
     engine.shutdown();
-    EXPECT_EQ(config::ConfigFile::load(path).getNumber("audio.master"), 0.3);
+    EXPECT_EQ(sq::config::ConfigFile::load(path).getNumber("audio.master"), 0.3);
 }
 
 }  // namespace

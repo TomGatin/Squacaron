@@ -14,7 +14,7 @@
 #include "core/PluginBuilder.hpp"
 #include "scripting/ScriptSystem.hpp"
 
-namespace scripting {
+namespace sq::scripting {
 
 /** @brief When the scripts run. */
 enum class ScriptTick : std::uint8_t {
@@ -30,7 +30,7 @@ enum class ScriptTick : std::uint8_t {
 /**
  * @brief Plugin responsible for Wren VM integration, script component lifecycle, and hot-reload.
  */
-class ScriptPlugin final : public engine::IPlugin {
+class ScriptPlugin final : public sq::engine::IPlugin {
   public:
     /**
      * @brief Constructs ScriptPlugin.
@@ -41,8 +41,8 @@ class ScriptPlugin final : public engine::IPlugin {
     /**
      * @brief Constructs ScriptPlugin reading the module files from `scriptRoot`.
      * @param tick When the scripts run.
-     * @param scriptRoot Directory module files are read from, usually `engine::contentRoot()`; empty for the working
-     * directory.
+     * @param scriptRoot Directory module files are read from, usually `sq::engine::contentRoot()`; empty for the
+     * working directory.
      */
     ScriptPlugin(ScriptTick tick, std::filesystem::path scriptRoot) : _tick(tick) {
         _scriptSystem.setScriptRoot(std::move(scriptRoot));
@@ -73,27 +73,27 @@ class ScriptPlugin final : public engine::IPlugin {
      * @brief Declares plugin dependencies.
      * @param builder Dependency builder.
      */
-    void build(engine::PluginBuilder& builder) override;
+    void build(sq::engine::PluginBuilder& builder) override;
 
     /**
      * @brief Initializes Wren VM bindings and core modules against host Engine.
      * @param engine Reference to host Engine.
      */
-    void init(engine::Engine& engine) override;
+    void init(sq::engine::Engine& engine) override;
 
     /**
      * @brief Executes script lifecycle updates, fiber sleeps, and deferred commands, with `ScriptTick::EveryFrame`.
      * @param engine Reference to host Engine.
      * @param time Frame timing information.
      */
-    void update(engine::Engine& engine, const ecs::time::Time& time) override;
+    void update(sq::engine::Engine& engine, const sq::time::Time& time) override;
 
     /**
      * @brief Same as `update()`, with `ScriptTick::FixedStep`.
      * @param engine Reference to host Engine.
      * @param time Fixed step timing information.
      */
-    void fixedUpdate(engine::Engine& engine, const ecs::time::Time& time) override;
+    void fixedUpdate(sq::engine::Engine& engine, const sq::time::Time& time) override;
 
     /**
      * @brief Gets when the scripts run.
@@ -105,19 +105,19 @@ class ScriptPlugin final : public engine::IPlugin {
      * @brief Shuts down scripting runtime: stops forwarding collision events to the scripts.
      * @param engine Reference to host Engine.
      */
-    void shutdown(engine::Engine& engine) override;
+    void shutdown(sq::engine::Engine& engine) override;
 
     /** @brief Gets mutable reference to the underlying ScriptSystem. */
-    [[nodiscard]] scripting::ScriptSystem& scriptSystem() noexcept { return _scriptSystem; }
+    [[nodiscard]] sq::scripting::ScriptSystem& scriptSystem() noexcept { return _scriptSystem; }
 
     /** @brief Gets const reference to the underlying ScriptSystem. */
-    [[nodiscard]] const scripting::ScriptSystem& scriptSystem() const noexcept { return _scriptSystem; }
+    [[nodiscard]] const sq::scripting::ScriptSystem& scriptSystem() const noexcept { return _scriptSystem; }
 
   private:
     /** @brief Internal ScriptSystem instance driving Wren VM execution. */
-    scripting::ScriptSystem _scriptSystem;
+    sq::scripting::ScriptSystem _scriptSystem;
     /** @brief When the scripts run. */
     ScriptTick _tick = ScriptTick::EveryFrame;
 };
 
-}  // namespace scripting
+}  // namespace sq::scripting

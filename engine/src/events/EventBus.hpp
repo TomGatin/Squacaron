@@ -7,14 +7,14 @@
 
 #include "utils/MoveOnlyFunction.hpp"
 
-namespace ecs {
+namespace sq::events {
 
 /**
  * @brief Decoupled publish-subscribe event bus connecting engine systems and scripts.
  *
  * Provides a type-safe pub-sub messaging architecture:
- * - Systems or scripts subscribe to specific event types (`events::CollisionBeginEvent`, etc.).
- * - Type erasure (`MoveOnlyFunction<void(const void*)>`) allows storing callbacks generically.
+ * - Systems or scripts subscribe to specific event types (`sq::events::CollisionBeginEvent`, etc.).
+ * - Type erasure (`ecs::MoveOnlyFunction<void(const void*)>`) allows storing callbacks generically.
  * - Supports listener removal via subscription tokens (`EventToken`).
  */
 class EventBus {
@@ -46,7 +46,7 @@ class EventBus {
      * @return Unique `EventToken` for unsubscribing later.
      */
     template <typename EventType>
-    EventToken subscribe(MoveOnlyFunction<void(const EventType&)> callback);
+    EventToken subscribe(ecs::MoveOnlyFunction<void(const EventType&)> callback);
 
     /**
      * @brief Unsubscribes a listener identified by its token.
@@ -74,7 +74,7 @@ class EventBus {
         /** @brief Flag indicating if the subscription is still active. */
         bool active = true;
         /** @brief Type-erased invocation callback receiving an opaque event pointer. */
-        MoveOnlyFunction<void(const void*)> callback;
+        ecs::MoveOnlyFunction<void(const void*)> callback;
     };
 
     /**
@@ -93,6 +93,6 @@ class EventBus {
     EventToken _nextToken = 0;
 };
 
-}  // namespace ecs
+}  // namespace sq::events
 
 #include "EventBus.tpp"  // IWYU pragma: export

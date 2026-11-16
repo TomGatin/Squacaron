@@ -7,7 +7,7 @@
 #include "ecs/time/SteadyNow.hpp"
 #include "ecs/time/Time.hpp"
 
-namespace ecs::time {
+namespace sq::time {
 
 Clock::Clock(TimeSource source, std::size_t maxStepsPerTick)
     : _source(source ? std::move(source) : TimeSource(steadyNowSeconds)),
@@ -43,4 +43,4 @@ double Clock::pollElapsed() {
     return elapsed;
 }
 
-}  // namespace ecs::time
+}  // namespace sq::time

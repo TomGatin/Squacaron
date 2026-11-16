@@ -12,7 +12,7 @@
 #include "audio/spatial/SpatialConfig.hpp"
 #include "audio/types/AudioTypes.hpp"
 
-namespace engine {
+namespace sq::engine {
 
 /**
  * @brief Abstract audio service exposed through the Mediator.
@@ -52,52 +52,52 @@ class IAudioService {
      * @param path Audio file path.
      * @return The new handle, or `NO_SOUND` if the file could not be loaded or the audio is muted.
      */
-    [[nodiscard]] virtual audio::SoundId loadSound(const std::string& path) = 0;
+    [[nodiscard]] virtual sq::audio::SoundId loadSound(const std::string& path) = 0;
 
     /**
      * @brief Opens a music stream.
      * @param path Audio file path.
      * @return The new handle, or `NO_MUSIC` if the file could not be opened or the audio is muted.
      */
-    [[nodiscard]] virtual audio::MusicId loadMusic(const std::string& path) = 0;
+    [[nodiscard]] virtual sq::audio::MusicId loadMusic(const std::string& path) = 0;
 
     /**
      * @brief Releases a sound effect; unknown handles are ignored.
      * @param id Handle returned by `loadSound`.
      */
-    virtual void unloadSound(audio::SoundId id) = 0;
+    virtual void unloadSound(sq::audio::SoundId id) = 0;
 
     /**
      * @brief Releases a music stream; unknown handles are ignored.
      * @param id Handle returned by `loadMusic`.
      */
-    virtual void unloadMusic(audio::MusicId id) = 0;
+    virtual void unloadMusic(sq::audio::MusicId id) = 0;
 
     /**
      * @brief Sets the gain of a bus immediately.
      * @param bus Bus to change.
      * @param volume Linear gain, clamped to [`MIN_VOLUME`, `MAX_VOLUME`].
      */
-    virtual void setVolume(audio::AudioBus bus, float volume) = 0;
+    virtual void setVolume(sq::audio::AudioBus bus, float volume) = 0;
 
     /**
      * @brief Reads the gain of a bus.
      * @param bus Bus to read.
      * @return Linear gain in [`MIN_VOLUME`, `MAX_VOLUME`].
      */
-    [[nodiscard]] virtual float volume(audio::AudioBus bus) const noexcept = 0;
+    [[nodiscard]] virtual float volume(sq::audio::AudioBus bus) const noexcept = 0;
 
     /**
      * @brief Changes how positioned sounds are panned and attenuated.
      * @param config Pan and attenuation settings, in world units.
      */
-    virtual void setSpatialConfig(const audio::SpatialConfig& config) = 0;
+    virtual void setSpatialConfig(const sq::audio::SpatialConfig& config) = 0;
 
     /**
      * @brief Reads the pan and attenuation settings.
      * @return Current spatial configuration.
      */
-    [[nodiscard]] virtual const audio::SpatialConfig& spatialConfig() const noexcept = 0;
+    [[nodiscard]] virtual const sq::audio::SpatialConfig& spatialConfig() const noexcept = 0;
 
     /**
      * @brief Applies the volumes and spatial settings of a configuration at runtime.
@@ -106,7 +106,7 @@ class IAudioService {
      *
      * @param settings Settings to apply.
      */
-    virtual void applySettings(const audio::AudioSettings& settings) = 0;
+    virtual void applySettings(const sq::audio::AudioSettings& settings) = 0;
 
     /**
      * @brief Counts the sound effect instances currently playing, for metrics and debugging.
@@ -115,4 +115,4 @@ class IAudioService {
     [[nodiscard]] virtual std::size_t activeVoiceCount() const = 0;
 };
 
-}  // namespace engine
+}  // namespace sq::engine

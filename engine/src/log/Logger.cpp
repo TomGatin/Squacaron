@@ -12,7 +12,7 @@
 #include "log/LogLevel.hpp"
 #include "log/LogStyle.hpp"
 
-namespace engine::log {
+namespace sq::engine::log {
 
 namespace {
 
@@ -66,7 +66,9 @@ void setColored(const bool enabled) noexcept { coloredFlag() = enabled; }
 
 bool isColored() noexcept { return coloredFlag().load(); }
 
-namespace detail {
+}  // namespace sq::engine::log
+
+namespace sq::engine::log::detail {
 
 void write(const Level level, const std::string_view tag, const std::string_view message) {
     const std::string line = formatLine(level, tag, message);
@@ -76,6 +78,4 @@ void write(const Level level, const std::string_view tag, const std::string_view
     out << line << std::flush;
 }
 
-}  // namespace detail
-
-}  // namespace engine::log
+}  // namespace sq::engine::log::detail

@@ -8,7 +8,7 @@
 #include <filesystem>
 #include <string_view>
 
-namespace engine {
+namespace sq::engine {
 
 /** @brief Environment variable overriding the content root (a game installed apart from its content, tests...). */
 inline constexpr std::string_view CONTENT_ROOT_VARIABLE = "ENGINE_CONTENT_ROOT";
@@ -39,4 +39,4 @@ inline constexpr std::string_view CONTENT_ROOT_VARIABLE = "ENGINE_CONTENT_ROOT";
 [[nodiscard]] std::filesystem::path resolveContentPath(const std::filesystem::path& root,
                                                        const std::filesystem::path& path);
 
-}  // namespace engine
+}  // namespace sq::engine

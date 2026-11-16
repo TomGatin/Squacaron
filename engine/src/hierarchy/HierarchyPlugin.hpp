@@ -11,7 +11,7 @@
 #include "core/IPlugin.hpp"
 #include "hierarchy/HierarchyHooks.hpp"
 
-namespace hierarchy {
+namespace sq::hierarchy {
 
 /**
  * @brief Plugin enabling entity hierarchies in an Engine.
@@ -20,11 +20,11 @@ namespace hierarchy {
  * - `lateUpdate`: runs `propagateTransforms`, after every plugin's `update`, so render, audio and networking read the
  *   final world transforms of children for the frame.
  *
- * Propagation owns the world `ecs::Transform` of children: move a child through its `LocalTransform`. A child with a
- * physics body should be kinematic; its propagated position is pushed to the physics world on the next fixed step.
+ * Propagation owns the world `sq::ecs::Transform` of children: move a child through its `LocalTransform`. A child with
+ * a physics body should be kinematic; its propagated position is pushed to the physics world on the next fixed step.
  * Headless: depends only on `engine_core`.
  */
-class HierarchyPlugin final : public engine::IPlugin {
+class HierarchyPlugin final : public sq::engine::IPlugin {
   public:
     /** @brief Constructs HierarchyPlugin. */
     HierarchyPlugin();
@@ -51,24 +51,24 @@ class HierarchyPlugin final : public engine::IPlugin {
      * @brief Installs the hierarchy hooks on the engine registry.
      * @param engine Reference to host Engine.
      */
-    void init(engine::Engine& engine) override;
+    void init(sq::engine::Engine& engine) override;
 
     /**
      * @brief Propagates world transforms down every hierarchy.
      * @param engine Reference to host Engine.
      * @param time Frame timing information (unused).
      */
-    void lateUpdate(engine::Engine& engine, const ecs::time::Time& time) override;
+    void lateUpdate(sq::engine::Engine& engine, const sq::time::Time& time) override;
 
     /**
      * @brief Removes the hierarchy hooks.
      * @param engine Reference to host Engine.
      */
-    void shutdown(engine::Engine& engine) override;
+    void shutdown(sq::engine::Engine& engine) override;
 
   private:
     /** @brief Registry listeners, alive between `init` and `shutdown`. */
     std::unique_ptr<HierarchyHooks> _hooks;
 };
 
-}  // namespace hierarchy
+}  // namespace sq::hierarchy

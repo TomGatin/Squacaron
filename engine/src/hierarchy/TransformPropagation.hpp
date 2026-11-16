@@ -7,20 +7,21 @@
 
 #include "ecs/Registry.hpp"
 
-namespace hierarchy {
+namespace sq::hierarchy {
 
 /**
- * @brief Updates the world `ecs::Transform` of every entity that has a parent.
+ * @brief Updates the world `sq::ecs::Transform` of every entity that has a parent.
  *
  * Every tree is walked from its root (an entity with `Children` and no living parent), parents before children, so a
  * single pass is enough whatever the depth. For each child with a `LocalTransform`, the world transform becomes
- * `compose(parentWorld, local)`; the `ecs::Transform` is created if missing. A child without `LocalTransform` keeps
- * its world transform, and its own children are placed from it. A parent without `ecs::Transform` counts as identity.
+ * `compose(parentWorld, local)`; the `sq::ecs::Transform` is created if missing. A child without `LocalTransform` keeps
+ * its world transform, and its own children are placed from it. A parent without `sq::ecs::Transform` counts as
+ * identity.
  *
  * Uses an explicit stack, so deep trees cannot overflow the call stack. `HierarchyPlugin` runs it in `lateUpdate`.
  *
  * @param registry Registry holding the hierarchy.
  */
-void propagateTransforms(ecs::Registry& registry);
+void propagateTransforms(sq::ecs::Registry& registry);
 
-}  // namespace hierarchy
+}  // namespace sq::hierarchy

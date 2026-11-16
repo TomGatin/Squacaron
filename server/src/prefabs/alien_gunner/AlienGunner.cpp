@@ -26,7 +26,7 @@ namespace {
  * @param high Largest value.
  * @return The value, within [low, high].
  */
-float clampedParam(PrefabParams const& params, const char* key, const float fallback, const float low,
+float clampedParam(sq::prefabs::PrefabParams const& params, const char* key, const float fallback, const float low,
                    const float high) {
     const float requested = params.get(key, fallback);
     return std::isnan(requested) ? fallback : std::clamp(requested, low, high);
@@ -34,21 +34,21 @@ float clampedParam(PrefabParams const& params, const char* key, const float fall
 
 }  // namespace
 
-void buildAlienGunner(ecs::Entity e, ecs::Registry& registry, PrefabParams const& params) {
+void buildAlienGunner(sq::ecs::Entity e, sq::ecs::Registry& registry, sq::prefabs::PrefabParams const& params) {
     const float interval = clampedParam(params, "fire_interval", DEFAULT_ALIEN_GUNNER_FIRE_INTERVAL, 0.3F, 10.0F);
-    registry.addComponent<ecs::Transform>(e, makeTransform(params));
-    registry.addComponent<ecs::Renderable>(e, ecs::Renderable{.layer = 1});
-    registry.addComponent<ecs::RigidBody2D>(e, ecs::RigidBody2D{
-                                                   .bodyType = ecs::BodyType::Kinematic,
-                                                   .velocityX = params.get("speed", DEFAULT_ALIEN_GUNNER_SPEED),
-                                               });
-    registry.addComponent<ecs::Collider2D>(e, ecs::Collider2D{
-                                                  .halfWidth = ALIEN_GUNNER_HALF_SIZE,
-                                                  .halfHeight = ALIEN_GUNNER_HALF_SIZE,
-                                                  .categoryBits = collision::ENEMY,
-                                                  .maskBits = collision::ENEMY_MASK,
-                                                  .isSensor = true,
-                                              });
+    registry.addComponent<sq::ecs::Transform>(e, sq::prefabs::makeTransform(params));
+    registry.addComponent<sq::ecs::Renderable>(e, sq::ecs::Renderable{.layer = 1});
+    registry.addComponent<sq::ecs::RigidBody2D>(e, sq::ecs::RigidBody2D{
+                                                       .bodyType = sq::ecs::BodyType::Kinematic,
+                                                       .velocityX = params.get("speed", DEFAULT_ALIEN_GUNNER_SPEED),
+                                                   });
+    registry.addComponent<sq::ecs::Collider2D>(e, sq::ecs::Collider2D{
+                                                      .halfWidth = ALIEN_GUNNER_HALF_SIZE,
+                                                      .halfHeight = ALIEN_GUNNER_HALF_SIZE,
+                                                      .categoryBits = collision::ENEMY,
+                                                      .maskBits = collision::ENEMY_MASK,
+                                                      .isSensor = true,
+                                                  });
     registry.addComponent<EnemyGun>(
         e, EnemyGun{
                .interval = interval,

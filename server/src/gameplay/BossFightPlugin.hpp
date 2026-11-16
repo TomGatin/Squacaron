@@ -30,7 +30,7 @@ namespace rtype::server::gameplay {
  * children of the boss in the entity hierarchy: they move with it and are destroyed with it. A part with an unknown
  * `role` is skipped, with a warning.
  */
-class BossFightPlugin final : public engine::IPlugin {
+class BossFightPlugin final : public sq::engine::IPlugin {
   public:
     /** @brief Creates the plugin. Boss scripts are read under the script root of the room's `ScriptSystem`. */
     BossFightPlugin() = default;
@@ -39,30 +39,30 @@ class BossFightPlugin final : public engine::IPlugin {
     [[nodiscard]] std::string_view name() const noexcept override { return "RTypeBossFightPlugin"; }
 
     /**
-     * @brief Requires `systems::PhysicsPlugin`, which moves the bosses, and `hierarchy::HierarchyPlugin`, which moves
-     * their parts.
+     * @brief Requires `sq::systems::PhysicsPlugin`, which moves the bosses, and `sq::hierarchy::HierarchyPlugin`, which
+     * moves their parts.
      * @param builder Dependency builder.
      */
-    void build(engine::PluginBuilder& builder) override;
+    void build(sq::engine::PluginBuilder& builder) override;
 
     /**
      * @brief Subscribes to the played level events.
      * @param engine Host engine.
      */
-    void init(engine::Engine& engine) override;
+    void init(sq::engine::Engine& engine) override;
 
     /**
      * @brief Stops the bosses that reached their place, and ends the fight once no boss is left.
      * @param engine Host engine.
      * @param time Fixed step time.
      */
-    void fixedUpdate(engine::Engine& engine, const ecs::time::Time& time) override;
+    void fixedUpdate(sq::engine::Engine& engine, const sq::time::Time& time) override;
 
     /**
      * @brief Unsubscribes from the level events.
      * @param engine Host engine.
      */
-    void shutdown(engine::Engine& engine) override;
+    void shutdown(sq::engine::Engine& engine) override;
 
   private:
     /**
@@ -70,7 +70,7 @@ class BossFightPlugin final : public engine::IPlugin {
      * @param registry Room registry.
      * @param params Event parameters: `prefab`, `script`, `class` and the prefab parameters.
      */
-    void startFight(ecs::Registry& registry, const prefabs::PrefabParams& params);
+    void startFight(sq::ecs::Registry& registry, const sq::prefabs::PrefabParams& params);
 
     /**
      * @brief Spawns the replicated parts of a boss, as children of it.
@@ -78,12 +78,12 @@ class BossFightPlugin final : public engine::IPlugin {
      * @param boss The boss, already placed.
      * @param params Event parameters, holding `parts.count` and the `parts.<n>.*` keys.
      */
-    static void spawnParts(ecs::Registry& registry, ecs::Entity boss, const prefabs::PrefabParams& params);
+    static void spawnParts(sq::ecs::Registry& registry, sq::ecs::Entity boss, const sq::prefabs::PrefabParams& params);
 
     /** @brief Event bus of the room, set by `init()`. */
-    ecs::EventBus* _bus = nullptr;
+    sq::events::EventBus* _bus = nullptr;
     /** @brief Subscription to the played level events. */
-    std::optional<ecs::EventBus::EventToken> _playedToken;
+    std::optional<sq::events::EventBus::EventToken> _playedToken;
     /** @brief True from a `boss` event until no boss is left. */
     bool _fighting = false;
 };

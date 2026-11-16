@@ -13,7 +13,7 @@
 #include "INetworkServer.hpp"
 #include "INetworkService.hpp"
 
-namespace ecs::net {
+namespace sq::net {
 
 /**
  * @brief Adapts a server transport to the `NetworkPlugin` of one engine, among several sharing that transport.
@@ -105,4 +105,4 @@ class PeerGroupConnection final : public INetworkService, public INetworkEventSo
     std::unordered_map<PeerId, std::size_t> _queuedPerPeer;
 };
 
-}  // namespace ecs::net
+}  // namespace sq::net

@@ -43,8 +43,8 @@ constexpr std::uint32_t SEED = 40;
 constexpr int REENTRANT_COMMANDS = 1'000;
 
 /** @brief Spawns an entity whose position counts the system runs that visited it. */
-void deferMovingEntity(ecs::CommandBuffer& buffer, std::unordered_map<ecs::Entity, int>& runs) {
-    buffer.deferSpawn([&runs](ecs::Entity e, ecs::Registry& registry) {
+void deferMovingEntity(sq::ecs::CommandBuffer& buffer, std::unordered_map<sq::ecs::Entity, int>& runs) {
+    buffer.deferSpawn([&runs](sq::ecs::Entity e, sq::ecs::Registry& registry) {
         registry.addComponent<Position>(e, Position{.x = 0.0F, .y = 0.0F});
         registry.addComponent<Velocity>(e, Velocity{.dx = 1.0F, .dy = 0.0F});
         runs.emplace(e, 0);
@@ -54,14 +54,14 @@ void deferMovingEntity(ecs::CommandBuffer& buffer, std::unordered_map<ecs::Entit
 }  // namespace
 
 TEST(CommandBufferStress, ChurnDuringSystemRunsKeepsEveryEntityConsistent) {
-    ecs::Registry registry;
-    ecs::CommandBuffer buffer;
+    sq::ecs::Registry registry;
+    sq::ecs::CommandBuffer buffer;
     std::mt19937 rng(SEED);
     std::bernoulli_distribution churn(CHURN_RATIO);
 
     // Reference model: how many system runs each live entity went through, so its position must equal that count.
-    std::unordered_map<ecs::Entity, int> runs;
-    std::vector<ecs::Entity> destroyed;
+    std::unordered_map<sq::ecs::Entity, int> runs;
+    std::vector<sq::ecs::Entity> destroyed;
 
     for (std::size_t i = 0; i < ENTITY_COUNT; ++i) {
         deferMovingEntity(buffer, runs);
@@ -70,10 +70,10 @@ TEST(CommandBufferStress, ChurnDuringSystemRunsKeepsEveryEntityConsistent) {
     ASSERT_EQ(runs.size(), ENTITY_COUNT);
 
     for (int frame = 0; frame < FRAME_COUNT; ++frame) {
-        std::unordered_set<ecs::Entity> doomed;
+        std::unordered_set<sq::ecs::Entity> doomed;
         std::size_t visited = 0;
 
-        registry.runSystem<Position, Velocity>([&](ecs::Entity e, Position& pos, Velocity const& vel) {
+        registry.runSystem<Position, Velocity>([&](sq::ecs::Entity e, Position& pos, Velocity const& vel) {
             ++visited;
             auto const it = runs.find(e);
             ASSERT_NE(it, runs.end()) << "a destroyed entity was visited";
@@ -92,13 +92,13 @@ TEST(CommandBufferStress, ChurnDuringSystemRunsKeepsEveryEntityConsistent) {
         ASSERT_EQ(visited, runs.size());
 
         // Nothing changed while the system ran: the commands only apply at the flush.
-        for (ecs::Entity const e : doomed) {
+        for (sq::ecs::Entity const e : doomed) {
             ASSERT_TRUE(registry.isAlive(e));
         }
         buffer.flush(registry);
         ASSERT_TRUE(buffer.empty());
 
-        for (ecs::Entity const e : doomed) {
+        for (sq::ecs::Entity const e : doomed) {
             ASSERT_FALSE(registry.isAlive(e));
             runs.erase(e);
             destroyed.push_back(e);
@@ -112,23 +112,24 @@ TEST(CommandBufferStress, ChurnDuringSystemRunsKeepsEveryEntityConsistent) {
         ASSERT_EQ(registry.getComponents<Position>().get(e).x, static_cast<float>(count));
     }
     // A destroyed handle stays dead even once its slot holds another entity.
-    for (ecs::Entity const e : destroyed) {
+    for (sq::ecs::Entity const e : destroyed) {
         ASSERT_FALSE(registry.isAlive(e));
         ASSERT_FALSE(registry.hasComponent<Position>(e));
     }
 }
 
 TEST(CommandBufferStress, CommandsQueuedDuringFlushRunAtTheNextFlush) {
-    ecs::Registry registry;
-    ecs::CommandBuffer buffer;
-    ecs::Entity parent = ecs::NULL_ENTITY;
+    sq::ecs::Registry registry;
+    sq::ecs::CommandBuffer buffer;
+    sq::ecs::Entity parent = sq::ecs::NULL_ENTITY;
 
     // The initializer queues into the buffer being flushed: its queues grow while the flush walks them.
-    buffer.deferSpawn([&](ecs::Entity e, ecs::Registry& /*registry*/) {
+    buffer.deferSpawn([&](sq::ecs::Entity e, sq::ecs::Registry& /*registry*/) {
         parent = e;
         for (int i = 0; i < REENTRANT_COMMANDS; ++i) {
-            buffer.deferSpawn(
-                [i](ecs::Entity child, ecs::Registry& reg) { reg.addComponent<Marker>(child, Marker{.value = i}); });
+            buffer.deferSpawn([i](sq::ecs::Entity child, sq::ecs::Registry& reg) {
+                reg.addComponent<Marker>(child, Marker{.value = i});
+            });
         }
         buffer.deferDestroy(e);
     });
@@ -145,19 +146,19 @@ TEST(CommandBufferStress, CommandsQueuedDuringFlushRunAtTheNextFlush) {
 }
 
 TEST(CommandBufferStress, DestroyListenerQueuingDuringFlushRunsAtTheNextFlush) {
-    ecs::Registry registry;
-    ecs::CommandBuffer buffer;
+    sq::ecs::Registry registry;
+    sq::ecs::CommandBuffer buffer;
 
-    std::vector<ecs::Entity> children;
+    std::vector<sq::ecs::Entity> children;
     for (int i = 0; i < REENTRANT_COMMANDS; ++i) {
         children.push_back(registry.spawnEntity());
     }
-    ecs::Entity const parent = registry.spawnEntity();
+    sq::ecs::Entity const parent = registry.spawnEntity();
 
     // Like a hierarchy cascade: destroying the parent defers the destruction of its children.
-    registry.addDestroyListener([&](ecs::Entity destroyed) {
+    registry.addDestroyListener([&](sq::ecs::Entity destroyed) {
         if (destroyed == parent) {
-            for (ecs::Entity const child : children) {
+            for (sq::ecs::Entity const child : children) {
                 buffer.deferDestroy(child);
             }
         }
@@ -166,56 +167,56 @@ TEST(CommandBufferStress, DestroyListenerQueuingDuringFlushRunsAtTheNextFlush) {
     buffer.deferDestroy(parent);
     buffer.flush(registry);
     EXPECT_FALSE(registry.isAlive(parent));
-    for (ecs::Entity const child : children) {
+    for (sq::ecs::Entity const child : children) {
         ASSERT_TRUE(registry.isAlive(child));
     }
 
     buffer.flush(registry);
-    for (ecs::Entity const child : children) {
+    for (sq::ecs::Entity const child : children) {
         ASSERT_FALSE(registry.isAlive(child));
     }
     EXPECT_TRUE(buffer.empty());
 }
 
 TEST(CommandBufferStress, MassDestroyOfStaleAndDuplicateHandlesOnlyKillsLiveTargets) {
-    ecs::Registry registry;
-    ecs::CommandBuffer buffer;
+    sq::ecs::Registry registry;
+    sq::ecs::CommandBuffer buffer;
 
-    std::vector<ecs::Entity> entities;
+    std::vector<sq::ecs::Entity> entities;
     entities.reserve(ENTITY_COUNT);
     for (std::size_t i = 0; i < ENTITY_COUNT; ++i) {
         entities.push_back(registry.spawnEntity());
     }
 
     // Kill every other entity now, then refill the freed slots: those handles are stale, their slots taken.
-    std::vector<ecs::Entity> stale;
-    std::vector<ecs::Entity> targets;
+    std::vector<sq::ecs::Entity> stale;
+    std::vector<sq::ecs::Entity> targets;
     for (std::size_t i = 0; i < entities.size(); ++i) {
         (i % 2 == 0 ? stale : targets).push_back(entities[i]);
     }
-    for (ecs::Entity const e : stale) {
+    for (sq::ecs::Entity const e : stale) {
         registry.killEntity(e);
     }
-    std::vector<ecs::Entity> newcomers;
+    std::vector<sq::ecs::Entity> newcomers;
     newcomers.reserve(stale.size());
     for (std::size_t i = 0; i < stale.size(); ++i) {
         newcomers.push_back(registry.spawnEntity());
         registry.addComponent<Marker>(newcomers.back(), Marker{.value = static_cast<int>(i)});
     }
 
-    for (ecs::Entity const e : stale) {
+    for (sq::ecs::Entity const e : stale) {
         buffer.deferDestroy(e);
     }
     for (int copy = 0; copy < 3; ++copy) {
-        for (ecs::Entity const e : targets) {
+        for (sq::ecs::Entity const e : targets) {
             buffer.deferDestroy(e);
         }
     }
-    buffer.deferDestroy(ecs::NULL_ENTITY);
-    buffer.deferDestroy(ecs::makeEntity(static_cast<std::uint32_t>(ENTITY_COUNT * 4), 0U));  // never spawned
+    buffer.deferDestroy(sq::ecs::NULL_ENTITY);
+    buffer.deferDestroy(sq::ecs::makeEntity(static_cast<std::uint32_t>(ENTITY_COUNT * 4), 0U));  // never spawned
     buffer.flush(registry);
 
-    for (ecs::Entity const e : targets) {
+    for (sq::ecs::Entity const e : targets) {
         ASSERT_FALSE(registry.isAlive(e));
     }
     for (std::size_t i = 0; i < newcomers.size(); ++i) {
@@ -226,7 +227,7 @@ TEST(CommandBufferStress, MassDestroyOfStaleAndDuplicateHandlesOnlyKillsLiveTarg
     // Each target slot was freed exactly once: refilling them all, then one more, needs exactly one new slot.
     std::unordered_set<std::uint32_t> refilled;
     for (std::size_t i = 0; i < targets.size(); ++i) {
-        ASSERT_TRUE(refilled.insert(ecs::entityIndex(registry.spawnEntity())).second) << "slot handed out twice";
+        ASSERT_TRUE(refilled.insert(sq::ecs::entityIndex(registry.spawnEntity())).second) << "slot handed out twice";
     }
-    EXPECT_EQ(ecs::entityIndex(registry.spawnEntity()), static_cast<std::uint32_t>(ENTITY_COUNT));
+    EXPECT_EQ(sq::ecs::entityIndex(registry.spawnEntity()), static_cast<std::uint32_t>(ENTITY_COUNT));
 }

@@ -328,7 +328,7 @@ Sent every client tick (~60 Hz). A lost datagram is replaced by the next one.
 | `value`  | 2 | `float`   | In [-1, 1], finite     |
 
 The protocol carries **actions, not keys**. An action id is the FNV-1a hash of the action's name, the same value as
-the engine's `input::ActionId` (`input::makeActionId("shoot")`). The game declares its actions in its `ActionMapping`
+the engine's `sq::input::ActionId` (`sq::input::makeActionId("shoot")`). The game declares its actions in its `ActionMapping`
 (R-Type: `shoot`, `move_x`, `move_y`, see `client/src/input/RTypeBindings.cpp`), so another game sends its own
 actions without any protocol change, and rebinding keys or using a gamepad changes nothing on the wire. Ids are
 `fixed32` because a hash is uniformly spread: as a varint it would take 5 bytes most of the time.
@@ -378,7 +378,7 @@ the server has not applied yet.
 
 The protocol knows **no entity kind**: like input actions, kinds are the game's own. `kind` is the 32-bit FNV-1a hash
 of the name of the prefab the entity was spawned from (`protocol::makeEntityKind("alien_scout")`, the same algorithm
-as `input::makeActionId()`). The client maps each kind to its sprite or prefab; `subtype` and `flags` carry whatever the
+as `sq::input::makeActionId()`). The client maps each kind to its sprite or prefab; `subtype` and `flags` carry whatever the
 game needs, see [Appendix A](#appendix-a--r-type-entity-conventions) for R-Type. A kind the client does not know is
 not an error: it is up to the game to skip or show a placeholder.
 

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "components/InputBuffer.hpp"
-#include "components/Transform.hpp"
+#include "net/components/InputBuffer.hpp"
+#include "ecs/components/Transform.hpp"
 #include "input/ActionId.hpp"
 
 namespace rtype::game {

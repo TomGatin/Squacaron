@@ -9,7 +9,6 @@
 #include "AssetsPlugin.hpp"
 #include "Shapes.hpp"
 #include "components/Renderable.hpp"
-#include "components/ScriptComponent.hpp"
 #include "components/Transform.hpp"
 #include "core/Engine.hpp"
 #include "core/PluginBuilder.hpp"
@@ -19,6 +18,7 @@
 #include "game/ScriptBindings.hpp"
 #include "net/ClientReplicationPlugin.hpp"
 #include "net/ReplicationEvents.hpp"
+#include "scripting/ScriptComponent.hpp"
 #include "scripting/ScriptPlugin.hpp"
 
 namespace rlss::client {
@@ -105,7 +105,7 @@ void CarViewPlugin::init(engine::Engine& engine) {
                     .gaugeFill = spawnPart(registry, car, ecs::NO_TEXTURE, GAUGE_FILL_COLOR, LAYER_GAUGE_FILL),
                     .flash = spawnPart(registry, car, assets.carBody, FLASH_COLOR, LAYER_FLASH),
                 });
-            registry.addComponent(event.entity, ecs::ScriptComponent{
+            registry.addComponent(event.entity, scripting::ScriptComponent{
                                                     .moduleName = std::string(game::CAR_VIEW_SCRIPT_MODULE),
                                                     .className = "CarView",
                                                     .hasUpdate = true,

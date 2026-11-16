@@ -5,15 +5,19 @@
 
 #pragma once
 
-#include <cstddef>
-#include <optional>
 #include <string>
 #include <string_view>
+#include <vector>
 
 #include "core/IPlugin.hpp"
 #include "core/PluginBuilder.hpp"
+#include "scripting/IScriptExtension.hpp"
 
-namespace systems {
+namespace ecs {
+class Registry;
+}
+
+namespace scripting {
 class ScriptSystem;
 }
 
@@ -34,7 +38,7 @@ namespace assets {
  * group are rejected with a warning of the manager. This module is the only one that depends on both
  * `engine_assets` and `engine_scripting`.
  */
-class AssetScriptingPlugin final : public engine::IPlugin {
+class AssetScriptingPlugin final : public engine::IPlugin, private scripting::IScriptExtension {
   public:
     /**
      * @brief Creates the bridge.
@@ -73,14 +77,25 @@ class AssetScriptingPlugin final : public engine::IPlugin {
     [[nodiscard]] bool declarationsLoaded() const noexcept { return _declarationsLoaded; }
 
   private:
+    /** @brief The `core/Assets` module. @return One module. */
+    [[nodiscard]] std::vector<scripting::ModuleSource> modules() const override;
+    /** @brief Binds the foreign methods of `core/Assets`. @param vm VM to bind. */
+    void bind(scripting::WrenVM& vm) override;
+    /**
+     * @brief Around a hot reload, the modules run their declarations again: those no longer made are dropped at the
+     * end, unless a module failed to run again (its missing declarations would unload assets still in use).
+     * @param phase Phase.
+     */
+    void onVmReset(scripting::VmResetPhase phase) override;
+
     /** @brief Wren module declaring the game's assets, or empty. */
     std::string _declarationModule;
     /** @brief Whether the declaration module ran at init. */
     bool _declarationsLoaded = false;
     /** @brief Script system followed for hot reloads. */
-    systems::ScriptSystem* _scripts = nullptr;
-    /** @brief Id of the VM reset listener. */
-    std::optional<std::size_t> _resetListener;
+    scripting::ScriptSystem* _scripts = nullptr;
+    /** @brief Registry holding the `AssetManager`, between `init` and `shutdown`. */
+    ecs::Registry* _registry = nullptr;
 };
 
 }  // namespace assets

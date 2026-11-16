@@ -7,8 +7,8 @@
 #include "game/Components.hpp"
 #include "input/InputState.hpp"
 #include "scripting/ComponentBinder.hpp"
+#include "scripting/ScriptSystem.hpp"
 #include "scripting/WrenVM.hpp"
-#include "systems/script/ScriptSystem.hpp"
 
 namespace rlss::game {
 
@@ -128,7 +128,7 @@ bool registerComponentClasses(scripting::WrenVM& vm) {
     return ok;
 }
 
-bool installScriptBindings(systems::ScriptSystem& scripts) {
+bool installScriptBindings(scripting::ScriptSystem& scripts) {
     const bool ok = registerComponentClasses(scripts.getVm());
     scripts.addBinderReplay([](scripting::WrenVM& vm) { (void)registerComponentClasses(vm); });
     return ok;

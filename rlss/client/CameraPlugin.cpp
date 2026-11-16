@@ -10,7 +10,6 @@
 #include "CarViewPlugin.hpp"
 #include "ClientEvents.hpp"
 #include "components/CameraComponent.hpp"
-#include "components/ScriptComponent.hpp"
 #include "components/Tag.hpp"
 #include "core/Engine.hpp"
 #include "core/PluginBuilder.hpp"
@@ -25,6 +24,7 @@
 #include "net/ReplicationEvents.hpp"
 #include "protocol/Protocol.hpp"
 #include "render/RenderPlugin.hpp"
+#include "scripting/ScriptComponent.hpp"
 
 namespace rlss::client {
 
@@ -68,7 +68,7 @@ void CameraPlugin::init(engine::Engine& engine) {
                                        .boundsRight = arena::RIGHT + arena::GOAL_DEPTH + ARENA_WALL,
                                        .boundsBottom = arena::BOTTOM + ARENA_WALL,
                                    });
-    registry.addComponent(_camera, ecs::ScriptComponent{
+    registry.addComponent(_camera, scripting::ScriptComponent{
                                        .moduleName = std::string(game::CAMERA_SCRIPT_MODULE),
                                        .className = "CameraDirector",
                                        .hasUpdate = true,

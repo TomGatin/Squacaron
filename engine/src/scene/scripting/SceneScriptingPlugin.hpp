@@ -6,8 +6,6 @@
 
 #pragma once
 
-#include <cstddef>
-#include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -17,7 +15,7 @@
 #include "ecs/Entity.hpp"
 #include "scene/SceneTypes.hpp"
 #include "scene/scripting/ScriptScene.hpp"
-#include "systems/script/ScriptSystem.hpp"
+#include "scripting/ScriptSystem.hpp"
 
 namespace engine {
 class Engine;
@@ -51,7 +49,7 @@ struct SceneScriptBridge {
  * This module is the only one that depends on both `engine_scene` and `engine_scripting`: neither depends on the
  * other, and a game without scripting does not link it.
  */
-class SceneScriptingPlugin final : public engine::IPlugin {
+class SceneScriptingPlugin final : public engine::IPlugin, private scripting::IScriptExtension {
   public:
     /** @brief Constructs the plugin. */
     SceneScriptingPlugin() = default;
@@ -110,23 +108,26 @@ class SceneScriptingPlugin final : public engine::IPlugin {
                                 ScriptSceneOptions options = {});
 
   private:
+    /** @brief The `core/Scene` module. @return One module. */
+    [[nodiscard]] std::vector<scripting::ModuleSource> modules() const override;
+    /** @brief Binds the foreign methods of `core/Scene`. @param vm VM to bind. */
+    void bind(scripting::WrenVM& vm) override;
+    /** @brief Releases the scripted scenes' handles before a reset, builds them again after. @param phase Phase. */
+    void onVmReset(scripting::VmResetPhase phase) override;
     /**
-     * @brief Spawn decorator: gives an entity spawned from Wren to the scene of its owner.
-     * @param context The plugin.
+     * @brief Gives an entity spawned from Wren to the scene of its owner.
      * @param registry Registry of the entity.
      * @param spawned The new entity.
      * @param owner Script owner that requested the spawn.
      */
-    static void adoptSpawn(void* context, ecs::Registry& registry, ecs::Entity spawned, systems::ScriptOwner owner);
+    void onScriptSpawn(ecs::Registry& registry, ecs::Entity spawned, scripting::ScriptOwner owner) override;
 
     /** @brief Scene manager, between `init` and `shutdown`. */
     SceneManager* _manager = nullptr;
     /** @brief Script system, between `init` and `shutdown`. */
-    systems::ScriptSystem* _scripts = nullptr;
+    scripting::ScriptSystem* _scripts = nullptr;
     /** @brief Scripted scenes, owned by the manager. */
     std::vector<ScriptScene*> _scriptScenes;
-    /** @brief Id of the hot-reload listener. */
-    std::optional<std::size_t> _resetListener;
 };
 
 }  // namespace scene

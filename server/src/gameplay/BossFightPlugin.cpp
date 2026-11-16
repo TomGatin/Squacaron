@@ -12,7 +12,6 @@
 
 #include "LogTag.hpp"
 #include "components/RigidBody2D.hpp"
-#include "components/ScriptComponent.hpp"
 #include "components/Transform.hpp"
 #include "core/Engine.hpp"
 #include "core/PluginBuilder.hpp"
@@ -31,6 +30,7 @@
 #include "prefabs/PrefabParams.hpp"
 #include "prefabs/boss_core/BossCore.hpp"
 #include "prefabs/boss_part/BossPart.hpp"
+#include "scripting/ScriptComponent.hpp"
 #include "systems/physics/PhysicsPlugin.hpp"
 
 namespace rtype::server::gameplay {
@@ -68,7 +68,7 @@ void BossFightPlugin::startFight(ecs::Registry& registry, const ::prefabs::Prefa
         // `scripts/Boss.wren` is the module `scripts/Boss`, read under the script root (the data root, set by the
         // room), whose class is `Boss` unless the event names another one.
         const std::filesystem::path path(*script);
-        registry.addComponent(boss, ecs::ScriptComponent{
+        registry.addComponent(boss, scripting::ScriptComponent{
                                         .moduleName = (path.parent_path() / path.stem()).generic_string(),
                                         .className = params.get<std::string>("class", path.stem().string()),
                                         .hasUpdate = true,

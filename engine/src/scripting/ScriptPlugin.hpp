@@ -12,7 +12,7 @@
 
 #include "core/IPlugin.hpp"
 #include "core/PluginBuilder.hpp"
-#include "systems/script/ScriptSystem.hpp"
+#include "scripting/ScriptSystem.hpp"
 
 namespace scripting {
 
@@ -108,14 +108,14 @@ class ScriptPlugin final : public engine::IPlugin {
     void shutdown(engine::Engine& engine) override;
 
     /** @brief Gets mutable reference to the underlying ScriptSystem. */
-    [[nodiscard]] systems::ScriptSystem& scriptSystem() noexcept { return _scriptSystem; }
+    [[nodiscard]] scripting::ScriptSystem& scriptSystem() noexcept { return _scriptSystem; }
 
     /** @brief Gets const reference to the underlying ScriptSystem. */
-    [[nodiscard]] const systems::ScriptSystem& scriptSystem() const noexcept { return _scriptSystem; }
+    [[nodiscard]] const scripting::ScriptSystem& scriptSystem() const noexcept { return _scriptSystem; }
 
   private:
     /** @brief Internal ScriptSystem instance driving Wren VM execution. */
-    systems::ScriptSystem _scriptSystem;
+    scripting::ScriptSystem _scriptSystem;
     /** @brief When the scripts run. */
     ScriptTick _tick = ScriptTick::EveryFrame;
 };

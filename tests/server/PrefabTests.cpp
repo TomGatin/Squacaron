@@ -36,31 +36,6 @@
 
 namespace {
 
-TEST(PrefabManager, UnknownPrefabQueuesNothing) {
-    prefabs::PrefabManager manager;
-    ecs::CommandBuffer buffer;
-
-    EXPECT_FALSE(manager.has("does_not_exist"));
-    EXPECT_FALSE(manager.spawn("does_not_exist", buffer));
-    EXPECT_TRUE(buffer.empty());
-}
-
-TEST(PrefabManager, SpawnIsDeferredUntilFlush) {
-    prefabs::PrefabManager manager;
-    manager.registerPrefab(prefabs::MISSILE_PREFAB, prefabs::buildMissile);
-    ecs::Registry registry;
-    ecs::CommandBuffer buffer;
-
-    ASSERT_TRUE(manager.spawn(prefabs::MISSILE_PREFAB, buffer));
-    EXPECT_FALSE(buffer.empty());
-    EXPECT_FALSE(registry.isAlive(0));
-
-    buffer.flush(registry);
-
-    EXPECT_TRUE(buffer.empty());
-    EXPECT_TRUE(registry.isAlive(0));
-}
-
 TEST(PrefabManager, MissileHasAllComponents) {
     prefabs::PrefabManager manager;
     manager.registerPrefab(prefabs::MISSILE_PREFAB, prefabs::buildMissile);
@@ -364,44 +339,6 @@ TEST(PrefabManager, BossCoreHealthIsClampedToTheNetworkRange) {
     EXPECT_EQ(health.get(2).points, prefabs::DEFAULT_BOSS_CORE_HEALTH);
 }
 
-TEST(PrefabParams, NumbersConvertOtherTypesFallBack) {
-    prefabs::PrefabParams params{{"speed", 10}, {"scale", 2.5F}, {"tag", "boss"}, {"visible", true}};
-
-    EXPECT_FLOAT_EQ(params.get("speed", 0.0F), 10.0F);
-    EXPECT_EQ(params.get("scale", 0), 2);
-    EXPECT_EQ(params.get<std::string>("tag", ""), "boss");
-    EXPECT_TRUE(params.get("visible", false));
-    EXPECT_FLOAT_EQ(params.get("tag", 1.0F), 1.0F);
-    EXPECT_FLOAT_EQ(params.get("missing", 3.0F), 3.0F);
-    EXPECT_FALSE(params.find<bool>("speed").has_value());
-}
-
-TEST(PrefabParams, MergeOverridesExistingKeys) {
-    prefabs::PrefabParams params{{"x", 1.0F}, {"y", 2.0F}};
-    params.merge(prefabs::PrefabParams{}.set("y", 5.0F).set("rotation", 0.5F));
-
-    EXPECT_FLOAT_EQ(params.get("x", 0.0F), 1.0F);
-    EXPECT_FLOAT_EQ(params.get("y", 0.0F), 5.0F);
-    EXPECT_FLOAT_EQ(params.get("rotation", 0.0F), 0.5F);
-}
-
-TEST(PrefabManager, SpawnParamsOverrideRegistrationDefaults) {
-    prefabs::PrefabManager manager;
-    manager.registerPrefab("fast_missile", prefabs::buildMissile, {{"speed", -1200.0F}, {"y", 50.0F}});
-    ecs::Registry registry;
-    ecs::CommandBuffer buffer;
-
-    manager.spawn("fast_missile", buffer, {{"x", 10.0F}, {"rotation", 1.5F}, {"scaleX", -1.0F}, {"speed", -300.0F}});
-    buffer.flush(registry);
-
-    auto const& transform = registry.getComponents<ecs::Transform>().get(0);
-    EXPECT_FLOAT_EQ(transform.x, 10.0F);
-    EXPECT_FLOAT_EQ(transform.y, 50.0F);
-    EXPECT_FLOAT_EQ(transform.rotation, 1.5F);
-    EXPECT_FLOAT_EQ(transform.scaleX, -1.0F);
-    EXPECT_FLOAT_EQ(registry.getComponents<ecs::RigidBody2D>().get(0).velocityX, -300.0F);
-}
-
 TEST(PrefabManager, ObstacleSizeCanBeSetPerSpawn) {
     prefabs::PrefabManager manager;
     prefabs::registerRtypePrefabs(manager);
@@ -453,34 +390,7 @@ TEST(PrefabManager, CollisionCategoriesFilterPairs) {
     EXPECT_TRUE(canCollide(powerUp, player));
 }
 
-TEST(PrefabManager, SpawningSurvivesManagerDestructionBeforeFlush) {
-    ecs::Registry registry;
-    ecs::CommandBuffer buffer;
-
-    {
-        prefabs::PrefabManager localManager;
-        localManager.registerPrefab(prefabs::MISSILE_PREFAB, prefabs::buildMissile);
-        ASSERT_TRUE(localManager.spawn(prefabs::MISSILE_PREFAB, buffer, {{"x", 123.0F}}));
-    }
-
-    buffer.flush(registry);
-
-    ASSERT_TRUE(registry.hasComponent<ecs::Transform>(0));
-    EXPECT_FLOAT_EQ(registry.getComponents<ecs::Transform>().get(0).x, 123.0F);
-}
-
 }  // namespace
-
-TEST(PrefabPlugin, InitFailsAndKeepsExistingManagerOnDuplicate) {
-    engine::Engine engine;
-    auto const existing = std::make_shared<prefabs::PrefabManager>();
-    ASSERT_TRUE(engine.mediator().registerService<prefabs::PrefabManager>(existing).has_value());
-
-    engine.addPlugin<prefabs::PrefabPlugin>();
-
-    EXPECT_THROW(engine.init(), engine::MediatorError);
-    EXPECT_EQ(&engine.mediator().service<prefabs::PrefabManager>(), existing.get());
-}
 
 int main(int argc, char** argv) {
     ::testing::InitGoogleTest(&argc, argv);

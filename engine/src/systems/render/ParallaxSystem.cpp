@@ -7,12 +7,12 @@
 
 #include "systems/render/ParallaxSystem.hpp"
 
-#include "components/CameraComponent.hpp"
-#include "components/ParallaxLayer.hpp"
-#include "components/SpriteInstances.hpp"
-#include "components/Transform.hpp"
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
+#include "ecs/components/Transform.hpp"
+#include "render/api/components/CameraComponent.hpp"
+#include "render/api/components/ParallaxLayer.hpp"
+#include "render/api/components/SpriteInstances.hpp"
 
 namespace {
 

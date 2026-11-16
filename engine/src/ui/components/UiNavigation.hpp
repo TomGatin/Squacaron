@@ -7,9 +7,9 @@
 
 #include <vector>
 
-#include "components/Renderable.hpp"
-#include "core/services/InputCodes.hpp"
 #include "ecs/Entity.hpp"
+#include "render/api/InputCodes.hpp"
+#include "render/api/components/Renderable.hpp"
 
 namespace ui {
 

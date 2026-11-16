@@ -4,10 +4,10 @@
 #include <cmath>
 #include <numbers>
 
-#include "components/Renderable.hpp"
-#include "components/Transform.hpp"
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
+#include "ecs/components/Transform.hpp"
+#include "render/api/components/Renderable.hpp"
 
 namespace rlss::client {
 

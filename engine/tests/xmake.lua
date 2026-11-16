@@ -30,7 +30,8 @@ target("test_engine")
 
 target("test_scripting")
     set_kind("binary")
-    add_deps("engine_core", "engine_events", "engine_scripting", "engine_input", "engine_prefabs")
+    add_deps("engine_core", "engine_events", "engine_scripting", "engine_input", "engine_input_scripting", "engine_prefabs",
+             "engine_prefabs_scripting", "engine_physics")
     add_packages("gtest", "wren")
     add_files("test_scripting.cpp")
     add_tests("test_scripting")
@@ -188,7 +189,7 @@ target("test_scene")
 
 target("test_scene_scripting")
     set_kind("binary")
-    add_deps("engine_core", "engine_time", "engine_events", "engine_scene", "engine_scripting", "engine_input",
+    add_deps("engine_prefabs_scripting", "engine_core", "engine_time", "engine_events", "engine_scene", "engine_scripting", "engine_input",
              "engine_prefabs", "engine_scene_scripting")
     add_packages("gtest", "wren")
     add_files("test_scene_scripting.cpp")

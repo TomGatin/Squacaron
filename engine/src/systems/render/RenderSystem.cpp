@@ -5,13 +5,13 @@
 #include <algorithm>
 #include <cmath>
 
-#include "components/CameraComponent.hpp"
-#include "components/Hidden.hpp"
-#include "components/Renderable.hpp"
-#include "components/SpriteInstances.hpp"
-#include "components/Transform.hpp"
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
+#include "ecs/components/Transform.hpp"
+#include "render/api/components/CameraComponent.hpp"
+#include "render/api/components/Hidden.hpp"
+#include "render/api/components/Renderable.hpp"
+#include "render/api/components/SpriteInstances.hpp"
 #include "render/detail/RaylibStores.hpp"
 #include "render/texture/TextureStore.hpp"
 #include "systems/render/RenderSystemDefaults.hpp"

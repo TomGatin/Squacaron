@@ -4,7 +4,6 @@
 #include <utility>
 
 #include "ClientEvents.hpp"
-#include "components/InputBuffer.hpp"
 #include "core/Engine.hpp"
 #include "core/PluginBuilder.hpp"
 #include "ecs/Entity.hpp"
@@ -14,6 +13,7 @@
 #include "input/InputState.hpp"
 #include "net/ClientReplicationPlugin.hpp"
 #include "net/ReplicationEvents.hpp"
+#include "net/components/InputBuffer.hpp"
 
 namespace rlss::client {
 

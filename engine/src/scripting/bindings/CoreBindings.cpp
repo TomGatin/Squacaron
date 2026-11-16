@@ -50,7 +50,7 @@ void engineSpawnPrefab(ForeignCall& call) {
         return;
     }
 
-    (void)scriptSystem->spawnPrefab(*prefabName, {{"x", *x}, {"y", *y}});
+    (void)scriptSystem->requestPrefabSpawn(*prefabName, *x, *y);
 }
 
 /**
@@ -155,7 +155,6 @@ void registerCoreBindings(WrenVM& vm) {
     vm.registerForeignMethod<&worldIdsWithTag>("core/World", "World", true, "idsWithTag_(_)");
     vm.registerForeignMethod<&worldNearestIdWithTag>("core/World", "World", true, "nearestIdWithTag_(_,_,_)");
     vm.registerForeignMethod<&worldIdsInRadius>("core/World", "World", true, "idsInRadius_(_,_,_)");
-    registerInputBindings(vm);
 }
 
 }  // namespace scripting::detail

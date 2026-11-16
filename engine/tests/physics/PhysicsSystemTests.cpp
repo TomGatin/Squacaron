@@ -7,14 +7,14 @@
 #include <new>
 #include <vector>
 
-#include "components/Collider2D.hpp"
-#include "components/RigidBody2D.hpp"
-#include "components/Transform.hpp"
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
+#include "ecs/components/Transform.hpp"
 #include "events/EventBus.hpp"
-#include "events/PhysicsEvents.hpp"
+#include "systems/physics/PhysicsEvents.hpp"
 #include "systems/physics/PhysicsSystem.hpp"
+#include "systems/physics/components/Collider2D.hpp"
+#include "systems/physics/components/RigidBody2D.hpp"
 
 namespace {
 

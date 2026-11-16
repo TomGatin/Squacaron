@@ -19,6 +19,7 @@
 #include "assets/AssetPlugin.hpp"
 #include "core/Engine.hpp"
 #include "ecs/Registry.hpp"
+#include "utils/Paths.hpp"
 #include "utils/StableSlots.hpp"
 
 namespace {
@@ -132,18 +133,18 @@ struct OtherTexture {
 }  // namespace
 
 TEST(AssetPath, NormalisesSeparatorsAndDots) {
-    EXPECT_EQ(assets::normalizeAssetPath("sprites/ship.png"), "sprites/ship.png");
-    EXPECT_EQ(assets::normalizeAssetPath("sprites\\ship.png"), "sprites/ship.png");
-    EXPECT_EQ(assets::normalizeAssetPath("a/../sprites/./ship.png"), "sprites/ship.png");
-    EXPECT_EQ(assets::normalizeAssetPath("sprites//ship.png"), "sprites/ship.png");
-    EXPECT_EQ(assets::normalizeAssetPath("textures/"), "textures");
+    EXPECT_EQ(utils::normalizePath("sprites/ship.png"), "sprites/ship.png");
+    EXPECT_EQ(utils::normalizePath("sprites\\ship.png"), "sprites/ship.png");
+    EXPECT_EQ(utils::normalizePath("a/../sprites/./ship.png"), "sprites/ship.png");
+    EXPECT_EQ(utils::normalizePath("sprites//ship.png"), "sprites/ship.png");
+    EXPECT_EQ(utils::normalizePath("textures/"), "textures");
 }
 
 TEST(AssetPath, RejectsEmptyTooLongAndNulPaths) {
-    EXPECT_FALSE(assets::normalizeAssetPath(""));
-    EXPECT_FALSE(assets::normalizeAssetPath("."));
-    EXPECT_FALSE(assets::normalizeAssetPath(std::string(assets::MAX_PATH_LENGTH + 1, 'a')));
-    EXPECT_FALSE(assets::normalizeAssetPath(std::string("a\0b", 3)));
+    EXPECT_FALSE(utils::normalizePath(""));
+    EXPECT_FALSE(utils::normalizePath("."));
+    EXPECT_FALSE(utils::normalizePath(std::string(utils::MAX_PATH_LENGTH + 1, 'a')));
+    EXPECT_FALSE(utils::normalizePath(std::string("a\0b", 3)));
     EXPECT_FALSE(assets::isValidAssetName(""));
     EXPECT_FALSE(assets::isValidAssetName(std::string(assets::MAX_NAME_LENGTH + 1, 'a')));
     EXPECT_TRUE(assets::isValidAssetName("player_ship"));
@@ -159,18 +160,18 @@ TEST(AssetPath, AliasesCannotLookLikePaths) {
 }
 
 TEST(AssetPath, TellsWhetherAPathStaysInTheWorkingDirectory) {
-    EXPECT_TRUE(assets::isConfinedAssetPath("sprites/ship.png"));
-    EXPECT_TRUE(assets::isConfinedAssetPath("..data/x.png"));
-    EXPECT_FALSE(assets::isConfinedAssetPath("/etc/passwd"));
-    EXPECT_FALSE(assets::isConfinedAssetPath("../secret.png"));
-    EXPECT_FALSE(assets::isConfinedAssetPath(".."));
-    EXPECT_FALSE(assets::isConfinedAssetPath("C:/Windows/x.png"));
-    EXPECT_EQ(assets::normalizeAssetPath("a/../../b.png"), "../b.png");
+    EXPECT_TRUE(utils::isConfinedPath("sprites/ship.png"));
+    EXPECT_TRUE(utils::isConfinedPath("..data/x.png"));
+    EXPECT_FALSE(utils::isConfinedPath("/etc/passwd"));
+    EXPECT_FALSE(utils::isConfinedPath("../secret.png"));
+    EXPECT_FALSE(utils::isConfinedPath(".."));
+    EXPECT_FALSE(utils::isConfinedPath("C:/Windows/x.png"));
+    EXPECT_EQ(utils::normalizePath("a/../../b.png"), "../b.png");
 }
 
 TEST(AssetPath, QuotesAndCutsLongNamesForLogs) {
-    EXPECT_EQ(assets::quoteForLog("ship"), "'ship'");
-    EXPECT_EQ(assets::quoteForLog(std::string(500, 'x'), 4), "'xxxx...'");
+    EXPECT_EQ(utils::quoteForLog("ship"), "'ship'");
+    EXPECT_EQ(utils::quoteForLog(std::string(500, 'x'), 4), "'xxxx...'");
 }
 
 TEST(StableSlots, GivesAFreedSlotBackOnlyToTheHandleThatAsksForIt) {
@@ -399,7 +400,7 @@ TEST_F(AssetManagerTest, InvalidInputIsRejectedWithAWarning) {
 TEST_F(AssetManagerTest, WarningsCutHugeNames) {
     manager.declare<assets::Texture>(std::string(100'000, 'x'), "");
     ASSERT_EQ(manager.warnings().size(), 1U);
-    EXPECT_LT(manager.warnings().front().size(), 2U * assets::MAX_PATH_LENGTH);
+    EXPECT_LT(manager.warnings().front().size(), 2U * utils::MAX_PATH_LENGTH);
 }
 
 TEST_F(AssetManagerTest, AnUnknownAliasIsNeverLookedForOnTheDisk) {

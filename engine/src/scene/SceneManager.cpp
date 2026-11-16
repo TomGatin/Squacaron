@@ -9,10 +9,10 @@
 #include <typeindex>
 #include <utility>
 
-#include "components/Hidden.hpp"
 #include "core/Engine.hpp"
 #include "ecs/Registry.hpp"
 #include "events/EventBus.hpp"
+#include "render/api/components/Hidden.hpp"
 #include "scene/IScene.hpp"
 #include "scene/SceneEvents.hpp"
 #include "scene/SceneTypes.hpp"

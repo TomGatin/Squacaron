@@ -10,14 +10,14 @@
 #include <string_view>
 #include <vector>
 
-#include "components/Renderable.hpp"
 #include "core/Engine.hpp"
 #include "core/IPlugin.hpp"
 #include "core/PluginBuilder.hpp"
-#include "core/services/IInputCaptureService.hpp"
-#include "core/services/IScreenDrawService.hpp"
-#include "core/services/IWindowService.hpp"
-#include "core/services/InputCodes.hpp"
+#include "render/api/IInputCaptureService.hpp"
+#include "render/api/IScreenDrawService.hpp"
+#include "render/api/IWindowService.hpp"
+#include "render/api/InputCodes.hpp"
+#include "render/api/components/Renderable.hpp"
 #include "tools/common/TextUtils.hpp"
 #include "tools/console/BuiltinCommands.hpp"
 #include "tools/console/Console.hpp"

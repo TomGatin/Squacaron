@@ -12,7 +12,7 @@
 
 #include "core/IPlugin.hpp"
 #include "core/PluginBuilder.hpp"
-#include "core/services/InputCodes.hpp"
+#include "render/api/InputCodes.hpp"
 #include "tools/devconsole/DevConsole.hpp"
 #include "tools/devconsole/DevConsoleTypes.hpp"
 #include "tools/devconsole/DevConsoleView.hpp"

@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <thread>
 
+#include "ecs/ClockTick.hpp"
 #include "ecs/Registry.hpp"
 #include "ecs/time/Clock.hpp"
 #include "ecs/time/PreciseSleep.hpp"
@@ -141,7 +142,7 @@ TEST(Clock, SyncsTimeResourceInRegistry) {
 
     fake.now = static_cast<double>(FIXED_DT);
     std::size_t steps = 0;
-    clock.tick(FIXED_DT, registry, [&](ecs::Registry& reg) {
+    ecs::time::tick(clock, FIXED_DT, registry, [&](ecs::Registry& reg) {
         ++steps;
         EXPECT_TRUE(reg.hasResource<ecs::time::Time>());
         const auto& time = reg.getResource<ecs::time::Time>();

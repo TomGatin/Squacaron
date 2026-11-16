@@ -5,11 +5,11 @@
 #include <string>
 #include <vector>
 
-#include "components/Tag.hpp"
-#include "components/Transform.hpp"
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
 #include "ecs/SpatialQueries.hpp"
+#include "ecs/components/Tag.hpp"
+#include "ecs/components/Transform.hpp"
 #include "events/EventBus.hpp"
 #include "scripting/ComponentBinder.hpp"
 #include "scripting/ScriptComponent.hpp"

@@ -9,11 +9,11 @@
 
 #include <span>
 
-#include "core/services/IWindowService.hpp"
-#include "core/services/InputCodes.hpp"
 #include "ecs/Registry.hpp"
 #include "events/EventBus.hpp"
-#include "events/UiEvents.hpp"
+#include "render/api/IWindowService.hpp"
+#include "render/api/InputCodes.hpp"
+#include "ui/UiEvents.hpp"
 #include "ui/components/UiButton.hpp"
 #include "ui/system/UiLayout.hpp"
 

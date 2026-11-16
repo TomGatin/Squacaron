@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "core/services/InputCodes.hpp"
+#include "render/api/InputCodes.hpp"
 
 namespace engine {
 

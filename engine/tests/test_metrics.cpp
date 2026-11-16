@@ -8,12 +8,9 @@
 #include <string_view>
 #include <vector>
 
-#include "components/Renderable.hpp"
 #include "core/Engine.hpp"
 #include "core/IPlugin.hpp"
 #include "core/PluginBuilder.hpp"
-#include "core/services/IScreenDrawService.hpp"
-#include "core/services/IWindowService.hpp"
 #include "ecs/Entity.hpp"
 #include "hierarchy/HierarchyPlugin.hpp"
 #include "metrics/MetricsBoard.hpp"
@@ -21,6 +18,9 @@
 #include "metrics/ProcessUsage.hpp"
 #include "metrics/RollingStats.hpp"
 #include "metrics/overlay/MetricsOverlayPlugin.hpp"
+#include "render/api/IScreenDrawService.hpp"
+#include "render/api/IWindowService.hpp"
+#include "render/api/components/Renderable.hpp"
 #include "ui/UiPlugin.hpp"
 #include "ui/components/UiProgressBar.hpp"
 #include "ui/components/UiRect.hpp"

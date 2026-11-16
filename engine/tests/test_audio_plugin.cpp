@@ -4,11 +4,11 @@
 #include <memory>
 
 #include "audio/AudioPlugin.hpp"
+#include "audio/IAudioService.hpp"
 #include "audio/NullAudioBackend.hpp"
 #include "audio/settings/AudioSettings.hpp"
 #include "audio/types/AudioTypes.hpp"
 #include "core/Engine.hpp"
-#include "core/services/IAudioService.hpp"
 
 namespace {
 

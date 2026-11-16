@@ -12,9 +12,9 @@
 #include <string>
 #include <string_view>
 
-#include "core/services/InputCodes.hpp"
 #include "ecs/Entity.hpp"
 #include "input/RTypeBindings.hpp"
+#include "render/api/InputCodes.hpp"
 #include "scene/IScene.hpp"
 
 namespace client {

@@ -9,12 +9,12 @@
 #include <string_view>
 
 #include "UiCanvas.hpp"
-#include "components/Renderable.hpp"
 #include "core/IPlugin.hpp"
 #include "core/PluginBuilder.hpp"
 #include "ecs/Entity.hpp"
 #include "events/EventBus.hpp"
 #include "game/Components.hpp"
+#include "render/api/components/Renderable.hpp"
 #include "tools/cvars/CVarRef.hpp"
 
 namespace ecs::time {

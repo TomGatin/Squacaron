@@ -3,7 +3,6 @@
 #include <cstddef>
 #include <utility>
 
-#include "ecs/Registry.hpp"
 #include "ecs/time/Clock.hpp"  // NOLINT(misc-header-include-cycle)
 
 namespace ecs::time {
@@ -34,18 +33,6 @@ std::size_t Clock::tick(float fixedDt, Step step) {
         _accumulator = std::fmod(_accumulator, stepSeconds);
     }
     return steps;
-}
-
-template <typename Step>
-std::size_t Clock::tick(float fixedDt, Registry& registry, Step step) {
-    return tick(fixedDt, [&registry, &step](const Time& timeData) {
-        if (!registry.hasResource<Time>()) {
-            registry.emplaceResource<Time>(timeData);
-        } else {
-            registry.getResource<Time>() = timeData;
-        }
-        step(registry);
-    });
 }
 
 }  // namespace ecs::time

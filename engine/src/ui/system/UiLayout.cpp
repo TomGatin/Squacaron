@@ -8,10 +8,10 @@
 #include <utility>
 #include <vector>
 
-#include "components/Hidden.hpp"
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
 #include "hierarchy/Hierarchy.hpp"
+#include "render/api/components/Hidden.hpp"
 #include "ui/components/UiAnchor.hpp"
 #include "ui/components/UiButton.hpp"
 #include "ui/components/UiImage.hpp"

@@ -5,7 +5,7 @@
 #include <optional>
 #include <utility>
 
-#include "components/InputBuffer.hpp"
+#include "net/components/InputBuffer.hpp"
 
 namespace ecs::net {
 

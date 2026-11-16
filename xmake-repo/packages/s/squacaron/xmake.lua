@@ -16,7 +16,7 @@ package("squacaron")
         end
         package:add("includedirs", "include/squacaron")
         -- Static libraries: a library comes before the ones it depends on.
-        local links = {"engine_assets_scene", "engine_assets_scripting", "engine_scene_scripting", "engine_scene",
+        local links = {"engine_input_scripting", "engine_prefabs_scripting", "engine_physics_scripting", "engine_assets_scene", "engine_assets_scripting", "engine_scene_scripting", "engine_scene",
                        "engine_metrics_overlay", "engine_network_metrics", "engine_network_asio", "engine_network",
                        "engine_physics", "engine_tools_scripting", "engine_devconsole", "engine_tools",
                        "engine_scripting", "engine_prefabs", "engine_input", "engine_settings"}
@@ -27,7 +27,7 @@ package("squacaron")
         if package:config("graphics") then
             table.join2(links, {"engine_render"})
         end
-        table.join2(links, {"engine_ui", "engine_metrics", "engine_hierarchy", "engine_log", "engine_core", "engine_time"})
+        table.join2(links, {"engine_ui", "engine_metrics", "engine_hierarchy", "engine_log", "engine_core", "engine_time", "engine_utils"})
         package:add("links", links)
         if package:is_plat("windows", "mingw") then
             package:add("syslinks", "winmm", "psapi", "user32", "ws2_32", "mswsock")

@@ -11,7 +11,7 @@
 
 #include <cstdint>
 
-#include "components/Collider2D.hpp"
+#include "systems/physics/components/Collider2D.hpp"
 
 namespace prefabs::collision {
 

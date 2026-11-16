@@ -6,7 +6,6 @@
 #include "assets/AssetManager.hpp"
 #include "collision/CollisionRouter.hpp"
 #include "collision/GameCollisionEvents.hpp"
-#include "components/Renderable.hpp"
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
 #include "events/EventBus.hpp"
@@ -15,6 +14,7 @@
 #include "prefabs/ClientEnemy.hpp"
 #include "prefabs/CollisionCategories.hpp"
 #include "prefabs/PrefabParams.hpp"
+#include "render/api/components/Renderable.hpp"
 #include "systems/physics/PhysicsSystem.hpp"
 
 namespace {

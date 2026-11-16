@@ -7,8 +7,8 @@
 #include <type_traits>
 #include <variant>
 
-#include "components/Renderable.hpp"
-#include "core/services/IScreenDrawService.hpp"
+#include "render/api/IScreenDrawService.hpp"
+#include "render/api/components/Renderable.hpp"
 #include "render/detail/RaylibStores.hpp"
 #include "render/font/FontStore.hpp"
 

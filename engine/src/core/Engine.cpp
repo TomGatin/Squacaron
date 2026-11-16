@@ -17,7 +17,6 @@
 #include "core/IPlugin.hpp"
 #include "core/plugins/CorePlugin.hpp"
 #include "core/plugins/TimePlugin.hpp"
-#include "core/services/IWindowService.hpp"
 #include "ecs/time/Clock.hpp"
 #include "ecs/time/Time.hpp"
 
@@ -78,16 +77,14 @@ void Engine::run(const RunOptions options) {
 
     double frameRate = options.frameRate;
     if (frameRate == 0.0) {
-        const bool windowed = _mediator.getService<IWindowService>().has_value();
-        frameRate = windowed || _fixedDt <= 0.0F ? -1.0 : 1.0 / static_cast<double>(_fixedDt);
+        frameRate = _externallyPaced || _fixedDt <= 0.0F ? -1.0 : 1.0 / static_cast<double>(_fixedDt);
     }
     FixedRateLoop loop(frameRate);
     loop.stopOnSignals(options.stopOnSignals);
 
     _running = true;
     loop.run([&] {
-        const auto windowService = _mediator.getService<IWindowService>();
-        if (!_running || (windowService && windowService->get().shouldClose())) {
+        if (!_running) {
             loop.stop();
             return;
         }

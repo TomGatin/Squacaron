@@ -11,11 +11,9 @@
 #include <utility>
 
 #include "LogTag.hpp"
-#include "components/InputBuffer.hpp"
-#include "components/NetworkOwner.hpp"
-#include "components/Transform.hpp"
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
+#include "ecs/components/Transform.hpp"
 #include "ecs/time/Clock.hpp"
 #include "events/EventBus.hpp"
 #include "game/ReplicationCodec.hpp"
@@ -37,9 +35,12 @@
 #include "net/ReplicationEvents.hpp"
 #include "net/ReplicationSystems.hpp"
 #include "net/ServerReplicationPlugin.hpp"
+#include "net/components/InputBuffer.hpp"
+#include "net/components/NetworkOwner.hpp"
 #include "prefabs/PrefabManager.hpp"
 #include "prefabs/PrefabPlugin.hpp"
 #include "prefabs/player_ship/PlayerShip.hpp"
+#include "prefabs/scripting/PrefabScripting.hpp"
 #include "protocol/Messages.hpp"
 #include "protocol/Protocol.hpp"
 #include "scripting/ScriptPlugin.hpp"
@@ -81,6 +82,8 @@ Room::Room(ecs::net::INetworkServer& network, const std::uint8_t maxPlayers, con
     _engine.addPlugin<prefabs::PrefabPlugin>();
     // On fixed steps: the room loop advances the engine about every millisecond, scripts follow the 60 Hz simulation.
     _engine.addPlugin<scripting::ScriptPlugin>(scripting::ScriptTick::FixedStep);
+    // What a script spawns (a boss's missiles, its escort) comes from the PrefabPlugin's prefabs.
+    _engine.addPlugin<::prefabs::PrefabScriptingPlugin>();
     ecs::EventBus& bus = _engine.eventBus();
     bus.subscribe<protocol::LevelStart>(
         [this](const protocol::LevelStart& message) { broadcastReliable(*_connection, message); });
@@ -106,7 +109,6 @@ Room::Room(ecs::net::INetworkServer& network, const std::uint8_t maxPlayers, con
     ::prefabs::PrefabManager& scriptPrefabs = _engine.getPlugin<prefabs::PrefabPlugin>().manager();
     gameplay::registerScriptPrefabs(scriptPrefabs);
     scripting::ScriptSystem& scripts = _engine.getPlugin<scripting::ScriptPlugin>().scriptSystem();
-    scripts.setPrefabManager(&scriptPrefabs);
     // Boss scripts are named relative to the data directory, which they cannot leave.
     scripts.setScriptRoot(level != nullptr ? level->dataRoot : std::filesystem::path{});
     // Hot reload is a development tool: on the game server, editing a script mid-match would rebuild the VM of every

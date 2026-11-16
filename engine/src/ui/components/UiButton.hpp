@@ -8,7 +8,7 @@
 #include <cstdint>
 #include <string>
 
-#include "components/Renderable.hpp"
+#include "render/api/components/Renderable.hpp"
 
 namespace ui {
 

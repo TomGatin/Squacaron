@@ -7,13 +7,13 @@
 #include <string_view>
 #include <utility>
 
-#include "components/Renderable.hpp"
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
-#include "events/UiEvents.hpp"
 #include "hierarchy/Hierarchy.hpp"
+#include "render/api/components/Renderable.hpp"
 #include "scene/SceneContext.hpp"
 #include "scene/SceneManager.hpp"
+#include "ui/UiEvents.hpp"
 #include "ui/components/UiAnchor.hpp"
 #include "ui/components/UiButton.hpp"
 #include "ui/components/UiFocusable.hpp"

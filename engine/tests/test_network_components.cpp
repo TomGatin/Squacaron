@@ -4,14 +4,14 @@
 #include <optional>
 #include <vector>
 
-#include "components/InputBuffer.hpp"
-#include "components/NetworkId.hpp"
-#include "components/NetworkOwner.hpp"
-#include "components/Replicated.hpp"
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
 #include "net/InputQueue.hpp"
 #include "net/NetworkEntityMap.hpp"
+#include "net/components/InputBuffer.hpp"
+#include "net/components/NetworkId.hpp"
+#include "net/components/NetworkOwner.hpp"
+#include "net/components/Replicated.hpp"
 
 namespace {
 

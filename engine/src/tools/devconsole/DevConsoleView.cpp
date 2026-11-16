@@ -5,8 +5,8 @@
 #include <cstddef>
 #include <string>
 
-#include "components/Renderable.hpp"
-#include "core/services/IScreenDrawService.hpp"
+#include "render/api/IScreenDrawService.hpp"
+#include "render/api/components/Renderable.hpp"
 #include "tools/console/Console.hpp"
 #include "tools/console/ConsoleTypes.hpp"
 #include "tools/devconsole/DevConsole.hpp"

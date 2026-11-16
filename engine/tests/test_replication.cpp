@@ -9,17 +9,11 @@
 #include <utility>
 #include <vector>
 
-#include "components/InputBuffer.hpp"
-#include "components/Interpolated.hpp"
-#include "components/NetworkId.hpp"
-#include "components/NetworkOwner.hpp"
-#include "components/Predicted.hpp"
-#include "components/Replicated.hpp"
-#include "components/Transform.hpp"
 #include "core/Engine.hpp"
 #include "core/plugins/CorePlugin.hpp"
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
+#include "ecs/components/Transform.hpp"
 #include "net/ClientReplicationPlugin.hpp"
 #include "net/INetworkEventSource.hpp"
 #include "net/INetworkManager.hpp"
@@ -32,6 +26,12 @@
 #include "net/ReplicationSystems.hpp"
 #include "net/ServerReplicationPlugin.hpp"
 #include "net/SnapshotApplier.hpp"
+#include "net/components/InputBuffer.hpp"
+#include "net/components/Interpolated.hpp"
+#include "net/components/NetworkId.hpp"
+#include "net/components/NetworkOwner.hpp"
+#include "net/components/Predicted.hpp"
+#include "net/components/Replicated.hpp"
 
 namespace {
 

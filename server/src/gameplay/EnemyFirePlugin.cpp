@@ -2,10 +2,10 @@
 
 #include <cmath>
 
-#include "components/Transform.hpp"
 #include "core/Engine.hpp"
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
+#include "ecs/components/Transform.hpp"
 #include "ecs/time/Time.hpp"
 #include "gameplay/GameplayComponents.hpp"
 #include "gameplay/Targeting.hpp"

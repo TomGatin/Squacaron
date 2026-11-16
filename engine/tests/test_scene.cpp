@@ -8,13 +8,13 @@
 #include <utility>
 #include <vector>
 
-#include "components/Hidden.hpp"
 #include "core/Engine.hpp"
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
 #include "ecs/time/Time.hpp"
 #include "hierarchy/Hierarchy.hpp"
 #include "hierarchy/HierarchyPlugin.hpp"
+#include "render/api/components/Hidden.hpp"
 #include "scene/IScene.hpp"
 #include "scene/SceneContext.hpp"
 #include "scene/SceneEvents.hpp"

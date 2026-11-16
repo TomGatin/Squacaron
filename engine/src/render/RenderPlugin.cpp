@@ -17,11 +17,11 @@
 #include "core/MediatorError.hpp"
 #include "core/PluginBuilder.hpp"
 #include "core/plugins/CorePlugin.hpp"
-#include "core/services/IInputCaptureService.hpp"
-#include "core/services/IRenderService.hpp"
-#include "core/services/IScreenDrawService.hpp"
-#include "core/services/IWindowService.hpp"
-#include "core/services/InputCodes.hpp"
+#include "render/api/IInputCaptureService.hpp"
+#include "render/api/IRenderService.hpp"
+#include "render/api/IScreenDrawService.hpp"
+#include "render/api/IWindowService.hpp"
+#include "render/api/InputCodes.hpp"
 #include "render/screen/ScreenDrawService.hpp"
 #include "render/texture/TextureStore.hpp"
 #include "render/window/Window.hpp"
@@ -548,6 +548,8 @@ void RenderPlugin::init(engine::Engine& engine) {
     _inputCapture = std::make_shared<InputCaptureImpl>(_windowService);
     _renderService = std::make_shared<RenderServiceImpl>(*_renderSystem);
     _screenDrawService = std::make_shared<ScreenDrawService>(_textures.get());
+    // The window waits for its target frame rate: Engine::run must not sleep on top of it.
+    engine.setExternallyPaced(true);
 
     if (const auto res = engine.mediator().registerService<engine::IWindowService>(_windowService); !res) {
         throw engine::MediatorError(res.error());
@@ -579,6 +581,9 @@ void RenderPlugin::render(engine::Engine& engine) {
         _screenDrawService->flush();
     }
     Window::endFrame();
+    if (Window::shouldClose()) {
+        engine.stop();
+    }
 }
 
 void RenderPlugin::shutdown(engine::Engine& engine) {

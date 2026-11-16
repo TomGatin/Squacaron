@@ -9,7 +9,7 @@
 #include <string>
 #include <string_view>
 
-#include "components/Renderable.hpp"
+#include "render/api/components/Renderable.hpp"
 
 namespace engine {
 

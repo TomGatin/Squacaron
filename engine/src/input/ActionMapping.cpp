@@ -6,10 +6,10 @@
 #include <string>
 #include <string_view>
 
-#include "core/services/IWindowService.hpp"
-#include "core/services/InputCodes.hpp"
 #include "input/ActionId.hpp"
 #include "input/InputConstants.hpp"
+#include "render/api/IWindowService.hpp"
+#include "render/api/InputCodes.hpp"
 
 namespace input {
 

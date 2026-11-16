@@ -9,11 +9,11 @@
 
 #include "core/Engine.hpp"
 #include "core/PluginBuilder.hpp"
-#include "core/services/IScreenDrawService.hpp"
-#include "core/services/IWindowService.hpp"
 #include "ecs/Registry.hpp"
 #include "ecs/time/Time.hpp"
 #include "hierarchy/HierarchyPlugin.hpp"
+#include "render/api/IScreenDrawService.hpp"
+#include "render/api/IWindowService.hpp"
 #include "ui/components/UiNavigation.hpp"
 #include "ui/system/UiButtonSystem.hpp"
 #include "ui/system/UiInteractionSystem.hpp"

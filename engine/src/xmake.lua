@@ -1,3 +1,9 @@
+-- Small helpers every module may use: move-only callables, stable slots, portable paths. No dependency.
+target("engine_utils")
+    set_kind("static")
+    add_files("utils/*.cpp")
+    add_includedirs(".", {public = true})
+
 target("engine_time")
     set_kind("static")
     add_files("ecs/time/*.cpp")
@@ -11,7 +17,7 @@ target("engine_core")
     set_kind("static")
     add_files("ecs/*.cpp", "core/**.cpp")
     add_includedirs(".", {public = true})
-    add_deps("engine_time")
+    add_deps("engine_time", "engine_events", "engine_utils")
 
 -- Thread-safe logger shared by the engine modules and the games.
 target("engine_log")
@@ -22,6 +28,7 @@ target("engine_log")
 target("engine_events")
     set_kind("headeronly")
     add_includedirs(".", {public = true})
+    add_deps("engine_utils")
 
 target("engine_config")
     set_kind("static")
@@ -42,7 +49,7 @@ target("engine_assets")
     set_kind("static")
     add_files("assets/*.cpp", "assets/detail/*.cpp")
     add_includedirs(".", {public = true})
-    add_deps("engine_core")
+    add_deps("engine_core", "engine_render_api")
 
 -- Bridge between the assets and Wren: the core/Assets module and the game's asset declaration script.
 target("engine_assets_scripting")
@@ -60,9 +67,16 @@ target("engine_assets_scene")
 
 target("engine_prefabs")
     set_kind("static")
-    add_files("prefabs/**.cpp")
+    add_files("prefabs/*.cpp")
     add_includedirs(".", {public = true})
     add_deps("engine_core")
+
+-- Bridge between the prefabs and Wren: `Engine.spawnPrefab`, and spawns from game bindings.
+target("engine_prefabs_scripting")
+    set_kind("static")
+    add_files("prefabs/scripting/*.cpp")
+    add_includedirs(".", {public = true})
+    add_deps("engine_prefabs", "engine_scripting")
 
 -- Measures and the board holding them: no graphics library, so a headless program can use them too.
 target("engine_metrics")
@@ -78,7 +92,7 @@ target("engine_scripting")
     set_kind("static")
     add_files("scripting/**.cpp")
     add_includedirs(".", {public = true})
-    add_deps("engine_core", "engine_events", "engine_input", "engine_prefabs", "engine_assets", "engine_log")
+    add_deps("engine_core", "engine_events", "engine_log")
     add_packages("wren")
 
 -- Network interfaces (transport, config) and replication building blocks (input queue, network id map).
@@ -87,7 +101,7 @@ target("engine_network")
     set_kind("static")
     add_files("net/*.cpp")
     add_includedirs(".", {public = true})
-    add_deps("engine_core")
+    add_deps("engine_core", "engine_events")
 
 -- Network lines of the metrics board. Apart from engine_network, so that the network does not depend on the metrics.
 target("engine_network_metrics")
@@ -109,10 +123,17 @@ target("engine_network_asio")
 
 target("engine_physics")
     set_kind("static")
-    add_files("systems/physics/**.cpp")
+    add_files("systems/physics/*.cpp", "systems/physics/detail/*.cpp")
     add_includedirs(".", {public = true})
     add_deps("engine_core", "engine_events")
     add_packages("box2d")
+
+-- Bridge between physics and Wren: contacts reach `onCollision(other)` of entity scripts.
+target("engine_physics_scripting")
+    set_kind("static")
+    add_files("systems/physics/scripting/*.cpp")
+    add_includedirs(".", {public = true})
+    add_deps("engine_physics", "engine_scripting")
 
 target("engine_hierarchy")
     set_kind("static")
@@ -139,7 +160,7 @@ target("engine_scene")
     set_kind("static")
     add_files("scene/*.cpp")
     add_includedirs(".", {public = true})
-    add_deps("engine_core", "engine_events", "engine_hierarchy")
+    add_deps("engine_core", "engine_events", "engine_hierarchy", "engine_render_api")
 
 -- Bridge between scenes and Wren: the core/Scene module, scripted scenes, ownership of script spawns.
 target("engine_scene_scripting")
@@ -168,7 +189,7 @@ target("engine_devconsole")
     set_kind("static")
     add_files("tools/devconsole/*.cpp")
     add_includedirs(".", {public = true})
-    add_deps("engine_tools", "engine_ui")
+    add_deps("engine_tools", "engine_ui", "engine_render_api")
 
 -- Public headers, installed under include/squacaron/ by `xmake install` (and so by the squacaron package).
 target("engine_headers")
@@ -182,7 +203,8 @@ target("engine_headers")
 
 target("engine_all")
     set_kind("phony")
-    add_deps("engine_headers", "engine_log", "engine_core", "engine_time", "engine_events", "engine_config", "engine_prefabs", "engine_scripting", "engine_network", "engine_network_metrics", "engine_network_asio", "engine_physics", "engine_input", "engine_hierarchy", "engine_ui", "engine_metrics", "engine_metrics_overlay", "engine_scene", "engine_scene_scripting", "engine_settings", "engine_assets", "engine_assets_scripting", "engine_assets_scene", "engine_timeline", "engine_tools", "engine_tools_scripting", "engine_devconsole")
+    add_deps("engine_headers", "engine_utils", "engine_render_api", "engine_input_scripting", "engine_prefabs_scripting",
+             "engine_physics_scripting", "engine_log", "engine_core", "engine_time", "engine_events", "engine_config", "engine_prefabs", "engine_scripting", "engine_network", "engine_network_metrics", "engine_network_asio", "engine_physics", "engine_input", "engine_hierarchy", "engine_ui", "engine_metrics", "engine_metrics_overlay", "engine_scene", "engine_scene_scripting", "engine_settings", "engine_assets", "engine_assets_scripting", "engine_assets_scene", "engine_timeline", "engine_tools", "engine_tools_scripting", "engine_devconsole")
     if has_config("graphics") then
         add_deps("engine_render", "engine_audio", "engine_assets_render", "engine_assets_audio")
     end
@@ -204,5 +226,13 @@ if has_config("graphics") then
         add_includedirs(".", {public = true})
         add_deps("engine_assets", "engine_audio")
 end
+-- The headless side of rendering: render data components (Renderable, Camera, Hidden...) and the window, input
+-- codes, input capture, render and screen-draw service interfaces. The server sets render data and the UI draws
+-- through these interfaces without linking raylib; engine_render implements them.
+target("engine_render_api")
+    set_kind("headeronly")
+    add_includedirs(".", {public = true})
+    add_deps("engine_core")
+
 includes("ui")
 includes("input")

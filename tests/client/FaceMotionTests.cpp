@@ -2,9 +2,9 @@
 
 #include <numbers>
 
-#include "components/Transform.hpp"
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
+#include "ecs/components/Transform.hpp"
 #include "gameplay/FaceMotion.hpp"
 
 namespace {

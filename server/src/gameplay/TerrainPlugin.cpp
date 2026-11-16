@@ -8,12 +8,11 @@
 #include <string>
 #include <vector>
 
-#include "components/RigidBody2D.hpp"
-#include "components/Transform.hpp"
 #include "core/Engine.hpp"
 #include "core/PluginBuilder.hpp"
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
+#include "ecs/components/Transform.hpp"
 #include "ecs/time/Time.hpp"
 #include "game/ReplicationCodec.hpp"
 #include "gameplay/GameplayComponents.hpp"
@@ -23,6 +22,7 @@
 #include "prefabs/PrefabParams.hpp"
 #include "prefabs/obstacle/Obstacle.hpp"
 #include "systems/physics/PhysicsPlugin.hpp"
+#include "systems/physics/components/RigidBody2D.hpp"
 #include "timeline/TimelinePlugin.hpp"
 
 namespace rtype::server::gameplay {

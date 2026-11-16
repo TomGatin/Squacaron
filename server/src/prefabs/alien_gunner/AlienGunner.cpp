@@ -3,15 +3,15 @@
 #include <algorithm>
 #include <cmath>
 
-#include "components/Collider2D.hpp"
-#include "components/Renderable.hpp"
-#include "components/RigidBody2D.hpp"
-#include "components/Transform.hpp"
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
+#include "ecs/components/Transform.hpp"
 #include "prefabs/CollisionCategories.hpp"
 #include "prefabs/EnemyGun.hpp"
 #include "prefabs/PrefabParams.hpp"
+#include "render/api/components/Renderable.hpp"
+#include "systems/physics/components/Collider2D.hpp"
+#include "systems/physics/components/RigidBody2D.hpp"
 
 namespace prefabs {
 

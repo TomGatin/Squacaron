@@ -23,6 +23,7 @@
 #include "scripting/ScriptPlugin.hpp"
 #include "scripting/ScriptSystem.hpp"
 #include "scripting/WrenVM.hpp"
+#include "utils/Paths.hpp"
 
 namespace assets {
 
@@ -104,7 +105,7 @@ bool boolArgument(const scripting::ForeignCall& call, const int slot, const std:
 std::string_view kindArgument(const scripting::ForeignCall& call, const AssetManager* manager) {
     const std::string_view kind = stringArgument(call, 1, "kind");
     if (manager != nullptr && !manager->hasKind(kind)) {
-        throw std::invalid_argument("Assets: unknown asset kind " + quoteForLog(kind));
+        throw std::invalid_argument("Assets: unknown asset kind " + utils::quoteForLog(kind));
     }
     return kind;
 }
@@ -118,13 +119,13 @@ std::string_view kindArgument(const scripting::ForeignCall& call, const AssetMan
 std::optional<std::string> confinedPath(AssetManager& manager, const std::string_view path) {
     // The working directory itself, for a directory preload.
     std::optional<std::string> normalized =
-        fromUtf8(path).lexically_normal() == "." ? std::optional<std::string>(".") : normalizeAssetPath(path);
+        utils::fromUtf8(path).lexically_normal() == "." ? std::optional<std::string>(".") : utils::normalizePath(path);
     if (!normalized) {
-        manager.warn("invalid path " + quoteForLog(path));
+        manager.warn("invalid path " + utils::quoteForLog(path));
         return std::nullopt;
     }
-    if (!isConfinedAssetPath(*normalized)) {
-        manager.warn("path " + quoteForLog(*normalized, MAX_PATH_LENGTH) +
+    if (!utils::isConfinedPath(*normalized)) {
+        manager.warn("path " + utils::quoteForLog(*normalized, MAX_PATH_LENGTH) +
                      " leaves the working directory: scripts may only name files under it");
         return std::nullopt;
     }
@@ -218,7 +219,8 @@ void assetsPreload(const scripting::ForeignCall& call) {
         call.ret(0.0);
         return;
     }
-    call.ret(static_cast<double>(manager->preloadDirectory(kind, fromUtf8(*confined), group, optionsOf(kind, smooth))));
+    call.ret(static_cast<double>(
+        manager->preloadDirectory(kind, utils::fromUtf8(*confined), group, optionsOf(kind, smooth))));
 }
 
 /**

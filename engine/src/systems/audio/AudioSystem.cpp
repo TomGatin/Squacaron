@@ -6,19 +6,19 @@
 #include <utility>
 #include <variant>
 
+#include "audio/AudioEvents.hpp"
 #include "audio/AudioMiddleware.hpp"
 #include "audio/IAudioBackend.hpp"
+#include "audio/components/AudioEmitter.hpp"
+#include "audio/components/AudioListener.hpp"
 #include "audio/settings/AudioSettings.hpp"
 #include "audio/spatial/AudioSpatial.hpp"
 #include "audio/types/AudioConstants.hpp"
 #include "audio/types/AudioTypes.hpp"
 #include "audio/types/SoundParams.hpp"
-#include "components/AudioEmitter.hpp"
-#include "components/AudioListener.hpp"
-#include "components/Transform.hpp"
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
-#include "events/AudioEvents.hpp"
+#include "ecs/components/Transform.hpp"
 #include "events/EventBus.hpp"
 #include "utils/MoveOnlyFunction.hpp"
 

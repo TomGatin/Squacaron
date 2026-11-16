@@ -13,8 +13,8 @@
 #include "core/MediatorError.hpp"
 #include "core/PluginBuilder.hpp"
 #include "core/plugins/CorePlugin.hpp"
-#include "core/services/IInputService.hpp"
-#include "core/services/IWindowService.hpp"
+#include "input/IInputService.hpp"
+#include "render/api/IWindowService.hpp"
 #include "systems/input/InputSystem.hpp"
 
 namespace input {

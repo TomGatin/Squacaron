@@ -10,9 +10,9 @@
 #include "collision/GameCollisionEvents.hpp"
 #include "ecs/Entity.hpp"
 #include "events/EventBus.hpp"
-#include "events/PhysicsEvents.hpp"
 #include "log/Logger.hpp"
 #include "prefabs/CollisionCategories.hpp"
+#include "systems/physics/PhysicsEvents.hpp"
 
 namespace rtype::server::collision {
 

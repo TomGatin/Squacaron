@@ -9,8 +9,6 @@
 #include <utility>
 #include <vector>
 
-#include "components/Hidden.hpp"
-#include "components/Renderable.hpp"
 #include "core/Engine.hpp"
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
@@ -21,6 +19,8 @@
 #include "net/RTypeNetworkPlugin.hpp"
 #include "net/SessionEvents.hpp"
 #include "protocol/Messages.hpp"
+#include "render/api/components/Hidden.hpp"
+#include "render/api/components/Renderable.hpp"
 #include "scene/SceneContext.hpp"
 #include "scene/SceneManager.hpp"
 #include "scene/SceneTypes.hpp"

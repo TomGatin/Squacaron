@@ -7,9 +7,9 @@
 
 #include <span>
 
-#include "core/services/IWindowService.hpp"
 #include "ecs/Registry.hpp"
 #include "events/EventBus.hpp"
+#include "render/api/IWindowService.hpp"
 #include "ui/components/UiButton.hpp"
 #include "ui/system/UiLayout.hpp"
 

@@ -137,8 +137,9 @@ class Engine {
         /**
          * @brief Frames per second of the loop.
          *
-         * 0 picks: unpaced when a window service is registered (its vsync paces the loop), otherwise one frame per
-         * fixed step (`1 / fixedDeltaTime()`), so a headless program sleeps between frames instead of taking a core.
+         * 0 picks: unpaced when a plugin paces the frames itself (`setExternallyPaced`, e.g. a vsynced window),
+         * otherwise one frame per fixed step (`1 / fixedDeltaTime()`), so a headless program sleeps between frames
+         * instead of taking a core.
          * A negative rate is always unpaced.
          */
         double frameRate = 0.0;
@@ -147,7 +148,14 @@ class Engine {
     };
 
     /**
-     * @brief Runs the main loop until `stop()`, a closed window or a stop signal, then shuts down.
+     * @brief Tells `run()` that a plugin paces the frames (a window waiting for vsync), so it must not sleep.
+     * @param paced True when frames are paced by a plugin.
+     */
+    void setExternallyPaced(bool paced) noexcept { _externallyPaced = paced; }
+
+    /**
+     * @brief Runs the main loop until `stop()` (which any plugin can call, e.g. when its window closes) or a stop
+     * signal, then shuts down.
      *
      * Returns at once if the engine was already shut down.
      * @param options Pacing and stop conditions.
@@ -216,6 +224,8 @@ class Engine {
     bool _shutdown = false;
     /** @brief Flag controlling the active game loop execution state; atomic so `stop()` works from any thread. */
     std::atomic<bool> _running{false};
+    /** @brief Set by a plugin that paces the frames itself. */
+    bool _externallyPaced = false;
 };
 
 }  // namespace engine

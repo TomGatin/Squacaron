@@ -5,9 +5,9 @@
 
 #pragma once
 
-#include "components/Renderable.hpp"
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
+#include "render/api/components/Renderable.hpp"
 
 namespace rlss::client {
 

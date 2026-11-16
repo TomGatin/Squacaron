@@ -5,9 +5,9 @@
 #include <optional>
 
 #include "LogTag.hpp"
-#include "components/Transform.hpp"
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
+#include "ecs/components/Transform.hpp"
 #include "gameplay/Targeting.hpp"
 #include "hierarchy/Hierarchy.hpp"
 #include "log/Logger.hpp"
@@ -16,6 +16,7 @@
 #include "prefabs/PrefabParams.hpp"
 #include "prefabs/boss_part/BossPart.hpp"
 #include "prefabs/missile/Missile.hpp"
+#include "prefabs/scripting/PrefabScripting.hpp"
 #include "scripting/ComponentBinder.hpp"
 #include "scripting/ForeignCall.hpp"
 #include "scripting/ScriptSystem.hpp"
@@ -164,8 +165,8 @@ void combatFireAt(scripting::ForeignCall& call) {
     // `fireAt(x, y, targetX, targetY, speed, look)`: the look of the missile, its subtype, within a byte.
     const std::optional<double> look = call.slotCount() > 6 ? call.arg<double>(6) : std::optional<double>{0.0};
     auto* scripts = call.userData<scripting::ScriptSystem>();
-    if (!x || !y || !targetX || !targetY || !speed || !look || scripts == nullptr ||
-        scripts->getPrefabManager() == nullptr) {
+    auto* spawner = scripts != nullptr ? ::prefabs::ScriptPrefabSpawner::of(*scripts) : nullptr;
+    if (!x || !y || !targetX || !targetY || !speed || !look || spawner == nullptr) {
         return;
     }
     const auto clamped = static_cast<float>(std::clamp(*speed, MIN_AIMED_SHOT_SPEED, MAX_AIMED_SHOT_SPEED));
@@ -177,7 +178,7 @@ void combatFireAt(scripting::ForeignCall& call) {
                                          {"speed", velocity.x},
                                          {"speed_y", velocity.y},
                                          {"subtype", static_cast<std::int64_t>(std::clamp(*look, 0.0, 255.0))}};
-    (void)scripts->spawnPrefab(::prefabs::MISSILE_PREFAB, params);
+    (void)spawner->spawn(::prefabs::MISSILE_PREFAB, params);
 }
 
 /**

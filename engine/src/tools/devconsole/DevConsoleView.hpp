@@ -8,8 +8,8 @@
 #include <cstddef>
 #include <utility>
 
-#include "components/Renderable.hpp"
-#include "core/services/IScreenDrawService.hpp"
+#include "render/api/IScreenDrawService.hpp"
+#include "render/api/components/Renderable.hpp"
 #include "tools/console/ConsoleTypes.hpp"
 #include "tools/devconsole/DevConsoleTypes.hpp"
 

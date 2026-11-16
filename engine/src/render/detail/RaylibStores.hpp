@@ -10,8 +10,8 @@
 #include <cstddef>
 #include <vector>
 
-#include "components/Renderable.hpp"
-#include "core/services/IScreenDrawService.hpp"
+#include "render/api/IScreenDrawService.hpp"
+#include "render/api/components/Renderable.hpp"
 #include "render/font/FontStore.hpp"
 #include "render/texture/TextureStore.hpp"
 

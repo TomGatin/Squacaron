@@ -7,8 +7,8 @@
 #include "collision/CollisionRouter.hpp"
 #include "collision/GameCollisionEvents.hpp"
 #include "events/EventBus.hpp"
-#include "events/PhysicsEvents.hpp"
 #include "prefabs/CollisionCategories.hpp"
+#include "systems/physics/PhysicsEvents.hpp"
 
 namespace {
 

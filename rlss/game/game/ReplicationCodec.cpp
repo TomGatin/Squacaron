@@ -9,16 +9,16 @@
 #include <variant>
 #include <vector>
 
-#include "components/InputBuffer.hpp"
-#include "components/Interpolated.hpp"
-#include "components/Replicated.hpp"
-#include "components/Transform.hpp"
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
+#include "ecs/components/Transform.hpp"
 #include "game/Components.hpp"
 #include "net/INetworkManager.hpp"
 #include "net/IReplicationCodec.hpp"
 #include "net/SnapshotApplier.hpp"
+#include "net/components/InputBuffer.hpp"
+#include "net/components/Interpolated.hpp"
+#include "net/components/Replicated.hpp"
 #include "protocol/Protocol.hpp"
 
 namespace rlss::game {

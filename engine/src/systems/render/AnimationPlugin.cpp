@@ -9,8 +9,8 @@
 
 #include "core/Engine.hpp"
 #include "core/PluginBuilder.hpp"
-#include "core/services/IRenderService.hpp"
 #include "ecs/time/Time.hpp"
+#include "render/api/IRenderService.hpp"
 #include "systems/render/AnimationSystem.hpp"
 
 namespace systems {

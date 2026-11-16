@@ -13,10 +13,10 @@
 #include <string_view>
 #include <vector>
 
-#include "components/Tag.hpp"
-#include "components/Transform.hpp"
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
+#include "ecs/components/Tag.hpp"
+#include "ecs/components/Transform.hpp"
 
 namespace ecs {
 

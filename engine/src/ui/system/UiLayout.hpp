@@ -8,9 +8,9 @@
 #include <functional>
 #include <vector>
 
-#include "core/services/IScreenDrawService.hpp"
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
+#include "render/api/IScreenDrawService.hpp"
 #include "ui/components/UiAnchor.hpp"
 #include "ui/components/UiText.hpp"
 

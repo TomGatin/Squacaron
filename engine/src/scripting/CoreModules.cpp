@@ -19,9 +19,6 @@ std::string_view getCoreModuleSource(std::string_view moduleName) noexcept {
     if (moduleName == "core/World") {
         return CORE_WORLD_SOURCE;
     }
-    if (moduleName == "core/Input") {
-        return CORE_INPUT_SOURCE;
-    }
     if (moduleName == "_internal") {
         return INTERNAL_DISPATCHER_SOURCE;
     }

@@ -25,4 +25,26 @@ void ScriptSystem::registerEventForwarding(ecs::EventBus& bus, std::string const
         });
 }
 
+template <typename ContactEvent>
+void ScriptSystem::forwardCollisions(ecs::EventBus& bus) {
+    stopForwardingCollisions();
+    prepareCollisionForwarding();
+    // The system is not movable: the subscription can capture `this`; the destructor unsubscribes.
+    const ecs::EventBus::EventToken token = bus.subscribe<ContactEvent>([this](const ContactEvent& event) {
+        forwardCollision(event.entityA, event.entityB);
+        forwardCollision(event.entityB, event.entityA);
+    });
+    _stopCollisions = [&bus, token] { bus.unsubscribe<ContactEvent>(token); };
+}
+
+template <typename Extension>
+Extension* ScriptSystem::findExtension() const noexcept {
+    for (IScriptExtension* extension : _extensions) {
+        if (auto* found = dynamic_cast<Extension*>(extension)) {
+            return found;
+        }
+    }
+    return nullptr;
+}
+
 }  // namespace scripting

@@ -1,12 +1,12 @@
 #include <gtest/gtest.h>
 
-#include "components/Renderable.hpp"
-#include "components/Replicated.hpp"
-#include "components/Transform.hpp"
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
+#include "ecs/components/Transform.hpp"
 #include "game/ReplicationCodec.hpp"
 #include "gameplay/AimedSprite.hpp"
+#include "net/components/Replicated.hpp"
+#include "render/api/components/Renderable.hpp"
 
 namespace {
 

@@ -9,13 +9,11 @@
 #include "ArenaViewPlugin.hpp"
 #include "CarViewPlugin.hpp"
 #include "ClientEvents.hpp"
-#include "components/CameraComponent.hpp"
-#include "components/Tag.hpp"
 #include "core/Engine.hpp"
 #include "core/PluginBuilder.hpp"
-#include "core/services/IWindowService.hpp"
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
+#include "ecs/components/Tag.hpp"
 #include "game/Components.hpp"
 #include "net/ClientReplicationPlugin.hpp"
 #include "net/NetworkEntityMap.hpp"
@@ -24,6 +22,8 @@
 #include "net/ReplicationEvents.hpp"
 #include "protocol/Protocol.hpp"
 #include "render/RenderPlugin.hpp"
+#include "render/api/IWindowService.hpp"
+#include "render/api/components/CameraComponent.hpp"
 #include "scripting/ScriptComponent.hpp"
 
 namespace rlss::client {

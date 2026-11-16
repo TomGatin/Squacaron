@@ -40,7 +40,7 @@ An element is an entity with a `UiAnchor` (where it sits) and one or more drawab
 | `UiTextInput`    | box, text or placeholder, blinking caret  | typing (optionally made capitals, filtered by `allowed`), Backspace (repeats), Enter: `UiTextSubmittedEvent` |
 | `UiScrollList`   | nothing itself                            | its children are rows, see below                  |
 
-Events are declared in `events/UiEvents.hpp`. Widgets are matched by their `action` string, so a listener does not
+Events are declared in `ui/UiEvents.hpp`. Widgets are matched by their `action` string, so a listener does not
 need entity ids.
 
 `UiAnchor` places an element inside its container: the screen for a root element, else the rectangle of its
@@ -83,7 +83,7 @@ rows.
 
 ## Hiding
 
-`ecs::Hidden` (`components/Hidden.hpp`, in `engine_core`) asks every renderer to skip an entity:
+`ecs::Hidden` (`render/api/components/Hidden.hpp`, in `engine_core`) asks every renderer to skip an entity:
 
 - The UI layout skips a hidden element **with its whole subtree**.
 - The world `RenderSystem` skips hidden sprites.

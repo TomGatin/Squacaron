@@ -12,11 +12,9 @@
 #include <vector>
 
 #include "ClientOptions.hpp"
-#include "components/Interpolated.hpp"
-#include "components/Predicted.hpp"
-#include "components/Transform.hpp"
 #include "core/Engine.hpp"
 #include "ecs/Entity.hpp"
+#include "ecs/components/Transform.hpp"
 #include "game/ReplicationCodec.hpp"
 #include "game/ShipMovement.hpp"
 #include "input/InputState.hpp"
@@ -30,6 +28,8 @@
 #include "net/PlayerControlPlugin.hpp"
 #include "net/RTypeNetworkPlugin.hpp"
 #include "net/SessionEvents.hpp"
+#include "net/components/Interpolated.hpp"
+#include "net/components/Predicted.hpp"
 #include "protocol/Messages.hpp"
 #include "protocol/Protocol.hpp"
 

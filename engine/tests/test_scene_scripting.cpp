@@ -3,6 +3,7 @@
 #include <chrono>
 #include <filesystem>
 #include <fstream>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <system_error>
@@ -12,6 +13,7 @@
 #include "ecs/Registry.hpp"
 #include "prefabs/PrefabManager.hpp"
 #include "prefabs/PrefabParams.hpp"
+#include "prefabs/scripting/PrefabScripting.hpp"
 #include "scene/IScene.hpp"
 #include "scene/SceneManager.hpp"
 #include "scene/ScenePlugin.hpp"
@@ -124,7 +126,8 @@ class SceneScriptingTest : public ::testing::Test {
                                            scene::ScriptSceneOptions{.hasUpdate = true});
         waiting = bridge.registerScriptScene(engine, "Waiting", waitingFile.module(), "Waiting");
         engine.init();
-        scripts().setPrefabManager(&prefabs);
+        spawner.emplace(scripts(), prefabs);
+        scripts().addExtension(*spawner);
     }
 
     scene::SceneManager& manager() { return engine.getPlugin<scene::ScenePlugin>().manager(); }
@@ -164,6 +167,8 @@ class SceneScriptingTest : public ::testing::Test {
     ScriptFile waitingFile{"TestSceneWaiting", WAITING_SCENE};
     prefabs::PrefabManager prefabs;
     engine::Engine engine;
+    /** @brief Spawns the prefabs of `Engine.spawnPrefab`; destroyed before the engine. */
+    std::optional<prefabs::ScriptPrefabSpawner> spawner;
     scene::SceneId game = scene::INVALID_SCENE;
     scene::SceneId title = scene::INVALID_SCENE;
     scene::SceneId waiting = scene::INVALID_SCENE;

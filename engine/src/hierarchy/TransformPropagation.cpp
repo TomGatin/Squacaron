@@ -2,9 +2,9 @@
 
 #include <vector>
 
-#include "components/Transform.hpp"
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
+#include "ecs/components/Transform.hpp"
 #include "hierarchy/HierarchyComponents.hpp"
 #include "hierarchy/TransformMath.hpp"
 

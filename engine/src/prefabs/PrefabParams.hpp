@@ -5,8 +5,8 @@
 
 #pragma once
 
-#include "components/Transform.hpp"
 #include "ecs/ParamBag.hpp"
+#include "ecs/components/Transform.hpp"
 
 namespace prefabs {
 

@@ -14,12 +14,10 @@
 #include <vector>
 
 #include "collision/GameCollisionEvents.hpp"
-#include "components/Replicated.hpp"
-#include "components/RigidBody2D.hpp"
-#include "components/Transform.hpp"
 #include "core/Engine.hpp"
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
+#include "ecs/components/Transform.hpp"
 #include "game/ReplicationCodec.hpp"
 #include "game/ShipMovement.hpp"
 #include "gameplay/BossFightPlugin.hpp"
@@ -37,6 +35,7 @@
 #include "level/LevelLoader.hpp"
 #include "net/ReplicationEvents.hpp"
 #include "net/ReplicationSystems.hpp"
+#include "net/components/Replicated.hpp"
 #include "prefabs/CollisionCategories.hpp"
 #include "prefabs/Health.hpp"
 #include "prefabs/PrefabManager.hpp"
@@ -49,11 +48,13 @@
 #include "prefabs/missile/Missile.hpp"
 #include "prefabs/player_ship/PlayerShip.hpp"
 #include "prefabs/power_up/PowerUp.hpp"
+#include "prefabs/scripting/PrefabScripting.hpp"
 #include "protocol/Messages.hpp"
 #include "scripting/ScriptComponent.hpp"
 #include "scripting/ScriptPlugin.hpp"
 #include "scripting/ScriptSystem.hpp"
 #include "systems/physics/PhysicsPlugin.hpp"
+#include "systems/physics/components/RigidBody2D.hpp"
 #include "timeline/TimelineEvent.hpp"
 #include "timeline/TimelinePlugin.hpp"
 
@@ -1128,11 +1129,11 @@ class ScriptedBossTest : public ::testing::Test {
         rtype::server::gameplay::addGameplayPlugins(engine, built);
         engine.addPlugin<prefabs::PrefabPlugin>();
         engine.addPlugin<scripting::ScriptPlugin>(scripting::ScriptTick::FixedStep);
+        engine.addPlugin<prefabs::PrefabScriptingPlugin>();
         engine.init();
         prefabs::PrefabManager& manager = engine.getPlugin<prefabs::PrefabPlugin>().manager();
         rtype::server::gameplay::registerScriptPrefabs(manager);
         scripting::ScriptSystem& scripts = engine.getPlugin<scripting::ScriptPlugin>().scriptSystem();
-        scripts.setPrefabManager(&manager);
         scripts.setScriptRoot(built->dataRoot);
         bound = rtype::server::gameplay::bindScriptComponents(scripts);
     }

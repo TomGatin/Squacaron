@@ -11,7 +11,6 @@
 #include <vector>
 
 #include "LogTag.hpp"
-#include "components/Replicated.hpp"
 #include "core/Engine.hpp"
 #include "core/PluginBuilder.hpp"
 #include "ecs/Entity.hpp"
@@ -23,6 +22,7 @@
 #include "level/Level.hpp"
 #include "log/Logger.hpp"
 #include "net/ReplicationSystems.hpp"
+#include "net/components/Replicated.hpp"
 #include "prefabs/Health.hpp"
 #include "prefabs/PrefabParams.hpp"
 #include "prefabs/alien_elite/AlienElite.hpp"

@@ -35,9 +35,9 @@ engine/src/audio/
 ├── IAudioBackend.hpp   backend interface
 └── NullAudioBackend.hpp
 engine/src/systems/audio/AudioSystem.*      the system
-engine/src/events/AudioEvents.hpp           the events
-engine/src/components/AudioListener.hpp     the listener component
-engine/src/components/AudioEmitter.hpp      the emitter component
+engine/src/audio/AudioEvents.hpp           the events
+engine/src/audio/components/AudioListener.hpp     the listener component
+engine/src/audio/components/AudioEmitter.hpp      the emitter component
 ```
 
 ## Architecture
@@ -60,7 +60,7 @@ backend, or with the recording backend used in tests. Only `strategy/raylib/` in
 
 ```cpp
 #include "audio/factory/AudioBackendFactory.hpp"
-#include "events/AudioEvents.hpp"
+#include "audio/AudioEvents.hpp"
 #include "systems/audio/AudioSystem.hpp"
 
 ecs::EventBus eventBus;
@@ -89,7 +89,7 @@ cannot be read or the backend is muted; playing these handles does nothing.
 
 ### Events
 
-All events live in `events/AudioEvents.hpp`, in the `events` namespace.
+All events live in `audio/AudioEvents.hpp`, in the `events` namespace.
 
 | Event | Fields | Effect |
 |-------|--------|--------|

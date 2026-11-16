@@ -7,7 +7,8 @@ local engine_targets = {
     "engine_headers", "engine_hierarchy", "engine_input", "engine_log", "engine_metrics", "engine_metrics_overlay", "engine_network",
     "engine_network_asio", "engine_network_metrics", "engine_physics", "engine_prefabs", "engine_render",
     "engine_scene", "engine_scene_scripting", "engine_scripting", "engine_settings", "engine_time",
-    "engine_timeline", "engine_tools", "engine_tools_scripting", "engine_ui"
+    "engine_timeline", "engine_tools", "engine_tools_scripting", "engine_ui", "engine_utils", "engine_render_api",
+    "engine_input_scripting", "engine_prefabs_scripting", "engine_physics_scripting"
 }
 
 for _, name in ipairs(engine_targets) do

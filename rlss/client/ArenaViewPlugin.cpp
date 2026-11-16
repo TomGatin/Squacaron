@@ -3,14 +3,14 @@
 #include "Arena.hpp"
 #include "AssetsPlugin.hpp"
 #include "Shapes.hpp"
-#include "components/CameraComponent.hpp"
-#include "components/Renderable.hpp"
-#include "components/Transform.hpp"
 #include "core/Engine.hpp"
 #include "core/PluginBuilder.hpp"
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
+#include "ecs/components/Transform.hpp"
 #include "ecs/time/Time.hpp"
+#include "render/api/components/CameraComponent.hpp"
+#include "render/api/components/Renderable.hpp"
 
 namespace rlss::client {
 

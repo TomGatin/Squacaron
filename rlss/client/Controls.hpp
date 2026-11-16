@@ -11,8 +11,8 @@
 #include <string>
 #include <string_view>
 
-#include "core/services/InputCodes.hpp"
 #include "input/ActionMapping.hpp"
+#include "render/api/InputCodes.hpp"
 
 namespace config {
 class Settings;

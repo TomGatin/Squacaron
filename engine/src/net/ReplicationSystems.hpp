@@ -4,7 +4,6 @@
 #include <cstdint>
 #include <unordered_set>
 
-#include "components/InputBuffer.hpp"
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
 #include "events/EventBus.hpp"
@@ -12,6 +11,7 @@
 #include "net/INetworkService.hpp"
 #include "net/IReplicationCodec.hpp"
 #include "net/SnapshotApplier.hpp"
+#include "net/components/InputBuffer.hpp"
 
 // Systems of the replication plugins, as free functions so that they can run (and be tested) without a plugin.
 namespace ecs::net {

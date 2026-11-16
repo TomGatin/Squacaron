@@ -11,10 +11,10 @@
 #include <cstddef>
 #include <numeric>
 
-#include "components/AnimationComponent.hpp"
-#include "components/Renderable.hpp"
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
+#include "render/api/components/AnimationComponent.hpp"
+#include "render/api/components/Renderable.hpp"
 
 namespace systems {
 

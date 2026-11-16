@@ -13,6 +13,7 @@
 #include <memory>
 #include <optional>
 #include <random>
+#include <system_error>
 #include <thread>
 #include <unordered_map>
 #include <vector>
@@ -89,6 +90,12 @@ class NetworkServer : public INetworkServer {
     /** @brief Waits for the next TCP connection. */
     void accept();
     /**
+     * @brief Handles a failed accept: logs it and calls `accept()` again after `NetworkConfig::acceptRetryDelay`, so a
+     * persistent error (out of file descriptors) does not spin the network thread.
+     * @param ec The error.
+     */
+    void onAcceptError(const std::error_code& ec);
+    /**
      * @brief Tells a new connection the server is full and closes it. It never becomes a peer.
      * @param socket The connection.
      */
@@ -163,6 +170,10 @@ class NetworkServer : public INetworkServer {
 
     /** @brief Timer of `onUdpTick()`. */
     asio::steady_timer _udpTimer;
+    /** @brief Delays the next accept after a failed one. */
+    asio::steady_timer _acceptRetryTimer;
+    /** @brief True while accepts fail: only the first failure of a streak is logged. */
+    bool _acceptFailing = false;
 
     /** @brief Open connections, including those still handshaking. Network thread only. */
     std::unordered_map<PeerId, PeerInfo> _peers;
@@ -172,7 +183,7 @@ class NetworkServer : public INetworkServer {
     std::random_device _random;
 
     /** @brief Events waiting for `poll()`. */
-    EventQueue _events;
+    EventQueue _events{_config.maxQueuedMessages, _counters};
     /** @brief Lifecycle state. */
     std::atomic<State> _state{State::Idle};
 };

@@ -162,7 +162,7 @@ target("test_transport")
     set_kind("binary")
     add_deps("engine_network_asio")
     add_packages("gtest", "asio")
-    add_files("net/TransportTests.cpp")
+    add_files("net/TransportTests.cpp", "net/EventQueueTests.cpp")
     add_tests("test_transport")
 
 target("test_ui_components")

@@ -315,6 +315,29 @@ TEST(PeerGroupConnection, HandsOutTheEventsOfItsPeersOnce) {
     EXPECT_TRUE(group.poll().empty());
 }
 
+TEST(PeerGroupConnection, FloodedPeerStaysAtTheCapAndKeepsItsDisconnect) {
+    FakeServer server;
+    ecs::net::PeerGroupConnection group(server, 3);
+    group.addPeer(1);
+    group.addPeer(2);
+
+    for (std::uint8_t i = 0; i < 10; ++i) {
+        group.push({.type = EventType::Data, .peer = 1, .data = {i}, .channel = Channel::Unreliable});
+    }
+    group.push({.type = EventType::Data, .peer = 2, .data = {42}, .channel = Channel::Unreliable});
+    group.push({.type = EventType::Disconnected, .peer = 1, .data = {}, .channel = Channel::Reliable});
+
+    const auto events = group.poll();
+    ASSERT_EQ(events.size(), 5U) << "3 from the flooding peer, 1 from the other, and the disconnect";
+    EXPECT_EQ(events[2].data, Bytes{2}) << "the oldest messages are kept";
+    EXPECT_EQ(events[3].peer, 2U);
+    EXPECT_EQ(events[4].type, EventType::Disconnected);
+    EXPECT_EQ(group.droppedMessages(), 7U);
+
+    group.push({.type = EventType::Data, .peer = 1, .data = {9}, .channel = Channel::Unreliable});
+    EXPECT_EQ(group.poll().size(), 1U) << "the cap is per poll";
+}
+
 namespace {
 
 /** @brief Transport whose traffic is set by the test. */

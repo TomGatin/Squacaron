@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <cstddef>
 #include <expected>
 #include <functional>
@@ -131,15 +132,33 @@ class Engine {
      */
     void init();
 
-    /**
-     * @brief Runs the continuous main game loop until stopped or window is closed, then shuts down.
-     *
-     * Returns at once if the engine was already shut down.
-     */
-    void run();
+    /** @brief How `run()` paces its loop and when it stops, besides `stop()`. */
+    struct RunOptions {
+        /**
+         * @brief Frames per second of the loop.
+         *
+         * 0 picks: unpaced when a window service is registered (its vsync paces the loop), otherwise one frame per
+         * fixed step (`1 / fixedDeltaTime()`), so a headless program sleeps between frames instead of taking a core.
+         * A negative rate is always unpaced.
+         */
+        double frameRate = 0.0;
+        /** @brief Stop on SIGINT / SIGTERM (Ctrl+C, closing the console on Windows), see `FixedRateLoop`. */
+        bool stopOnSignals = true;
+    };
 
     /**
-     * @brief Signals the main game loop to terminate.
+     * @brief Runs the main loop until `stop()`, a closed window or a stop signal, then shuts down.
+     *
+     * Returns at once if the engine was already shut down.
+     * @param options Pacing and stop conditions.
+     */
+    void run(RunOptions options);
+
+    /** @brief Runs the main loop with the default `RunOptions`: see `run(RunOptions)`. */
+    void run() { run(RunOptions{}); }
+
+    /**
+     * @brief Signals the main game loop to terminate. Thread-safe.
      */
     void stop() noexcept { _running = false; }
 
@@ -195,8 +214,8 @@ class Engine {
     bool _initialized = false;
     /** @brief Flag set by `shutdown()`: plugins are released for good and must not be initialized again. */
     bool _shutdown = false;
-    /** @brief Flag controlling the active game loop execution state. */
-    bool _running = false;
+    /** @brief Flag controlling the active game loop execution state; atomic so `stop()` works from any thread. */
+    std::atomic<bool> _running{false};
 };
 
 }  // namespace engine

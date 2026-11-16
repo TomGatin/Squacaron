@@ -1,6 +1,5 @@
 #pragma once
 
-#include <atomic>
 #include <chrono>
 #include <cstdint>
 #include <memory>
@@ -8,6 +7,7 @@
 
 #include "Lobby.hpp"
 #include "Room.hpp"
+#include "core/FixedRateLoop.hpp"
 #include "level/Level.hpp"
 #include "net/INetworkManager.hpp"
 #include "net/INetworkServer.hpp"
@@ -22,6 +22,8 @@ namespace rtype::server {
  * only times out clients whose UDP channel is open, which happens after the handshake).
  */
 inline constexpr std::chrono::milliseconds HANDSHAKE_TIMEOUT{std::chrono::seconds(5)};
+/** @brief Passes per second of the server loop (network, handshakes, lobby): about one per millisecond. */
+inline constexpr double SERVER_LOOP_RATE = 1000.0;
 
 /**
  * @brief Owns the network and the lobby, and runs the server loop on its thread.
@@ -66,6 +68,9 @@ class ServerManager {
     /** @brief Asks `run()` to return. Thread-safe and signal-safe: it only sets an atomic flag. */
     void stop();
 
+    /** @brief Makes `run()` also return on SIGINT / SIGTERM (Ctrl+C, closing the console on Windows). */
+    void stopOnSignals() noexcept { _loop.stopOnSignals(true); }
+
   private:
     /**
      * @brief Polls the network and dispatches each event.
@@ -99,8 +104,8 @@ class ServerManager {
     std::unordered_map<ClientId, std::chrono::steady_clock::time_point> _pendingHandshakes;
     /** @brief Time a connected client has to send its `Hello`. */
     std::chrono::milliseconds _handshakeTimeout;
-    /** @brief Loop flag, cleared by `stop()`. */
-    std::atomic<bool> _running{false};
+    /** @brief Server loop, about every millisecond so the step jitter stays around 1 ms; ended by `stop()`. */
+    engine::FixedRateLoop _loop{SERVER_LOOP_RATE};
 };
 
 }  // namespace rtype::server

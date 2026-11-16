@@ -3,9 +3,6 @@
  * @brief RLSS server entry point: `rlss_server [port]`.
  */
 
-#include <atomic>
-#include <chrono>
-#include <csignal>
 #include <cstddef>
 #include <cstdint>
 #include <exception>
@@ -13,11 +10,11 @@
 #include <memory>
 #include <optional>
 #include <span>
-#include <thread>
 
 #include "CommandLine.hpp"
 #include "MatchServer.hpp"
 #include "core/ContentRoot.hpp"
+#include "core/FixedRateLoop.hpp"
 #include "log/Logger.hpp"
 #include "net/INetworkServer.hpp"
 #include "net/NetworkFactory.hpp"
@@ -27,14 +24,8 @@ namespace {
 
 constexpr int EXIT_ERROR = 84;
 constexpr const char* LOG_TAG = "server";
-/** @brief Pause between two polls of the transport, so that an idle server does not spin a core. */
-constexpr std::chrono::milliseconds FRAME_SLEEP{1};
-
-// The signal handler cannot take arguments, so it reaches the main loop through a global.
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-std::atomic<bool> g_running{true};
-
-void onSignal(int /*signal*/) { g_running = false; }
+/** @brief Polls of the transport per second: about one per millisecond, without spinning a core. */
+constexpr double MENU_LOOP_RATE = 1000.0;
 
 }  // namespace
 
@@ -59,18 +50,15 @@ int main(int ac, char** av) {
             engine::log::error(LOG_TAG, "cannot listen on port ", *port);
             return EXIT_ERROR;
         }
-        std::signal(SIGINT, onSignal);
-        std::signal(SIGTERM, onSignal);
         engine::log::info(LOG_TAG, rlss::protocol::GAME_TITLE, " server listening on port ", *port);
 
         {
             // The menu runs here; each match runs on its own thread, with its own engine.
             // The scripts are read next to the executable, so the server runs from any working directory.
             rlss::server::MatchServer server(transport, true, engine::contentRoot());
-            while (g_running.load()) {
-                server.update();
-                std::this_thread::sleep_for(FRAME_SLEEP);
-            }
+            engine::FixedRateLoop loop(MENU_LOOP_RATE);
+            loop.stopOnSignals(true);
+            loop.run([&server] { server.update(); });
             engine::log::info(LOG_TAG, "shutting down");
         }
         transport->stop();

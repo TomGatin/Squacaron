@@ -84,7 +84,7 @@ late was counted as missed when the next one came, so it is removed from the cou
 `RTT` and `Missed` also depend on when the server wakes up, not only on the network. Its loops sleep 1 ms between two
 passes, which Windows turns into about 15.6 ms by default: steps would then run up to 15 ms late, adding about 8 ms to
 `RTT` on average, and any wake-up later than one step would merge two steps into one snapshot and count as `Missed`.
-This is why `server/src/main.cpp` holds an `ecs::time::PreciseSleepScope` for the whole run (see
+This is why the server loops run on `engine::FixedRateLoop`, which holds an `ecs::time::PreciseSleepScope` (see
 [Engine Clock](clock.md#sleeping-between-two-passes)). The client needs nothing: its raylib window asks for the same
 timer period.
 

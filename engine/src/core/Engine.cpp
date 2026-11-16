@@ -13,6 +13,7 @@
 #include <utility>
 #include <vector>
 
+#include "core/FixedRateLoop.hpp"
 #include "core/IPlugin.hpp"
 #include "core/plugins/CorePlugin.hpp"
 #include "core/plugins/TimePlugin.hpp"
@@ -67,7 +68,7 @@ void Engine::init() {
     _initialized = true;
 }
 
-void Engine::run() {
+void Engine::run(const RunOptions options) {
     if (_shutdown) {
         return;
     }
@@ -75,13 +76,20 @@ void Engine::run() {
         init();
     }
 
-    _running = true;
+    double frameRate = options.frameRate;
+    if (frameRate == 0.0) {
+        const bool windowed = _mediator.getService<IWindowService>().has_value();
+        frameRate = windowed || _fixedDt <= 0.0F ? -1.0 : 1.0 / static_cast<double>(_fixedDt);
+    }
+    FixedRateLoop loop(frameRate);
+    loop.stopOnSignals(options.stopOnSignals);
 
-    while (_running) {
+    _running = true;
+    loop.run([&] {
         const auto windowService = _mediator.getService<IWindowService>();
-        if (windowService && windowService->get().shouldClose()) {
-            _running = false;
-            break;
+        if (!_running || (windowService && windowService->get().shouldClose())) {
+            loop.stop();
+            return;
         }
 
         advance();
@@ -89,7 +97,8 @@ void Engine::run() {
         for (IPlugin* plugin : _pluginGraph.executionOrder()) {
             plugin->render(*this);
         }
-    }
+    });
+    _running = false;
 
     shutdown();
 }

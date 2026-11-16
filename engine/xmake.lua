@@ -13,6 +13,7 @@ if standalone then
 
     option("graphics", {default = true, showmenu = true, description = "Build the render and audio modules (raylib)"})
     option("tests", {default = false, showmenu = true, description = "Build the engine tests"})
+    option("benchmarks", {default = false, showmenu = true, description = "Build the ECS benchmarks (Google Benchmark)"})
 
     add_requires("asio", "wren", "box2d v2.4.2", "toml++ v3.4.0")
     if has_config("graphics") then
@@ -20,6 +21,9 @@ if standalone then
     end
     if has_config("tests") then
         add_requires("gtest")
+    end
+    if has_config("benchmarks") then
+        add_requires("benchmark")
     end
 
     if is_plat("windows") then

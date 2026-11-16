@@ -48,7 +48,8 @@ block. R-Type consumes it as a library, and a **second, different sample game** 
 - `rlss/` — second sample game (2D car football): `shared/` (protocol, arena), `game/` (codec, Wren bindings),
   `server/`, `client/`, `scripts/` (Wren car physics, read from the content root: the executable's directory); see `docs/rlss/index.md`
 - `scripts/` — Wren scripts (`scripts/core/*.wren`) + tooling scripts
-- `tests/` — GoogleTest binaries, one `target` per suite in `tests/xmake.lua`
+- `engine/tests/` — engine GoogleTest suites, one `target` per suite in `engine/tests/xmake.lua`
+- `tests/` — R-Type and RLSS GoogleTest suites, one `target` per suite in `tests/xmake.lua`
 - `docs/` — architecture, protocol, comparative study, accessibility, dev guides
 
 ## Architecture rules (Track #1)
@@ -82,7 +83,7 @@ block. R-Type consumes it as a library, and a **second, different sample game** 
 - `#pragma once`, namespaces per module (`ecs`, ...), `detail` namespace for internals.
 - Doxygen `/** @brief ... */` on every public declaration in `engine/src` (≥80% coverage enforced).
 - New source file → make sure it is matched by the target's `add_files` glob; new test suite → add a target in
-  `tests/xmake.lua` with `add_tests`.
+  `engine/tests/xmake.lua` (engine) or `tests/xmake.lua` (games) with `add_tests`.
 - Commits: Conventional Commits (`feat(ecs): ...`, `fix(network): ...`), see `CONTRIBUTING.md`.
   Work on `feat/<Name>` branches, merge through PRs into `main`.
 - All documentation, comments, and commit messages are written in English.

@@ -6,7 +6,9 @@ mutations, entity recycling, and memory checks in CI.
 
 ## Inventory
 
-30 GoogleTest binaries, 569 test cases, declared in `tests/xmake.lua`, all run by `xmake test`.
+66 GoogleTest binaries, all run by `xmake test`: 42 engine suites declared in `engine/tests/xmake.lua` (36 without
+`graphics`), which also run with the engine alone (`cd engine && xmake test -P .`), and 24 R-Type and RLSS suites
+declared in `tests/xmake.lua`. The table below is the inventory of the original audit.
 
 | Area | Suites | Cases |
 |---|---|---|
@@ -26,7 +28,7 @@ The `bench_ecs` binary is not a test: it measures and asserts nothing. See [ECS 
 
 ### What already existed
 
-`tests/test_ecs.cpp` already covered the behaviour of one entity at a time:
+`engine/tests/test_ecs.cpp` already covered the behaviour of one entity at a time:
 
 - a killed slot is reused with a new generation, and the generation wraps around;
 - a stale handle (same slot, older generation) can't read, write or kill the slot's new occupant;
@@ -39,7 +41,7 @@ invariants of the containers.
 
 ### What was added
 
-`tests/ecs/`, target `test_ecs_stress`:
+`engine/tests/ecs/`, target `test_ecs_stress`:
 
 | Test | What it proves |
 |---|---|
@@ -88,7 +90,7 @@ it.
 
 ### Test harness: `test_physics` under ASan
 
-`tests/physics/PhysicsSystemTests.cpp` replaces the global `operator new` and `operator delete` to count allocations,
+`engine/tests/physics/PhysicsSystemTests.cpp` replaces the global `operator new` and `operator delete` to count allocations,
 but not the `std::nothrow` overloads. GoogleTest allocates with `new (std::nothrow)` and the test frees with
 `std::free`, which ASan reports as an `alloc-dealloc-mismatch`. Outside ASan both end up in `malloc` and `free`, so
 there is no effect at runtime. The fix is to also replace the `nothrow` overloads. The physics engine itself is not
@@ -96,7 +98,7 @@ involved.
 
 ### Smaller points
 
-- `tests/test_ecs.cpp` defines `main()` in the middle of the file, with tests after it.
+- `engine/tests/test_ecs.cpp` defines `main()` in the middle of the file, with tests after it.
 - `ECS.HighThroughputIteration` checks one pass over 10,000 entities for correctness but measures nothing. The
   benchmark now does the measuring.
 - The sanitizers only run on the ECS suites in CI. Running the whole suite under ASan locally takes 35 s, so it could

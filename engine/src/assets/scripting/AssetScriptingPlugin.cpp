@@ -9,6 +9,7 @@
 #include <string>
 #include <string_view>
 #include <utility>
+#include <vector>
 
 #include "assets/AssetKinds.hpp"
 #include "assets/AssetManager.hpp"
@@ -20,8 +21,8 @@
 #include "ecs/Registry.hpp"
 #include "scripting/ForeignCall.hpp"
 #include "scripting/ScriptPlugin.hpp"
+#include "scripting/ScriptSystem.hpp"
 #include "scripting/WrenVM.hpp"
-#include "systems/script/ScriptSystem.hpp"
 
 namespace assets {
 
@@ -39,7 +40,7 @@ constexpr double MAX_STEP_LOADS = 1'000'000.0;
  * @return The manager, or null when no `AssetPlugin` runs.
  */
 AssetManager* managerOf(const scripting::ForeignCall& call) {
-    auto* scripts = call.userData<systems::ScriptSystem>();
+    auto* scripts = call.userData<scripting::ScriptSystem>();
     if (scripts == nullptr || scripts->getRegistry() == nullptr ||
         !scripts->getRegistry()->hasResource<AssetManager>()) {
         return nullptr;
@@ -57,7 +58,7 @@ AssetManager* managerOf(const scripting::ForeignCall& call) {
  * @return True for a call from another VM than the script system's live one.
  */
 bool isStagingCall(const scripting::ForeignCall& call) {
-    auto* scripts = call.userData<systems::ScriptSystem>();
+    auto* scripts = call.userData<scripting::ScriptSystem>();
     return scripts != nullptr && call.raw() != scripts->getVm().raw();
 }
 
@@ -393,28 +394,12 @@ void AssetScriptingPlugin::build(engine::PluginBuilder& builder) {
 }
 
 void AssetScriptingPlugin::init(engine::Engine& engine) {
-    systems::ScriptSystem& scripts = engine.getPlugin<scripting::ScriptPlugin>().scriptSystem();
+    scripting::ScriptSystem& scripts = engine.getPlugin<scripting::ScriptPlugin>().scriptSystem();
     _scripts = &scripts;
-    scripts.addModuleSource(std::string(ASSETS_MODULE_NAME), std::string(ASSETS_MODULE_SOURCE));
-    bindAssetsModule(scripts.getVm());
-    scripts.addBinderReplay(&bindAssetsModule);
+    _registry = &engine.registry();
+    scripts.addExtension(*this);
 
-    ecs::Registry& registry = engine.registry();
-    auto& manager = registry.getResource<AssetManager>();
-    // A hot reload runs every module again: the declarations they no longer make are dropped at the end.
-    _resetListener = scripts.addVmResetListener([&registry, &scripts](const systems::VmResetPhase phase) {
-        if (!registry.hasResource<AssetManager>()) {
-            return;
-        }
-        auto& assets = registry.getResource<AssetManager>();
-        if (phase == systems::VmResetPhase::Before) {
-            assets.beginScriptDeclarations(true);
-        } else {
-            // A module that failed to run again did not reach all its declarations: dropping them would unload
-            // assets still in use, so nothing is replaced then.
-            assets.endScriptDeclarations(scripts.lastReplaySucceeded());
-        }
-    });
+    auto& manager = _registry->getResource<AssetManager>();
 
     manager.beginScriptDeclarations(false);
     _declarationsLoaded = _declarationModule.empty() || scripts.loadModule(_declarationModule);
@@ -425,11 +410,29 @@ void AssetScriptingPlugin::init(engine::Engine& engine) {
 }
 
 void AssetScriptingPlugin::shutdown(engine::Engine& /*engine*/) {
-    if (_scripts != nullptr && _resetListener) {
-        _scripts->removeVmResetListener(*_resetListener);
+    if (_scripts != nullptr) {
+        _scripts->removeExtension(*this);
     }
-    _resetListener.reset();
     _scripts = nullptr;
+    _registry = nullptr;
+}
+
+std::vector<scripting::ModuleSource> AssetScriptingPlugin::modules() const {
+    return {{.name = std::string(ASSETS_MODULE_NAME), .source = std::string(ASSETS_MODULE_SOURCE)}};
+}
+
+void AssetScriptingPlugin::bind(scripting::WrenVM& vm) { bindAssetsModule(vm); }
+
+void AssetScriptingPlugin::onVmReset(const scripting::VmResetPhase phase) {
+    if (_registry == nullptr || _scripts == nullptr || !_registry->hasResource<AssetManager>()) {
+        return;
+    }
+    auto& assets = _registry->getResource<AssetManager>();
+    if (phase == scripting::VmResetPhase::Before) {
+        assets.beginScriptDeclarations(true);
+    } else {
+        assets.endScriptDeclarations(_scripts->lastReplaySucceeded());
+    }
 }
 
 }  // namespace assets

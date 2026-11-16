@@ -6,7 +6,7 @@
 #pragma once
 #include <string>
 
-namespace ecs {
+namespace scripting {
 
 /**
  * @brief Component attaching a Wren script class instance to an ECS entity.
@@ -37,4 +37,4 @@ struct ScriptComponent {
     bool initialized = false;
 };
 
-}  // namespace ecs
+}  // namespace scripting

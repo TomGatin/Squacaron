@@ -43,8 +43,8 @@
 #include "protocol/Messages.hpp"
 #include "protocol/Protocol.hpp"
 #include "scripting/ScriptPlugin.hpp"
+#include "scripting/ScriptSystem.hpp"
 #include "systems/physics/PhysicsPlugin.hpp"
-#include "systems/script/ScriptSystem.hpp"
 #include "timeline/TimelinePlugin.hpp"
 
 namespace rtype::server {
@@ -105,7 +105,7 @@ Room::Room(ecs::net::INetworkServer& network, const std::uint8_t maxPlayers, con
     // What a script spawns (a boss's missiles, its escort) is replicated like the rest of the game.
     ::prefabs::PrefabManager& scriptPrefabs = _engine.getPlugin<prefabs::PrefabPlugin>().manager();
     gameplay::registerScriptPrefabs(scriptPrefabs);
-    systems::ScriptSystem& scripts = _engine.getPlugin<scripting::ScriptPlugin>().scriptSystem();
+    scripting::ScriptSystem& scripts = _engine.getPlugin<scripting::ScriptPlugin>().scriptSystem();
     scripts.setPrefabManager(&scriptPrefabs);
     // Boss scripts are named relative to the data directory, which they cannot leave.
     scripts.setScriptRoot(level != nullptr ? level->dataRoot : std::filesystem::path{});

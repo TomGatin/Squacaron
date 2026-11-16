@@ -249,7 +249,7 @@ class PlayerController {
 }
 ```
 
-The C++ glue in [`ScriptSystemBindings.cpp`](../../engine/src/systems/script/ScriptSystemBindings.cpp) locates the target entity's `input::InputState` component matching the requested `playerIndex`.
+The C++ glue in [`InputBindings.cpp`](../../engine/src/scripting/bindings/InputBindings.cpp) locates the target entity's `input::InputState` component matching the requested `playerIndex`.
 
 ---
 

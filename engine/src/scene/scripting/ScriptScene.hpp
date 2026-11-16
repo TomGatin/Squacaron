@@ -12,7 +12,7 @@
 #include "scene/SceneTypes.hpp"
 #include "scripting/detail/WrenTypes.hpp"
 
-namespace systems {
+namespace scripting {
 class ScriptSystem;
 }
 
@@ -53,7 +53,7 @@ class ScriptScene final : public IScene {
      * @param scripts Script system running the class; must outlive the scene's time on the stack.
      */
     ScriptScene(std::string name, std::string module, std::string className, ScriptSceneOptions options,
-                systems::ScriptSystem& scripts);
+                scripting::ScriptSystem& scripts);
 
     /** @brief Destructor. */
     ~ScriptScene() override = default;
@@ -153,7 +153,7 @@ class ScriptScene final : public IScene {
     /** @brief Mode and per-frame hooks. */
     ScriptSceneOptions _options;
     /** @brief Script system running the class. */
-    systems::ScriptSystem* _scripts;
+    scripting::ScriptSystem* _scripts;
     /** @brief Id of the scene, known from the first enter. */
     SceneId _id = INVALID_SCENE;
     /** @brief `true` between enter and exit. */

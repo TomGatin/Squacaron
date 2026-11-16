@@ -16,7 +16,6 @@
 #include "collision/GameCollisionEvents.hpp"
 #include "components/Replicated.hpp"
 #include "components/RigidBody2D.hpp"
-#include "components/ScriptComponent.hpp"
 #include "components/Transform.hpp"
 #include "core/Engine.hpp"
 #include "ecs/Entity.hpp"
@@ -51,9 +50,10 @@
 #include "prefabs/player_ship/PlayerShip.hpp"
 #include "prefabs/power_up/PowerUp.hpp"
 #include "protocol/Messages.hpp"
+#include "scripting/ScriptComponent.hpp"
 #include "scripting/ScriptPlugin.hpp"
+#include "scripting/ScriptSystem.hpp"
 #include "systems/physics/PhysicsPlugin.hpp"
-#include "systems/script/ScriptSystem.hpp"
 #include "timeline/TimelineEvent.hpp"
 #include "timeline/TimelinePlugin.hpp"
 
@@ -808,8 +808,8 @@ TEST_F(BossFightTest, BossGetsTheScriptOfItsEvent) {
     run(1.1F);
     const auto spawned = bosses();
     ASSERT_EQ(spawned.size(), 1U);
-    ASSERT_TRUE(registry().hasComponent<ecs::ScriptComponent>(spawned.front()));
-    const auto& script = registry().getComponents<ecs::ScriptComponent>().get(spawned.front());
+    ASSERT_TRUE(registry().hasComponent<scripting::ScriptComponent>(spawned.front()));
+    const auto& script = registry().getComponents<scripting::ScriptComponent>().get(spawned.front());
     EXPECT_EQ(script.moduleName, "scripts/Boss");
     EXPECT_EQ(script.className, "Boss");
     EXPECT_TRUE(script.hasUpdate);
@@ -1114,8 +1114,10 @@ class ScriptedBossTest : public ::testing::Test {
         auto built = std::make_shared<level::Level>();
         built->dataRoot = scriptPath.parent_path();
         built->scrollSpeed = LEVEL_SPEED;
-        prefabs::PrefabParams params{
-            {"prefab", std::string("boss_core")}, {"x", 900.0}, {"y", 360.0}, {"script", scriptPath.filename().generic_string()}};
+        prefabs::PrefabParams params{{"prefab", std::string("boss_core")},
+                                     {"x", 900.0},
+                                     {"y", 360.0},
+                                     {"script", scriptPath.filename().generic_string()}};
         params.merge(extra);
         built->timeline.add({.position = 0.0F, .type = std::string(level::EVENT_BOSS), .params = std::move(params)});
 
@@ -1129,7 +1131,7 @@ class ScriptedBossTest : public ::testing::Test {
         engine.init();
         prefabs::PrefabManager& manager = engine.getPlugin<prefabs::PrefabPlugin>().manager();
         rtype::server::gameplay::registerScriptPrefabs(manager);
-        systems::ScriptSystem& scripts = engine.getPlugin<scripting::ScriptPlugin>().scriptSystem();
+        scripting::ScriptSystem& scripts = engine.getPlugin<scripting::ScriptPlugin>().scriptSystem();
         scripts.setPrefabManager(&manager);
         scripts.setScriptRoot(built->dataRoot);
         bound = rtype::server::gameplay::bindScriptComponents(scripts);

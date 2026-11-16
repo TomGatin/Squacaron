@@ -79,7 +79,7 @@ The engine is orchestrated by the central `engine::Engine` class and partitioned
 - **Physics Subsystem (`PhysicsPlugin`, Box2D):** Rigid body simulation, kinematic synchronization with ECS Transforms, and collider components.
 - **Event Bus (`EventBus`):** Type-safe synchronous pub-sub event dispatch connecting decoupled systems.
 - **Prefab System (`PrefabPlugin`, `PrefabManager`):** Named entity templates instantiated safely through deferred command buffers.
-- **Scripting Subsystem (`ScriptPlugin`, `ScriptSystem` & `WrenVM`):** Embeds Wren for rapid gameplay prototyping. Supports C++23 member property reflection (`ComponentBinder`), selective `update(dt)` polling, coroutine fibers (`Engine.wait`), deferred structural mutations (`CommandBuffer`), and non-intrusive live hot-reloading with staging validation and lifecycle hooks (`onSpawn`, `onReload`, `onDestroy`).
+- **Scripting Subsystem (`ScriptPlugin`, `ScriptSystem` & `WrenVM`):** Embeds Wren for rapid gameplay prototyping. Supports C++23 member property reflection (`ComponentBinder`), selective `update(dt)` polling, coroutine fibers (`Engine.wait`), deferred structural mutations (`CommandBuffer`), and non-intrusive live hot-reloading with staging validation and lifecycle hooks (`onSpawn`, `onReload`, `onDestroy`). Everything lives in `engine/src/scripting/`, namespace `scripting`: `ScriptSystem` keeps the lifecycle of the scripts and delegates to `FiberScheduler` (`Engine.wait`), `ScriptHotReloader` (watched files, staging checks, module replay) and `ScriptErrorTracker` (rate-limited errors, disabling). Bridges (scenes, assets) plug in through one interface, `IScriptExtension`. The system is neither copyable nor movable: `ScriptPlugin` owns it.
 
 ## 4. Decoupling & Modularity
 

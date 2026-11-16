@@ -1,15 +1,15 @@
 /**
  * @file ScriptSystem.tpp
- * @brief Template implementation for ScriptSystem event forwarding subscriptions.
+ * @brief Template implementation of the ScriptSystem event forwarding.
  */
 
 #pragma once
 #include <string>
 #include <utility>
 
-#include "systems/script/ScriptSystem.hpp"
+#include "scripting/ScriptSystem.hpp"
 
-namespace systems {
+namespace scripting {
 
 template <typename EventType, typename ArgExtractor>
 void ScriptSystem::registerEventForwarding(ecs::EventBus& bus, std::string const& methodName,
@@ -18,7 +18,6 @@ void ScriptSystem::registerEventForwarding(ecs::EventBus& bus, std::string const
     if (!_cachedMethodHandles.contains(signature)) {
         _cachedMethodHandles[signature] = _vm.makeCallHandle(signature);
     }
-
     bus.subscribe<EventType>(
         [this, signature, extractor = std::forward<ArgExtractor>(extractor)](const EventType& event) {
             auto [targetEntity, argEntity] = extractor(event);
@@ -26,4 +25,4 @@ void ScriptSystem::registerEventForwarding(ecs::EventBus& bus, std::string const
         });
 }
 
-}  // namespace systems
+}  // namespace scripting

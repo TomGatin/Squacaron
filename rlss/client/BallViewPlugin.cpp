@@ -9,7 +9,6 @@
 #include "CarViewPlugin.hpp"
 #include "Shapes.hpp"
 #include "components/Renderable.hpp"
-#include "components/ScriptComponent.hpp"
 #include "components/Tag.hpp"
 #include "components/Transform.hpp"
 #include "core/Engine.hpp"
@@ -19,6 +18,7 @@
 #include "game/Components.hpp"
 #include "net/ClientReplicationPlugin.hpp"
 #include "net/ReplicationEvents.hpp"
+#include "scripting/ScriptComponent.hpp"
 #include "scripting/ScriptPlugin.hpp"
 
 namespace rlss::client {
@@ -95,7 +95,7 @@ void BallViewPlugin::init(engine::Engine& engine) {
                                         ballScale, WHITE, LAYER_BALL));
             pieces.push_back(spawnPiece(registry, game::BallPart{.parent = event.entity}, assets.ballShade, ballScale,
                                         WHITE, LAYER_SHADE));
-            registry.addComponent(event.entity, ecs::ScriptComponent{
+            registry.addComponent(event.entity, scripting::ScriptComponent{
                                                     .moduleName = std::string(game::BALL_VIEW_SCRIPT_MODULE),
                                                     .className = "BallView",
                                                     .hasUpdate = true,

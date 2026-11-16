@@ -9,7 +9,6 @@
 
 #include "Arena.hpp"
 #include "components/InputBuffer.hpp"
-#include "components/ScriptComponent.hpp"
 #include "components/Tag.hpp"
 #include "components/Transform.hpp"
 #include "core/Engine.hpp"
@@ -27,6 +26,7 @@
 #include "net/ReplicationSystems.hpp"
 #include "net/ServerReplicationPlugin.hpp"
 #include "protocol/Protocol.hpp"
+#include "scripting/ScriptComponent.hpp"
 #include "scripting/ScriptPlugin.hpp"
 
 namespace rlss::server {
@@ -57,7 +57,7 @@ void CarSimulationPlugin::init(engine::Engine& engine) {
                                   });
     registry.addComponent(_arena, game::MatchState{});
     // The match script steps every car and the ball together.
-    registry.addComponent(_arena, ecs::ScriptComponent{
+    registry.addComponent(_arena, scripting::ScriptComponent{
                                       .moduleName = std::string(game::MATCH_SCRIPT_MODULE),
                                       .className = "Match",
                                       .hasUpdate = true,
@@ -69,7 +69,7 @@ void CarSimulationPlugin::init(engine::Engine& engine) {
                                      .x = (arena::LEFT + arena::RIGHT) / 2.0F,
                                      .y = (arena::TOP + arena::BOTTOM) / 2.0F,
                                  });
-    registry.addComponent(_ball, ecs::ScriptComponent{
+    registry.addComponent(_ball, scripting::ScriptComponent{
                                      .moduleName = std::string(game::BALL_SCRIPT_MODULE),
                                      .className = "Ball",
                                  });

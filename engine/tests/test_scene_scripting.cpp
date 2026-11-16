@@ -7,7 +7,6 @@
 #include <string_view>
 #include <system_error>
 
-#include "components/ScriptComponent.hpp"
 #include "core/Engine.hpp"
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
@@ -19,9 +18,10 @@
 #include "scene/SceneTypes.hpp"
 #include "scene/scripting/SceneScriptingPlugin.hpp"
 #include "scene/scripting/ScriptScene.hpp"
+#include "scripting/ScriptComponent.hpp"
 #include "scripting/ScriptPlugin.hpp"
+#include "scripting/ScriptSystem.hpp"
 #include "scripting/WrenVM.hpp"
-#include "systems/script/ScriptSystem.hpp"
 
 namespace {
 
@@ -128,7 +128,7 @@ class SceneScriptingTest : public ::testing::Test {
     }
 
     scene::SceneManager& manager() { return engine.getPlugin<scene::ScenePlugin>().manager(); }
-    systems::ScriptSystem& scripts() { return engine.getPlugin<scripting::ScriptPlugin>().scriptSystem(); }
+    scripting::ScriptSystem& scripts() { return engine.getPlugin<scripting::ScriptPlugin>().scriptSystem(); }
 
     /** @brief Runs Wren code in a fresh module, returning whether it succeeded. */
     bool run(std::string_view code) {
@@ -246,7 +246,7 @@ class Spawner {
     frame();
     const ecs::Entity entity = manager().context(game).spawn();
     engine.registry().addComponent(entity,
-                                   ecs::ScriptComponent{.moduleName = spawner.module(), .className = "Spawner"});
+                                   scripting::ScriptComponent{.moduleName = spawner.module(), .className = "Spawner"});
     frame();
     frame();
     ASSERT_EQ(countDots(), 1);

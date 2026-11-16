@@ -26,7 +26,7 @@ block. R-Type consumes it as a library, and a **second, different sample game** 
 
 - `engine/src/` — the engine, split into link-time modules (one static lib each):
   `engine_core` (ecs/), `engine_time` (ecs/time/), `engine_events` (events/, header-only),
-  `engine_scripting` (scripting/, systems/script/), `engine_physics` (systems/physics/),
+  `engine_scripting` (scripting/), `engine_physics` (systems/physics/),
   `engine_network` (net/: transport interfaces, `NetworkConfig`, `NetworkPlugin`, replication plugins — no asio),
   `engine_network_asio` (net/asio/: asio transport behind `net/NetworkFactory.hpp`),
   `engine_metrics` (metrics/), `engine_metrics_overlay` (metrics/overlay/), `engine_network_metrics` (net/metrics/),

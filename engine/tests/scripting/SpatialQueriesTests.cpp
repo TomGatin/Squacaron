@@ -5,7 +5,6 @@
 #include <string>
 #include <vector>
 
-#include "components/ScriptComponent.hpp"
 #include "components/Tag.hpp"
 #include "components/Transform.hpp"
 #include "ecs/Entity.hpp"
@@ -13,8 +12,9 @@
 #include "ecs/SpatialQueries.hpp"
 #include "events/EventBus.hpp"
 #include "scripting/ComponentBinder.hpp"
+#include "scripting/ScriptComponent.hpp"
+#include "scripting/ScriptSystem.hpp"
 #include "scripting/WrenVM.hpp"
-#include "systems/script/ScriptSystem.hpp"
 
 namespace {
 
@@ -34,7 +34,7 @@ class SpatialQueries : public ::testing::Test {
     void SetUp() override {
         registry.registerComponent<ecs::Tag>();
         registry.registerComponent<ecs::Transform>();
-        registry.registerComponent<ecs::ScriptComponent>();
+        registry.registerComponent<scripting::ScriptComponent>();
     }
 
     ecs::Registry registry;
@@ -85,7 +85,7 @@ class Probe {
     }
 
     ecs::EventBus bus;
-    systems::ScriptSystem scripts;
+    scripting::ScriptSystem scripts;
 
   private:
     void setArg(int slot, double value) { wrenSetSlotDouble(scripts.getVm().raw(), slot, value); }
@@ -253,8 +253,8 @@ class HomingMissile {
     ecs::Entity const closer = spawnAt(registry, 100, 100, "enemy");
     ecs::Entity const farther = spawnAt(registry, -400, 0, "enemy");
     ecs::Entity const missile = spawnAt(registry, 0, 0, "missile");
-    registry.addComponent<ecs::ScriptComponent>(
-        missile, ecs::ScriptComponent{
+    registry.addComponent<scripting::ScriptComponent>(
+        missile, scripting::ScriptComponent{
                      .moduleName = "homing", .className = "HomingMissile", .hasUpdate = true, .initialized = false});
 
     auto distanceTo = [&](ecs::Entity target) {

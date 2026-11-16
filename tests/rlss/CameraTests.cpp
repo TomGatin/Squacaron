@@ -10,14 +10,14 @@
 
 #include "Arena.hpp"
 #include "components/CameraComponent.hpp"
-#include "components/ScriptComponent.hpp"
 #include "components/Transform.hpp"
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
 #include "events/EventBus.hpp"
 #include "game/Components.hpp"
 #include "game/ScriptBindings.hpp"
-#include "systems/script/ScriptSystem.hpp"
+#include "scripting/ScriptComponent.hpp"
+#include "scripting/ScriptSystem.hpp"
 
 namespace {
 
@@ -54,7 +54,7 @@ class CameraDirector : public ::testing::Test {
                                             .boundsRight = BOUNDS_RIGHT,
                                             .boundsBottom = BOUNDS_BOTTOM,
                                         });
-        _registry.addComponent(_camera, ecs::ScriptComponent{
+        _registry.addComponent(_camera, scripting::ScriptComponent{
                                             .moduleName = std::string(game::CAMERA_SCRIPT_MODULE),
                                             .className = "CameraDirector",
                                             .hasUpdate = true,
@@ -105,7 +105,7 @@ class CameraDirector : public ::testing::Test {
 
     ecs::Registry _registry;
     ecs::EventBus _bus;
-    systems::ScriptSystem _scripts;
+    scripting::ScriptSystem _scripts;
     ecs::Entity _car = 0;
     ecs::Entity _ball = 0;
     ecs::Entity _camera = 0;

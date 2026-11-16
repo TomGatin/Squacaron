@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "systems/script/ScriptSystem.hpp"
+#include "scripting/ScriptSystem.hpp"
 
 namespace rtype::server::gameplay {
 
@@ -44,6 +44,6 @@ inline constexpr double MIN_AIMED_SHOT_SPEED = 50.0;
  * @param scripts Script system of the room.
  * @return True if the binding was loaded in the room VM.
  */
-bool bindScriptComponents(systems::ScriptSystem& scripts);
+bool bindScriptComponents(scripting::ScriptSystem& scripts);
 
 }  // namespace rtype::server::gameplay

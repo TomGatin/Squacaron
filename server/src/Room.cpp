@@ -1,7 +1,6 @@
 #include "Room.hpp"
 
 #include <algorithm>
-#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <exception>
@@ -51,10 +50,6 @@
 namespace rtype::server {
 
 namespace {
-
-// Sleep between two iterations of a room's thread. Short enough to keep the step jitter around 1 ms, long enough not to
-// burn a core.
-constexpr auto IDLE_SLEEP = std::chrono::milliseconds(1);
 
 /**
  * @brief Sends a message to every player of a room on the reliable channel (TCP).
@@ -121,7 +116,7 @@ Room::Room(ecs::net::INetworkServer& network, const std::uint8_t maxPlayers, con
 }
 
 Room::~Room() {
-    _stopping = true;
+    _loop.stop();
     if (_thread.joinable()) {
         _thread.join();
     }
@@ -206,10 +201,7 @@ std::size_t Room::advance() {
 void Room::runInBackground() {
     _thread = std::thread([this] {
         try {
-            while (!_stopping.load()) {
-                advance();
-                std::this_thread::sleep_for(IDLE_SLEEP);
-            }
+            _loop.run([this] { advance(); });
         } catch (const std::exception& error) {
             engine::log::error(LOG_TAG, "room stopped by an error in its simulation: ", error.what());
             broadcastReliable(*_connection, protocol::GameOver{.reason = protocol::GameOverReason::ServerShutdown});

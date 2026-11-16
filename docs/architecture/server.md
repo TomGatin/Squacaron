@@ -19,8 +19,10 @@ entities does not slow down the others. The mutex of a room is only contended wh
 then waits for the step in progress. An exception in a simulation stops that room only.
 See [Network Architecture](network.md#6-threading-model).
 
-The server thread and the room threads sleep 1 ms between two passes. `main()` holds an `ecs::time::PreciseSleepScope`
-for the whole run so that this stays true on Windows, where a sleep lasts about 15.6 ms by default. See
+The server thread and the room threads run on `engine::FixedRateLoop` at 1000 passes per second (`SERVER_LOOP_RATE`,
+`ROOM_LOOP_RATE`): they sleep until the next pass instead of spinning. The loop holds an `ecs::time::PreciseSleepScope`,
+so this stays true on Windows, where a sleep lasts about 15.6 ms by default. Ctrl+C and SIGTERM stop the server loop
+(`ServerManager::stopOnSignals()`). See
 [Engine Clock — Sleeping between two passes](clock.md#sleeping-between-two-passes).
 
 ## `ServerManager`

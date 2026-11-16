@@ -119,7 +119,7 @@ void ScriptScene::callHook(const scripting::detail::UniqueWrenHandle& hook) {
     vm.ensureSlots(2);
     vm.getVariable(SCENE_MODULE_NAME, HOOKS_CLASS, 0);
     vm.setSlot(1, _instance.get());
-    if (vm.call(hook.get()) != WREN_RESULT_SUCCESS) {
+    if (vm.call(hook.get()) != scripting::CallResult::Success) {
         std::cerr << "[ScriptScene] A hook of scene '" << _name << "' failed\n";
     }
 }
@@ -129,7 +129,7 @@ void ScriptScene::callStep(const scripting::detail::UniqueWrenHandle& method, fl
         return;
     }
     const scripting::OwnerScope owner(*_scripts, sceneOwner(_id));
-    if (_scripts->getVm().call(method, _instance.get(), static_cast<double>(dt)) != WREN_RESULT_SUCCESS) {
+    if (_scripts->getVm().call(method, _instance.get(), static_cast<double>(dt)) != scripting::CallResult::Success) {
         std::cerr << "[ScriptScene] update of scene '" << _name << "' failed\n";
     }
 }

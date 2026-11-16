@@ -37,8 +37,8 @@ void ScriptSystem::invokeEntityMethod(ecs::Entity target, std::string const& sig
     if (_vm.hasVariable("core/Entity", "Entity")) {
         argObj = _vm.newInstanceWithHandle(_newHandle, "core/Entity", "Entity", arg);
     }
-    WrenInterpretResult const res = argObj ? _vm.call(itMethod->second, itInst->second.get(), argObj.get())
-                                           : _vm.call(itMethod->second, itInst->second.get(), arg);
+    CallResult const res = argObj ? _vm.call(itMethod->second, itInst->second.get(), argObj.get())
+                                  : _vm.call(itMethod->second, itInst->second.get(), arg);
     recordResult(target, res, signature);
 }
 

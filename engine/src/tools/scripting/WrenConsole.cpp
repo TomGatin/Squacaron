@@ -5,7 +5,6 @@
 #include <utility>
 
 #include "scripting/WrenVM.hpp"
-#include "scripting/detail/WrenApi.hpp"
 #include "tools/console/CommandContext.hpp"
 
 namespace tools {
@@ -19,9 +18,9 @@ WrenConsole::Outcome WrenConsole::interpret(std::string_view module, std::string
         HandlerScope(scripting::WrenVM& vm, Outcome& outcome)
             : _vm(&vm), _write(vm.writeHandler()), _error(vm.errorHandler()) {
             vm.setWriteHandler([&outcome](std::string_view text) { outcome.output += text; });
-            vm.setErrorHandler([&outcome](WrenErrorType type, std::string_view /*module*/, int /*line*/,
+            vm.setErrorHandler([&outcome](scripting::ScriptErrorKind type, std::string_view /*module*/, int /*line*/,
                                           std::string_view /*message*/) {
-                outcome.compileError = outcome.compileError || type == WREN_ERROR_COMPILE;
+                outcome.compileError = outcome.compileError || type == scripting::ScriptErrorKind::Compile;
             });
         }
         ~HandlerScope() {

@@ -7,7 +7,7 @@
 #include <optional>
 #include <string_view>
 
-#include "scripting/detail/WrenApi.hpp"  // IWYU pragma: export
+#include "scripting/detail/WrenFwd.hpp"  // IWYU pragma: export
 
 namespace scripting {
 
@@ -22,13 +22,13 @@ class WrenVM;
 class ForeignCall {
   public:
     /**
-     * @brief Constructs a ForeignCall wrapping a raw Wren VM instance.
-     * @param vm Raw Wren VM pointer.
+     * @brief Constructs a ForeignCall over the VM a foreign method received.
+     * @param vm The VM.
      */
-    explicit ForeignCall(::WrenVM* vm) noexcept : _vm(vm) {}
+    explicit ForeignCall(NativeVm* vm) noexcept : _vm(vm) {}
 
-    /** @brief Returns the raw Wren VM pointer. */
-    [[nodiscard]] ::WrenVM* raw() const noexcept { return _vm; }
+    /** @brief Returns the VM, opaque. */
+    [[nodiscard]] NativeVm* raw() const noexcept { return _vm; }
 
     /** @brief Returns a pointer to the enclosing C++ WrenVM facade. */
     [[nodiscard]] WrenVM* vm() const noexcept;
@@ -42,22 +42,22 @@ class ForeignCall {
     [[nodiscard]] T* userData() const noexcept;
 
     /** @brief Returns the number of slots available in this foreign call. */
-    [[nodiscard]] int slotCount() const noexcept { return wrenGetSlotCount(_vm); }
+    [[nodiscard]] int slotCount() const noexcept { return detail::slots::count(_vm); }
 
     /**
-     * @brief Returns the Wren low-level type of the object stored in slot.
+     * @brief Returns the type of the value stored in a slot.
      * @param slot Slot index.
      */
-    [[nodiscard]] WrenType slotType(int slot) const noexcept { return wrenGetSlotType(_vm, slot); }
+    [[nodiscard]] SlotType slotType(int slot) const noexcept { return detail::slots::type(_vm, slot); }
 
     /**
      * @brief Aborts the current Wren fiber with an error message in slot 0.
      * @param message Descriptive error message.
      */
     void abort(std::string_view message) const noexcept {
-        wrenEnsureSlots(_vm, 1);
-        wrenSetSlotBytes(_vm, 0, message.data(), message.size());
-        wrenAbortFiber(_vm, 0);
+        detail::slots::ensure(_vm, 1);
+        detail::slots::setBytes(_vm, 0, message);
+        detail::slots::abortFiber(_vm, 0);
     }
 
     /**
@@ -85,24 +85,24 @@ class ForeignCall {
      */
     template <typename T>
     [[nodiscard]] T* argForeign(int slot) const noexcept {
-        if (slot >= slotCount() || wrenGetSlotType(_vm, slot) != WREN_TYPE_FOREIGN) {
+        if (slot >= slotCount() || slotType(slot) != SlotType::Foreign) {
             abort("Expected argument to be a foreign object");
             return nullptr;
         }
-        return static_cast<T*>(wrenGetSlotForeign(_vm, slot));
+        return static_cast<T*>(detail::slots::getForeign(_vm, slot));
     }
 
     /**
      * @brief Sets slot 0 to null.
      */
-    void retNull() const noexcept { wrenSetSlotNull(_vm, 0); }
+    void retNull() const noexcept { detail::slots::setNull(_vm, 0); }
 
     /**
      * @brief Allocates a new empty list in slot 0.
      */
     void retList() const noexcept {
-        wrenEnsureSlots(_vm, 1);
-        wrenSetSlotNewList(_vm, 0);
+        detail::slots::ensure(_vm, 1);
+        detail::slots::setNewList(_vm, 0);
     }
 
     /**
@@ -113,9 +113,9 @@ class ForeignCall {
      * @param value Number to append.
      */
     void listAppend(double value) const noexcept {
-        wrenEnsureSlots(_vm, 2);
-        wrenSetSlotDouble(_vm, 1, value);
-        wrenInsertInList(_vm, 0, -1, 1);
+        detail::slots::ensure(_vm, 2);
+        detail::slots::setDouble(_vm, 1, value);
+        detail::slots::insertInList(_vm, 0, -1, 1);
     }
 
     /**
@@ -134,12 +134,12 @@ class ForeignCall {
      */
     template <typename T>
     [[nodiscard]] T* retNewForeign(int classSlot = 0) const noexcept {
-        return static_cast<T*>(wrenSetSlotNewForeign(_vm, 0, classSlot, sizeof(T)));
+        return static_cast<T*>(detail::slots::setNewForeign(_vm, 0, classSlot, sizeof(T)));
     }
 
   private:
-    /** @brief Pointer to the raw Wren VM instance. */
-    ::WrenVM* _vm = nullptr;
+    /** @brief The VM. */
+    NativeVm* _vm = nullptr;
 };
 
 }  // namespace scripting

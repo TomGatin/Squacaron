@@ -8,7 +8,7 @@
 #include <vector>
 
 #include "scripting/WrenVM.hpp"
-#include "scripting/detail/WrenApi.hpp"
+#include "scripting/detail/WrenFwd.hpp"
 
 namespace scripting {
 
@@ -83,7 +83,7 @@ class ComponentBinderBase {
      * @param getter Function pointer to the getter FFI callback.
      * @param setter Function pointer to the setter FFI callback.
      */
-    void registerPropertyMethods(const std::string& propName, WrenForeignMethodFn getter, WrenForeignMethodFn setter);
+    void registerPropertyMethods(const std::string& propName, ForeignMethodFn getter, ForeignMethodFn setter);
 
   private:
     /** @brief Non-owning pointer to the target WrenVM instance. */

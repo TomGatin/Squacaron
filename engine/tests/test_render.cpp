@@ -194,8 +194,8 @@ TEST(RenderSystem, FallsBackToANeutralCameraWhenNoneIsActive) {
 TEST(TextureStore, UnknownIdentifiersResolveToNothing) {
     const render::TextureStore textures;
 
-    EXPECT_EQ(textures.get(ecs::NO_TEXTURE), nullptr);
-    EXPECT_EQ(textures.get(1), nullptr);
+    EXPECT_FALSE(textures.contains(ecs::NO_TEXTURE));
+    EXPECT_FALSE(textures.contains(1));
 }
 
 TEST(TextureStore, UnloadIgnoresUnknownIdentifiersAndThePlaceholderNeedsAWindow) {

@@ -41,7 +41,10 @@ target("my_game")
 ```
 
 The package brings the engine libraries and their dependencies (asio, wren, box2d, toml++ and raylib when
-`graphics` is on). Headers are included as the engine modules name them: `core/Engine.hpp`, `ecs/Registry.hpp`,
+`graphics` is on), for linking only: no public engine header includes them, so a game does not need
+`add_packages("wren")` or `add_packages("raylib")` to use the engine. Wren bindings are written with the engine's
+`scripting::WrenVM` and `scripting::ForeignCall` (results are `scripting::CallResult`), and the render module exposes
+engine types (`ecs::Rgba`, `ecs::TextureRect`, `render::CameraView`). `scripts/check_public_headers.sh` checks it. Headers are included as the engine modules name them: `core/Engine.hpp`, `ecs/Registry.hpp`,
 `events/EventBus.hpp`...
 
 ## A minimal game

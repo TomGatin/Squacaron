@@ -63,7 +63,9 @@ block. R-Type consumes it as a library, and a **second, different sample game** 
 - ECS first: data in components (plain structs), logic in systems, cross-system communication through
   `EventBus` / `CommandBuffer` — no direct system-to-system calls.
 - Third-party types (raylib, box2d, asio, wren) stay inside their module's `.cpp`/private headers;
-  public engine headers expose engine types only.
+  public engine headers expose engine types only. Private headers (`net/asio/`, `render/detail/`,
+  `audio/strategy/raylib/`, `systems/physics/detail/`, `scripting/detail/WrenApi.hpp`) are not installed;
+  `scripts/check_public_headers.sh` (CI) compiles every installed header without the four libraries.
 - Time-based logic uses the engine `Clock`/delta time, never frame count or CPU speed.
 - Target features to grow toward: modularity (link-time, possibly runtime plugins), audio, resource/asset manager,
   message passing, scripting, dev console + CVars, in-game metrics/profiling, scene/level editor.

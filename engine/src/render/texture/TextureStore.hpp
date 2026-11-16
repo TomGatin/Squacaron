@@ -1,11 +1,9 @@
 #pragma once
 
-#include <raylib.h>
-
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 #include <string>
-#include <vector>
 
 #include "components/Renderable.hpp"
 
@@ -28,7 +26,7 @@ enum class TextureFilter : std::uint8_t {
 class TextureStore {
   public:
     /** @brief Creates an empty store. */
-    TextureStore() = default;
+    TextureStore();
 
     /** @brief Unloads every texture still held. */
     ~TextureStore();
@@ -61,12 +59,20 @@ class TextureStore {
     void reserve(ecs::TextureId last);
 
     /**
-     * @brief Looks a texture up.
-     *
+     * @brief Tells whether an identifier names a loaded texture.
      * @param id Identifier returned by `load`.
-     * @return The texture, or nullptr if `id` is unknown.
+     * @return False for `ecs::NO_TEXTURE`, an unknown or an unloaded id.
      */
-    [[nodiscard]] const Texture2D* get(ecs::TextureId id) const;
+    [[nodiscard]] bool contains(ecs::TextureId id) const;
+
+    /** @brief The GPU textures, defined in `render/detail/RaylibStores.hpp` for the render module only. */
+    struct Impl;
+
+    /**
+     * @brief Gets the GPU textures, for the render module.
+     * @return The storage.
+     */
+    [[nodiscard]] const Impl& impl() const noexcept { return *_impl; }
 
     /**
      * @brief Releases a texture; its identifier is never given to another texture, and now resolves to nothing.
@@ -89,18 +95,8 @@ class TextureStore {
     [[nodiscard]] std::size_t loadedCount() const noexcept;
 
   private:
-    /** @brief One texture. */
-    struct Slot {
-        /** @brief GPU texture. */
-        Texture2D texture{};
-        /** @brief False once unloaded; the slot is kept so its identifier is never reused. */
-        bool loaded = false;
-    };
-
-    /** @brief Textures; identifier `n` is stored at index `n - 1`. */
-    std::vector<Slot> _textures;
-    /** @brief Identifier of the placeholder once made. */
-    ecs::TextureId _placeholder = ecs::NO_TEXTURE;
+    /** @brief GPU textures. */
+    std::unique_ptr<Impl> _impl;
 };
 
 }  // namespace render

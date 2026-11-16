@@ -162,6 +162,10 @@ jobs:
           xmake build -P . -y
           xmake test -P .
 
+      # What a game includes: every installed header must compile without asio, box2d, raylib or wren.
+      - name: Check the installed headers
+        run: scripts/check_public_headers.sh
+
       # The games on the installed squacaron package instead of the in-tree engine.
       - name: Build the games on the squacaron package
         run: |

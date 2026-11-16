@@ -8,52 +8,6 @@ rule("rlss.project_dir")
     end)
 rule_end()
 
-target("test_ecs_stress")
-    set_kind("binary")
-    add_deps("engine_core")
-    add_packages("gtest")
-    add_files("ecs/main.cpp", "ecs/CommandBufferStressTest.cpp", "ecs/EntityRecycleTest.cpp")
-    add_tests("test_ecs_stress")
-
--- Not a test: it measures, and asserts nothing. Run it in release, see docs/comparative-study/ecs-benchmark.md.
-if has_config("benchmarks") then
-    target("bench_ecs")
-        set_kind("binary")
-        add_deps("engine_core")
-        add_packages("benchmark")
-        add_files("ecs/SparseArrayBenchmark.cpp")
-end
-
-target("test_content_root")
-    set_kind("binary")
-    add_deps("engine_core")
-    add_packages("gtest")
-    add_files("core/ContentRootTests.cpp")
-    add_tests("test_content_root")
-
-target("test_assets")
-    set_kind("binary")
-    add_deps("engine_core", "engine_assets")
-    add_packages("gtest")
-    add_files("assets/AssetManagerTests.cpp")
-    add_tests("test_assets")
-
-target("test_assets_scripting")
-    set_kind("binary")
-    add_deps("engine_core", "engine_events", "engine_scripting", "engine_input", "engine_prefabs", "engine_assets",
-             "engine_assets_scripting")
-    add_packages("gtest", "wren")
-    add_files("assets/AssetScriptingTests.cpp")
-    add_tests("test_assets_scripting")
-
-target("test_assets_scene")
-    set_kind("binary")
-    add_deps("engine_core", "engine_time", "engine_events", "engine_scene", "engine_hierarchy", "engine_assets",
-             "engine_assets_scene")
-    add_packages("gtest")
-    add_files("assets/SceneAssetsTests.cpp")
-    add_tests("test_assets_scene")
-
 target("test_collision_router")
     set_kind("binary")
     add_deps("rtype_collision")
@@ -73,29 +27,20 @@ target("test_level_loader")
     end)
     add_tests("test_level_loader")
 
-target("test_prefabs")
+target("test_rtype_prefabs")
     set_kind("binary")
     add_deps("engine_core", "engine_prefabs", "rtype_prefabs")
     add_packages("gtest")
-    add_files("prefabs/PrefabManagerTests.cpp")
-    add_tests("test_prefabs")
+    add_files("server/PrefabTests.cpp")
+    add_tests("test_rtype_prefabs")
 
-target("test_input")
+target("test_client_bindings")
     set_kind("binary")
-    add_deps("engine_core", "engine_events", "engine_input")
+    add_deps("engine_input")
     add_packages("gtest")
-    add_files("test_input.cpp", "../client/src/input/RTypeBindings.cpp")
+    add_files("client/RTypeBindingsTests.cpp", "../client/src/input/RTypeBindings.cpp")
     add_includedirs("../client/src")
-    add_tests("test_input")
-
-if has_config("graphics") then
-    target("test_assets_audio")
-        set_kind("binary")
-        add_deps("engine_audio", "engine_assets", "engine_assets_audio")
-        add_packages("gtest")
-        add_files("assets/AudioAssetsTests.cpp")
-        add_tests("test_assets_audio")
-end
+    add_tests("test_client_bindings")
 
 target("test_server_room")
     set_kind("binary")

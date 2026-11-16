@@ -219,15 +219,15 @@ every call.
 
 ## Tests
 
-- `test_assets` (`tests/assets/AssetManagerTests.cpp`): a hundred loads of a file call the loader once; aliases and
+- `test_assets` (`engine/tests/assets/AssetManagerTests.cpp`): a hundred loads of a file call the loader once; aliases and
   path spellings share one load; groups release only what no other group holds; stable handles across group reloads
   and loader restarts; failed assets and the fallback; alias rebinding releases the old file; undeclare and
   `forgetGroup`; options; a game's own kind; step-by-step loading; directory preloads; hot reload of script
   declarations; `StableSlots`.
-- `test_assets_scripting` (`tests/assets/AssetScriptingTests.cpp`): the declaration script, `core/Assets` from Wren,
+- `test_assets_scripting` (`engine/tests/assets/AssetScriptingTests.cpp`): the declaration script, `core/Assets` from Wren,
   wrong argument types, confined paths, the protected `"global"` group, step-by-step loading, kinds by name, hot
   reload (nothing loaded twice, a deleted line releases its asset).
-- `test_assets_scene` (`tests/assets/SceneAssetsTests.cpp`): a scene's group is loaded before `onEnter` and released
+- `test_assets_scene` (`engine/tests/assets/SceneAssetsTests.cpp`): a scene's group is loaded before `onEnter` and released
   on exit or on a failed enter.
-- `test_assets_audio` (`tests/assets/AudioAssetsTests.cpp`): the audio loaders, stable sound handles, a muted backend.
+- `test_assets_audio` (`engine/tests/assets/AudioAssetsTests.cpp`): the audio loaders, stable sound handles, a muted backend.
 - `test_render`: `TextureStore::unload` and the placeholder; `test_client_collisions`: the prefab `texture` alias.

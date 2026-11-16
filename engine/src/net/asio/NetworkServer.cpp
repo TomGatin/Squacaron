@@ -42,7 +42,12 @@ void closeWithReason(TcpSession& session, const DisconnectReason reason) {
 }  // namespace
 
 NetworkServer::NetworkServer(const NetworkConfig& config)
-    : _config(config), _work(asio::make_work_guard(_io)), _acceptor(_io), _udpSocket(_io), _udpTimer(_io) {}
+    : _config(config),
+      _work(asio::make_work_guard(_io)),
+      _acceptor(_io),
+      _udpSocket(_io),
+      _udpTimer(_io),
+      _acceptRetryTimer(_io) {}
 
 NetworkServer::~NetworkServer() { NetworkServer::stop(); }
 
@@ -82,6 +87,7 @@ void NetworkServer::stop() {
         std::ignore = _acceptor.close(ignored);
         std::ignore = _udpSocket.close(ignored);
         _udpTimer.cancel();
+        _acceptRetryTimer.cancel();
 
         auto peers = std::move(_peers);
         _peers.clear();
@@ -103,10 +109,18 @@ void NetworkServer::accept() {
         if (ec == asio::error::operation_aborted || _state.load() != State::Running) {
             return;
         }
-        if (!ec && _peers.size() >= _config.maxPeers) {
+        if (ec) {
+            onAcceptError(ec);
+            return;
+        }
+        if (_acceptFailing) {
+            engine::log::info(LOG_TAG, "accepting connections again");
+            _acceptFailing = false;
+        }
+        if (_peers.size() >= _config.maxPeers) {
             engine::log::warning(LOG_TAG, "server full (", _config.maxPeers, " peers): connection refused");
             refuseConnection(std::move(socket));
-        } else if (!ec) {
+        } else {
             const PeerId id = _nextId++;
             std::error_code endpointError;
             const auto remote = socket.remote_endpoint(endpointError);
@@ -133,6 +147,22 @@ void NetworkServer::accept() {
                                   .lastSeen = {},
                                   .lastSent = {}};
             tcp->start();
+        }
+        accept();
+    });
+}
+
+void NetworkServer::onAcceptError(const std::error_code& ec) {
+    _counters.onAcceptError();
+    if (!_acceptFailing) {
+        engine::log::error(LOG_TAG, "cannot accept a connection: ", ec.message(), "; retrying every ",
+                           _config.acceptRetryDelay.count(), " ms");
+        _acceptFailing = true;
+    }
+    _acceptRetryTimer.expires_after(_config.acceptRetryDelay);
+    _acceptRetryTimer.async_wait([this](const std::error_code timerError) {
+        if (timerError == asio::error::operation_aborted || _state.load() != State::Running) {
+            return;
         }
         accept();
     });

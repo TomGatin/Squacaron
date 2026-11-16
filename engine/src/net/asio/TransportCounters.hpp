@@ -23,6 +23,12 @@ class TransportCounters {
         _packetsReceived.fetch_add(1, std::memory_order_relaxed);
     }
 
+    /** @brief A received message was dropped: its peer had too many waiting for the game. */
+    void onEventDropped() noexcept { _eventsDropped.fetch_add(1, std::memory_order_relaxed); }
+
+    /** @brief Accepting a TCP connection failed. */
+    void onAcceptError() noexcept { _acceptErrors.fetch_add(1, std::memory_order_relaxed); }
+
     /** @brief Reads the counters. @return The traffic so far. */
     [[nodiscard]] TransportStats read() const noexcept {
         return {
@@ -30,6 +36,8 @@ class TransportCounters {
             .bytesReceived = _bytesReceived.load(std::memory_order_relaxed),
             .packetsSent = _packetsSent.load(std::memory_order_relaxed),
             .packetsReceived = _packetsReceived.load(std::memory_order_relaxed),
+            .eventsDropped = _eventsDropped.load(std::memory_order_relaxed),
+            .acceptErrors = _acceptErrors.load(std::memory_order_relaxed),
         };
     }
 
@@ -42,6 +50,10 @@ class TransportCounters {
     std::atomic<std::uint64_t> _packetsSent{0};
     /** @brief TCP frames and datagrams received so far. */
     std::atomic<std::uint64_t> _packetsReceived{0};
+    /** @brief Received messages dropped so far. */
+    std::atomic<std::uint64_t> _eventsDropped{0};
+    /** @brief Failed accepts so far. */
+    std::atomic<std::uint64_t> _acceptErrors{0};
 };
 
 }  // namespace ecs::net::detail

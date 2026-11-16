@@ -109,21 +109,18 @@ type erasure, heap allocation or indirect call on a path executed every frame.
 
 ### Server main loop
 
-```cpp
-const ecs::time::PreciseSleepScope preciseSleep;          // see "Sleeping between two passes" below
-ecs::time::Clock clock;
-constexpr float FIXED_DT = ecs::time::DEFAULT_FIXED_DT;   // 1.0F / 60.0F, 60 Hz
+A headless program does not write this loop by hand: `engine.run()` paces itself when there is no window (one frame
+per fixed step by default), and a loop that drives `advance()` or anything else uses `engine::FixedRateLoop`
+(`core/FixedRateLoop.hpp`):
 
-while (running) {
-    clock.tick(FIXED_DT, [&](const ecs::time::Time& time) {
-        network.poll();                    // read client inputs
-        scripts.update(time.deltaTime);    // game logic / AI
-        physics.update(time.deltaTime);    // movement and collisions
-        network.sendSnapshot();            // send state to clients
-    });
-    std::this_thread::sleep_for(std::chrono::milliseconds(1));   // short sleep to avoid burning the CPU
-}
+```cpp
+engine::FixedRateLoop loop(1000.0);   // passes per second; holds a PreciseSleepScope while it runs
+loop.stopOnSignals(true);             // Ctrl+C / SIGTERM end run()
+loop.run([&] { room.advance(); });    // the clock decides how many fixed steps each pass runs
 ```
+
+The loop sleeps until the next pass is due. A late pass is not caught up with a burst: catching up is the job of the
+clock and its fixed steps. `stop()` is thread-safe and signal-safe, and a `stop()` made before `run()` is kept.
 
 ### Sleeping between two passes
 
@@ -134,8 +131,8 @@ then run up to 15 ms late, and when two are due at once the server sends a singl
 `ecs::time::PreciseSleepScope` asks Windows for a 1 ms period (`timeBeginPeriod(1)`) while it lives, and gives it back
 when destroyed. It does nothing on the other systems, and `raised()` tells whether it changed the period.
 
-- Create one at the start of a program whose loop sleeps: `server/src/main.cpp` does, for the server thread and the
-  room threads.
+- `engine::FixedRateLoop` holds one while a paced loop runs, so `engine.run()` without a window, the server loop and the
+  room threads all get it. Create one by hand only for a loop that sleeps on its own.
 - A raylib window already asks for the same period, so a windowed client does not need one.
 - The period applies to the whole process; scopes can be nested. Windows 11 may ignore it for a process whose window
   is minimized or hidden: this does not concern a headless server.

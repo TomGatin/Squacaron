@@ -232,13 +232,17 @@ The engine offers two ways to run frames. Both call `init()` first if it was not
 
 | Method      | Blocking | Fixed steps per call                             | Renders | Use it for                                                                                 |
 |-------------|----------|--------------------------------------------------|---------|--------------------------------------------------------------------------------------------|
-| `run()`     | yes      | as many as real time requires                    | yes     | a client: loops until `stop()` or the window closes, then shuts down                       |
+| `run()`     | yes      | as many as real time requires                    | yes     | a program: loops until `stop()`, the window closes or Ctrl+C / SIGTERM, then shuts down    |
 | `advance()` | no       | as many as real time requires; returns the count | no      | a loop owned by someone else, e.g. a server running one engine per room in a single thread |
 
 Tests that need a deterministic frame give the engine a fake time source: `Engine([&now] { return now; })`.
 `shutdown()` is final: an engine that was shut down is not initialized again, and `run()` and `advance()` do nothing.
 
-`run()` is a loop over `advance()` followed by `render`, so both produce the same frames. `advance()` returns the
+`run()` is a loop over `advance()` followed by `render`, so both produce the same frames. With a window, its vsync
+paces the loop; without one, `run()` sleeps between frames (one frame per fixed step), so a headless program does not
+take a whole core. `run({.frameRate = 120.0})` picks another rate, `run({.frameRate = -1.0})` never sleeps, and
+`.stopOnSignals = false` leaves Ctrl+C to the program. A loop of your own (several engines, a lobby) uses
+`engine::FixedRateLoop`, the loop `run()` is built on. `advance()` returns the
 number of fixed steps it executed, `0` when less than one `fixedDt` has elapsed: the caller uses it to know whether the
 simulation moved (for example, to send a snapshot only when it did). The clock caps the steps per call at
 `Clock::DEFAULT_MAX_STEPS_PER_TICK`; call `engine.clock().reset()` before the first `advance()` when the engine was

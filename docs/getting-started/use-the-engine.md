@@ -68,7 +68,9 @@ int main() {
 }
 ```
 
-A headless program like this one has no window to close it, so it runs until `engine.stop()` is called. Add
+A headless program like this one has no window to vsync on: `run()` then sleeps between two frames (one per fixed step,
+60 per second by default), so it idles near 0 % CPU, and it stops on Ctrl+C or SIGTERM, or when `engine.stop()` is
+called. Add
 `render::RenderPlugin` to get a window, or build a server out of `engine_network` and `engine_network_asio` (see
 [Add the Network to a Game](networked-game.md)).
 

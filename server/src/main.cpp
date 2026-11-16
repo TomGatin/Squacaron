@@ -6,8 +6,6 @@
 */
 
 #include <algorithm>
-#include <atomic>
-#include <csignal>
 #include <cstddef>
 #include <filesystem>
 #include <iostream>
@@ -24,7 +22,6 @@
 #include "LogTag.hpp"
 #include "ServerManager.hpp"
 #include "core/ContentRoot.hpp"
-#include "ecs/time/PreciseSleep.hpp"
 #include "gameplay/LevelDirectorPlugin.hpp"
 #include "level/Level.hpp"
 #include "level/LevelLoader.hpp"
@@ -41,10 +38,6 @@ constexpr const char* LEVELS_DIRECTORY = "server/levels";
 constexpr std::string_view LEVEL_PREFIX = "level_";
 /** @brief Extension of a level file. */
 constexpr std::string_view LEVEL_EXTENSION = ".toml";
-
-// The signal handler cannot take arguments, so it reaches the server through a global.
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-std::atomic<rtype::server::ServerManager*> g_server{nullptr};
 
 /**
  * @brief Finds the directory holding the server data (`server/levels/`, `scripts/`): `engine::contentRoot()`, the
@@ -127,11 +120,6 @@ std::shared_ptr<const rtype::server::level::Level> loadCampaign(const std::files
     return next;
 }
 
-void onSignal(int /*signal*/) {
-    if (auto* server = g_server.load()) {
-        server->stop();  // only sets an atomic flag: signal-safe
-    }
-}
 }  // namespace
 
 int main(int ac, char** av) {
@@ -143,9 +131,6 @@ int main(int ac, char** av) {
     }
     engine::log::setVerbose(options->logs);
     engine::log::setColored(options->colors);
-
-    // The server and room loops sleep 1 ms between two passes: without this, Windows makes it about 15.6 ms.
-    const ecs::time::PreciseSleepScope preciseSleep;
 
     const std::filesystem::path root = dataRoot();
     // A level asked for on the command line is played alone, and must load: playing another one would be misleading.
@@ -165,10 +150,7 @@ int main(int ac, char** av) {
     rtype::server::ServerManager server(ecs::net::createServer({.protocolId = rtype::protocol::TRANSPORT_PROTOCOL_ID}),
                                         rtype::server::HANDSHAKE_TIMEOUT, level);
 
-    g_server = &server;
-    std::signal(SIGINT, onSignal);
-    std::signal(SIGTERM, onSignal);
+    server.stopOnSignals();
     const bool ok = server.run(options->port);
-    g_server = nullptr;
     return ok ? 0 : EXIT_ERROR;
 }

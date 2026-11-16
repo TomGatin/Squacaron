@@ -148,7 +148,7 @@ class NetworkClient : public INetworkClient {
     bool _udpBound = false;
 
     /** @brief Events waiting for `poll()`. */
-    EventQueue _events;
+    EventQueue _events{_config.maxQueuedMessages, _counters};
 };
 
 }  // namespace ecs::net::detail

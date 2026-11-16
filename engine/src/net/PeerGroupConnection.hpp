@@ -1,6 +1,10 @@
 #pragma once
 
+#include <atomic>
+#include <cstddef>
+#include <cstdint>
 #include <mutex>
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
@@ -20,11 +24,16 @@ namespace ecs::net {
  */
 class PeerGroupConnection final : public INetworkService, public INetworkEventSource {
   public:
+    /** @brief Default of `maxQueuedMessages`, the same as `NetworkConfig::maxQueuedMessages`. */
+    static constexpr std::size_t DEFAULT_MAX_QUEUED_MESSAGES = 4096;
+
     /**
      * @brief Creates an empty group.
      * @param server Transport, which must outlive this connection.
+     * @param maxQueuedMessages `Data` events kept per peer until `poll()`; the next ones are dropped (at least 1).
      */
-    explicit PeerGroupConnection(INetworkServer& server) : _server(&server) {}
+    explicit PeerGroupConnection(INetworkServer& server, std::size_t maxQueuedMessages = DEFAULT_MAX_QUEUED_MESSAGES)
+        : _server(&server), _maxQueuedMessages(maxQueuedMessages > 0 ? maxQueuedMessages : 1) {}
 
     /**
      * @brief Adds a peer to the group.
@@ -40,11 +49,19 @@ class PeerGroupConnection final : public INetworkService, public INetworkEventSo
     /**
      * @brief Queues an event for the engine's next `poll()`; dropped if its peer is not in the group.
      *
-     * The queue is only emptied by `poll()`: stop pushing when the engine does not run, or it grows without limit.
+     * The queue is only emptied by `poll()`. A peer with `maxQueuedMessages` `Data` events waiting has its next ones
+     * dropped and counted in `droppedMessages()`, so a flood while the engine does not poll cannot exhaust memory.
+     * `Connected` and `Disconnected` are never dropped.
      *
      * @param event Event taken from the transport.
      */
     void push(NetworkEvent event);
+
+    /**
+     * @brief Messages dropped so far because their peer was over the cap.
+     * @return The count, since the group was created.
+     */
+    [[nodiscard]] std::uint64_t droppedMessages() const noexcept { return _dropped.load(std::memory_order_relaxed); }
 
     /**
      * @brief Takes the events pushed since the last call.
@@ -74,12 +91,18 @@ class PeerGroupConnection final : public INetworkService, public INetworkEventSo
   private:
     /** @brief Shared transport. */
     INetworkServer* _server;
+    /** @brief Cap on the `Data` events waiting per peer. */
+    std::size_t _maxQueuedMessages;
+    /** @brief Messages dropped so far. */
+    std::atomic<std::uint64_t> _dropped{0};
     /** @brief Protects `_peers` and `_events`: `INetworkService` is thread-safe. */
     std::mutex _mutex;
     /** @brief Peers of the group. */
     std::unordered_set<PeerId> _peers;
     /** @brief Events waiting for `poll()`. */
     std::vector<NetworkEvent> _events;
+    /** @brief `Data` events waiting, per peer. */
+    std::unordered_map<PeerId, std::size_t> _queuedPerPeer;
 };
 
 }  // namespace ecs::net

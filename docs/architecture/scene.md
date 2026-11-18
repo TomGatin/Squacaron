@@ -219,13 +219,16 @@ Entities spawned from Wren with `Engine.spawnPrefab` get a `SceneMember`, decide
 
 An entity whose owner scene exited before the spawn was flushed is destroyed right away.
 
-This relies on two generic hooks of `systems::ScriptSystem`, usable by other extensions:
-- the **script owner** (`currentOwner`, `setCurrentOwner`, `cancelFibers`), recorded by sleeping fibers and spawns;
-- the **spawn decorator** (`setSpawnDecorator`).
+The bridge is a `scripting::IScriptExtension`, the one interface any module uses to plug into the script system
+(`ScriptSystem::addExtension()` / `removeExtension()`):
+- `modules()` provides built-in modules such as `core/Scene`, kept across hot reloads;
+- `bind(vm)` registers the foreign methods, on the live VM, on every staging VM and on the VM of each hot reload;
+- `onVmReset(phase)` tells about hot reloads, so handles can be released and rebuilt;
+- `onScriptSpawn(registry, entity, owner)` sees every entity spawned from Wren, with the **script owner** that asked.
 
-Two more hooks support the bridge:
-- `addModuleSource` provides built-in modules such as `core/Scene`;
-- `addVmResetListener` notifies hot reloads, so handles can be released and rebuilt.
+A scripted scene runs its Wren code inside a `scripting::OwnerScope` with an owner id from
+`scripting::makeExtensionOwner()`, so its sleeping fibers and spawns record it; `ScriptSystem::cancelFibers(owner)`
+drops its fibers when it exits.
 
 ## Frame timeline
 

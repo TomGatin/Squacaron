@@ -81,5 +81,6 @@ Every prefab attaches `ecs::Transform`, `ecs::Renderable`, `ecs::RigidBody2D` an
 
 Wren scripts expose `Engine.spawnPrefab(name, x, y)` (`core/Engine` module).
 
-!!! warning
-    The binding in `ScriptSystemBindings.cpp` currently queues a placeholder spawn: it is not yet wired to `PrefabManager`, so the created entity has no components.
+The binding spawns through the `PrefabManager` given to `ScriptSystem::setPrefabManager()`. A game's own foreign
+method that spawns calls `ScriptSystem::spawnPrefab(name, params)`, so the script extensions (scenes) see the new
+entity as well.

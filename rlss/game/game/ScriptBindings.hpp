@@ -7,8 +7,8 @@
 
 #include <string_view>
 
+#include "scripting/ScriptSystem.hpp"
 #include "scripting/WrenVM.hpp"
-#include "systems/script/ScriptSystem.hpp"
 
 namespace rlss::game {
 
@@ -30,6 +30,6 @@ bool registerComponentClasses(scripting::WrenVM& vm);
  * @param scripts Script system of the engine.
  * @return False if Wren refused the generated code.
  */
-bool installScriptBindings(systems::ScriptSystem& scripts);
+bool installScriptBindings(scripting::ScriptSystem& scripts);
 
 }  // namespace rlss::game

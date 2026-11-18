@@ -13,7 +13,6 @@
 #include <utility>
 
 #include "Arena.hpp"
-#include "components/ScriptComponent.hpp"
 #include "components/Tag.hpp"
 #include "components/Transform.hpp"
 #include "ecs/Entity.hpp"
@@ -22,7 +21,8 @@
 #include "game/Components.hpp"
 #include "game/ScriptBindings.hpp"
 #include "input/InputState.hpp"
-#include "systems/script/ScriptSystem.hpp"
+#include "scripting/ScriptComponent.hpp"
+#include "scripting/ScriptSystem.hpp"
 
 namespace {
 
@@ -147,9 +147,10 @@ class CarPhysics : public ::testing::Test {
         // Most tests want the ball in play at once: a match already running (a new one starts with a kickoff).
         _registry.addComponent(arenaEntity, game::MatchState{.clock = MATCH_DURATION});
         _arena = arenaEntity;
-        _registry.addComponent(arenaEntity, ecs::ScriptComponent{.moduleName = std::string(game::MATCH_SCRIPT_MODULE),
-                                                                 .className = "Match",
-                                                                 .hasUpdate = true});
+        _registry.addComponent(
+            arenaEntity,
+            scripting::ScriptComponent{
+                .moduleName = std::string(game::MATCH_SCRIPT_MODULE), .className = "Match", .hasUpdate = true});
     }
 
     /** @brief Spawns a car at rest, wheels down. */
@@ -162,7 +163,7 @@ class CarPhysics : public ::testing::Test {
         _registry.addComponent(_car, game::CarStatus{});
         _registry.addComponent(_car, game::CarCues{});
         _registry.addComponent(
-            _car, ecs::ScriptComponent{.moduleName = std::string(game::CAR_SCRIPT_MODULE), .className = "Car"});
+            _car, scripting::ScriptComponent{.moduleName = std::string(game::CAR_SCRIPT_MODULE), .className = "Car"});
     }
 
     /** @brief Spawns the ball at rest. */
@@ -171,8 +172,8 @@ class CarPhysics : public ::testing::Test {
         _registry.addComponent(_ball, ecs::Transform{.x = x, .y = y});
         _registry.addComponent(_ball, game::ShotGlow{});
         _registry.addComponent(_ball, game::BallCues{});
-        _registry.addComponent(
-            _ball, ecs::ScriptComponent{.moduleName = std::string(game::BALL_SCRIPT_MODULE), .className = "Ball"});
+        _registry.addComponent(_ball, scripting::ScriptComponent{.moduleName = std::string(game::BALL_SCRIPT_MODULE),
+                                                                 .className = "Ball"});
     }
 
     /** @brief Simulates `seconds` with the given input held. */
@@ -310,7 +311,7 @@ class CarPhysics : public ::testing::Test {
 
     ecs::Registry _registry;
     ecs::EventBus _bus;
-    systems::ScriptSystem _scripts;
+    scripting::ScriptSystem _scripts;
     ecs::Entity _arena = 0;
     ecs::Entity _car = 0;
     ecs::Entity _ball = 0;

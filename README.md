@@ -191,7 +191,7 @@ The codebase is organized into modular libraries and applications:
 ├── game/          # R-Type code shared by client and server (replication codec, ship movement)
 ├── rlss/          # Second game on the engine: 2D car football (server, client, Wren scripts)
 ├── server/        # Authoritative server (lobby, one engine per room)
-└── tests/         # Unit and integration test suites (GoogleTest)
+└── tests/         # R-Type and RLSS test suites (engine suites: engine/tests/)
 ```
 
 Each module is described in the [Architecture Overview](docs/architecture/overview.md).
@@ -214,7 +214,12 @@ Specifications:
 
 ## Testing & Quality Assurance
 
-The tests are GoogleTest suites, one binary per module:
+The tests are GoogleTest suites, one binary per module: 66 in all, 42 for the engine (`engine/tests/`, 36 without
+`graphics`) and 24 for R-Type and RLSS (`tests/`). The engine suites also run with the engine alone:
+
+```bash
+cd engine && xmake f -P . --tests=y -y && xmake -P . && xmake test -P .
+```
 
 ```bash
 # Run all automated tests

@@ -9,7 +9,7 @@ data and the same work, stored three ways.
   of other state, and has a virtual `update()`. The objects are allocated between unrelated allocations, and the
   vector is shuffled, as a real game spreads its objects over the heap.
 
-The code is `tests/ecs/SparseArrayBenchmark.cpp` (Google Benchmark).
+The code is `engine/tests/ecs/SparseArrayBenchmark.cpp` (Google Benchmark).
 
 ## Protocol
 

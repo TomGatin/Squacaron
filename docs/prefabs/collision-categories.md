@@ -90,7 +90,7 @@ Pairs that deliberately ignore each other:
 1. Add a new bit constant (next free bit: `0x0040`); 16 categories are available in total.
 2. Write its mask.
 3. Update the masks of the existing categories that must touch it. Both sides must agree, otherwise the pair is ignored.
-4. Update the table above and the `CollisionCategoriesFilterPairs` test in `tests/prefabs/PrefabManagerTests.cpp`.
+4. Update the table above and the `CollisionCategoriesFilterPairs` test in `tests/server/PrefabTests.cpp`.
 
 !!! warning "Filtering is not detection"
     Categories and masks only decide which pairs are **allowed** to interact. With Box2D v2.4.2, a contact is only created when at least one of the two bodies is `Dynamic`.

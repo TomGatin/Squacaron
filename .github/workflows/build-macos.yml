@@ -17,9 +17,8 @@ concurrency:
 jobs:
   build-macos:
     name: Build (macOS)
-    if: ${{ github.repository == 'Matt4401/Mirror-Rtype' }}
+    if: ${{ github.repository == 'TomGatin/Squacaron' }}
     runs-on: macos-latest
-    # Never blocks merging: a failure is reported as a success with an annotation.
     continue-on-error: true
     steps:
       - name: Checkout repository

@@ -3,7 +3,6 @@
 #include <chrono>
 #include <cstdint>
 #include <memory>
-#include <thread>
 #include <utility>
 #include <variant>
 
@@ -19,13 +18,6 @@
 
 namespace rtype::server {
 
-namespace {
-
-// Sleep between two loop iterations. Short enough to keep the step jitter around 1 ms, long enough not to burn a core.
-constexpr auto IDLE_SLEEP = std::chrono::milliseconds(1);
-
-}  // namespace
-
 ServerManager::ServerManager(std::unique_ptr<ecs::net::INetworkServer> network,
                              const std::chrono::milliseconds handshakeTimeout,
                              std::shared_ptr<const level::Level> level)
@@ -38,14 +30,11 @@ bool ServerManager::run(const std::uint16_t port) {
     _port = port;
     engine::log::info(LOG_TAG, "listening on port ", port);
     engine::log::debug(LOG_TAG, "debug logs enabled");
-    _running = true;
-
-    while (_running.load()) {
+    _loop.run([this] {
         handleEvents();
         expireHandshakes();
         _lobby.update();
-        std::this_thread::sleep_for(IDLE_SLEEP);
-    }
+    });
 
     // Rooms running in the background send through the network: they stop first.
     _lobby.clear();
@@ -54,7 +43,7 @@ bool ServerManager::run(const std::uint16_t port) {
     return true;
 }
 
-void ServerManager::stop() { _running = false; }
+void ServerManager::stop() { _loop.stop(); }
 
 void ServerManager::handleEvents() {
     for (const auto& [type, client, data, channel] : _network->poll()) {

@@ -11,6 +11,7 @@
 
 #include "components/InputBuffer.hpp"
 #include "core/Engine.hpp"
+#include "core/FixedRateLoop.hpp"
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
 #include "ecs/time/Clock.hpp"
@@ -24,6 +25,8 @@ namespace rtype::server {
 
 /** @brief Maximum number of inputs queued per player; when exceeded, the oldest one is dropped. */
 inline constexpr std::size_t MAX_PENDING_INPUTS = ecs::DEFAULT_MAX_PENDING_INPUTS;
+/** @brief Passes per second of a room's loop: about one per millisecond, so the 60 Hz steps keep a ~1 ms jitter. */
+inline constexpr double ROOM_LOOP_RATE = 1000.0;
 
 /** @brief Network id of a player: the transport's peer id. */
 using ClientId = ecs::net::PeerId;
@@ -188,8 +191,9 @@ class Room {
     std::vector<RoomPlayer> _players;
     /** @brief Protects `_engine` from the thread of the room. Mutable: `lastProcessedInput()` only reads. */
     mutable std::mutex _mutex;
-    /** @brief Set by the destructor to stop `_thread`. */
-    std::atomic<bool> _stopping{false};
+    /** @brief Paces `_thread`: about every millisecond, so the steps keep a jitter around 1 ms; stopped by the
+     * destructor. */
+    engine::FixedRateLoop _loop{ROOM_LOOP_RATE};
     /** @brief Set from the room's thread when the game is over. */
     std::atomic<bool> _ended{false};
     /** @brief Runs the simulation once `runInBackground()` was called. */

@@ -5,7 +5,6 @@
 
 #pragma once
 
-#include <atomic>
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
@@ -15,12 +14,16 @@
 #include <vector>
 
 #include "core/Engine.hpp"
+#include "core/FixedRateLoop.hpp"
 #include "net/INetworkManager.hpp"
 #include "net/INetworkServer.hpp"
 #include "net/PeerGroupConnection.hpp"
 #include "protocol/Protocol.hpp"
 
 namespace rlss::server {
+
+/** @brief Frames per second of a match's loop: about one per millisecond, the engine clock runs the fixed steps. */
+inline constexpr double MATCH_LOOP_RATE = 1000.0;
 
 /** @brief What the menu shows about a match, refreshed after each frame of the match. */
 struct MatchSummary {
@@ -131,8 +134,8 @@ class MatchRoom {
     mutable std::mutex _summaryMutex;
     /** @brief What the menu shows about the match. */
     MatchSummary _summary;
-    /** @brief Set by the destructor to stop `_thread`. */
-    std::atomic<bool> _stopping{false};
+    /** @brief Paces `_thread` at `MATCH_LOOP_RATE`; stopped by the destructor. */
+    engine::FixedRateLoop _loop{MATCH_LOOP_RATE};
     /** @brief Runs the match once `runInBackground()` was called. */
     std::thread _thread;
 };

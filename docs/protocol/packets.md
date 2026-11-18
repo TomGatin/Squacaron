@@ -2,7 +2,7 @@
 
 This page describes every game-layer message. The game layer is encoded with
 [Protocol Buffers](https://protobuf.dev/) (proto3, binary wire format); the schema is
-[`common/proto/rtype.proto`](https://github.com/Matt4401/Mirror-Rtype/blob/main/common/proto/rtype.proto) and is the
+[`common/proto/rtype.proto`](https://github.com/TomGatin/Squacaron/blob/main/common/proto/rtype.proto) and is the
 source of truth.
 
 For the transport framing that wraps these payloads, see [transport.md](transport.md).
@@ -79,7 +79,7 @@ Standard protobuf wire format. Main consequences:
 | `sint32`      | positions (`x`, `y`)         | zigzag varint: small negative values stay small            |
 | `bool`        | flags                        | varint, 1 byte                                             |
 | `string`      | chat text                    | length-prefixed, valid UTF-8                               |
-| enum          | `RoomState`, `GameOverReason` | varint; unknown values are rejected by the receiver        |
+| enum          | `RoomState`, `GameOverReason` | varint; unknown values are rejected by the receiver       |
 | message       | nested records               | length-prefixed                                            |
 
 - A field equal to its default (`0`, `false`, empty) is **not written** at all: a `LobbyCreate` costs 3 bytes (2-byte
@@ -459,23 +459,23 @@ How R-Type fills the game-defined fields of `EntityState`. Another game defines 
 
 ## Appendix B — Message Summary
 
-| #    | Message            | Dir   | Channel    | Typical size (bytes)       |
-|------|--------------------|-------|------------|----------------------------|
-| `1`  | `PlayerInput`      | C → S | Unreliable | 4–34                       |
+| #    | Message            | Dir   | Channel    | Typical size (bytes)                     |
+|------|--------------------|-------|------------|------------------------------------------|
+| `1`  | `PlayerInput`      | C → S | Unreliable | 4–34                                     |
 | `2`  | `WorldState`       | S → C | Unreliable | ~8 + 26 per entity (≤1192, split beyond) |
-| `16` | `Hello`            | C → S | Reliable   | 5                          |
-| `17` | `Welcome`          | S → C | Reliable   | 6                          |
-| `32` | `LobbyListRequest` | C → S | Reliable   | 3                          |
-| `33` | `LobbyList`        | S → C | Reliable   | 3 + ~10 per room           |
-| `34` | `LobbyCreate`      | C → S | Reliable   | 3                          |
-| `35` | `LobbyJoin`        | C → S | Reliable   | ~5                         |
-| `36` | `LobbyReady`       | C → S | Reliable   | 3–5                        |
-| `37` | `LobbyUpdate`      | S → C | Reliable   | ~5 + 6 per player          |
-| `48` | `GameStart`        | S → C | Reliable   | ~9                         |
-| `49` | `GameOver`         | S → C | Reliable   | ~14                        |
-| `50` | `PlayerLeft`       | S → C | Reliable   | ~5                         |
-| `51` | `LevelStart`       | S → C | Reliable   | ~7 + name length           |
-| `52` | `LevelComplete`    | S → C | Reliable   | ~10                        |
-| `53` | `ScoreUpdate`      | S → C | Reliable   | ~8                         |
-| `64` | `Leave`            | C → S | Reliable   | 3                          |
-| `65` | `Chat`             | Both  | Reliable   | ~7 + text length           |
+| `16` | `Hello`            | C → S | Reliable   | 5                                        |
+| `17` | `Welcome`          | S → C | Reliable   | 6                                        |
+| `32` | `LobbyListRequest` | C → S | Reliable   | 3                                        |
+| `33` | `LobbyList`        | S → C | Reliable   | 3 + ~10 per room                         |
+| `34` | `LobbyCreate`      | C → S | Reliable   | 3                                        |
+| `35` | `LobbyJoin`        | C → S | Reliable   | ~5                                       |
+| `36` | `LobbyReady`       | C → S | Reliable   | 3–5                                      |
+| `37` | `LobbyUpdate`      | S → C | Reliable   | ~5 + 6 per player                        |
+| `48` | `GameStart`        | S → C | Reliable   | ~9                                       |
+| `49` | `GameOver`         | S → C | Reliable   | ~14                                      |
+| `50` | `PlayerLeft`       | S → C | Reliable   | ~5                                       |
+| `51` | `LevelStart`       | S → C | Reliable   | ~7 + name length                         |
+| `52` | `LevelComplete`    | S → C | Reliable   | ~10                                      |
+| `53` | `ScoreUpdate`      | S → C | Reliable   | ~8                                       |
+| `64` | `Leave`            | C → S | Reliable   | 3                                        |
+| `65` | `Chat`             | Both  | Reliable   | ~7 + text length                         |

@@ -24,6 +24,11 @@
 #include <utility>
 #include <vector>
 
+#ifdef __linux__
+#include <sys/resource.h>
+#include <unistd.h>
+#endif
+
 #include "net/INetworkClient.hpp"
 #include "net/INetworkManager.hpp"
 #include "net/INetworkServer.hpp"
@@ -114,6 +119,8 @@ TEST(NetworkConfig, DefaultIsValid) { EXPECT_TRUE(ecs::net::isValid(NetworkConfi
 
 TEST(NetworkConfig, InvalidConfigIsRefusedByTheFactory) {
     EXPECT_FALSE(ecs::net::isValid(NetworkConfig{.maxPeers = 0}));
+    EXPECT_FALSE(ecs::net::isValid(NetworkConfig{.maxQueuedMessages = 0}));
+    EXPECT_FALSE(ecs::net::isValid(NetworkConfig{.acceptRetryDelay = std::chrono::milliseconds(0)}));
     EXPECT_FALSE(ecs::net::isValid(NetworkConfig{.keepaliveInterval = std::chrono::seconds(10)}));  // >= udpTimeout
     EXPECT_THROW((void)ecs::net::createServer(NetworkConfig{.maxPeers = 0}), std::invalid_argument);
     EXPECT_THROW((void)ecs::net::createClient(NetworkConfig{.udpTick = std::chrono::milliseconds(0)}),
@@ -420,6 +427,50 @@ TEST(Transport, StatsCountTheDatagrams) {
     ASSERT_TRUE(has(received, EventType::Data));
     EXPECT_GT(client->stats().packetsSent, beforeSent);
     EXPECT_GT(server->stats().bytesReceived, beforeReceived);
+}
+
+TEST(Transport, FailingAcceptRetriesWithADelay) {
+#ifndef __linux__
+    GTEST_SKIP() << "runs the server out of file descriptors with setrlimit, Linux only";
+#else
+    constexpr std::uint16_t PORT = 21325;
+    constexpr auto RETRY = std::chrono::milliseconds(50);
+    constexpr auto STARVED = std::chrono::milliseconds(500);
+    const auto server = ecs::net::createServer({.protocolId = GAME_A, .acceptRetryDelay = RETRY});
+    ASSERT_TRUE(server->start(PORT));
+
+    // The socket is opened before the limit is lowered; connecting needs no new descriptor.
+    asio::io_context io;
+    asio::ip::tcp::socket socket(io);
+    socket.open(asio::ip::tcp::v4());
+
+    rlimit original{};
+    ASSERT_EQ(getrlimit(RLIMIT_NOFILE, &original), 0);
+    const int lowestFree = dup(0);
+    ASSERT_GE(lowestFree, 0);
+    close(lowestFree);
+    rlimit starved = original;
+    // Every free descriptor is at or above `lowestFree`: accept() fails with EMFILE.
+    starved.rlim_cur = static_cast<rlim_t>(lowestFree);
+    ASSERT_EQ(setrlimit(RLIMIT_NOFILE, &starved), 0);
+
+    std::error_code connectError;
+    std::ignore = socket.connect({asio::ip::address_v4::loopback(), PORT}, connectError);  // completes in the backlog
+    std::this_thread::sleep_for(STARVED);
+    ASSERT_EQ(setrlimit(RLIMIT_NOFILE, &original), 0);
+    ASSERT_FALSE(connectError) << connectError.message();
+
+    const std::uint64_t errors = server->stats().acceptErrors;
+    EXPECT_GE(errors, 1U);
+    // A busy loop fails thousands of times in that window; with the delay, about STARVED / RETRY times.
+    EXPECT_LE(errors, 2 * (STARVED / RETRY) + 2);
+
+    // Descriptors are back: the server accepts connections again.
+    const auto client = ecs::net::createClient({.protocolId = GAME_A});
+    ASSERT_TRUE(client->connect("127.0.0.1", PORT));
+    EXPECT_TRUE(
+        has(pollUntil(*client, [](const auto& e) { return has(e, EventType::Connected); }), EventType::Connected));
+#endif
 }
 
 int main(int argc, char** argv) {

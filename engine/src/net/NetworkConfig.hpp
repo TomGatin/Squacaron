@@ -39,6 +39,13 @@ struct NetworkConfig {
     std::uint32_t maxReliablePayload = 64U * 1024U;
     /** @brief Bytes waiting to be written to one peer; above this, the peer is not reading and is disconnected. */
     std::size_t maxReliableQueueBytes = std::size_t{1024} * 1024U;
+    /**
+     * @brief Received messages of one peer kept until the game polls them; the next ones are dropped and counted in
+     * `TransportStats::eventsDropped`. Bounds the memory a flooding peer can take while the game thread is slow.
+     */
+    std::size_t maxQueuedMessages = 4096;
+    /** @brief Server only: delay before accepting again after a failed accept (e.g. out of file descriptors). */
+    std::chrono::milliseconds acceptRetryDelay{100};
 };
 
 /**
@@ -51,7 +58,8 @@ struct NetworkConfig {
     return config.maxPeers > 0 && config.udpTick > milliseconds::zero() &&
            config.keepaliveInterval > milliseconds::zero() && config.keepaliveInterval < config.udpTimeout &&
            config.handshakeTimeout > milliseconds::zero() && config.maxReliablePayload > 0 &&
-           config.maxReliableQueueBytes >= config.maxReliablePayload;
+           config.maxReliableQueueBytes >= config.maxReliablePayload && config.maxQueuedMessages > 0 &&
+           config.acceptRetryDelay > milliseconds::zero();
 }
 
 }  // namespace ecs::net

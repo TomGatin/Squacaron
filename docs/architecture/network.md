@@ -147,6 +147,8 @@ auto server = ecs::net::createServer({.protocolId = MY_GAME_PROTOCOL_ID, .maxPee
 | `handshakeTimeout`      | 5 s     | Server: a connection that did not send its `Handshake` in time is closed    |
 | `maxReliablePayload`    | 64 KiB  | Largest TCP payload, sent or received                                       |
 | `maxReliableQueueBytes` | 1 MiB   | Bytes waiting to be written to one peer before it is considered not reading |
+| `maxQueuedMessages`     | 4096    | Received messages of one peer kept until `poll()`; the next ones are dropped |
+| `acceptRetryDelay`      | 100 ms  | Server: wait before accepting again after a failed accept                    |
 
 `createServer()` / `createClient()` throw `std::invalid_argument` if `isValid(config)` is false (zero duration or limit,
 keepalive not shorter than the timeout). The UDP datagram size (1200 bytes, `MAX_UNRELIABLE_PAYLOAD` = 1192 for the
@@ -429,6 +431,8 @@ Two adapters provide both interfaces:
 - **`PeerGroupConnection`** gives one engine a part of a server transport. A transport has one event queue for all its
   peers, so the code that owns it polls it once and routes each event with `push()`. In the other direction, `broadcast()`
   sends to the peers of the group and never calls the transport's own `broadcast()`, which would reach every group.
+  Like the transport queue, it keeps at most `maxQueuedMessages` messages per peer between two `poll()`
+  (`droppedMessages()` counts the rest); `Connected` and `Disconnected` are never dropped.
 
 ---
 
@@ -599,6 +603,8 @@ without sockets.
 | Closing a session inside a loop over `_peers` (e.g. queue full during `broadcast`)  | Iterator invalidated, undefined behaviour         | `TcpSession::close()` is always deferred with `asio::post`               |
 | Peer that never reads its TCP socket                                                | Server memory grows with every `send`             | Write queue limited to 1 MiB, then the session is closed                 |
 | Connection flood                                                                    | Thousands of idle sessions                        | `maxPeers`, and `handshakeTimeout` for connections that stay silent      |
+| UDP flood while the game thread is slow                                             | The event queue grows until the process dies      | `maxQueuedMessages` per peer and per `poll()`; drops in `eventsDropped`  |
+| Accept failing at once, again and again (`EMFILE`)                                  | Busy loop on the network thread, nothing logged   | Error logged, accept retried after `acceptRetryDelay`; `acceptErrors`    |
 | Client of another game (or a port scanner) connecting                               | Garbage reaches the game's decoder                | `Handshake` with `protocolId` checked before the game sees the peer      |
 | Windows: datagram bigger than the receive buffer                                    | `message_size` error logged for each packet       | Ignore `message_size` like `connection_reset` and restart the receive    |
 | `start()` / `connect()` after `stop()`                                              | Returns `true` but nothing runs                   | Three-state `Idle` / `Running` / `Stopped`, single-use objects           |

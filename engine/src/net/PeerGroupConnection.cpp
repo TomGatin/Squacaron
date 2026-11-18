@@ -1,5 +1,7 @@
 #include "PeerGroupConnection.hpp"
 
+#include <atomic>
+#include <cstddef>
 #include <mutex>
 #include <utility>
 #include <vector>
@@ -20,13 +22,23 @@ void PeerGroupConnection::removePeer(const PeerId peer) {
 
 void PeerGroupConnection::push(NetworkEvent event) {
     const std::scoped_lock lock(_mutex);
-    if (_peers.contains(event.peer)) {
-        _events.push_back(std::move(event));
+    if (!_peers.contains(event.peer)) {
+        return;
     }
+    if (event.type == EventType::Data) {
+        std::size_t& queued = _queuedPerPeer[event.peer];
+        if (queued >= _maxQueuedMessages) {
+            _dropped.fetch_add(1, std::memory_order_relaxed);
+            return;
+        }
+        ++queued;
+    }
+    _events.push_back(std::move(event));
 }
 
 std::vector<NetworkEvent> PeerGroupConnection::poll() {
     const std::scoped_lock lock(_mutex);
+    _queuedPerPeer.clear();
     return std::exchange(_events, {});
 }
 

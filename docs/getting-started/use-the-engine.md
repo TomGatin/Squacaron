@@ -31,7 +31,7 @@ To build without the render and audio modules (and without raylib), add `--graph
 set_languages("c++23")
 add_rules("mode.debug", "mode.release")
 
-add_repositories("local-repo path/to/Mirror-Rtype/xmake-repo")
+add_repositories("local-repo path/to/Squacaron/xmake-repo")
 add_requires("squacaron", {configs = {graphics = true}})
 
 target("my_game")

@@ -17,7 +17,7 @@ concurrency:
 jobs:
   build:
     name: Build (${{ matrix.os }})
-    if: ${{ github.repository == 'Matt4401/Mirror-Rtype' }}
+    if: ${{ github.repository == 'TomGatin/Squacaron' }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -73,10 +73,10 @@ jobs:
         run: xmake test "test_*/*"
 
   # ECS core under AddressSanitizer, UndefinedBehaviorSanitizer and Valgrind, plus a short benchmark run (issue #40).
-  # Only runs on pushes to main (like the mirror push), not on every pull request.
+  # Only runs on pushes to main, not on every pull request.
   ecs-memory:
     name: ECS sanitizers, Valgrind and benchmark
-    if: ${{ github.repository == 'Matt4401/Mirror-Rtype' && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    if: ${{ github.repository == 'TomGatin/Squacaron' && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     env:
       ECS_TESTS: test_ecs test_ecs_stress
@@ -129,7 +129,7 @@ jobs:
 
   engine-package:
     name: Standalone engine + games on the package (ubuntu-latest)
-    if: ${{ github.repository == 'Matt4401/Mirror-Rtype' }}
+    if: ${{ github.repository == 'TomGatin/Squacaron' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository

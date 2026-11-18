@@ -1,9 +1,9 @@
 <!-- markdownlint-disable MD033 -->
 # Squacaron
 
-[![Cross-platform build](https://github.com/Matt4401/Mirror-Rtype/actions/workflows/build.yml/badge.svg)](https://github.com/Matt4401/Mirror-Rtype/actions/workflows/build.yml)
-[![macOS build](https://github.com/Matt4401/Mirror-Rtype/actions/workflows/build-macos.yml/badge.svg)](https://github.com/Matt4401/Mirror-Rtype/actions/workflows/build-macos.yml)
-[![Documentation](https://github.com/Matt4401/Mirror-Rtype/actions/workflows/docs.yml/badge.svg)](https://github.com/Matt4401/Mirror-Rtype/actions/workflows/docs.yml)
+[![Cross-platform build](https://github.com/TomGatin/Squacaron/actions/workflows/build.yml/badge.svg)](https://github.com/TomGatin/Squacaron/actions/workflows/build.yml)
+[![macOS build](https://github.com/TomGatin/Squacaron/actions/workflows/build-macos.yml/badge.svg)](https://github.com/TomGatin/Squacaron/actions/workflows/build-macos.yml)
+[![Documentation](https://github.com/TomGatin/Squacaron/actions/workflows/docs.yml/badge.svg)](https://github.com/TomGatin/Squacaron/actions/workflows/docs.yml)
 [![C++23](https://img.shields.io/badge/C%2B%2B-23-00599C?logo=c%2B%2B&logoColor=white)](https://en.cppreference.com/w/cpp/23)
 [![Build System](https://img.shields.io/badge/Build%20System-xmake-red)](https://xmake.io/)
 ![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20Windows%20%7C%20macOS-informational)
@@ -127,8 +127,8 @@ The [Building Guide](docs/getting-started/building.md) has the details.
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/Matt4401/Mirror-Rtype.git
-cd Mirror-Rtype
+git clone https://github.com/TomGatin/Squacaron.git
+cd Squacaron
 
 # 2. Configure the build environment (automatically resolves dependencies)
 xmake f -c
@@ -243,7 +243,7 @@ pre-commit install
 
 ## Documentation
 
-The documentation is hosted at **<https://matt4401.github.io/Mirror-Rtype/>** (rebuilt on every push to `main`).
+The documentation is hosted at **<https://tomgatin.github.io/Squacaron/>** (rebuilt on every push to `main`).
 It is written with MkDocs Material and Doxygen. To build it locally:
 
 ```bash

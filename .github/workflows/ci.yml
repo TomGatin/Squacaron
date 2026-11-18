@@ -1,0 +1,112 @@
+name: Lint and tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+env:
+  BUILD_MODE: release
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  cpp-linter:
+    name: Check C++ formatting and linting
+    if: ${{ github.repository == 'TomGatin/Squacaron' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v7
+
+      - name: Install tooling
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends clang-format clang-tidy \
+            libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxext-dev libgl1-mesa-dev
+
+      - name: Setup xmake
+        uses: xmake-io/github-action-setup-xmake@v1
+        with:
+          xmake-version: latest
+
+      - name: Restore xmake packages cache
+        uses: actions/cache@v5
+        with:
+          path: ~/.xmake/packages
+          key: xmake-pkgs-v2-${{ runner.os }}-${{ hashFiles('xmake.lua') }}
+          restore-keys: |
+            xmake-pkgs-v2-${{ runner.os }}-
+
+      - name: Generate compile_commands.json
+        run: |
+          xmake f -m ${{ env.BUILD_MODE }} -y
+          xmake project -k compile_commands build
+
+      - name: Run C++ linter
+        uses: cpp-linter/cpp-linter-action@v2
+        id: linter
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          version: "20"
+          style: "file"
+          tidy-checks: ""
+          database: "build"
+          ignore: ".github|build|tests|engine/tests"
+          file-annotations: "true"
+          step-summary: "true"
+
+      - name: Fail when checks fail
+        if: steps.linter.outputs.checks-failed > 0
+        run: exit 1
+
+  build-and-test:
+    name: Build and run tests
+    needs: cpp-linter
+    if: ${{ github.repository == 'TomGatin/Squacaron' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends build-essential \
+            libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxext-dev libgl1-mesa-dev
+
+      - name: Setup xmake
+        uses: xmake-io/github-action-setup-xmake@v1
+        with:
+          xmake-version: latest
+
+      - name: Restore xmake packages cache
+        uses: actions/cache@v5
+        with:
+          path: ~/.xmake/packages
+          key: xmake-pkgs-v2-${{ runner.os }}-${{ hashFiles('xmake.lua') }}
+          restore-keys: |
+            xmake-pkgs-v2-${{ runner.os }}-
+
+      - name: Configure xmake
+        run: xmake f -m ${{ env.BUILD_MODE }} -y
+
+      - name: Build binaries
+        run: xmake -v
+
+      - name: Check binaries
+        run: |
+          test -x r-type_client
+          test -x r-type_server
+          test -x rlss_server
+
+      - name: Run tests
+        run: xmake test
+

@@ -20,15 +20,15 @@
 namespace scripting {
 
 template <auto Fn>
-void WrenVM::foreignMethodTrampoline(::WrenVM* rawVm) noexcept {
+void WrenVM::foreignMethodTrampoline(NativeVm* rawVm) noexcept {
     try {
         ForeignCall call(rawVm);
         if constexpr (std::is_invocable_v<decltype(Fn), ForeignCall&>) {
             Fn(call);
-        } else if constexpr (std::is_invocable_v<decltype(Fn), ::WrenVM*>) {
+        } else if constexpr (std::is_invocable_v<decltype(Fn), NativeVm*>) {
             Fn(rawVm);
         } else {
-            static_assert(detail::always_false_v<decltype(Fn)>, "Foreign method must accept ForeignCall& or ::WrenVM*");
+            static_assert(detail::always_false_v<decltype(Fn)>, "Foreign method must accept ForeignCall& or NativeVm*");
         }
     } catch (const std::exception& e) {
         ForeignCall call(rawVm);
@@ -46,7 +46,7 @@ void WrenVM::registerForeignMethod(std::string_view module, std::string_view cla
 }
 
 template <typename Receiver, typename... Args>
-WrenInterpretResult WrenVM::call(WrenHandle* method, const Receiver& receiver, const Args&... args) {
+CallResult WrenVM::call(ScriptObject* method, const Receiver& receiver, const Args&... args) {
     constexpr int totalSlots = 1 + sizeof...(Args);
     ensureSlots(totalSlots);
     setSlot(0, receiver);
@@ -56,15 +56,14 @@ WrenInterpretResult WrenVM::call(WrenHandle* method, const Receiver& receiver, c
 }
 
 template <typename Receiver, typename... Args>
-WrenInterpretResult WrenVM::call(const detail::UniqueWrenHandle& method, const Receiver& receiver,
-                                 const Args&... args) {
+CallResult WrenVM::call(const detail::UniqueWrenHandle& method, const Receiver& receiver, const Args&... args) {
     return call(method.get(), receiver, args...);
 }
 
 template <typename... Args>
 detail::UniqueWrenHandle WrenVM::newInstance(std::string_view module, std::string_view className, const Args&... args) {
     if (!hasVariable(module, className)) {
-        return detail::UniqueWrenHandle(nullptr, detail::WrenHandleDeleter{.vm = raw()});
+        return detail::UniqueWrenHandle(nullptr, detail::WrenHandleDeleter{.vm = _vm});
     }
     constexpr int totalSlots = 1 + sizeof...(Args);
     ensureSlots(totalSlots);
@@ -73,8 +72,8 @@ detail::UniqueWrenHandle WrenVM::newInstance(std::string_view module, std::strin
     ([&]() { setSlot(slot++, args); }(), ...);
 
     auto newHandle = makeCallHandle(detail::makeMethodSignature("new", sizeof...(Args)));
-    if (call(newHandle.get()) != WREN_RESULT_SUCCESS) {
-        return detail::UniqueWrenHandle(nullptr, detail::WrenHandleDeleter{.vm = raw()});
+    if (call(newHandle.get()) != CallResult::Success) {
+        return detail::UniqueWrenHandle(nullptr, detail::WrenHandleDeleter{.vm = _vm});
     }
     return getSlot<detail::UniqueWrenHandle>(0);
 }
@@ -84,7 +83,7 @@ detail::UniqueWrenHandle WrenVM::newInstanceWithHandle(const detail::UniqueWrenH
                                                        std::string_view module, std::string_view className,
                                                        const Args&... args) {
     if (!hasVariable(module, className)) {
-        return detail::UniqueWrenHandle(nullptr, detail::WrenHandleDeleter{.vm = raw()});
+        return detail::UniqueWrenHandle(nullptr, detail::WrenHandleDeleter{.vm = _vm});
     }
     constexpr int totalSlots = 1 + sizeof...(Args);
     ensureSlots(totalSlots);
@@ -92,8 +91,8 @@ detail::UniqueWrenHandle WrenVM::newInstanceWithHandle(const detail::UniqueWrenH
     int slot = 1;
     ([&]() { setSlot(slot++, args); }(), ...);
 
-    if (call(newHandle.get()) != WREN_RESULT_SUCCESS) {
-        return detail::UniqueWrenHandle(nullptr, detail::WrenHandleDeleter{.vm = raw()});
+    if (call(newHandle.get()) != CallResult::Success) {
+        return detail::UniqueWrenHandle(nullptr, detail::WrenHandleDeleter{.vm = _vm});
     }
     return getSlot<detail::UniqueWrenHandle>(0);
 }
@@ -103,18 +102,17 @@ void WrenVM::setSlot(int slot, const T& value) {
     using DecayedT = std::decay_t<T>;
     if constexpr (std::is_same_v<DecayedT, std::nullptr_t>) {
         (void)value;
-        wrenSetSlotNull(raw(), slot);
+        detail::slots::setNull(_vm, slot);
     } else if constexpr (std::is_same_v<DecayedT, bool>) {
-        wrenSetSlotBool(raw(), slot, value);
+        detail::slots::setBool(_vm, slot, value);
     } else if constexpr (std::is_arithmetic_v<DecayedT>) {
-        wrenSetSlotDouble(raw(), slot, static_cast<double>(value));
+        detail::slots::setDouble(_vm, slot, static_cast<double>(value));
     } else if constexpr (std::is_convertible_v<DecayedT, std::string_view>) {
-        std::string_view const sv = value;
-        wrenSetSlotBytes(raw(), slot, sv.data(), sv.size());
-    } else if constexpr (std::is_same_v<DecayedT, WrenHandle*>) {
-        wrenSetSlotHandle(raw(), slot, value);
+        detail::slots::setBytes(_vm, slot, std::string_view(value));
+    } else if constexpr (std::is_same_v<DecayedT, ScriptObject*>) {
+        detail::slots::setHandle(_vm, slot, value);
     } else if constexpr (std::is_same_v<DecayedT, detail::UniqueWrenHandle>) {
-        wrenSetSlotHandle(raw(), slot, value.get());
+        detail::slots::setHandle(_vm, slot, value.get());
     } else {
         static_assert(detail::always_false_v<DecayedT>, "Unsupported slot type for WrenVM::setSlot");
     }
@@ -124,29 +122,29 @@ template <typename T>
 std::optional<T> WrenVM::getSlotChecked(int slot) {
     using DecayedT = std::decay_t<T>;
 
-    if (slot < 0 || slot >= wrenGetSlotCount(raw())) {
+    if (slot < 0 || slot >= detail::slots::count(_vm)) {
         return std::nullopt;
     }
 
     if constexpr (std::is_same_v<DecayedT, bool>) {
-        if (wrenGetSlotType(raw(), slot) != WREN_TYPE_BOOL) {
+        if (detail::slots::type(_vm, slot) != SlotType::Bool) {
             return std::nullopt;
         }
-        return wrenGetSlotBool(raw(), slot);
+        return detail::slots::getBool(_vm, slot);
     } else if constexpr (std::is_floating_point_v<DecayedT>) {
-        if (wrenGetSlotType(raw(), slot) != WREN_TYPE_NUM) {
+        if (detail::slots::type(_vm, slot) != SlotType::Num) {
             return std::nullopt;
         }
-        double const d = wrenGetSlotDouble(raw(), slot);
+        double const d = detail::slots::getDouble(_vm, slot);
         if (std::isnan(d) || std::isinf(d)) {
             return std::nullopt;
         }
         return static_cast<T>(d);
     } else if constexpr (std::is_integral_v<DecayedT>) {
-        if (wrenGetSlotType(raw(), slot) != WREN_TYPE_NUM) {
+        if (detail::slots::type(_vm, slot) != SlotType::Num) {
             return std::nullopt;
         }
-        double const d = wrenGetSlotDouble(raw(), slot);
+        double const d = detail::slots::getDouble(_vm, slot);
         if (std::isnan(d) || std::isinf(d)) {
             return std::nullopt;
         }
@@ -158,23 +156,19 @@ std::optional<T> WrenVM::getSlotChecked(int slot) {
         }
         return static_cast<T>(d);
     } else if constexpr (std::is_same_v<DecayedT, std::string_view>) {
-        if (wrenGetSlotType(raw(), slot) != WREN_TYPE_STRING) {
+        if (detail::slots::type(_vm, slot) != SlotType::String) {
             return std::nullopt;
         }
-        int length = 0;
-        const char* str = wrenGetSlotBytes(raw(), slot, &length);
-        return std::string_view(str, static_cast<std::size_t>(length));
+        return detail::slots::getBytes(_vm, slot);
     } else if constexpr (std::is_same_v<DecayedT, std::string>) {
-        if (wrenGetSlotType(raw(), slot) != WREN_TYPE_STRING) {
+        if (detail::slots::type(_vm, slot) != SlotType::String) {
             return std::nullopt;
         }
-        int length = 0;
-        const char* str = wrenGetSlotBytes(raw(), slot, &length);
-        return std::string(str, static_cast<std::size_t>(length));
-    } else if constexpr (std::is_same_v<DecayedT, WrenHandle*>) {
-        return wrenGetSlotHandle(raw(), slot);
+        return std::string(detail::slots::getBytes(_vm, slot));
+    } else if constexpr (std::is_same_v<DecayedT, ScriptObject*>) {
+        return detail::slots::getHandle(_vm, slot);
     } else if constexpr (std::is_same_v<DecayedT, detail::UniqueWrenHandle>) {
-        return detail::UniqueWrenHandle(wrenGetSlotHandle(raw(), slot), detail::WrenHandleDeleter{.vm = raw()});
+        return detail::UniqueWrenHandle(detail::slots::getHandle(_vm, slot), detail::WrenHandleDeleter{.vm = _vm});
     } else {
         static_assert(detail::always_false_v<DecayedT>, "Unsupported slot type for WrenVM::getSlotChecked");
         return std::nullopt;

@@ -83,8 +83,8 @@ void ScriptSystem::prepareVm(WrenVM& vm) {
     }
 }
 
-void ScriptSystem::recordResult(ScriptOwner owner, WrenInterpretResult result, std::string_view hook) {
-    if (result == WREN_RESULT_SUCCESS) {
+void ScriptSystem::recordResult(ScriptOwner owner, CallResult result, std::string_view hook) {
+    if (result == CallResult::Success) {
         _errors.recordSuccess(owner);
     } else if (_errors.recordFailure(owner, hook, _vm.lastError())) {
         _fibers.cancel(owner);

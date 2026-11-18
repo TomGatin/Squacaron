@@ -1,7 +1,5 @@
 #pragma once
 
-#include <raylib.h>
-
 #include <vector>
 
 #include "components/Renderable.hpp"
@@ -11,6 +9,26 @@
 #include "render/texture/TextureStore.hpp"
 
 namespace render {
+
+/** @brief A point of a `CameraView`, in world pixels. */
+struct CameraPoint {
+    /** @brief Horizontal coordinate. */
+    float x = 0.0F;
+    /** @brief Vertical coordinate. */
+    float y = 0.0F;
+};
+
+/** @brief The 2D camera a frame is drawn with. The default is neutral: no offset, no rotation, zoom 1. */
+struct CameraView {
+    /** @brief Screen position the target is drawn at. */
+    CameraPoint offset;
+    /** @brief World position the camera looks at. */
+    CameraPoint target;
+    /** @brief Rotation in degrees. */
+    float rotation = 0.0F;
+    /** @brief Zoom factor (1 is the pixel size). */
+    float zoom = 1.0F;
+};
 
 /**
  * @brief One drawable entity captured for the current frame.
@@ -85,7 +103,7 @@ class RenderSystem {
      * @brief Camera selected by the last `collect`.
      * @return The first active `CameraComponent`'s camera, or a neutral camera if there is none.
      */
-    [[nodiscard]] const Camera2D& camera() const noexcept { return _camera; }
+    [[nodiscard]] const CameraView& camera() const noexcept { return _camera; }
 
   private:
     /**
@@ -101,7 +119,7 @@ class RenderSystem {
     std::vector<DrawItem> _queue;
 
     /** @brief Camera used by `draw`. */
-    Camera2D _camera;
+    CameraView _camera;
 };
 
 }  // namespace render

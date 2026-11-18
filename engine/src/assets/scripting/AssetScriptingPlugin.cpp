@@ -59,7 +59,7 @@ AssetManager* managerOf(const scripting::ForeignCall& call) {
  */
 bool isStagingCall(const scripting::ForeignCall& call) {
     auto* scripts = call.userData<scripting::ScriptSystem>();
-    return scripts != nullptr && call.raw() != scripts->getVm().raw();
+    return scripts != nullptr && call.raw() != scripting::detail::raw(scripts->getVm());
 }
 
 /**

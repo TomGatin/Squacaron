@@ -15,6 +15,7 @@
 #include "scripting/ScriptComponent.hpp"
 #include "scripting/ScriptSystem.hpp"
 #include "scripting/WrenVM.hpp"
+#include "scripting/detail/WrenApi.hpp"
 
 namespace {
 
@@ -61,7 +62,7 @@ class Probe {
     }
 
     /** @brief Calls a static `Probe` method; the result is left in slot 0. */
-    WrenInterpretResult callProbe(std::string const& signature, auto... args) {
+    scripting::CallResult callProbe(std::string const& signature, auto... args) {
         auto& vm = scripts.getVm();
         auto handle = vm.makeCallHandle(signature);
         vm.ensureSlots(static_cast<int>(sizeof...(args)) + 1);
@@ -73,7 +74,7 @@ class Probe {
 
     /** @brief Reads the list of numbers in slot 0 as entity ids. */
     std::vector<ecs::Entity> resultIds() {
-        WrenVM* raw = scripts.getVm().raw();
+        ::WrenVM* raw = scripting::detail::raw(scripts.getVm());
         std::vector<ecs::Entity> ids;
         int const count = wrenGetListCount(raw, 0);
         wrenEnsureSlots(raw, 2);
@@ -88,8 +89,10 @@ class Probe {
     scripting::ScriptSystem scripts;
 
   private:
-    void setArg(int slot, double value) { wrenSetSlotDouble(scripts.getVm().raw(), slot, value); }
-    void setArg(int slot, char const* value) { wrenSetSlotString(scripts.getVm().raw(), slot, value); }
+    void setArg(int slot, double value) { wrenSetSlotDouble(scripting::detail::raw(scripts.getVm()), slot, value); }
+    void setArg(int slot, char const* value) {
+        wrenSetSlotString(scripting::detail::raw(scripts.getVm()), slot, value);
+    }
 };
 
 }  // namespace
@@ -176,10 +179,10 @@ TEST_F(WorldScripting, GetEntitiesWithTagReturnsEntityWrappers) {
     spawnAt(registry, 0, 0, "player");
     ecs::Entity const b = spawnAt(registry, 1, 1, "enemy");
 
-    ASSERT_EQ(callProbe("tagged(_)", "enemy"), WREN_RESULT_SUCCESS);
+    ASSERT_EQ(callProbe("tagged(_)", "enemy"), scripting::CallResult::Success);
     EXPECT_EQ(resultIds(), (std::vector<ecs::Entity>{a, b}));
 
-    ASSERT_EQ(callProbe("tagged(_)", "boss"), WREN_RESULT_SUCCESS);
+    ASSERT_EQ(callProbe("tagged(_)", "boss"), scripting::CallResult::Success);
     EXPECT_TRUE(resultIds().empty());
 }
 
@@ -187,11 +190,11 @@ TEST_F(WorldScripting, GetNearestWithTagReturnsEntityOrNull) {
     spawnAt(registry, 100, 0, "player");
     ecs::Entity const near = spawnAt(registry, 10, 0, "player");
 
-    ASSERT_EQ(callProbe("nearest(_,_,_)", 0.0, 0.0, "player"), WREN_RESULT_SUCCESS);
+    ASSERT_EQ(callProbe("nearest(_,_,_)", 0.0, 0.0, "player"), scripting::CallResult::Success);
     EXPECT_EQ(scripts.getVm().getSlot<double>(0), static_cast<double>(near));
 
-    ASSERT_EQ(callProbe("nearest(_,_,_)", 0.0, 0.0, "boss"), WREN_RESULT_SUCCESS);
-    EXPECT_EQ(wrenGetSlotType(scripts.getVm().raw(), 0), WREN_TYPE_NULL);
+    ASSERT_EQ(callProbe("nearest(_,_,_)", 0.0, 0.0, "boss"), scripting::CallResult::Success);
+    EXPECT_EQ(wrenGetSlotType(scripting::detail::raw(scripts.getVm()), 0), WREN_TYPE_NULL);
 }
 
 TEST_F(WorldScripting, GetEntitiesInRadiusForAreaOfEffect) {
@@ -199,10 +202,10 @@ TEST_F(WorldScripting, GetEntitiesInRadiusForAreaOfEffect) {
     ecs::Entity const hit2 = spawnAt(registry, 0, -20, "enemy");
     spawnAt(registry, 200, 0, "enemy");
 
-    ASSERT_EQ(callProbe("around(_,_,_)", 0.0, 0.0, 25.0), WREN_RESULT_SUCCESS);
+    ASSERT_EQ(callProbe("around(_,_,_)", 0.0, 0.0, 25.0), scripting::CallResult::Success);
     EXPECT_EQ(resultIds(), (std::vector<ecs::Entity>{hit1, hit2}));
 
-    ASSERT_EQ(callProbe("around(_,_,_)", 0.0, 0.0, -5.0), WREN_RESULT_SUCCESS);
+    ASSERT_EQ(callProbe("around(_,_,_)", 0.0, 0.0, -5.0), scripting::CallResult::Success);
     EXPECT_TRUE(resultIds().empty());
 }
 
@@ -211,19 +214,19 @@ TEST_F(WorldScripting, QueriesSkipEntitiesPendingDestroy) {
     ecs::Entity const survivor = spawnAt(registry, 50, 0, "enemy");
     scripts.queueDestroyEntity(doomed);
 
-    ASSERT_EQ(callProbe("tagged(_)", "enemy"), WREN_RESULT_SUCCESS);
+    ASSERT_EQ(callProbe("tagged(_)", "enemy"), scripting::CallResult::Success);
     EXPECT_EQ(resultIds(), (std::vector<ecs::Entity>{survivor}));
 
-    ASSERT_EQ(callProbe("nearest(_,_,_)", 0.0, 0.0, "enemy"), WREN_RESULT_SUCCESS);
+    ASSERT_EQ(callProbe("nearest(_,_,_)", 0.0, 0.0, "enemy"), scripting::CallResult::Success);
     EXPECT_EQ(scripts.getVm().getSlot<double>(0), static_cast<double>(survivor));
 
-    ASSERT_EQ(callProbe("around(_,_,_)", 0.0, 0.0, 100.0), WREN_RESULT_SUCCESS);
+    ASSERT_EQ(callProbe("around(_,_,_)", 0.0, 0.0, 100.0), scripting::CallResult::Success);
     EXPECT_EQ(resultIds(), (std::vector<ecs::Entity>{survivor}));
 }
 
 TEST_F(WorldScripting, InvalidArgumentsAbortTheFiberWithoutCrashing) {
-    ASSERT_EQ(callProbe("tagged(_)", 3.0), WREN_RESULT_RUNTIME_ERROR);
-    ASSERT_EQ(callProbe("nearest(_,_,_)", "x", 0.0, "enemy"), WREN_RESULT_RUNTIME_ERROR);
+    ASSERT_EQ(callProbe("tagged(_)", 3.0), scripting::CallResult::RuntimeError);
+    ASSERT_EQ(callProbe("nearest(_,_,_)", "x", 0.0, "enemy"), scripting::CallResult::RuntimeError);
 }
 
 TEST_F(WorldScripting, HomingMissileSteersTowardNearestEnemy) {

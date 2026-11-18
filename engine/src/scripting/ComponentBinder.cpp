@@ -21,32 +21,31 @@ ComponentBinderBase::ComponentBinderBase(WrenVM& vm, std::string moduleName, std
     : _vm(&vm), _module(std::move(moduleName)), _className(std::move(className)) {
     _vm->registerForeignClass(
         _module, _className,
-        WrenForeignClassMethods{.allocate =
-                                    [](::WrenVM* rawVm) noexcept {
-                                        try {
-                                            ForeignCall const call(rawVm);
-                                            auto entityId = call.arg<ecs::Entity>(1);
-                                            if (!entityId.has_value()) {
-                                                return;
-                                            }
-                                            auto* ptr = call.retNewForeign<ecs::Entity>(0);
-                                            if (ptr != nullptr) {
-                                                *ptr = *entityId;
-                                            }
-                                        } catch (const std::exception& e) {
-                                            ForeignCall const call(rawVm);
-                                            call.abort(std::string("Exception in foreign class allocation: ") +
-                                                       e.what());
-                                        } catch (...) {
-                                            ForeignCall const call(rawVm);
-                                            call.abort("Unknown exception in foreign class allocation");
+        ForeignClassMethods{.allocate =
+                                [](::WrenVM* rawVm) noexcept {
+                                    try {
+                                        ForeignCall const call(rawVm);
+                                        auto entityId = call.arg<ecs::Entity>(1);
+                                        if (!entityId.has_value()) {
+                                            return;
                                         }
-                                    },
-                                .finalize = nullptr});
+                                        auto* ptr = call.retNewForeign<ecs::Entity>(0);
+                                        if (ptr != nullptr) {
+                                            *ptr = *entityId;
+                                        }
+                                    } catch (const std::exception& e) {
+                                        ForeignCall const call(rawVm);
+                                        call.abort(std::string("Exception in foreign class allocation: ") + e.what());
+                                    } catch (...) {
+                                        ForeignCall const call(rawVm);
+                                        call.abort("Unknown exception in foreign class allocation");
+                                    }
+                                },
+                            .finalize = nullptr});
 }
 
-void ComponentBinderBase::registerPropertyMethods(const std::string& propName, WrenForeignMethodFn getter,
-                                                  WrenForeignMethodFn setter) {
+void ComponentBinderBase::registerPropertyMethods(const std::string& propName, ForeignMethodFn getter,
+                                                  ForeignMethodFn setter) {
     _vm->registerForeignMethod(_module, _className, false, propName, getter);
     _vm->registerForeignMethod(_module, _className, false, propName + "=(_)", setter);
     _properties.push_back(propName);

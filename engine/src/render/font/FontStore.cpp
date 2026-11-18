@@ -3,18 +3,22 @@
 #include <raylib.h>
 
 #include <cstddef>
+#include <memory>
 #include <string>
 
 #include "core/services/IScreenDrawService.hpp"
+#include "render/detail/RaylibStores.hpp"
 #include "utils/StableSlots.hpp"
 
 namespace render {
+
+FontStore::FontStore() : _impl(std::make_unique<Impl>()) {}
 
 FontStore::~FontStore() {
     if (!IsWindowReady()) {
         return;
     }
-    for (const Slot& slot : _fonts) {
+    for (const Impl::Slot& slot : _impl->fonts) {
         if (slot.loaded) {
             UnloadFont(slot.font);
         }
@@ -39,31 +43,25 @@ engine::FontId FontStore::load(const std::string& path, const engine::FontId pre
     }
     GenTextureMipmaps(&font.texture);
     SetTextureFilter(font.texture, TEXTURE_FILTER_TRILINEAR);
-    return ecs::placeInSlot(_fonts, Slot{.font = font, .loaded = true}, preferred);
+    return ecs::placeInSlot(_impl->fonts, Impl::Slot{.font = font, .loaded = true}, preferred);
 }
 
-void FontStore::reserve(const engine::FontId last) { ecs::reserveSlots(_fonts, last); }
+void FontStore::reserve(const engine::FontId last) { ecs::reserveSlots(_impl->fonts, last); }
 
-const Font* FontStore::get(engine::FontId id) const {
-    if (id == engine::NO_FONT || static_cast<std::size_t>(id) > _fonts.size()) {
-        return nullptr;
-    }
-    const Slot& slot = _fonts.at(id - 1);
-    return slot.loaded ? &slot.font : nullptr;
-}
+bool FontStore::contains(engine::FontId id) const { return _impl->get(id) != nullptr; }
 
 void FontStore::unload(const engine::FontId id) {
-    if (id == engine::NO_FONT || static_cast<std::size_t>(id) > _fonts.size()) {
+    if (id == engine::NO_FONT || static_cast<std::size_t>(id) > _impl->fonts.size()) {
         return;
     }
-    Slot& slot = _fonts.at(id - 1);
+    Impl::Slot& slot = _impl->fonts.at(id - 1);
     if (!slot.loaded) {
         return;
     }
     if (IsWindowReady()) {
         UnloadFont(slot.font);
     }
-    slot = Slot{};
+    slot = Impl::Slot{};
 }
 
 }  // namespace render

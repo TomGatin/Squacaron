@@ -18,7 +18,7 @@
 #include "tools/cvars/CVarRef.hpp"
 #include "tools/cvars/CVarTypes.hpp"
 
-namespace tools {
+namespace sq::tools {
 
 /**
  * @brief Registry of the CVars of a program.
@@ -182,6 +182,6 @@ class CVarManager {
     bool _cheatsAllowed = false;
 };
 
-}  // namespace tools
+}  // namespace sq::tools
 
 #include "tools/cvars/CVarManager.tpp"  // IWYU pragma: export

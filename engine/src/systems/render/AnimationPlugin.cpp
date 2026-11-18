@@ -13,13 +13,15 @@
 #include "render/api/IRenderService.hpp"
 #include "systems/render/AnimationSystem.hpp"
 
-namespace systems {
+namespace sq::systems {
 
-void AnimationPlugin::build(engine::PluginBuilder& builder) { builder.requireService<engine::IRenderService>(); }
+void AnimationPlugin::build(sq::engine::PluginBuilder& builder) {
+    builder.requireService<sq::engine::IRenderService>();
+}
 
-void AnimationPlugin::fixedUpdate(engine::Engine& engine, const ecs::time::Time& time) {
+void AnimationPlugin::fixedUpdate(sq::engine::Engine& engine, const sq::time::Time& time) {
     AnimationSystem::update(engine.registry(), time.deltaTime);
     _parallaxSystem.update(engine.registry(), time.deltaTime);
 }
 
-}  // namespace systems
+}  // namespace sq::systems

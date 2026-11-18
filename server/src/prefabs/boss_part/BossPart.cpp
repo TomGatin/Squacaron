@@ -38,7 +38,7 @@ constexpr auto BYTE_MAX = static_cast<double>(std::numeric_limits<std::uint8_t>:
  * @param high Largest value.
  * @return The value, within [low, high].
  */
-double clampedParam(PrefabParams const& params, const char* key, const double fallback, const double low,
+double clampedParam(sq::prefabs::PrefabParams const& params, const char* key, const double fallback, const double low,
                     const double high) {
     const double requested = params.get(key, fallback);
     return std::isnan(requested) ? fallback : std::clamp(requested, low, high);
@@ -59,7 +59,7 @@ std::optional<BossPartRole> bossPartRole(const std::string_view name) {
     return std::nullopt;
 }
 
-void buildBossPart(ecs::Entity e, ecs::Registry& registry, PrefabParams const& params) {
+void buildBossPart(sq::ecs::Entity e, sq::ecs::Registry& registry, sq::prefabs::PrefabParams const& params) {
     const BossPartRole role = bossPartRole(params.get<std::string>("role", "")).value_or(BossPartRole::Armor);
     const auto width =
         static_cast<float>(clampedParam(params, "width", DEFAULT_BOSS_PART_SIZE, MIN_PART_SIZE, MAX_PART_SIZE));
@@ -67,17 +67,17 @@ void buildBossPart(ecs::Entity e, ecs::Registry& registry, PrefabParams const& p
         static_cast<float>(clampedParam(params, "height", DEFAULT_BOSS_PART_SIZE, MIN_PART_SIZE, MAX_PART_SIZE));
     const auto look = static_cast<std::uint8_t>(clampedParam(params, "look", 0.0, 0.0, BYTE_MAX));
 
-    registry.addComponent<ecs::Transform>(e, makeTransform(params));
-    registry.addComponent<ecs::Renderable>(e, ecs::Renderable{.layer = 2});
+    registry.addComponent<sq::ecs::Transform>(e, sq::prefabs::makeTransform(params));
+    registry.addComponent<sq::ecs::Renderable>(e, sq::ecs::Renderable{.layer = 2});
     // Kinematic without velocity: the hierarchy moves it with its boss.
-    registry.addComponent<ecs::RigidBody2D>(e, ecs::RigidBody2D{.bodyType = ecs::BodyType::Kinematic});
-    registry.addComponent<ecs::Collider2D>(e, ecs::Collider2D{
-                                                  .halfWidth = width / 2.0F,
-                                                  .halfHeight = height / 2.0F,
-                                                  .categoryBits = collision::ENEMY,
-                                                  .maskBits = collision::ENEMY_MASK,
-                                                  .isSensor = true,
-                                              });
+    registry.addComponent<sq::ecs::RigidBody2D>(e, sq::ecs::RigidBody2D{.bodyType = sq::ecs::BodyType::Kinematic});
+    registry.addComponent<sq::ecs::Collider2D>(e, sq::ecs::Collider2D{
+                                                      .halfWidth = width / 2.0F,
+                                                      .halfHeight = height / 2.0F,
+                                                      .categoryBits = collision::ENEMY,
+                                                      .maskBits = collision::ENEMY_MASK,
+                                                      .isSensor = true,
+                                                  });
     registry.addComponent<BossPart>(e, BossPart{.role = role, .look = look});
     if (role == BossPartRole::Turret) {
         const auto health = static_cast<std::uint8_t>(

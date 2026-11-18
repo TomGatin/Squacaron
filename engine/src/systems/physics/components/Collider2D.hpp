@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace ecs {
+namespace sq::ecs {
 
 /** @brief Geometries supported by a 2D collider. */
 enum class ColliderShape : std::uint8_t {
@@ -47,4 +47,4 @@ struct Collider2D {
     bool isSensor = false;
 };
 
-}  // namespace ecs
+}  // namespace sq::ecs

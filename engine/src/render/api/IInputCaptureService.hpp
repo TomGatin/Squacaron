@@ -7,7 +7,7 @@
 
 #include "render/api/InputCodes.hpp"
 
-namespace engine {
+namespace sq::engine {
 
 /**
  * @brief Takes the user input away from the rest of the program (a developer console, a modal text prompt...).
@@ -66,4 +66,4 @@ class IInputCaptureService {
     [[nodiscard]] virtual float mouseWheelDelta() const noexcept = 0;
 };
 
-}  // namespace engine
+}  // namespace sq::engine

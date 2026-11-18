@@ -27,7 +27,7 @@ inline constexpr double MIN_AIMED_SHOT_SPEED = 50.0;
 /**
  * @brief Binds the components the boss scripts use, in the VM of a room and in every VM a hot reload creates.
  *
- * - `core/Position`: `ecs::Transform` as `Position` (`x`, `y`).
+ * - `core/Position`: `sq::ecs::Transform` as `Position` (`x`, `y`).
  * - `game/Combat`: static helpers of the class `Combat`:
  *   - `health(id)`: `[points, max]` of an entity with hit points (a boss, a turret), or null;
  *   - `parts(id)`: ids of the living parts of a boss;
@@ -44,6 +44,6 @@ inline constexpr double MIN_AIMED_SHOT_SPEED = 50.0;
  * @param scripts Script system of the room.
  * @return True if the binding was loaded in the room VM.
  */
-bool bindScriptComponents(scripting::ScriptSystem& scripts);
+bool bindScriptComponents(sq::scripting::ScriptSystem& scripts);
 
 }  // namespace rtype::server::gameplay

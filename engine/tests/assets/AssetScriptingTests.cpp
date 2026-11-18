@@ -72,16 +72,16 @@ struct LoaderLog {
     /** @brief Paths loaded, in order. */
     std::vector<std::string> loads;
     /** @brief Options of each load. */
-    std::vector<assets::LoadOptions> options;
+    std::vector<sq::assets::LoadOptions> options;
     /** @brief Handles released. */
     std::vector<std::uint32_t> unloads;
 };
 
-template <assets::AssetKind Kind>
-assets::AssetLoader<Kind> fakeLoader(const std::shared_ptr<LoaderLog>& log) {
-    return assets::AssetLoader<Kind>{
-        .load = [log](const std::string& path, const assets::LoadOptions& options, typename Kind::Id /*preferred*/) ->
-        typename Kind::Id {
+template <sq::assets::AssetKind Kind>
+sq::assets::AssetLoader<Kind> fakeLoader(const std::shared_ptr<LoaderLog>& log) {
+    return sq::assets::AssetLoader<Kind>{
+        .load = [log](const std::string& path, const sq::assets::LoadOptions& options,
+                      typename Kind::Id /*preferred*/) -> typename Kind::Id {
             log->loads.push_back(path);
             log->options.push_back(options);
             return static_cast<typename Kind::Id>(log->loads.size());
@@ -94,21 +94,21 @@ assets::AssetLoader<Kind> fakeLoader(const std::shared_ptr<LoaderLog>& log) {
 class AssetScriptingTest : public ::testing::Test {
   protected:
     void SetUp() override {
-        engine.addPlugin<scripting::ScriptPlugin>()
-            .addPlugin<assets::AssetPlugin>()
-            .addPlugin<assets::AssetScriptingPlugin>(std::string(DECLARATIONS));
+        engine.addPlugin<sq::scripting::ScriptPlugin>()
+            .addPlugin<sq::assets::AssetPlugin>()
+            .addPlugin<sq::assets::AssetScriptingPlugin>(std::string(DECLARATIONS));
         engine.init();
         // Installed after the script ran: what it asked for is loaded now.
-        manager().setLoader<assets::Texture>(fakeLoader<assets::Texture>(textures));
-        manager().setLoader<assets::Sound>(fakeLoader<assets::Sound>(sounds));
-        manager().setLoader<assets::Font>(fakeLoader<assets::Font>(fonts));
-        manager().setLoader<assets::Music>(fakeLoader<assets::Music>(musics));
+        manager().setLoader<sq::assets::Texture>(fakeLoader<sq::assets::Texture>(textures));
+        manager().setLoader<sq::assets::Sound>(fakeLoader<sq::assets::Sound>(sounds));
+        manager().setLoader<sq::assets::Font>(fakeLoader<sq::assets::Font>(fonts));
+        manager().setLoader<sq::assets::Music>(fakeLoader<sq::assets::Music>(musics));
     }
 
     void TearDown() override { engine.shutdown(); }
 
-    assets::AssetManager& manager() { return engine.registry().getResource<assets::AssetManager>(); }
-    scripting::ScriptSystem& scripts() { return engine.getPlugin<scripting::ScriptPlugin>().scriptSystem(); }
+    sq::assets::AssetManager& manager() { return engine.registry().getResource<sq::assets::AssetManager>(); }
+    sq::scripting::ScriptSystem& scripts() { return engine.getPlugin<sq::scripting::ScriptPlugin>().scriptSystem(); }
 
     /** @brief Runs Wren code in a fresh module; false if it failed (aborted fiber included). */
     bool run(std::string_view source) {
@@ -121,7 +121,7 @@ class AssetScriptingTest : public ::testing::Test {
     }
 
     ScriptFile declarations{std::string(DECLARATIONS), DECLARATIONS_SOURCE};
-    engine::Engine engine;
+    sq::engine::Engine engine;
     std::shared_ptr<LoaderLog> textures = std::make_shared<LoaderLog>();
     std::shared_ptr<LoaderLog> sounds = std::make_shared<LoaderLog>();
     std::shared_ptr<LoaderLog> fonts = std::make_shared<LoaderLog>();
@@ -131,13 +131,13 @@ class AssetScriptingTest : public ::testing::Test {
 }  // namespace
 
 TEST_F(AssetScriptingTest, TheDeclarationScriptRunsAtInitAndLoadsItsGlobalGroup) {
-    EXPECT_TRUE(engine.getPlugin<assets::AssetScriptingPlugin>().declarationsLoaded());
+    EXPECT_TRUE(engine.getPlugin<sq::assets::AssetScriptingPlugin>().declarationsLoaded());
     EXPECT_EQ(textures->loads, std::vector<std::string>{"sprites/ship.png"});
     EXPECT_EQ(fonts->loads, std::vector<std::string>{"fonts/ui.ttf"});
     EXPECT_EQ(musics->loads, std::vector<std::string>{"music/theme.ogg"});
     EXPECT_TRUE(sounds->loads.empty());
-    EXPECT_NE(manager().get<assets::Texture>("ship"), assets::Texture::NONE);
-    EXPECT_EQ(manager().get<assets::Texture>("stadium"), assets::Texture::NONE);
+    EXPECT_NE(manager().get<sq::assets::Texture>("ship"), sq::assets::Texture::NONE);
+    EXPECT_EQ(manager().get<sq::assets::Texture>("stadium"), sq::assets::Texture::NONE);
 }
 
 TEST_F(AssetScriptingTest, AScriptLoadsAndUnloadsAGroup) {
@@ -149,7 +149,7 @@ TEST_F(AssetScriptingTest, AScriptLoadsAndUnloadsAGroup) {
     )"));
     EXPECT_EQ(sounds->loads, std::vector<std::string>{"sounds/jump.wav"});
     ASSERT_EQ(textures->options.size(), 2U);
-    EXPECT_EQ(textures->options.back().filter, assets::TextureFilter::Smooth);
+    EXPECT_EQ(textures->options.back().filter, sq::assets::TextureFilter::Smooth);
 
     ASSERT_TRUE(run(R"(
         Assets.unloadGroup("match")
@@ -161,7 +161,7 @@ TEST_F(AssetScriptingTest, AScriptLoadsAndUnloadsAGroup) {
 }
 
 TEST_F(AssetScriptingTest, TheIdsSeenByScriptsAreTheOnesOfTheManager) {
-    const auto ship = manager().get<assets::Texture>("ship");
+    const auto ship = manager().get<sq::assets::Texture>("ship");
     ASSERT_TRUE(run("if (Assets.textureId(\"ship\") != " + std::to_string(ship) + ") Fiber.abort(\"wrong id\")"));
     ASSERT_TRUE(run(R"(if (Assets.textureId("unknown") != 0) Fiber.abort("unknown should be 0"))"));
 }
@@ -175,7 +175,7 @@ TEST_F(AssetScriptingTest, ArgumentsOfTheWrongTypeAbortTheFiberWithoutTouchingTh
     EXPECT_FALSE(run(R"(Assets.declare_("texture", "a", "a.png", "global", 1))"));
     EXPECT_FALSE(run(R"(Assets.loadGroupStep("global", -1))"));
     EXPECT_FALSE(run(R"(Assets.preloadTextures([], "global"))"));
-    EXPECT_EQ(manager().get<assets::Texture>("a.png"), assets::Texture::NONE);
+    EXPECT_EQ(manager().get<sq::assets::Texture>("a.png"), sq::assets::Texture::NONE);
     EXPECT_EQ(textures->loads.size(), 1U);
 }
 
@@ -199,7 +199,7 @@ TEST_F(AssetScriptingTest, ScriptsCannotNameFilesOutsideTheWorkingDirectory) {
         if (Assets.preloadTextures("..", "global") != 0) Fiber.abort("climbing out is refused")
     )"));
     EXPECT_EQ(manager().warnings().size(), 3U);
-    EXPECT_EQ(manager().status<assets::Texture>("a"), assets::AssetStatus::Unknown);
+    EXPECT_EQ(manager().status<sq::assets::Texture>("a"), sq::assets::AssetStatus::Unknown);
 }
 
 TEST_F(AssetScriptingTest, ScriptsCannotUnloadTheGlobalGroup) {
@@ -246,15 +246,15 @@ TEST_F(AssetScriptingTest, HotReloadingTheDeclarationsLoadsNothingTwice) {
 }
 
 TEST_F(AssetScriptingTest, HotReloadingWithoutALineReleasesItsAsset) {
-    ASSERT_NE(manager().get<assets::Music>("theme"), assets::Music::NONE);
+    ASSERT_NE(manager().get<sq::assets::Music>("theme"), sq::assets::Music::NONE);
     std::string source(DECLARATIONS_SOURCE);
     const std::string line = "Assets.music(\"theme\", \"music/theme.ogg\")\n";
     source.erase(source.find(line), line.size());
     declarations.write(source);
     ASSERT_TRUE(scripts().reloadModifiedScripts());
-    EXPECT_EQ(manager().status<assets::Music>("theme"), assets::AssetStatus::Unknown);
+    EXPECT_EQ(manager().status<sq::assets::Music>("theme"), sq::assets::AssetStatus::Unknown);
     EXPECT_EQ(musics->unloads.size(), 1U);
-    EXPECT_EQ(manager().status<assets::Texture>("ship"), assets::AssetStatus::Loaded);
+    EXPECT_EQ(manager().status<sq::assets::Texture>("ship"), sq::assets::AssetStatus::Loaded);
     EXPECT_EQ(textures->loads.size(), 1U);
 }
 
@@ -263,7 +263,7 @@ TEST_F(AssetScriptingTest, ARejectedHotReloadChangesNothing) {
     declarations.write(std::string(DECLARATIONS_SOURCE) +
                        "Assets.undeclare(\"texture\", \"ship\")\nFiber.abort(\"broken\")\n");
     EXPECT_FALSE(scripts().reloadModifiedScripts());
-    EXPECT_EQ(manager().status<assets::Texture>("ship"), assets::AssetStatus::Loaded);
+    EXPECT_EQ(manager().status<sq::assets::Texture>("ship"), sq::assets::AssetStatus::Loaded);
     EXPECT_TRUE(textures->unloads.empty());
 }
 
@@ -277,7 +277,7 @@ TEST_F(AssetScriptingTest, AHotReloadThatFailsToReplayKeepsTheDeclarations) {
     declarations.write(source);
     scripts().reloadModifiedScripts();
     EXPECT_FALSE(scripts().lastReplaySucceeded());
-    EXPECT_EQ(manager().status<assets::Music>("theme"), assets::AssetStatus::Loaded);
+    EXPECT_EQ(manager().status<sq::assets::Music>("theme"), sq::assets::AssetStatus::Loaded);
     EXPECT_TRUE(musics->unloads.empty());
 }
 
@@ -297,12 +297,12 @@ TEST_F(AssetScriptingTest, OnlyTexturesTakeTheSmoothOption) {
 }
 
 TEST(AssetScriptingPlugin, AMissingDeclarationModuleIsReported) {
-    engine::Engine engine;
-    engine.addPlugin<scripting::ScriptPlugin>()
-        .addPlugin<assets::AssetPlugin>()
-        .addPlugin<assets::AssetScriptingPlugin>("does/not/Exist");
+    sq::engine::Engine engine;
+    engine.addPlugin<sq::scripting::ScriptPlugin>()
+        .addPlugin<sq::assets::AssetPlugin>()
+        .addPlugin<sq::assets::AssetScriptingPlugin>("does/not/Exist");
     engine.init();
-    EXPECT_FALSE(engine.getPlugin<assets::AssetScriptingPlugin>().declarationsLoaded());
+    EXPECT_FALSE(engine.getPlugin<sq::assets::AssetScriptingPlugin>().declarationsLoaded());
     engine.shutdown();
 }
 
@@ -319,18 +319,18 @@ Assets.texture(Names.ship, "sprites/ship.png")
 Assets.loadGroup("global")
 )wren";
 
-    engine::Engine engine;
-    engine.addPlugin<scripting::ScriptPlugin>(scripting::ScriptTick::EveryFrame, root)
-        .addPlugin<assets::AssetPlugin>(root)
-        .addPlugin<assets::AssetScriptingPlugin>("game/Assets");
+    sq::engine::Engine engine;
+    engine.addPlugin<sq::scripting::ScriptPlugin>(sq::scripting::ScriptTick::EveryFrame, root)
+        .addPlugin<sq::assets::AssetPlugin>(root)
+        .addPlugin<sq::assets::AssetScriptingPlugin>("game/Assets");
     engine.init();
-    EXPECT_TRUE(engine.getPlugin<assets::AssetScriptingPlugin>().declarationsLoaded());
+    EXPECT_TRUE(engine.getPlugin<sq::assets::AssetScriptingPlugin>().declarationsLoaded());
 
     auto log = std::make_shared<LoaderLog>();
-    auto& manager = engine.registry().getResource<assets::AssetManager>();
-    manager.setLoader<assets::Texture>(fakeLoader<assets::Texture>(log));
+    auto& manager = engine.registry().getResource<sq::assets::AssetManager>();
+    manager.setLoader<sq::assets::Texture>(fakeLoader<sq::assets::Texture>(log));
     EXPECT_EQ(log->loads, std::vector<std::string>{(root / "sprites/ship.png").generic_string()});
-    EXPECT_NE(manager.get<assets::Texture>("player_ship"), assets::Texture::NONE);
+    EXPECT_NE(manager.get<sq::assets::Texture>("player_ship"), sq::assets::Texture::NONE);
     engine.shutdown();
 
     std::error_code ec;

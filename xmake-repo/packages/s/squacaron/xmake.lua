@@ -41,6 +41,6 @@ package("squacaron")
     on_test(function (package)
         assert(package:check_cxxsnippets({test = [[
             #include "core/Engine.hpp"
-            void test() { engine::Engine engine; }
+            void test() { sq::engine::Engine engine; }
         ]]}, {configs = {languages = "c++23"}}))
     end)

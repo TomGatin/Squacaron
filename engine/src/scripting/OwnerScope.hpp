@@ -7,7 +7,7 @@
 
 #include "scripting/ScriptOwner.hpp"
 
-namespace scripting {
+namespace sq::scripting {
 
 class ScriptSystem;
 
@@ -43,4 +43,4 @@ class OwnerScope {
     ScriptOwner _previous;
 };
 
-}  // namespace scripting
+}  // namespace sq::scripting

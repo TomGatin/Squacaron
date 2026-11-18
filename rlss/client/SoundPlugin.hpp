@@ -19,11 +19,11 @@
 #include "events/EventBus.hpp"
 #include "game/Components.hpp"
 
-namespace ecs {
+namespace sq::ecs {
 class Registry;
 }
 
-namespace ecs::time {
+namespace sq::ecs::time {
 struct Time;
 }
 
@@ -82,7 +82,7 @@ inline constexpr std::size_t SOUND_COUNT = static_cast<std::size_t>(Sound::GoalE
 /** @brief Client: what the sounds of a car last heard, kept on the car entity by `SoundPlugin`. */
 struct CarAudio {
     /** @brief Entity playing the boost roar (an emitter follows its own entity, the car already plays its engine). */
-    ecs::Entity boost = 0;
+    sq::ecs::Entity boost = 0;
     /** @brief `CarCues::jumps` already played. */
     int jumps = 0;
     /** @brief `CarCues::impacts` already played. */
@@ -104,21 +104,21 @@ struct BallAudio {
 };
 
 /**
- * @brief Plays the sounds of the match through the engine audio module (`audio::AudioPlugin`).
+ * @brief Plays the sounds of the match through the engine audio module (`sq::audio::AudioPlugin`).
  *
  * Everything heard comes from the server's state, the client never guesses an event:
  * - each car plays its engine (pitched with its speed) and, while it boosts, the boost roar: looping
- *   `ecs::AudioEmitter`s that follow the cars;
+ *   `sq::ecs::AudioEmitter`s that follow the cars;
  * - the `CarCues` and `BallCues` counters, replicated with the snapshots, play the jumps, flips, impacts, hits and
  *   bounces where they happen, louder when stronger; a colored shot adds its own blast;
  * - the `MatchState` written by `HudPlugin` plays the countdown, the kickoff, the goals, the overtime, the
  *   end of the match and the last seconds of the clock; a crowd murmurs during the whole match.
  *
- * Positioned sounds are heard from the camera (an `ecs::AudioListener` follows its target): the cars and the ball
+ * Positioned sounds are heard from the camera (an `sq::ecs::AudioListener` follows its target): the cars and the ball
  * pan left and right with their place on screen and fade out when they are far away. A missing sound file only
  * mutes that sound.
  */
-class SoundPlugin final : public engine::IPlugin {
+class SoundPlugin final : public sq::engine::IPlugin {
   public:
     /**
      * @brief Gets plugin name.
@@ -131,26 +131,26 @@ class SoundPlugin final : public engine::IPlugin {
      * scoreboard plugins.
      * @param builder Dependency builder.
      */
-    void build(engine::PluginBuilder& builder) override;
+    void build(sq::engine::PluginBuilder& builder) override;
 
     /**
      * @brief Loads the sounds, sets the spatialization, spawns the listener and subscribes to the events.
      * @param engine Host engine.
      */
-    void init(engine::Engine& engine) override;
+    void init(sq::engine::Engine& engine) override;
 
     /**
      * @brief Moves the listener with the camera, updates the loops and plays the new events.
      * @param engine Host engine.
      * @param time Frame time.
      */
-    void update(engine::Engine& engine, const ecs::time::Time& time) override;
+    void update(sq::engine::Engine& engine, const sq::time::Time& time) override;
 
     /**
      * @brief Unsubscribes from the events and releases the sounds.
      * @param engine Host engine.
      */
-    void shutdown(engine::Engine& engine) override;
+    void shutdown(sq::engine::Engine& engine) override;
 
   private:
     /**
@@ -161,44 +161,44 @@ class SoundPlugin final : public engine::IPlugin {
      * @param pitch Playback speed factor.
      * @param position Where it happens, or nothing for a sound heard everywhere.
      */
-    void play(engine::Engine& engine, Sound sound, float volume, float pitch,
-              std::optional<audio::SoundPosition> position = std::nullopt) const;
+    void play(sq::engine::Engine& engine, Sound sound, float volume, float pitch,
+              std::optional<sq::audio::SoundPosition> position = std::nullopt) const;
 
     /**
      * @brief Engine and boost loops of every car, and the sounds of their new jumps and impacts.
      * @param engine Host engine.
      * @param dt Frame time, in seconds.
      */
-    void updateCars(engine::Engine& engine, float dt) const;
+    void updateCars(sq::engine::Engine& engine, float dt) const;
 
     /**
      * @brief Sounds of the new hits, colored shots and bounces of the ball.
      * @param engine Host engine.
      */
-    void updateBall(engine::Engine& engine) const;
+    void updateBall(sq::engine::Engine& engine) const;
 
     /**
      * @brief Sounds of the changes of the match state: countdown, kickoff, goal, overtime, end, clock.
      * @param engine Host engine.
      */
-    void updateMatch(engine::Engine& engine);
+    void updateMatch(sq::engine::Engine& engine);
 
-    /** @brief Loaded sounds, `audio::NO_SOUND` for those that could not be loaded. */
-    std::array<audio::SoundId, SOUND_COUNT> _sounds{};
+    /** @brief Loaded sounds, `sq::audio::NO_SOUND` for those that could not be loaded. */
+    std::array<sq::audio::SoundId, SOUND_COUNT> _sounds{};
     /** @brief Entity hearing the sounds, following the camera; it also plays the crowd. */
-    ecs::Entity _listener = 0;
+    sq::ecs::Entity _listener = 0;
     /** @brief True between `MatchJoined` and `MatchLeft`. */
     bool _inMatch = false;
     /** @brief Match state of the previous frame, or nothing right after joining. */
     std::optional<game::MatchState> _lastMatch;
     /** @brief Subscription to `ReplicatedEntitySpawned`, while initialized. */
-    std::optional<ecs::EventBus::EventToken> _spawned;
+    std::optional<sq::events::EventBus::EventToken> _spawned;
     /** @brief Subscription to `ReplicatedEntityDespawned`, while initialized. */
-    std::optional<ecs::EventBus::EventToken> _despawned;
+    std::optional<sq::events::EventBus::EventToken> _despawned;
     /** @brief Subscription to `MatchJoined`, while initialized. */
-    std::optional<ecs::EventBus::EventToken> _joined;
+    std::optional<sq::events::EventBus::EventToken> _joined;
     /** @brief Subscription to `MatchLeft`, while initialized. */
-    std::optional<ecs::EventBus::EventToken> _left;
+    std::optional<sq::events::EventBus::EventToken> _left;
 };
 
 }  // namespace rlss::client

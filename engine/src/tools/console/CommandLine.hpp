@@ -11,7 +11,7 @@
 #include <string_view>
 #include <vector>
 
-namespace tools {
+namespace sq::tools {
 
 /** @brief Words of one statement: the command or cvar name, then its arguments. */
 using Statement = std::vector<std::string>;
@@ -51,4 +51,4 @@ inline constexpr std::size_t MAX_LINE_WORDS = 64;
  */
 [[nodiscard]] std::string quoteWord(std::string_view word);
 
-}  // namespace tools
+}  // namespace sq::tools

@@ -13,11 +13,11 @@
 
 #include "scene/SceneManager.hpp"  // NOLINT(misc-header-include-cycle)
 
-namespace scene {
+namespace sq::scene {
 
 template <typename Scene, typename... Args>
 SceneId SceneManager::registerScene(Args&&... args) {
-    static_assert(std::is_base_of_v<IScene, Scene>, "Scene must derive from scene::IScene");
+    static_assert(std::is_base_of_v<IScene, Scene>, "Scene must derive from sq::scene::IScene");
     return add(std::make_unique<Scene>(std::forward<Args>(args)...));
 }
 
@@ -50,4 +50,4 @@ void SceneManager::replace() {
     replace(idOf<Scene>());
 }
 
-}  // namespace scene
+}  // namespace sq::scene

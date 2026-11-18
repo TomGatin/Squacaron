@@ -23,7 +23,7 @@
 #include "tools/cvars/CVarManager.hpp"
 #include "tools/cvars/CVarTypes.hpp"
 
-namespace tools {
+namespace sq::tools {
 
 void Console::addCommand(std::string name, Command command) {
     if (!CVarManager::isValidName(name)) {
@@ -322,4 +322,4 @@ std::string describeCVar(const CVarManager& cvars, std::string_view name) {
     return text;
 }
 
-}  // namespace tools
+}  // namespace sq::tools

@@ -4,7 +4,7 @@
 
 #include "ecs/time/Time.hpp"
 
-namespace ecs::time {
+namespace sq::time {
 
 /**
  * @brief Fixed-timestep simulation clock decoupled from the rendering framerate.
@@ -103,6 +103,6 @@ class Clock {
     Time _time;
 };
 
-}  // namespace ecs::time
+}  // namespace sq::time
 
 #include "Clock.tpp"  // IWYU pragma: export

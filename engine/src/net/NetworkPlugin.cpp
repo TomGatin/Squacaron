@@ -16,25 +16,26 @@
 #include "core/plugins/CorePlugin.hpp"
 #include "ecs/Entity.hpp"
 
-namespace ecs::net {
+namespace sq::net {
 
 NetworkPlugin::NetworkPlugin(std::shared_ptr<INetworkEventSource> source, std::shared_ptr<INetworkService> service)
     : _source(std::move(source)), _service(std::move(service)) {}
 
-void NetworkPlugin::build(engine::PluginBuilder& builder) { builder.require<engine::CorePlugin>(); }
+void NetworkPlugin::build(sq::engine::PluginBuilder& builder) { builder.require<sq::engine::CorePlugin>(); }
 
-void NetworkPlugin::init(engine::Engine& engine) {
+void NetworkPlugin::init(sq::engine::Engine& engine) {
     if (const auto res = engine.mediator().registerService<INetworkService>(_service); !res) {
-        throw engine::MediatorError(res.error());
+        throw sq::engine::MediatorError(res.error());
     }
     // Reuse a map created by the game before init: replacing it would drop its bindings and dangle references to it.
     auto& registry = engine.registry();
     auto& map = registry.hasResource<NetworkEntityMap>() ? registry.getResource<NetworkEntityMap>()
                                                          : registry.emplaceResource<NetworkEntityMap>();
-    _destroyListener = engine.registry().addDestroyListener([map = &map](const Entity e) { map->unbindEntity(e); });
+    _destroyListener =
+        engine.registry().addDestroyListener([map = &map](const ecs::Entity e) { map->unbindEntity(e); });
 }
 
-void NetworkPlugin::preUpdate(engine::Engine& engine) {
+void NetworkPlugin::preUpdate(sq::engine::Engine& engine) {
     for (auto& [type, peer, data, channel] : _source->poll()) {
         switch (type) {
             case EventType::Connected:
@@ -50,7 +51,7 @@ void NetworkPlugin::preUpdate(engine::Engine& engine) {
     }
 }
 
-void NetworkPlugin::shutdown(engine::Engine& engine) {
+void NetworkPlugin::shutdown(sq::engine::Engine& engine) {
     if (_destroyListener) {
         engine.registry().removeDestroyListener(*_destroyListener);
         _destroyListener.reset();
@@ -59,4 +60,5 @@ void NetworkPlugin::shutdown(engine::Engine& engine) {
         engine.mediator().removeService<INetworkService>();
     }
 }
-}  // namespace ecs::net
+
+}  // namespace sq::net

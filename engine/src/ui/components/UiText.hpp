@@ -5,7 +5,7 @@
 #include "render/api/components/Renderable.hpp"
 #include "ui/components/FontId.hpp"
 
-namespace ui {
+namespace sq::ui {
 
 /**
  * @brief Draws a text string in screen space.
@@ -21,10 +21,10 @@ struct UiText {
     float fontSize = 20.0F;
 
     /** @brief Text color. */
-    ecs::Rgba color;
+    sq::ecs::Rgba color;
 
     /** @brief Font to use, or `NO_FONT` for the default font. */
     FontId fontId = NO_FONT;
 };
 
-}  // namespace ui
+}  // namespace sq::ui

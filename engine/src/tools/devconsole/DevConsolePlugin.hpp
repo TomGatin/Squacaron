@@ -18,17 +18,19 @@
 #include "tools/devconsole/DevConsoleView.hpp"
 #include "tools/devconsole/KeyRepeater.hpp"
 
-namespace engine {
-class IInputCaptureService;
-}
+namespace sq::engine {
 
-namespace tools {
+class IInputCaptureService;
+
+}  // namespace sq::engine
+
+namespace sq::tools {
 
 /**
  * @brief In-game developer console window, on top of the `ConsolePlugin`.
  *
  * - The toggle key (`DevConsoleConfig::toggleKey`) opens and closes it; Escape closes it too.
- * - While it is open it captures the input (`engine::IInputCaptureService`): gameplay, menus and every other reader
+ * - While it is open it captures the input (`sq::engine::IInputCaptureService`): gameplay, menus and every other reader
  *   see an idle keyboard, mouse and gamepad.
  * - Typing edits the input line; Enter runs it, Tab completes it, Up/Down browse the history, Left/Right/Home/End move
  *   the cursor, Backspace/Delete erase, PageUp/PageDown and the mouse wheel scroll the output. Held keys repeat.
@@ -37,24 +39,24 @@ namespace tools {
  *
  * Holds no graphics-library code: it talks to the window, capture and screen draw services only.
  */
-class DevConsolePlugin final : public engine::IPlugin {
+class DevConsolePlugin final : public sq::engine::IPlugin {
   public:
     /** @brief Keys of the editing actions. */
     static constexpr auto KEY_BINDINGS = std::to_array<KeyBinding>({
-        {.key = engine::Key::Enter, .action = EditAction::Submit, .repeats = false},
-        {.key = engine::Key::KeypadEnter, .action = EditAction::Submit, .repeats = false},
-        {.key = engine::Key::Tab, .action = EditAction::Complete, .repeats = false},
-        {.key = engine::Key::Backspace, .action = EditAction::Backspace, .repeats = true},
-        {.key = engine::Key::Delete, .action = EditAction::Delete, .repeats = true},
-        {.key = engine::Key::Left, .action = EditAction::Left, .repeats = true},
-        {.key = engine::Key::Right, .action = EditAction::Right, .repeats = true},
-        {.key = engine::Key::Home, .action = EditAction::Home, .repeats = false},
-        {.key = engine::Key::End, .action = EditAction::End, .repeats = false},
-        {.key = engine::Key::Up, .action = EditAction::HistoryPrevious, .repeats = true},
-        {.key = engine::Key::Down, .action = EditAction::HistoryNext, .repeats = true},
-        {.key = engine::Key::PageUp, .action = EditAction::PageUp, .repeats = true},
-        {.key = engine::Key::PageDown, .action = EditAction::PageDown, .repeats = true},
-        {.key = engine::Key::Escape, .action = EditAction::Close, .repeats = false},
+        {.key = sq::engine::Key::Enter, .action = EditAction::Submit, .repeats = false},
+        {.key = sq::engine::Key::KeypadEnter, .action = EditAction::Submit, .repeats = false},
+        {.key = sq::engine::Key::Tab, .action = EditAction::Complete, .repeats = false},
+        {.key = sq::engine::Key::Backspace, .action = EditAction::Backspace, .repeats = true},
+        {.key = sq::engine::Key::Delete, .action = EditAction::Delete, .repeats = true},
+        {.key = sq::engine::Key::Left, .action = EditAction::Left, .repeats = true},
+        {.key = sq::engine::Key::Right, .action = EditAction::Right, .repeats = true},
+        {.key = sq::engine::Key::Home, .action = EditAction::Home, .repeats = false},
+        {.key = sq::engine::Key::End, .action = EditAction::End, .repeats = false},
+        {.key = sq::engine::Key::Up, .action = EditAction::HistoryPrevious, .repeats = true},
+        {.key = sq::engine::Key::Down, .action = EditAction::HistoryNext, .repeats = true},
+        {.key = sq::engine::Key::PageUp, .action = EditAction::PageUp, .repeats = true},
+        {.key = sq::engine::Key::PageDown, .action = EditAction::PageDown, .repeats = true},
+        {.key = sq::engine::Key::Escape, .action = EditAction::Close, .repeats = false},
     });
 
     /** @brief Runs after every plugin that does not depend on it, so the console is drawn over every overlay. */
@@ -96,32 +98,32 @@ class DevConsolePlugin final : public engine::IPlugin {
      * @brief Declares the console plugin, the window, capture and screen draw services, and the UI (drawn first).
      * @param builder Dependency builder.
      */
-    void build(engine::PluginBuilder& builder) override;
+    void build(sq::engine::PluginBuilder& builder) override;
 
     /**
      * @brief Creates the console state on the `Console` service and loads the font.
      * @param engine Host engine.
      */
-    void init(engine::Engine& engine) override;
+    void init(sq::engine::Engine& engine) override;
 
     /**
      * @brief Reads the toggle key, the typed characters, the editing keys and the wheel; captures the input while open.
      * @param engine Host engine.
      */
-    void preUpdate(engine::Engine& engine) override;
+    void preUpdate(sq::engine::Engine& engine) override;
 
     /**
      * @brief Draws the console while it is open.
      * @param engine Host engine.
      * @param time Frame time.
      */
-    void lateUpdate(engine::Engine& engine, const ecs::time::Time& time) override;
+    void lateUpdate(sq::engine::Engine& engine, const sq::time::Time& time) override;
 
     /**
      * @brief Releases the input capture.
      * @param engine Host engine.
      */
-    void shutdown(engine::Engine& engine) override;
+    void shutdown(sq::engine::Engine& engine) override;
 
     /** @brief Gets the console state. @return The state, or `nullptr` before `init`. */
     [[nodiscard]] DevConsole* devConsole() noexcept { return _devConsole.get(); }
@@ -132,13 +134,13 @@ class DevConsolePlugin final : public engine::IPlugin {
      * @param capture Real input.
      * @param dt Frame duration in seconds.
      */
-    void readEditing(engine::IInputCaptureService& capture, float dt);
+    void readEditing(sq::engine::IInputCaptureService& capture, float dt);
 
     /**
      * @brief Forgets the pending typed characters and makes held keys wait for their release.
      * @param capture Real input.
      */
-    void discardPendingInput(engine::IInputCaptureService& capture);
+    void discardPendingInput(sq::engine::IInputCaptureService& capture);
 
     /** @brief Toggle key, layout, font and colours. */
     DevConsoleConfig _config;
@@ -156,4 +158,4 @@ class DevConsolePlugin final : public engine::IPlugin {
     bool _caretVisible = true;
 };
 
-}  // namespace tools
+}  // namespace sq::tools

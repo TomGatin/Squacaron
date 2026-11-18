@@ -9,16 +9,16 @@
 #include <variant>
 #include <vector>
 
-#include "net/components/InputBuffer.hpp"
-#include "net/components/Replicated.hpp"
-#include "ecs/components/Transform.hpp"
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
+#include "ecs/components/Transform.hpp"
 #include "log/Logger.hpp"
 #include "net/INetworkManager.hpp"
 #include "net/IReplicationCodec.hpp"
 #include "net/NetworkConfig.hpp"
 #include "net/SnapshotApplier.hpp"
+#include "net/components/InputBuffer.hpp"
+#include "net/components/Replicated.hpp"
 #include "protocol/Messages.hpp"
 #include "protocol/Protocol.hpp"
 
@@ -29,8 +29,8 @@ namespace {
 constexpr const char* LOG_TAG = "replication";
 
 // The engine's transport refuses larger datagrams: every snapshot that passes the size check can be sent.
-static_assert(protocol::MAX_UNRELIABLE_SIZE <= ecs::net::MAX_UNRELIABLE_PAYLOAD);
-static_assert(protocol::MAX_SNAPSHOT_PARTS <= ecs::net::MAX_SNAPSHOT_PARTS);
+static_assert(protocol::MAX_UNRELIABLE_SIZE <= sq::net::MAX_UNRELIABLE_PAYLOAD);
+static_assert(protocol::MAX_SNAPSHOT_PARTS <= sq::net::MAX_SNAPSHOT_PARTS);
 
 }  // namespace
 
@@ -39,14 +39,14 @@ void ReplicationCodec::beginSnapshot(const std::uint32_t tick) {
     _outgoing.entities.clear();
 }
 
-void ReplicationCodec::writeEntity(const ecs::Registry& registry, const ecs::Entity entity, const std::uint32_t id,
-                                   const ecs::Replicated& replicated) {
-    ecs::Transform transform;
-    if (registry.hasComponent<ecs::Transform>(entity)) {
-        transform = registry.getComponents<ecs::Transform>().get(entity);
+void ReplicationCodec::writeEntity(const sq::ecs::Registry& registry, const sq::ecs::Entity entity,
+                                   const std::uint32_t id, const sq::ecs::Replicated& replicated) {
+    sq::ecs::Transform transform;
+    if (registry.hasComponent<sq::ecs::Transform>(entity)) {
+        transform = registry.getComponents<sq::ecs::Transform>().get(entity);
     }
     if (!std::isfinite(transform.x) || !std::isfinite(transform.y)) {
-        engine::log::error(LOG_TAG, "entity ", id, " has a non-finite position: not replicated");
+        sq::engine::log::error(LOG_TAG, "entity ", id, " has a non-finite position: not replicated");
         return;
     }
     EntityNetState state;
@@ -64,14 +64,14 @@ void ReplicationCodec::writeEntity(const ecs::Registry& registry, const ecs::Ent
     });
 }
 
-std::vector<ecs::net::Bytes> ReplicationCodec::encodeSnapshot(const std::uint32_t lastProcessedInput) {
+std::vector<sq::net::Bytes> ReplicationCodec::encodeSnapshot(const std::uint32_t lastProcessedInput) {
     const std::size_t entities = _outgoing.entities.size();
     // At least one part: an empty snapshot tells the client that its entities are gone.
     const std::size_t partCount =
         std::max<std::size_t>((entities + protocol::MAX_ENTITIES_PER_PART - 1) / protocol::MAX_ENTITIES_PER_PART, 1);
     if (partCount > protocol::MAX_SNAPSHOT_PARTS) {
-        engine::log::error(LOG_TAG, "snapshot of ", entities, " entities does not fit in ",
-                           protocol::MAX_SNAPSHOT_PARTS, " parts: not sent");
+        sq::engine::log::error(LOG_TAG, "snapshot of ", entities, " entities does not fit in ",
+                               protocol::MAX_SNAPSHOT_PARTS, " parts: not sent");
         return {};
     }
 
@@ -79,7 +79,7 @@ std::vector<ecs::net::Bytes> ReplicationCodec::encodeSnapshot(const std::uint32_
         const std::size_t index = std::min(part * protocol::MAX_ENTITIES_PER_PART, entities);
         return _outgoing.entities.begin() + static_cast<std::ptrdiff_t>(index);
     };
-    std::vector<ecs::net::Bytes> parts;
+    std::vector<sq::net::Bytes> parts;
     parts.reserve(partCount);
     protocol::WorldState part{.tick = _outgoing.tick,
                               .lastProcessedInput = lastProcessedInput,
@@ -94,13 +94,13 @@ std::vector<ecs::net::Bytes> ReplicationCodec::encodeSnapshot(const std::uint32_
     return parts;
 }
 
-std::optional<ecs::NetInput> ReplicationCodec::decodeInput(const ecs::net::Bytes& data) {
+std::optional<sq::ecs::NetInput> ReplicationCodec::decodeInput(const sq::net::Bytes& data) {
     const auto message = protocol::decode(data);
     const auto* input = message ? std::get_if<protocol::PlayerInput>(&*message) : nullptr;
     if (input == nullptr) {
         return std::nullopt;
     }
-    ecs::NetInput decoded{.sequence = input->sequence, .held = input->held, .axes = {}};
+    sq::ecs::NetInput decoded{.sequence = input->sequence, .held = input->held, .axes = {}};
     decoded.axes.reserve(input->axes.size());
     for (const auto& [action, value] : input->axes) {
         decoded.axes.push_back({.action = action, .value = value});
@@ -108,7 +108,7 @@ std::optional<ecs::NetInput> ReplicationCodec::decodeInput(const ecs::net::Bytes
     return decoded;
 }
 
-ecs::net::Bytes ReplicationCodec::encodeInput(const ecs::NetInput& input) {
+sq::net::Bytes ReplicationCodec::encodeInput(const sq::ecs::NetInput& input) {
     protocol::PlayerInput encoded{.sequence = input.sequence, .held = input.held, .axes = {}};
     encoded.axes.reserve(input.axes.size());
     for (const auto& [action, value] : input.axes) {
@@ -117,29 +117,29 @@ ecs::net::Bytes ReplicationCodec::encodeInput(const ecs::NetInput& input) {
     return protocol::encode(encoded);
 }
 
-std::optional<ecs::net::SnapshotHeader> ReplicationCodec::decodeSnapshot(const ecs::net::Bytes& data) {
+std::optional<sq::net::SnapshotHeader> ReplicationCodec::decodeSnapshot(const sq::net::Bytes& data) {
     auto message = protocol::decode(data);
     auto* snapshot = message ? std::get_if<protocol::WorldState>(&*message) : nullptr;
     if (snapshot == nullptr) {
         return std::nullopt;
     }
     _incoming = std::move(*snapshot);
-    return ecs::net::SnapshotHeader{.tick = _incoming.tick,
-                                    .lastProcessedInput = _incoming.lastProcessedInput,
-                                    .partIndex = _incoming.partIndex,
-                                    .partCount = _incoming.partCount};
+    return sq::net::SnapshotHeader{.tick = _incoming.tick,
+                                   .lastProcessedInput = _incoming.lastProcessedInput,
+                                   .partIndex = _incoming.partIndex,
+                                   .partCount = _incoming.partCount};
 }
 
-void ReplicationCodec::applySnapshot(ecs::net::SnapshotApplier& applier) {
-    ecs::Registry& registry = applier.registry();
+void ReplicationCodec::applySnapshot(sq::net::SnapshotApplier& applier) {
+    sq::ecs::Registry& registry = applier.registry();
     for (const protocol::EntityState& state : _incoming.entities) {
         const auto entity = applier.entity(state.entityId, state.kind);
         if (!entity) {
             continue;
         }
-        ecs::Transform transform;
-        if (registry.hasComponent<ecs::Transform>(*entity)) {
-            transform = registry.getComponents<ecs::Transform>().get(*entity);
+        sq::ecs::Transform transform;
+        if (registry.hasComponent<sq::ecs::Transform>(*entity)) {
+            transform = registry.getComponents<sq::ecs::Transform>().get(*entity);
         }
         transform.x = state.x;
         transform.y = state.y;

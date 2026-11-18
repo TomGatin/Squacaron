@@ -12,14 +12,15 @@
 #include "core/PluginBuilder.hpp"
 #include "systems/physics/PhysicsSystem.hpp"
 
-namespace systems {
+namespace sq::systems {
 
 /**
  * @brief Plugin responsible for synchronizing ECS transforms with the Box2D physics world.
  *
- * Contact events (`events::CollisionBeginEvent` / `events::CollisionEndEvent`) are published on the engine event bus.
+ * Contact events (`sq::events::CollisionBeginEvent` / `sq::events::CollisionEndEvent`) are published on the engine
+ * event bus.
  */
-class PhysicsPlugin final : public engine::IPlugin {
+class PhysicsPlugin final : public sq::engine::IPlugin {
   public:
     /** @brief Constructs PhysicsPlugin. */
     PhysicsPlugin() = default;
@@ -49,26 +50,26 @@ class PhysicsPlugin final : public engine::IPlugin {
      * @brief Declares plugin dependencies.
      * @param builder Dependency builder.
      */
-    void build(engine::PluginBuilder& builder) override;
+    void build(sq::engine::PluginBuilder& builder) override;
 
     /**
      * @brief Instantiates PhysicsSystem and registers IPhysicsService in Mediator.
      * @param engine Reference to host Engine.
      */
-    void init(engine::Engine& engine) override;
+    void init(sq::engine::Engine& engine) override;
 
     /**
      * @brief Advances Box2D physics simulation during fixed timestep tick.
      * @param engine Reference to host Engine.
      * @param time Fixed simulation timing information.
      */
-    void fixedUpdate(engine::Engine& engine, const ecs::time::Time& time) override;
+    void fixedUpdate(sq::engine::Engine& engine, const sq::time::Time& time) override;
 
     /**
      * @brief Unregisters services and releases physics world.
      * @param engine Reference to host Engine.
      */
-    void shutdown(engine::Engine& engine) override;
+    void shutdown(sq::engine::Engine& engine) override;
 
     /** @brief Gets pointer to the underlying PhysicsSystem, or nullptr if uninitialized. */
     [[nodiscard]] PhysicsSystem* physicsSystem() noexcept { return _physicsSystem.get(); }
@@ -82,4 +83,4 @@ class PhysicsPlugin final : public engine::IPlugin {
     std::shared_ptr<PhysicsServiceImpl> _physicsService = nullptr;
 };
 
-}  // namespace systems
+}  // namespace sq::systems

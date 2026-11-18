@@ -9,7 +9,7 @@
 #include <string>
 #include <string_view>
 
-namespace tools {
+namespace sq::tools {
 
 class Console;
 class CVarManager;
@@ -59,4 +59,4 @@ class CommandContext {
     bool _failed = false;
 };
 
-}  // namespace tools
+}  // namespace sq::tools

@@ -12,7 +12,7 @@
  * and the subsystem that logs. Debug and info go to stdout, warnings and errors to stderr. Thread-safe: the network
  * thread and the game thread can log at the same time without mixing their lines.
  */
-namespace engine::log {
+namespace sq::engine::log {
 
 /** @brief Turns the debug messages on or off (`--logs`). Thread-safe. */
 void setVerbose(bool enabled) noexcept;
@@ -55,13 +55,13 @@ void warning(std::string_view tag, const Args&... args);
 template <typename... Args>
 void error(std::string_view tag, const Args&... args);
 
-namespace detail {
+}  // namespace sq::engine::log
+
+namespace sq::engine::log::detail {
 
 /** @brief Prints one finished line, with or without colors. Called by `message()`. */
 void write(Level level, std::string_view tag, std::string_view message);
 
-}  // namespace detail
-
-}  // namespace engine::log
+}  // namespace sq::engine::log::detail
 
 #include "Logger.tpp"  // IWYU pragma: export

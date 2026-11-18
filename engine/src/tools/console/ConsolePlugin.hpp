@@ -12,7 +12,7 @@
 #include "core/PluginBuilder.hpp"
 #include "tools/console/ConsoleTypes.hpp"
 
-namespace tools {
+namespace sq::tools {
 
 class CVarManager;
 class Console;
@@ -27,7 +27,7 @@ class Console;
  *
  * This plugin draws nothing: a UI plugin shows the console on the client, a terminal reader can feed it on a server.
  */
-class ConsolePlugin final : public engine::IPlugin {
+class ConsolePlugin final : public sq::engine::IPlugin {
   public:
     /**
      * @brief Creates the plugin, its registry and its console.
@@ -56,25 +56,25 @@ class ConsolePlugin final : public engine::IPlugin {
      * @brief Declares the core plugin and the two services.
      * @param builder Dependency builder.
      */
-    void build(engine::PluginBuilder& builder) override;
+    void build(sq::engine::PluginBuilder& builder) override;
 
     /**
      * @brief Registers the registry and the console in the Mediator.
      * @param engine Host engine.
      */
-    void init(engine::Engine& engine) override;
+    void init(sq::engine::Engine& engine) override;
 
     /**
      * @brief Publishes the cvar changes since the last frame.
      * @param engine Host engine.
      */
-    void preUpdate(engine::Engine& engine) override;
+    void preUpdate(sq::engine::Engine& engine) override;
 
     /**
      * @brief Removes the services.
      * @param engine Host engine.
      */
-    void shutdown(engine::Engine& engine) override;
+    void shutdown(sq::engine::Engine& engine) override;
 
     /** @brief Gets the registry. @return The CVar registry, usable before `init`. */
     [[nodiscard]] CVarManager& cvars() noexcept { return *_cvars; }
@@ -89,4 +89,4 @@ class ConsolePlugin final : public engine::IPlugin {
     std::shared_ptr<Console> _console;
 };
 
-}  // namespace tools
+}  // namespace sq::tools

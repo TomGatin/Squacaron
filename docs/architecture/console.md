@@ -23,13 +23,13 @@ so it builds headless and is tested with fake services.
 #include "tools/cvars/CVarManager.hpp"
 #include "tools/console/ConsolePlugin.hpp"
 
-engine.addPlugin<tools::ConsolePlugin>(tools::ConsoleConfig{.allowCheats = true});
+engine.addPlugin<sq::tools::ConsolePlugin>(sq::tools::ConsoleConfig{.allowCheats = true});
 
 // In the init of the plugin that owns the setting:
-auto& cvars = engine.service<tools::CVarManager>();
+auto& cvars = engine.service<sq::tools::CVarManager>();
 _gravity = cvars.add("sv_gravity", 9.8F, "World gravity (m/s^2)",
-                     tools::CVarOptions{.flags = tools::CVarFlag::Cheat,
-                                        .range = tools::CVarRange{.min = -100.0, .max = 100.0}});
+                     sq::tools::CVarOptions{.flags = sq::tools::CVarFlag::Cheat,
+                                        .range = sq::tools::CVarRange{.min = -100.0, .max = 100.0}});
 
 // Every step: a pointer read, so console changes apply immediately.
 world.setGravity(_gravity.get());
@@ -41,8 +41,8 @@ world.setGravity(_gravity.get());
 - **Registering twice** with the same type returns the existing variable and keeps its value; with another type, an
   invalid name or an out-of-range default, `add` throws `std::invalid_argument` (programming errors).
 - **Lifetime.** Variables are never removed: a `CVarRef` stays valid as long as the `CVarManager`.
-- A plugin registering cvars in its `init` declares `builder.optionally<tools::ConsolePlugin>()` so the console is
-  initialized first, and checks `engine.mediator().hasService<tools::CVarManager>()`: the engine still works
+- A plugin registering cvars in its `init` declares `builder.optionally<sq::tools::ConsolePlugin>()` so the console is
+  initialized first, and checks `engine.mediator().hasService<sq::tools::CVarManager>()`: the engine still works
   without a console.
 
 ## Flags
@@ -99,14 +99,14 @@ Command names are case-insensitive. A command hides a cvar of the same name.
 Game commands are added by the game, never by the engine:
 
 ```cpp
-auto& console = engine.service<tools::Console>();
+auto& console = engine.service<sq::tools::Console>();
 console.addCommand("spawn", {.usage = "<prefab>",
                              .description = "Spawns a prefab in front of the player",
-                             .handler = [this](tools::CommandContext& ctx) { spawn(ctx.args().front()); },
+                             .handler = [this](sq::tools::CommandContext& ctx) { spawn(ctx.args().front()); },
                              .minArgs = 1,
                              .maxArgs = 1,
                              .cheat = true,
-                             .completer = [this](const tools::Console&, std::size_t, std::string_view) {
+                             .completer = [this](const sq::tools::Console&, std::size_t, std::string_view) {
                                  return prefabNames();
                              }});
 ```
@@ -138,9 +138,9 @@ console.addCommand("spawn", {.usage = "<prefab>",
 `ConsoleScriptingPlugin` (module `engine_tools_scripting`) joins the console and the script plugin; add it with both:
 
 ```cpp
-engine.addPlugin<tools::ConsolePlugin>(tools::ConsoleConfig{.allowCheats = true})
-    .addPlugin<scripting::ScriptPlugin>()
-    .addPlugin<tools::ConsoleScriptingPlugin>();
+engine.addPlugin<sq::tools::ConsolePlugin>(sq::tools::ConsoleConfig{.allowCheats = true})
+    .addPlugin<sq::scripting::ScriptPlugin>()
+    .addPlugin<sq::tools::ConsoleScriptingPlugin>();
 ```
 
 | Line                                     | Effect                                                          |
@@ -165,7 +165,7 @@ engine.addPlugin<tools::ConsolePlugin>(tools::ConsoleConfig{.allowCheats = true}
 - Owns the `CVarManager` and the `Console`, registered in the Mediator at `init` and removed at `shutdown`. Both
   are reachable before `init` through `cvars()` / `console()`.
 - Adds the built-in commands at construction, and reads its scripts from `ConsoleConfig::scriptRoot`.
-- Publishes one `tools::CVarChanged{name}` per changed cvar at the next `preUpdate`, before the simulation steps of
+- Publishes one `sq::tools::CVarChanged{name}` per changed cvar at the next `preUpdate`, before the simulation steps of
   the frame. Code that reads a `CVarRef` every frame does not need the event; it suits code that must react once
   (rebuild a resource, resize a buffer).
 
@@ -177,8 +177,8 @@ Not thread-safe: use the console and the cvars from the main thread.
 #include "tools/console/ConsolePlugin.hpp"
 #include "tools/devconsole/DevConsolePlugin.hpp"
 
-engine.addPlugin<tools::ConsolePlugin>()
-    .addPlugin<tools::DevConsolePlugin>();  // after the RenderPlugin, which provides the services it needs
+engine.addPlugin<sq::tools::ConsolePlugin>()
+    .addPlugin<sq::tools::DevConsolePlugin>();  // after the RenderPlugin, which provides the services it needs
 ```
 
 Both clients (R-Type and RLSS) add them. The window takes the top half of the screen: the output log (typed lines in blue, errors
@@ -203,7 +203,7 @@ presses, `DevConsoleView` draws, and `DevConsolePlugin` wires them to the servic
 
 ### Blocking the game while the console is open
 
-While the console is open it captures the input through `engine::IInputCaptureService`, provided by the
+While the console is open it captures the input through `sq::engine::IInputCaptureService`, provided by the
 `RenderPlugin`:
 
 - `IWindowService` then reports no key, mouse button, wheel, gamepad input or typed character. Gameplay
@@ -215,6 +215,6 @@ While the console is open it captures the input through `engine::IInputCaptureSe
   focused menu text field.
 
 Input is read in `preUpdate`, before the systems of the frame; the window is queued in `lateUpdate`. The plugin
-declares `optionally<ui::UiPlugin>()` and returns a low `IPlugin::priority()`, so it runs after the UI and after every
+declares `optionally<sq::ui::UiPlugin>()` and returns a low `IPlugin::priority()`, so it runs after the UI and after every
 game plugin that does not depend on it (RLSS HUD, name tags...): it stays on top whatever the order the plugins were
 added in.

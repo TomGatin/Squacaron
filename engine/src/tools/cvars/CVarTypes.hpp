@@ -11,7 +11,7 @@
 #include <type_traits>
 #include <variant>
 
-namespace tools {
+namespace sq::tools {
 
 /**
  * @brief Rules attached to a CVar, combined with `|`.
@@ -78,4 +78,4 @@ struct CVarOptions {
     std::optional<CVarRange> range;
 };
 
-}  // namespace tools
+}  // namespace sq::tools

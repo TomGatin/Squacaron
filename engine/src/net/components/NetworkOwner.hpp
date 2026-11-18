@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace ecs {
+namespace sq::ecs {
 
 /**
  * @brief Remote peer that controls an entity (its inputs drive it).
@@ -14,4 +14,4 @@ struct NetworkOwner {
     std::uint32_t client = 0;
 };
 
-}  // namespace ecs
+}  // namespace sq::ecs

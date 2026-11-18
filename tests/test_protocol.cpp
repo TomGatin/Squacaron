@@ -18,7 +18,7 @@ namespace {
 constexpr std::uint8_t TAG_PLAYER_INPUT = (1 << 3) | 2;
 constexpr std::uint8_t TAG_WORLD_STATE = (2 << 3) | 2;
 
-// Action ids are opaque to the protocol: any 32-bit value (in a game, input::makeActionId("shoot")...).
+// Action ids are opaque to the protocol: any 32-bit value (in a game, sq::input::makeActionId("shoot")...).
 constexpr ActionId SHOOT = 0xDEADBEEF;
 constexpr ActionId MOVE_X = 0x00000001;
 constexpr ActionId MOVE_Y = 0xFFFFFFFF;

@@ -15,7 +15,7 @@
 #include "tools/console/ConsoleEvents.hpp"
 #include "tools/cvars/CVarManager.hpp"
 
-namespace tools {
+namespace sq::tools {
 
 ConsolePlugin::ConsolePlugin(ConsoleConfig config)
     : _cvars(std::make_shared<CVarManager>()), _console(std::make_shared<Console>(*_cvars)) {
@@ -26,13 +26,13 @@ ConsolePlugin::ConsolePlugin(ConsoleConfig config)
 
 ConsolePlugin::~ConsolePlugin() = default;
 
-void ConsolePlugin::build(engine::PluginBuilder& builder) {
-    builder.require<engine::CorePlugin>();
+void ConsolePlugin::build(sq::engine::PluginBuilder& builder) {
+    builder.require<sq::engine::CorePlugin>();
     builder.provides<CVarManager>();
     builder.provides<Console>();
 }
 
-void ConsolePlugin::init(engine::Engine& engine) {
+void ConsolePlugin::init(sq::engine::Engine& engine) {
     if (!engine.mediator().registerService<CVarManager>(_cvars)) {
         throw std::logic_error("ConsolePlugin: a CVarManager service is already registered");
     }
@@ -42,14 +42,14 @@ void ConsolePlugin::init(engine::Engine& engine) {
     }
 }
 
-void ConsolePlugin::preUpdate(engine::Engine& engine) {
-    ecs::EventBus& bus = engine.eventBus();
+void ConsolePlugin::preUpdate(sq::engine::Engine& engine) {
+    sq::events::EventBus& bus = engine.eventBus();
     _cvars->drainChanged([&bus](std::string_view name) { bus.publish(CVarChanged{.name = std::string(name)}); });
 }
 
-void ConsolePlugin::shutdown(engine::Engine& engine) {
+void ConsolePlugin::shutdown(sq::engine::Engine& engine) {
     engine.mediator().removeService<Console>();
     engine.mediator().removeService<CVarManager>();
 }
 
-}  // namespace tools
+}  // namespace sq::tools

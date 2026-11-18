@@ -4,7 +4,7 @@
 
 #include "input/ActionId.hpp"
 
-namespace input {
+namespace sq::input {
 
 bool InputState::isDown(ActionId action) const noexcept {
     const auto it = actions.find(action);
@@ -57,4 +57,4 @@ void InputState::resetFrameTransitions() noexcept {
 
 void InputState::clear() noexcept { actions.clear(); }
 
-}  // namespace input
+}  // namespace sq::input

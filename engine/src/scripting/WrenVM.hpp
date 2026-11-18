@@ -15,12 +15,14 @@
 #include "scripting/detail/WrenFwd.hpp"    // IWYU pragma: export
 #include "scripting/detail/WrenTypes.hpp"  // IWYU pragma: export
 
-namespace scripting {
+namespace sq::scripting {
 
 class ForeignCall;
 class WrenVM;
 
-namespace detail {
+}  // namespace sq::scripting
+
+namespace sq::scripting::detail {
 
 /**
  * @brief Builds a Wren method signature.
@@ -41,7 +43,9 @@ namespace detail {
 /** @brief The callbacks the Wren C VM calls into, defined in `WrenVMCallbacks.cpp`. */
 struct VmCallbacks;
 
-}  // namespace detail
+}  // namespace sq::scripting::detail
+
+namespace sq::scripting {
 
 /**
  * @brief Owns a Wren virtual machine.
@@ -191,9 +195,9 @@ class WrenVM {
     /** @brief Runs a garbage collection. */
     void collectGarbage();
 
-    /** @brief Sets the ECS registry the component bindings read. @param registry `ecs::Registry*`. */
+    /** @brief Sets the ECS registry the component bindings read. @param registry `sq::ecs::Registry*`. */
     void setRegistry(void* registry) noexcept { _registry = registry; }
-    /** @brief Gets the ECS registry of the component bindings. @return `ecs::Registry*`, or null. */
+    /** @brief Gets the ECS registry of the component bindings. @return `sq::ecs::Registry*`, or null. */
     [[nodiscard]] void* getRegistry() const noexcept { return _registry; }
     /** @brief Sets the object foreign methods reach with `ForeignCall::userData`. @param ctx Context. */
     void setUserContext(void* ctx) noexcept { _userContext = ctx; }
@@ -228,7 +232,7 @@ class WrenVM {
 
     /** @brief The C VM. */
     NativeVm* _vm = nullptr;
-    /** @brief `ecs::Registry*` of the component bindings. */
+    /** @brief `sq::ecs::Registry*` of the component bindings. */
     void* _registry = nullptr;
     /** @brief Context of the foreign methods. */
     void* _userContext = nullptr;
@@ -250,6 +254,6 @@ class WrenVM {
     std::unordered_map<std::string, ForeignClassMethods> _foreignClasses;
 };
 
-}  // namespace scripting
+}  // namespace sq::scripting
 
 #include "WrenVM.tpp"  // IWYU pragma: export

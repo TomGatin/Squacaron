@@ -21,7 +21,7 @@
 #include "audio/types/SoundParams.hpp"
 #include "utils/StableSlots.hpp"
 
-namespace audio::detail {
+namespace sq::audio::detail {
 
 namespace {
 
@@ -85,9 +85,9 @@ SoundId RaylibAudioBackend::loadSound(const std::string& path) { return loadSoun
 
 MusicId RaylibAudioBackend::loadMusic(const std::string& path) { return loadMusicAs(path, NO_MUSIC); }
 
-void RaylibAudioBackend::reserveSounds(const SoundId last) { ecs::reserveSlots(_sounds, last); }
+void RaylibAudioBackend::reserveSounds(const SoundId last) { sq::ecs::reserveSlots(_sounds, last); }
 
-void RaylibAudioBackend::reserveMusics(const MusicId last) { ecs::reserveSlots(_musics, last); }
+void RaylibAudioBackend::reserveMusics(const MusicId last) { sq::ecs::reserveSlots(_musics, last); }
 
 SoundId RaylibAudioBackend::loadSoundAs(const std::string& path, const SoundId preferred) {
     if (!_available) {
@@ -112,7 +112,7 @@ SoundId RaylibAudioBackend::loadSoundAs(const std::string& path, const SoundId p
         return NO_SOUND;
     }
 
-    return ecs::placeInSlot(_sounds, std::move(slot), preferred);
+    return sq::ecs::placeInSlot(_sounds, std::move(slot), preferred);
 }
 
 MusicId RaylibAudioBackend::loadMusicAs(const std::string& path, const MusicId preferred) {
@@ -123,7 +123,7 @@ MusicId RaylibAudioBackend::loadMusicAs(const std::string& path, const MusicId p
     if (!IsMusicValid(music)) {
         return NO_MUSIC;
     }
-    return ecs::placeInSlot(_musics, MusicSlot{.music = music, .loaded = true}, preferred);
+    return sq::ecs::placeInSlot(_musics, MusicSlot{.music = music, .loaded = true}, preferred);
 }
 
 void RaylibAudioBackend::unloadSound(SoundId id) {
@@ -343,4 +343,4 @@ VoiceId RaylibAudioBackend::startVoice(std::uint32_t index, const SoundParams& p
     return makeVoiceId(index, voice.generation);
 }
 
-}  // namespace audio::detail
+}  // namespace sq::audio::detail

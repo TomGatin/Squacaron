@@ -6,7 +6,7 @@
 
 #include "ecs/SparseArray.hpp"
 
-namespace ecs {
+namespace sq::ecs {
 
 template <typename Component>
 std::optional<std::size_t> SparseArray<Component>::denseIndexOf(Entity e) const noexcept {
@@ -109,4 +109,4 @@ std::vector<Entity> const& SparseArray<Component>::getDenseEntities() const noex
     return _dense;
 }
 
-}  // namespace ecs
+}  // namespace sq::ecs

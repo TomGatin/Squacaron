@@ -24,13 +24,13 @@ inline constexpr float DEFAULT_PLAYER_BULLET_SPEED = 900.0F;
  *
  * The collider belongs to the `PLAYER_SHOT` category: it hits enemies and obstacles, never the player.
  *
- * Parameters: the transform keys (see `makeTransform`) and `speed` (horizontal velocity in pixels per second,
- * `DEFAULT_PLAYER_BULLET_SPEED` by default).
+ * Parameters: the transform keys (see `sq::prefabs::makeTransform`) and `speed` (horizontal velocity in pixels per
+ * second, `DEFAULT_PLAYER_BULLET_SPEED` by default).
  *
  * @param e Freshly spawned entity.
  * @param registry Registry owning the entity.
  * @param params Spawn parameters.
  */
-void buildPlayerBullet(ecs::Entity e, ecs::Registry& registry, PrefabParams const& params);
+void buildPlayerBullet(sq::ecs::Entity e, sq::ecs::Registry& registry, sq::prefabs::PrefabParams const& params);
 
 }  // namespace prefabs

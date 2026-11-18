@@ -3,7 +3,7 @@
 #include "audio/types/AudioConstants.hpp"
 #include "audio/types/AudioTypes.hpp"
 
-namespace ecs {
+namespace sq::ecs {
 
 /**
  * @brief Makes an entity emit a sound that follows its `Transform` while it plays (engine hum, moving enemy, ...).
@@ -14,13 +14,13 @@ namespace ecs {
  */
 struct AudioEmitter {
     /** @brief Sound to emit; `NO_SOUND` emits nothing. */
-    audio::SoundId sound = audio::NO_SOUND;
+    sq::audio::SoundId sound = sq::audio::NO_SOUND;
 
     /** @brief Gain of the sound, multiplied by the SFX bus volume and the distance attenuation. */
-    float volume = audio::DEFAULT_VOLUME;
+    float volume = sq::audio::DEFAULT_VOLUME;
 
     /** @brief Playback speed factor (1.0F keeps the original pitch). */
-    float pitch = audio::DEFAULT_PITCH;
+    float pitch = sq::audio::DEFAULT_PITCH;
 
     /** @brief Whether the sound restarts when it reaches its end. */
     bool loop = true;
@@ -29,4 +29,4 @@ struct AudioEmitter {
     bool playing = true;
 };
 
-}  // namespace ecs
+}  // namespace sq::ecs

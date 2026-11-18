@@ -14,29 +14,29 @@
 #include "core/plugins/CorePlugin.hpp"
 #include "prefabs/PrefabManager.hpp"
 
-namespace prefabs {
+namespace sq::prefabs {
 
 PrefabPlugin::PrefabPlugin() : _manager(std::make_shared<PrefabManager>()) {}
 
 PrefabPlugin::~PrefabPlugin() = default;
 
-void PrefabPlugin::build(engine::PluginBuilder& builder) {
-    builder.require<engine::CorePlugin>();
+void PrefabPlugin::build(sq::engine::PluginBuilder& builder) {
+    builder.require<sq::engine::CorePlugin>();
     builder.provides<PrefabManager>();
 }
 
-void PrefabPlugin::init(engine::Engine& engine) {
+void PrefabPlugin::init(sq::engine::Engine& engine) {
     if (_manager != nullptr) {
         if (const auto res = engine.mediator().registerService<PrefabManager>(_manager); !res) {
-            throw engine::MediatorError(res.error());
+            throw sq::engine::MediatorError(res.error());
         }
     }
 }
 
-void PrefabPlugin::shutdown(engine::Engine& engine) {
+void PrefabPlugin::shutdown(sq::engine::Engine& engine) {
     if (engine.mediator().hasService<PrefabManager>()) {
         engine.mediator().removeService<PrefabManager>();
     }
 }
 
-}  // namespace prefabs
+}  // namespace sq::prefabs

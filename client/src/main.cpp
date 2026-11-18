@@ -60,34 +60,36 @@ int main(int ac, char** av) {
     }
     try {
         // Scripts and assets are read next to the executable, so the client runs from any working directory.
-        const std::filesystem::path root = engine::contentRoot();
-        engine::Engine engine;
+        const std::filesystem::path root = sq::engine::contentRoot();
+        sq::engine::Engine engine;
         // Escape means "back" and "pause" in the menus: the game quits from its title screen.
-        engine.addPlugin<render::RenderPlugin>(render::WindowConfig{.title = "R-Type", .escapeClosesWindow = false})
-            .addPlugin<input::InputPlugin>()
-            .addPlugin<audio::AudioPlugin>()
-            .addPlugin<systems::PhysicsPlugin>()
-            .addPlugin<systems::AnimationPlugin>()
-            .addPlugin<prefabs::PrefabPlugin>()
-            .addPlugin<scripting::ScriptPlugin>(scripting::ScriptTick::EveryFrame, root)
-            .addPlugin<prefabs::PrefabScriptingPlugin>()
-            .addPlugin<assets::AssetPlugin>(root)
-            .addPlugin<assets::AssetScriptingPlugin>("scripts/rtype/Assets")
-            .addPlugin<assets::RenderAssetsPlugin>()
-            .addPlugin<assets::AudioAssetsPlugin>()
-            .addPlugin<hierarchy::HierarchyPlugin>()
-            .addPlugin<ui::UiPlugin>()
-            .addPlugin<metrics::MetricsPlugin>()
-            .addPlugin<metrics::MetricsOverlayPlugin>()
+        engine
+            .addPlugin<sq::render::RenderPlugin>(
+                sq::render::WindowConfig{.title = "R-Type", .escapeClosesWindow = false})
+            .addPlugin<sq::input::InputPlugin>()
+            .addPlugin<sq::audio::AudioPlugin>()
+            .addPlugin<sq::systems::PhysicsPlugin>()
+            .addPlugin<sq::systems::AnimationPlugin>()
+            .addPlugin<sq::prefabs::PrefabPlugin>()
+            .addPlugin<sq::scripting::ScriptPlugin>(sq::scripting::ScriptTick::EveryFrame, root)
+            .addPlugin<sq::prefabs::PrefabScriptingPlugin>()
+            .addPlugin<sq::assets::AssetPlugin>(root)
+            .addPlugin<sq::assets::AssetScriptingPlugin>("scripts/rtype/Assets")
+            .addPlugin<sq::assets::RenderAssetsPlugin>()
+            .addPlugin<sq::assets::AudioAssetsPlugin>()
+            .addPlugin<sq::hierarchy::HierarchyPlugin>()
+            .addPlugin<sq::ui::UiPlugin>()
+            .addPlugin<sq::metrics::MetricsPlugin>()
+            .addPlugin<sq::metrics::MetricsOverlayPlugin>()
             .addPlugin<client::ShipMetricsPlugin>()
-            .addPlugin<scene::ScenePlugin>()
-            .addPlugin<scene::SceneScriptingPlugin>()
-            .addPlugin<assets::SceneAssetsPlugin>()
-            .addPlugin<settings::SettingsPlugin>(config::userConfigDirectory("rtype") / "settings.toml")
+            .addPlugin<sq::scene::ScenePlugin>()
+            .addPlugin<sq::scene::SceneScriptingPlugin>()
+            .addPlugin<sq::assets::SceneAssetsPlugin>()
+            .addPlugin<sq::settings::SettingsPlugin>(sq::config::userConfigDirectory("rtype") / "settings.toml")
             // Cheats only reach this client: the server stays authoritative and runs its own rules.
-            .addPlugin<tools::ConsolePlugin>(tools::ConsoleConfig{.allowCheats = true})
-            .addPlugin<tools::ConsoleScriptingPlugin>()
-            .addPlugin<tools::DevConsolePlugin>()
+            .addPlugin<sq::tools::ConsolePlugin>(sq::tools::ConsoleConfig{.allowCheats = true})
+            .addPlugin<sq::tools::ConsoleScriptingPlugin>()
+            .addPlugin<sq::tools::DevConsolePlugin>()
             .addPlugin<client::RTypeGamePlugin>();
         client::addNetworkPlugins(engine);
         engine.addPlugin<client::ClientScenesPlugin>(options->host, options->port, args.size() > 1);

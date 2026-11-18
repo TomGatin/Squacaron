@@ -20,7 +20,7 @@
 #include "tools/console/CommandContext.hpp"  // IWYU pragma: export
 #include "tools/console/ConsoleTypes.hpp"    // IWYU pragma: export
 
-namespace tools {
+namespace sq::tools {
 
 class CVarManager;
 
@@ -213,4 +213,4 @@ class Console {
  */
 [[nodiscard]] std::string describeCVar(const CVarManager& cvars, std::string_view name);
 
-}  // namespace tools
+}  // namespace sq::tools

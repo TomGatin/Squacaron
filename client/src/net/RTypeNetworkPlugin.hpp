@@ -54,17 +54,17 @@ enum class SessionState : std::uint8_t {
  *
  * It draws nothing and needs no window, so it runs in tests.
  */
-class RTypeNetworkPlugin final : public engine::IPlugin {
+class RTypeNetworkPlugin final : public sq::engine::IPlugin {
   public:
     /** @brief Builds a new transport for each connection attempt. */
-    using TransportFactory = std::function<std::shared_ptr<ecs::net::INetworkClient>()>;
+    using TransportFactory = std::function<std::shared_ptr<sq::net::INetworkClient>()>;
 
     /**
      * @brief Creates the plugin.
-     * @param connection Connection given to `ecs::net::NetworkPlugin`; its transport is replaced at each connection.
+     * @param connection Connection given to `sq::net::NetworkPlugin`; its transport is replaced at each connection.
      * @param factory Builds the transports.
      */
-    RTypeNetworkPlugin(std::shared_ptr<ecs::net::ClientConnection> connection, TransportFactory factory);
+    RTypeNetworkPlugin(std::shared_ptr<sq::net::ClientConnection> connection, TransportFactory factory);
 
     /**
      * @brief Gets plugin name.
@@ -76,26 +76,26 @@ class RTypeNetworkPlugin final : public engine::IPlugin {
      * @brief Declares the dependencies on the network plugins.
      * @param builder Dependency builder.
      */
-    void build(engine::PluginBuilder& builder) override;
+    void build(sq::engine::PluginBuilder& builder) override;
 
     /**
      * @brief Subscribes to the network events and to the requests.
      * @param engine Host engine.
      */
-    void init(engine::Engine& engine) override;
+    void init(sq::engine::Engine& engine) override;
 
     /**
      * @brief Drops the transport of a connection that ended.
      * @param engine Host engine.
      * @param time Frame time.
      */
-    void update(engine::Engine& engine, const ecs::time::Time& time) override;
+    void update(sq::engine::Engine& engine, const sq::time::Time& time) override;
 
     /**
      * @brief Tells the server the client leaves, and unsubscribes.
      * @param engine Host engine.
      */
-    void shutdown(engine::Engine& engine) override;
+    void shutdown(sq::engine::Engine& engine) override;
 
     /**
      * @brief Gets where the session is.
@@ -147,62 +147,62 @@ class RTypeNetworkPlugin final : public engine::IPlugin {
      * @param handler Handler.
      */
     template <typename Event, typename Handler>
-    void listen(engine::Engine& engine, Handler handler);
+    void listen(sq::engine::Engine& engine, Handler handler);
 
     /**
      * @brief Starts a connection.
      * @param engine Host engine.
      * @param request Where to connect.
      */
-    void onConnect(engine::Engine& engine, const ConnectRequest& request);
+    void onConnect(sq::engine::Engine& engine, const ConnectRequest& request);
     /**
      * @brief The connection could not be made, or is gone: publishes `SessionClosed` and goes offline.
      * @param engine Host engine.
      */
-    void onDisconnected(engine::Engine& engine);
+    void onDisconnected(sq::engine::Engine& engine);
     /**
      * @brief Handles a reliable message; snapshots and inputs belong to the replication plugin.
      * @param engine Host engine.
      * @param packet Received packet.
      */
-    void onPacket(engine::Engine& engine, const ecs::net::PacketReceived& packet);
+    void onPacket(sq::engine::Engine& engine, const sq::net::PacketReceived& packet);
     /**
      * @brief Handles a decoded message of the server.
      * @param engine Host engine.
      * @param message The message.
      */
-    void onMessage(engine::Engine& engine, const rtype::protocol::Message& message);
+    void onMessage(sq::engine::Engine& engine, const rtype::protocol::Message& message);
     /**
      * @brief The game starts: opens UDP and publishes `GameStarted`, or closes the session if UDP cannot be opened.
      * @param engine Host engine.
      * @param start The message of the server.
      */
-    void onGameStart(engine::Engine& engine, const rtype::protocol::GameStart& start);
+    void onGameStart(sq::engine::Engine& engine, const rtype::protocol::GameStart& start);
     /**
      * @brief Leaves the game locally: closes UDP and resets the replication.
      * @param engine Host engine.
      */
-    void leaveGame(engine::Engine& engine);
+    void leaveGame(sq::engine::Engine& engine);
     /**
      * @brief Closes the session.
      * @param engine Host engine.
      * @param reason Reason for the player; empty when the game asked for it (no `SessionClosed` then).
      * @param duringConnection Whether the handshake was still in progress.
      */
-    void close(engine::Engine& engine, const std::string& reason, bool duringConnection);
+    void close(sq::engine::Engine& engine, const std::string& reason, bool duringConnection);
     /**
      * @brief Encodes and sends a message to the server, on the reliable channel.
      * @param engine Host engine.
      * @param message Message to send.
      */
-    static void sendMessage(engine::Engine& engine, const rtype::protocol::Message& message);
+    static void sendMessage(sq::engine::Engine& engine, const rtype::protocol::Message& message);
 
     /** @brief Connection shared with `NetworkPlugin`. */
-    std::shared_ptr<ecs::net::ClientConnection> _connection;
+    std::shared_ptr<sq::net::ClientConnection> _connection;
     /** @brief Builds the transports. */
     TransportFactory _factory;
     /** @brief Transport of a session that ended, dropped at the next update (not inside its own event dispatch). */
-    std::shared_ptr<ecs::net::INetworkClient> _retired;
+    std::shared_ptr<sq::net::INetworkClient> _retired;
     /** @brief Where the session is. */
     SessionState _state = SessionState::Offline;
     /** @brief UDP port of the server, received in `Welcome`. */

@@ -1,6 +1,6 @@
 /**
  * @file ClientSettings.hpp
- * @brief Keys of the R-Type client settings, saved by `settings::SettingsPlugin`.
+ * @brief Keys of the R-Type client settings, saved by `sq::settings::SettingsPlugin`.
  */
 
 #pragma once

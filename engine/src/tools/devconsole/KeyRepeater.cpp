@@ -1,6 +1,6 @@
 #include "tools/devconsole/KeyRepeater.hpp"
 
-namespace tools {
+namespace sq::tools {
 
 bool KeyRepeater::update(bool down, float dt) noexcept {
     if (!down) {
@@ -29,4 +29,4 @@ void KeyRepeater::reset(bool down) noexcept {
     _timer = _delay;
 }
 
-}  // namespace tools
+}  // namespace sq::tools

@@ -13,10 +13,10 @@
 
 #include "utils/Paths.hpp"
 
-namespace assets {
+namespace sq::assets {
 
 /** @brief Longest accepted asset path, in bytes. */
-inline constexpr std::size_t MAX_PATH_LENGTH = utils::MAX_PATH_LENGTH;
+inline constexpr std::size_t MAX_PATH_LENGTH = sq::utils::MAX_PATH_LENGTH;
 
 /** @brief Longest accepted alias or group name, in bytes. */
 inline constexpr std::size_t MAX_NAME_LENGTH = 128;
@@ -48,4 +48,4 @@ inline constexpr std::size_t MAX_DIRECTORY_FILES = 1024;
  */
 [[nodiscard]] bool looksLikeAssetPath(std::string_view aliasOrPath) noexcept;
 
-}  // namespace assets
+}  // namespace sq::assets

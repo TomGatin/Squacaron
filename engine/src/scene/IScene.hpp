@@ -9,7 +9,7 @@
 
 #include "scene/SceneTypes.hpp"
 
-namespace scene {
+namespace sq::scene {
 
 class SceneContext;
 
@@ -88,4 +88,4 @@ class IScene {
     virtual void onResume(SceneContext& /*context*/) {}
 };
 
-}  // namespace scene
+}  // namespace sq::scene

@@ -17,7 +17,7 @@ namespace rtype::server::gameplay {
  * @brief Destroys, on each fixed step, the player bullets past the right edge, and the enemies, enemy shots,
  * power-ups and terrain blocks past the left one (`OFFSCREEN_MARGIN` away).
  */
-class CleanupPlugin final : public engine::IPlugin {
+class CleanupPlugin final : public sq::engine::IPlugin {
   public:
     /** @brief Plugin name. */
     [[nodiscard]] std::string_view name() const noexcept override { return "RTypeCleanupPlugin"; }
@@ -27,7 +27,7 @@ class CleanupPlugin final : public engine::IPlugin {
      * @param engine Host engine.
      * @param time Fixed step time.
      */
-    void fixedUpdate(engine::Engine& engine, const ecs::time::Time& time) override;
+    void fixedUpdate(sq::engine::Engine& engine, const sq::time::Time& time) override;
 };
 
 }  // namespace rtype::server::gameplay

@@ -13,7 +13,7 @@
 #include "assets/AssetManager.hpp"
 #include "assets/detail/AssetCache.hpp"
 
-namespace assets {
+namespace sq::assets {
 
 template <AssetKind Kind>
 void AssetManager::registerKind() {
@@ -103,4 +103,4 @@ std::size_t AssetManager::loadedCount() const {
     return found != nullptr ? found->loadedCount() : 0;
 }
 
-}  // namespace assets
+}  // namespace sq::assets

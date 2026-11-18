@@ -29,13 +29,13 @@ struct ClientEnemy {};
  *
  * Sets up Transform, Renderable, AnimationComponent, a Kinematic RigidBody2D moving left, an `ENEMY` sensor
  * Collider2D and the ClientEnemy tag. Accepted parameters: transform keys (x, y, scaleX, scaleY), `speed`
- * (pixels/sec, positive values move left), and `texture` (asset alias resolved by the `assets::AssetManager`) or
+ * (pixels/sec, positive values move left), and `texture` (asset alias resolved by the `sq::assets::AssetManager`) or
  * `textureId` (raw texture identifier).
  *
  * @param e Freshly spawned entity.
  * @param registry Registry owning the entity.
  * @param params Spawn parameters.
  */
-void buildClientEnemy(ecs::Entity e, ecs::Registry& registry, ::prefabs::PrefabParams const& params);
+void buildClientEnemy(sq::ecs::Entity e, sq::ecs::Registry& registry, sq::prefabs::PrefabParams const& params);
 
 }  // namespace client::prefabs

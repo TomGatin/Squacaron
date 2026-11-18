@@ -163,14 +163,14 @@ To uphold Data-Oriented Design (DOD) principles and C++20 designated initializer
 - It can be initialized explicitly and safely:
 
   ```cpp
-  registry.addComponent<input::InputState>(playerEntity, input::InputState{.playerIndex = 0, .actions = {}});
+  registry.addComponent<sq::input::InputState>(playerEntity, sq::input::InputState{.playerIndex = 0, .actions = {}});
   ```
 
 - It provides `const noexcept` inline query methods (`isDown`, `getAxis`, `getVector2`) for ergonomic consumption by gameplay systems.
 
 ### Mouse
 
-- Mouse buttons bind to Button actions like keys: `mapping.bindMouseButton("shoot", engine::MouseButton::Left);`. They do not contribute to Axis actions.
+- Mouse buttons bind to Button actions like keys: `mapping.bindMouseButton("shoot", sq::engine::MouseButton::Left);`. They do not contribute to Axis actions.
 - `InputSystem` also copies the cursor position (window pixels) and the frame's wheel movement into `InputState::mouse`.
 - Scripts read them with `Input.mouseX`, `Input.mouseY` and `Input.mouseWheel`, or `Input.mouseX(playerIndex)` and the like.
 
@@ -249,7 +249,7 @@ class PlayerController {
 }
 ```
 
-The C++ glue in [`InputBindings.cpp`](../../engine/src/scripting/bindings/InputBindings.cpp) locates the target entity's `input::InputState` component matching the requested `playerIndex`.
+The C++ glue in [`InputBindings.cpp`](../../engine/src/scripting/bindings/InputBindings.cpp) locates the target entity's `sq::input::InputState` component matching the requested `playerIndex`.
 
 ---
 
@@ -259,7 +259,7 @@ The C++ glue in [`InputBindings.cpp`](../../engine/src/scripting/bindings/InputB
 
 Binding both QWERTY (`WASD`) and AZERTY (`ZQSD`) keys simultaneously to the same movement axes causes conflicting behavior:
 
-- `engine::Key` values (`render/api/InputCodes.hpp`) represent **physical positions on a US-layout keyboard**, not local character letters. `RenderPlugin` translates them to its backend (Raylib, whose GLFW desktop backend uses the same convention); the rest of the input stack never sees backend codes.
+- `sq::engine::Key` values (`render/api/InputCodes.hpp`) represent **physical positions on a US-layout keyboard**, not local character letters. `RenderPlugin` translates them to its backend (Raylib, whose GLFW desktop backend uses the same convention); the rest of the input stack never sees backend codes.
 - On an AZERTY layout, the physical `W` key (bottom row) is `Key::Z`, while the physical `Z` key (top row) is `Key::W`.
 - If both `Key::W` and `Key::Z` are bound to Move Up, pressing the physical key labeled `W` on AZERTY causes the ship to move forward!
 - Similarly, the physical key labeled `A` on AZERTY is `Key::Q`. If `Key::Q` is bound to Move Left, hitting `A` triggers unwanted horizontal displacement.

@@ -14,7 +14,7 @@
 #include "net/components/InputBuffer.hpp"
 
 // Systems of the replication plugins, as free functions so that they can run (and be tested) without a plugin.
-namespace ecs::net {
+namespace sq::net {
 
 /**
  * @brief Gives an entity a network id and marks it as replicated (server side).
@@ -26,7 +26,7 @@ namespace ecs::net {
  * @param kind Game-defined kind, sent to the clients so that they know what to spawn.
  * @return Its network id.
  */
-std::uint32_t replicate(ecs::Registry& registry, ecs::Entity entity, std::uint32_t kind);
+std::uint32_t replicate(sq::ecs::Registry& registry, sq::ecs::Entity entity, std::uint32_t kind);
 
 /**
  * @brief Server: queues an input in every entity controlled by the peer, i.e. carrying `NetworkOwner{peer}` and an
@@ -36,7 +36,7 @@ std::uint32_t replicate(ecs::Registry& registry, ecs::Entity entity, std::uint32
  * @param input Decoded input.
  * @return False if the peer controls no entity or every entity dropped the input (late, duplicated).
  */
-bool receiveInput(ecs::Registry& registry, PeerId peer, const NetInput& input);
+bool receiveInput(sq::ecs::Registry& registry, PeerId peer, const ecs::NetInput& input);
 
 /**
  * @brief Server, once per fixed step: takes one pending input per entity and publishes it as `InputApplied`.
@@ -44,7 +44,7 @@ bool receiveInput(ecs::Registry& registry, PeerId peer, const NetInput& input);
  * @param events Bus the game's input handlers listen to.
  * @param deltaTime Duration of the step, in seconds.
  */
-void applyInputs(ecs::Registry& registry, ecs::EventBus& events, float deltaTime);
+void applyInputs(sq::ecs::Registry& registry, sq::events::EventBus& events, float deltaTime);
 
 /**
  * @brief Server: encodes the replicated entities and sends one snapshot to each peer controlling an entity.
@@ -59,7 +59,7 @@ void applyInputs(ecs::Registry& registry, ecs::EventBus& events, float deltaTime
  * @param tick Server step of the snapshot.
  * @return Number of datagrams sent.
  */
-std::size_t sendSnapshots(ecs::Registry& registry, IReplicationCodec& codec, INetworkService& service,
+std::size_t sendSnapshots(sq::ecs::Registry& registry, IReplicationCodec& codec, INetworkService& service,
                           std::uint32_t tick);
 
 /**
@@ -69,7 +69,8 @@ std::size_t sendSnapshots(ecs::Registry& registry, IReplicationCodec& codec, INe
  * @param events Bus the game listens to.
  * @param present Entities contained in all the parts of the snapshot.
  */
-void despawnMissing(ecs::Registry& registry, ecs::EventBus& events, const std::unordered_set<ecs::Entity>& present);
+void despawnMissing(sq::ecs::Registry& registry, sq::events::EventBus& events,
+                    const std::unordered_set<sq::ecs::Entity>& present);
 
 /**
  * @brief Client: reconciles the `Predicted` entities with the server state just applied.
@@ -83,7 +84,7 @@ void despawnMissing(ecs::Registry& registry, ecs::EventBus& events, const std::u
  * @param lastProcessedInput Sequence acknowledged by the server.
  * @param deltaTime Duration of one input, in seconds.
  */
-void reconcile(ecs::Registry& registry, ecs::EventBus& events, const SnapshotApplier& applier,
+void reconcile(sq::ecs::Registry& registry, sq::events::EventBus& events, const SnapshotApplier& applier,
                std::uint32_t lastProcessedInput, float deltaTime);
 
 /**
@@ -93,7 +94,7 @@ void reconcile(ecs::Registry& registry, ecs::EventBus& events, const SnapshotApp
  * @param input Input sent this step.
  * @param deltaTime Duration of one input, in seconds.
  */
-void predict(ecs::Registry& registry, ecs::EventBus& events, const NetInput& input, float deltaTime);
+void predict(sq::ecs::Registry& registry, sq::events::EventBus& events, const ecs::NetInput& input, float deltaTime);
 
 /**
  * @brief Client, once per frame: moves each `Interpolated` entity's `Transform` toward its last snapshot.
@@ -102,6 +103,6 @@ void predict(ecs::Registry& registry, ecs::EventBus& events, const NetInput& inp
  * @param registry Client world.
  * @param deltaTime Frame duration, in seconds.
  */
-void interpolate(ecs::Registry& registry, float deltaTime);
+void interpolate(sq::ecs::Registry& registry, float deltaTime);
 
-}  // namespace ecs::net
+}  // namespace sq::net

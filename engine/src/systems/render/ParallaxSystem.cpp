@@ -27,7 +27,7 @@ void applyWrap(float& value, float wrapMin, float wrapMax) {
     }
 }
 
-void scroll(float& x, float& y, const ecs::ParallaxLayer& layer, float dx, float dy) {
+void scroll(float& x, float& y, const sq::ecs::ParallaxLayer& layer, float dx, float dy) {
     x += dx;
     y += dy;
     applyWrap(x, layer.wrapMinX, layer.wrapMaxX);
@@ -36,14 +36,14 @@ void scroll(float& x, float& y, const ecs::ParallaxLayer& layer, float dx, float
 
 }  // namespace
 
-namespace systems {
+namespace sq::systems {
 
-void ParallaxSystem::update(ecs::Registry& registry, float deltaTime) {
+void ParallaxSystem::update(sq::ecs::Registry& registry, float deltaTime) {
     float cameraX = _prevCameraX;
     float cameraY = _prevCameraY;
 
-    registry.runSystem<ecs::CameraComponent>(
-        [&cameraX, &cameraY](ecs::Entity /*entity*/, const ecs::CameraComponent& cam) {
+    registry.runSystem<sq::ecs::CameraComponent>(
+        [&cameraX, &cameraY](sq::ecs::Entity /*entity*/, const sq::ecs::CameraComponent& cam) {
             if (cam.active) {
                 cameraX = cam.targetX;
                 cameraY = cam.targetY;
@@ -55,17 +55,17 @@ void ParallaxSystem::update(ecs::Registry& registry, float deltaTime) {
     _prevCameraX = cameraX;
     _prevCameraY = cameraY;
 
-    registry.runSystem<ecs::Transform, ecs::ParallaxLayer>(
-        [deltaTime, cameraDeltaX, cameraDeltaY](ecs::Entity /*entity*/, ecs::Transform& transform,
-                                                const ecs::ParallaxLayer& layer) {
+    registry.runSystem<sq::ecs::Transform, sq::ecs::ParallaxLayer>(
+        [deltaTime, cameraDeltaX, cameraDeltaY](sq::ecs::Entity /*entity*/, sq::ecs::Transform& transform,
+                                                const sq::ecs::ParallaxLayer& layer) {
             const float dx = (layer.scrollSpeedX * deltaTime) + (layer.cameraFactorX * cameraDeltaX);
             const float dy = (layer.scrollSpeedY * deltaTime) + (layer.cameraFactorY * cameraDeltaY);
             scroll(transform.x, transform.y, layer, dx, dy);
         });
 
-    registry.runSystem<ecs::SpriteInstances, ecs::ParallaxLayer>(
-        [deltaTime, cameraDeltaX, cameraDeltaY](ecs::Entity /*entity*/, ecs::SpriteInstances& pool,
-                                                const ecs::ParallaxLayer& layer) {
+    registry.runSystem<sq::ecs::SpriteInstances, sq::ecs::ParallaxLayer>(
+        [deltaTime, cameraDeltaX, cameraDeltaY](sq::ecs::Entity /*entity*/, sq::ecs::SpriteInstances& pool,
+                                                const sq::ecs::ParallaxLayer& layer) {
             const float dx = (layer.scrollSpeedX * deltaTime) + (layer.cameraFactorX * cameraDeltaX);
             const float dy = (layer.scrollSpeedY * deltaTime) + (layer.cameraFactorY * cameraDeltaY);
             for (auto& inst : pool.instances) {
@@ -74,4 +74,4 @@ void ParallaxSystem::update(ecs::Registry& registry, float deltaTime) {
         });
 }
 
-}  // namespace systems
+}  // namespace sq::systems

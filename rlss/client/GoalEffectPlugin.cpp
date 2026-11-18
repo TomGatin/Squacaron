@@ -62,17 +62,17 @@ constexpr int LAYER_SHOCKWAVE = 20;
 constexpr int LAYER_FIREBALL = 21;
 constexpr int LAYER_SPARKS = 22;
 
-constexpr ecs::Rgba WHITE{.r = 255, .g = 255, .b = 255, .a = 255};
-constexpr ecs::Rgba GOLD{.r = 255, .g = 214, .b = 90, .a = 255};
+constexpr sq::ecs::Rgba WHITE{.r = 255, .g = 255, .b = 255, .a = 255};
+constexpr sq::ecs::Rgba GOLD{.r = 255, .g = 214, .b = 90, .a = 255};
 
-ecs::Rgba lighten(const Rgb color, const float amount) {
+sq::ecs::Rgba lighten(const Rgb color, const float amount) {
     const auto channel = [amount](const std::uint8_t value) {
         return static_cast<std::uint8_t>(static_cast<float>(value) + ((255.0F - static_cast<float>(value)) * amount));
     };
     return {.r = channel(color.r), .g = channel(color.g), .b = channel(color.b), .a = 255};
 }
 
-ecs::Rgba darken(const Rgb color, const float factor) {
+sq::ecs::Rgba darken(const Rgb color, const float factor) {
     const auto channel = [factor](const std::uint8_t value) {
         return static_cast<std::uint8_t>(static_cast<float>(value) * factor);
     };
@@ -80,36 +80,37 @@ ecs::Rgba darken(const Rgb color, const float factor) {
 }
 
 /** @brief Spawns one particle at (x, y). */
-ecs::Entity spawnParticle(ecs::Registry& registry, const float x, const float y, const ecs::TextureId texture,
-                          const ecs::Rgba tint, const int layer, const GoalParticle& particle) {
-    const ecs::Entity entity = registry.spawnEntity();
-    registry.addComponent(entity, ecs::Transform{
+sq::ecs::Entity spawnParticle(sq::ecs::Registry& registry, const float x, const float y,
+                              const sq::ecs::TextureId texture, const sq::ecs::Rgba tint, const int layer,
+                              const GoalParticle& particle) {
+    const sq::ecs::Entity entity = registry.spawnEntity();
+    registry.addComponent(entity, sq::ecs::Transform{
                                       .x = x,
                                       .y = y,
                                       .scaleX = particle.startWidth / particle.textureWidth,
                                       .scaleY = particle.startHeight / particle.textureHeight,
                                   });
-    ecs::Renderable renderable;
+    sq::ecs::Renderable renderable;
     renderable.textureId = texture;
     renderable.tint = tint;
     renderable.tint.a = static_cast<std::uint8_t>(255.0F * particle.startAlpha);
     renderable.layer = layer;
-    registry.addComponent(entity, ecs::Renderable{renderable});
+    registry.addComponent(entity, sq::ecs::Renderable{renderable});
     registry.addComponent(entity, GoalParticle{particle});
     return entity;
 }
 
 }  // namespace
 
-void GoalEffectPlugin::build(engine::PluginBuilder& builder) {
+void GoalEffectPlugin::build(sq::engine::PluginBuilder& builder) {
     builder.require<AssetsPlugin>();
     builder.require<CameraPlugin>();
     builder.require<HudPlugin>();
     builder.require<BallViewPlugin>();
-    builder.require<systems::AnimationPlugin>();
+    builder.require<sq::systems::AnimationPlugin>();
 }
 
-void GoalEffectPlugin::init(engine::Engine& engine) {
+void GoalEffectPlugin::init(sq::engine::Engine& engine) {
     const GameAssets& assets = engine.registry().getResource<GameAssets>();
     _explosionBlue = assets.explosionBlue;
     _explosionOrange = assets.explosionOrange;
@@ -117,26 +118,26 @@ void GoalEffectPlugin::init(engine::Engine& engine) {
     _spark = assets.spark;
     _glow = assets.glow;
     _puff = assets.puff;
-    _screen = Typeface(engine.service<engine::IScreenDrawService>(), assets.font);
+    _screen = Typeface(engine.service<sq::engine::IScreenDrawService>(), assets.font);
 }
 
-void GoalEffectPlugin::update(engine::Engine& engine, const ecs::time::Time& time) {
+void GoalEffectPlugin::update(sq::engine::Engine& engine, const sq::time::Time& time) {
     const float dt = time.deltaTime;
-    ecs::Registry& registry = engine.registry();
+    sq::ecs::Registry& registry = engine.registry();
     std::optional<game::MatchState> current;
     registry.runSystem<game::MatchState>(
-        [&current](ecs::Entity /*entity*/, const game::MatchState& state) { current = state; });
+        [&current](sq::ecs::Entity /*entity*/, const game::MatchState& state) { current = state; });
 
     if (current && _last && current->phase == PHASE_GOAL && _last->phase != PHASE_GOAL) {
         // The team whose score went up; a status missed in between counts for blue unless orange's went up.
         const bool blueScored = current->blueScore > _last->blueScore || current->orangeScore <= _last->orangeScore;
         const auto& rigs = registry.getComponents<game::CameraRig>();
-        const ecs::Entity camera = engine.getPlugin<CameraPlugin>().camera();
-        const auto& transforms = registry.getComponents<ecs::Transform>();
+        const sq::ecs::Entity camera = engine.getPlugin<CameraPlugin>().camera();
+        const auto& transforms = registry.getComponents<sq::ecs::Transform>();
         if (rigs.contains(camera) && rigs.get(camera).ball != game::NO_ENTITY) {
-            const auto ball = static_cast<ecs::Entity>(rigs.get(camera).ball);
+            const auto ball = static_cast<sq::ecs::Entity>(rigs.get(camera).ball);
             if (transforms.contains(ball)) {
-                const ecs::Transform where = transforms.get(ball);
+                const sq::ecs::Transform where = transforms.get(ball);
                 explode(engine, where.x, where.y, blueScored);
             }
         }
@@ -152,10 +153,10 @@ void GoalEffectPlugin::update(engine::Engine& engine, const ecs::time::Time& tim
     stepParticles(engine, dt);
 
     _flashAge += dt;
-    engine::IScreenDrawService* screen = _screen.service();
+    sq::engine::IScreenDrawService* screen = _screen.service();
     if (_flashAge < FLASH_TIME && screen != nullptr) {
-        const auto& window = engine.service<engine::IWindowService>();
-        ecs::Rgba color = _flashColor;
+        const auto& window = engine.service<sq::engine::IWindowService>();
+        sq::ecs::Rgba color = _flashColor;
         color.a = static_cast<std::uint8_t>(FLASH_ALPHA * (1.0F - (_flashAge / FLASH_TIME)));
         screen->fillRect(
             {
@@ -168,10 +169,10 @@ void GoalEffectPlugin::update(engine::Engine& engine, const ecs::time::Time& tim
     }
 }
 
-void GoalEffectPlugin::explode(engine::Engine& engine, const float x, const float y, const bool blueScored) {
-    ecs::Registry& registry = engine.registry();
+void GoalEffectPlugin::explode(sq::engine::Engine& engine, const float x, const float y, const bool blueScored) {
+    sq::ecs::Registry& registry = engine.registry();
     const Rgb team = blueScored ? BLUE_TEAM : ORANGE_TEAM;
-    const ecs::Rgba light = lighten(team, 0.45F);
+    const sq::ecs::Rgba light = lighten(team, 0.45F);
     _flashAge = 0.0F;
     _flashColor = lighten(team, 0.6F);
 
@@ -210,9 +211,9 @@ void GoalEffectPlugin::explode(engine::Engine& engine, const float x, const floa
                   });
 
     // The fireball: an animated strip, played once.
-    const ecs::TextureId sheet = blueScored ? _explosionBlue : _explosionOrange;
-    if (sheet != ecs::NO_TEXTURE) {
-        const ecs::Entity fireball =
+    const sq::ecs::TextureId sheet = blueScored ? _explosionBlue : _explosionOrange;
+    if (sheet != sq::ecs::NO_TEXTURE) {
+        const sq::ecs::Entity fireball =
             spawnParticle(registry, x, y, sheet, WHITE, LAYER_FIREBALL,
                           {
                               .life = EXPLOSION_FRAME_TIME * static_cast<float>(EXPLOSION_FRAMES),
@@ -224,13 +225,13 @@ void GoalEffectPlugin::explode(engine::Engine& engine, const float x, const floa
                               .textureHeight = static_cast<float>(EXPLOSION_FRAME),
                               .fades = false,
                           });
-        registry.getComponents<ecs::Renderable>().get(fireball).sourceRect = {
+        registry.getComponents<sq::ecs::Renderable>().get(fireball).sourceRect = {
             .x = 0,
             .y = 0,
             .width = EXPLOSION_FRAME,
             .height = EXPLOSION_FRAME,
         };
-        registry.addComponent(fireball, ecs::AnimationComponent{
+        registry.addComponent(fireball, sq::ecs::AnimationComponent{
                                             .frameWidth = EXPLOSION_FRAME,
                                             .frameHeight = EXPLOSION_FRAME,
                                             .frameCount = EXPLOSION_FRAMES,
@@ -242,7 +243,7 @@ void GoalEffectPlugin::explode(engine::Engine& engine, const float x, const floa
     // Sparks flying out in every direction and falling, in white, gold and the team color.
     std::uniform_real_distribution<float> angle(0.0F, 2.0F * std::numbers::pi_v<float>);
     std::uniform_real_distribution<float> unit(0.0F, 1.0F);
-    const std::array<ecs::Rgba, 3> sparkColors{WHITE, GOLD, light};
+    const std::array<sq::ecs::Rgba, 3> sparkColors{WHITE, GOLD, light};
     for (int i = 0; i < SPARKS; ++i) {
         const float direction = angle(_random);
         const float speed = 700.0F + (1700.0F * unit(_random));
@@ -287,12 +288,12 @@ void GoalEffectPlugin::explode(engine::Engine& engine, const float x, const floa
     }
 }
 
-void GoalEffectPlugin::stepParticles(engine::Engine& engine, const float dt) {
-    ecs::Registry& registry = engine.registry();
-    std::vector<ecs::Entity> finished;
-    registry.runSystem<GoalParticle, ecs::Transform, ecs::Renderable>(
-        [dt, &finished](const ecs::Entity entity, GoalParticle& particle, ecs::Transform& transform,
-                        ecs::Renderable& renderable) {
+void GoalEffectPlugin::stepParticles(sq::engine::Engine& engine, const float dt) {
+    sq::ecs::Registry& registry = engine.registry();
+    std::vector<sq::ecs::Entity> finished;
+    registry.runSystem<GoalParticle, sq::ecs::Transform, sq::ecs::Renderable>(
+        [dt, &finished](const sq::ecs::Entity entity, GoalParticle& particle, sq::ecs::Transform& transform,
+                        sq::ecs::Renderable& renderable) {
             particle.age += dt;
             if (particle.age >= particle.life) {
                 finished.push_back(entity);
@@ -317,26 +318,26 @@ void GoalEffectPlugin::stepParticles(engine::Engine& engine, const float dt) {
                 renderable.tint.a = static_cast<std::uint8_t>(255.0F * particle.startAlpha * (1.0F - (t * t)));
             }
         });
-    for (const ecs::Entity entity : finished) {
+    for (const sq::ecs::Entity entity : finished) {
         if (registry.isAlive(entity)) {
             registry.killEntity(entity);
         }
     }
 }
 
-void GoalEffectPlugin::showBall(engine::Engine& engine, const bool shown) {
-    engine.registry().runSystem<game::BallPart, ecs::Renderable>(
-        [shown](ecs::Entity /*entity*/, const game::BallPart& /*part*/, ecs::Renderable& renderable) {
+void GoalEffectPlugin::showBall(sq::engine::Engine& engine, const bool shown) {
+    engine.registry().runSystem<game::BallPart, sq::ecs::Renderable>(
+        [shown](sq::ecs::Entity /*entity*/, const game::BallPart& /*part*/, sq::ecs::Renderable& renderable) {
             renderable.tint.a = shown ? 255 : 0;
         });
 }
 
-void GoalEffectPlugin::shutdown(engine::Engine& engine) {
-    ecs::Registry& registry = engine.registry();
-    std::vector<ecs::Entity> particles;
+void GoalEffectPlugin::shutdown(sq::engine::Engine& engine) {
+    sq::ecs::Registry& registry = engine.registry();
+    std::vector<sq::ecs::Entity> particles;
     registry.runSystem<GoalParticle>(
-        [&particles](const ecs::Entity entity, const GoalParticle& /*particle*/) { particles.push_back(entity); });
-    for (const ecs::Entity entity : particles) {
+        [&particles](const sq::ecs::Entity entity, const GoalParticle& /*particle*/) { particles.push_back(entity); });
+    for (const sq::ecs::Entity entity : particles) {
         if (registry.isAlive(entity)) {
             registry.killEntity(entity);
         }

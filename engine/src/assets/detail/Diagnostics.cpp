@@ -7,7 +7,7 @@
 #include <string_view>
 #include <utility>
 
-namespace assets::detail {
+namespace sq::assets::detail {
 
 void Diagnostics::warn(std::string message) {
     std::cerr << "[assets] " << message << '\n';
@@ -28,4 +28,4 @@ void Diagnostics::warnOnce(const std::string_view key, std::string message) {
     warn(std::move(message));
 }
 
-}  // namespace assets::detail
+}  // namespace sq::assets::detail

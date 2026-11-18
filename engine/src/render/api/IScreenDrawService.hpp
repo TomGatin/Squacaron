@@ -11,7 +11,7 @@
 
 #include "render/api/components/Renderable.hpp"
 
-namespace engine {
+namespace sq::engine {
 
 /** @brief Identifier of a font loaded by `IScreenDrawService::loadFont`. */
 using FontId = std::uint32_t;
@@ -93,7 +93,7 @@ class IScreenDrawService {
      * @param rect Rectangle in screen pixels.
      * @param color Fill color.
      */
-    virtual void fillRect(const ScreenRect& rect, const ecs::Rgba& color) = 0;
+    virtual void fillRect(const ScreenRect& rect, const sq::ecs::Rgba& color) = 0;
 
     /**
      * @brief Queues a rectangle outline, drawn inside the rectangle.
@@ -101,7 +101,7 @@ class IScreenDrawService {
      * @param thickness Line thickness in pixels.
      * @param color Line color.
      */
-    virtual void strokeRect(const ScreenRect& rect, float thickness, const ecs::Rgba& color) = 0;
+    virtual void strokeRect(const ScreenRect& rect, float thickness, const sq::ecs::Rgba& color) = 0;
 
     /**
      * @brief Queues a piece of text.
@@ -114,7 +114,7 @@ class IScreenDrawService {
      * @param font Font to use; `NO_FONT` or an unknown id selects the default font.
      */
     virtual void drawText(std::string_view text, float x, float y, float fontSize, float spacing,
-                          const ecs::Rgba& color, FontId font) = 0;
+                          const sq::ecs::Rgba& color, FontId font) = 0;
 
     /**
      * @brief Queues a textured quad.
@@ -124,8 +124,8 @@ class IScreenDrawService {
      * @param rotation Rotation around the center of `dest`, in radians, clockwise on screen.
      * @param tint Color multiplied with the texture; white leaves it unchanged.
      */
-    virtual void drawTexture(ecs::TextureId texture, const ecs::TextureRect& source, const ScreenRect& dest,
-                             float rotation, const ecs::Rgba& tint) = 0;
+    virtual void drawTexture(sq::ecs::TextureId texture, const sq::ecs::TextureRect& source, const ScreenRect& dest,
+                             float rotation, const sq::ecs::Rgba& tint) = 0;
 };
 
-}  // namespace engine
+}  // namespace sq::engine

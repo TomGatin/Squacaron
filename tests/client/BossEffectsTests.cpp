@@ -15,13 +15,13 @@ namespace {
 
 namespace gameplay = client::gameplay;
 
-constexpr ecs::Rgba BASE_TINT = {.r = 10, .g = 20, .b = 30, .a = 255};
+constexpr sq::ecs::Rgba BASE_TINT = {.r = 10, .g = 20, .b = 30, .a = 255};
 
 /** @brief A boss as the client holds it: replicated hit points, a sprite, a flash. */
-ecs::Entity spawnBoss(ecs::Registry& registry, const std::uint8_t health) {
-    const ecs::Entity boss = registry.spawnEntity();
+sq::ecs::Entity spawnBoss(sq::ecs::Registry& registry, const std::uint8_t health) {
+    const sq::ecs::Entity boss = registry.spawnEntity();
     registry.addComponent(boss, rtype::game::EntityNetState{.health = health});
-    registry.addComponent(boss, ecs::Renderable{.tint = BASE_TINT});
+    registry.addComponent(boss, sq::ecs::Renderable{.tint = BASE_TINT});
     registry.addComponent(boss, gameplay::HitFlash{.spawnHealth = health, .lastHealth = health, .baseTint = BASE_TINT});
     return boss;
 }
@@ -29,17 +29,17 @@ ecs::Entity spawnBoss(ecs::Registry& registry, const std::uint8_t health) {
 }  // namespace
 
 TEST(BossEffects, LosingHitPointsFlashesForAMoment) {
-    ecs::Registry registry;
-    const ecs::Entity boss = spawnBoss(registry, 40);
+    sq::ecs::Registry registry;
+    const sq::ecs::Entity boss = spawnBoss(registry, 40);
     gameplay::updateHitFlashes(registry, 0.016F);
-    EXPECT_EQ(registry.getComponents<ecs::Renderable>().get(boss).tint.g, BASE_TINT.g);
+    EXPECT_EQ(registry.getComponents<sq::ecs::Renderable>().get(boss).tint.g, BASE_TINT.g);
 
     registry.getComponents<rtype::game::EntityNetState>().get(boss).health = 39;
     gameplay::updateHitFlashes(registry, 0.016F);
-    EXPECT_EQ(registry.getComponents<ecs::Renderable>().get(boss).tint.r, gameplay::HIT_FLASH_TINT.r);
+    EXPECT_EQ(registry.getComponents<sq::ecs::Renderable>().get(boss).tint.r, gameplay::HIT_FLASH_TINT.r);
 
     gameplay::updateHitFlashes(registry, gameplay::HIT_FLASH_DURATION);
-    EXPECT_EQ(registry.getComponents<ecs::Renderable>().get(boss).tint.r, BASE_TINT.r);
+    EXPECT_EQ(registry.getComponents<sq::ecs::Renderable>().get(boss).tint.r, BASE_TINT.r);
 }
 
 TEST(BossEffects, OnlyANearlyDeadBossCountsAsKilled) {
@@ -63,34 +63,34 @@ TEST(BossEffects, ExplosionStartsAtTheCenterAndSpreadsOverTheBoss) {
 }
 
 TEST(BossEffects, BurstWaitsGrowsFadesThenDisappears) {
-    ecs::Registry registry;
-    const ecs::Entity burst = registry.spawnEntity();
-    registry.addComponent(burst, ecs::Transform{});
-    registry.addComponent(burst, ecs::Renderable{});
+    sq::ecs::Registry registry;
+    const sq::ecs::Entity burst = registry.spawnEntity();
+    registry.addComponent(burst, sq::ecs::Transform{});
+    registry.addComponent(burst, sq::ecs::Renderable{});
     registry.addComponent(burst, gameplay::ExplosionBurst{.delay = 0.1F, .startScale = 1.0F, .growth = 3.0F});
 
     gameplay::updateExplosions(registry, 0.05F);
-    EXPECT_EQ(registry.getComponents<ecs::Renderable>().get(burst).tint.a, 0) << "hidden during its delay";
+    EXPECT_EQ(registry.getComponents<sq::ecs::Renderable>().get(burst).tint.a, 0) << "hidden during its delay";
 
     gameplay::updateExplosions(registry, 0.06F);
     gameplay::updateExplosions(registry, gameplay::EXPLOSION_BURST_DURATION / 2.0F);
-    EXPECT_GT(registry.getComponents<ecs::Transform>().get(burst).scaleX, 1.5F);
-    EXPECT_GT(registry.getComponents<ecs::Renderable>().get(burst).tint.a, 0);
+    EXPECT_GT(registry.getComponents<sq::ecs::Transform>().get(burst).scaleX, 1.5F);
+    EXPECT_GT(registry.getComponents<sq::ecs::Renderable>().get(burst).tint.a, 0);
 
     gameplay::updateExplosions(registry, gameplay::EXPLOSION_BURST_DURATION);
     EXPECT_FALSE(registry.isAlive(burst));
 }
 
 TEST(BossEffects, BossHealthSumsTheBossesOnScreen) {
-    ecs::Registry registry;
+    sq::ecs::Registry registry;
     EXPECT_FALSE(gameplay::bossHealth(registry).has_value());
     for (const std::uint8_t health : {std::uint8_t{10}, std::uint8_t{30}}) {
-        const ecs::Entity boss = spawnBoss(registry, 40);
-        registry.emplaceComponent<ecs::Replicated>(boss, rtype::game::KIND_BOSS_CORE);
+        const sq::ecs::Entity boss = spawnBoss(registry, 40);
+        registry.emplaceComponent<sq::ecs::Replicated>(boss, rtype::game::KIND_BOSS_CORE);
         registry.getComponents<rtype::game::EntityNetState>().get(boss).health = health;
     }
-    const ecs::Entity turret = spawnBoss(registry, 8);
-    registry.emplaceComponent<ecs::Replicated>(turret, rtype::game::KIND_BOSS_PART);
+    const sq::ecs::Entity turret = spawnBoss(registry, 8);
+    registry.emplaceComponent<sq::ecs::Replicated>(turret, rtype::game::KIND_BOSS_PART);
 
     const auto health = gameplay::bossHealth(registry);
     ASSERT_TRUE(health.has_value());

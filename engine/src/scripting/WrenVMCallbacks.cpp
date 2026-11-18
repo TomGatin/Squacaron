@@ -15,9 +15,7 @@
 #include "scripting/detail/WrenApi.hpp"
 #include "scripting/detail/WrenTypes.hpp"
 
-namespace scripting {
-
-namespace detail {
+namespace sq::scripting::detail {
 
 namespace {
 
@@ -58,7 +56,9 @@ struct VmCallbacks {
     static void onError(::WrenVM* vm, WrenErrorType type, const char* module, int line, const char* message) noexcept;
 };
 
-}  // namespace detail
+}  // namespace sq::scripting::detail
+
+namespace sq::scripting {
 
 void WrenVM::createVm() {
     WrenConfiguration config;
@@ -147,26 +147,26 @@ void detail::VmCallbacks::onWrite(::WrenVM* vm, const char* text) noexcept {
             return;
         }
         if (self == nullptr) {
-            engine::log::info(detail::LOG_TAG, chunk);
+            sq::engine::log::info(detail::LOG_TAG, chunk);
             return;
         }
         // `System.print` writes the text, then "\n" on its own: one log line per complete line.
         self->_pendingOutput += chunk;
         if (self->_pendingOutput.size() > WrenVM::MAX_ERROR_LENGTH) {
-            engine::log::info(detail::LOG_TAG, self->_pendingOutput);
+            sq::engine::log::info(detail::LOG_TAG, self->_pendingOutput);
             self->_pendingOutput.clear();
             return;
         }
         std::size_t newline = self->_pendingOutput.find('\n');
         while (newline != std::string::npos) {
-            engine::log::info(detail::LOG_TAG, std::string_view(self->_pendingOutput).substr(0, newline));
+            sq::engine::log::info(detail::LOG_TAG, std::string_view(self->_pendingOutput).substr(0, newline));
             self->_pendingOutput.erase(0, newline + 1);
             newline = self->_pendingOutput.find('\n');
         }
     } catch (const std::exception& e) {
-        engine::log::error(detail::LOG_TAG, "exception in the Wren write callback: ", e.what());
+        sq::engine::log::error(detail::LOG_TAG, "exception in the Wren write callback: ", e.what());
     } catch (...) {
-        engine::log::error(detail::LOG_TAG, "unknown exception in the Wren write callback");
+        sq::engine::log::error(detail::LOG_TAG, "unknown exception in the Wren write callback");
     }
 }
 
@@ -201,13 +201,13 @@ void detail::VmCallbacks::onError(::WrenVM* vm, WrenErrorType type, const char* 
             self->_errorHandler(kind, modStr, line, msgStr);
         } else {
             // The caller logs `lastError()` once; the pieces are only shown in verbose mode.
-            engine::log::debug(detail::LOG_TAG, text);
+            sq::engine::log::debug(detail::LOG_TAG, text);
         }
     } catch (const std::exception& e) {
-        engine::log::error(detail::LOG_TAG, "exception in the Wren error callback: ", e.what());
+        sq::engine::log::error(detail::LOG_TAG, "exception in the Wren error callback: ", e.what());
     } catch (...) {
-        engine::log::error(detail::LOG_TAG, "unknown exception in the Wren error callback");
+        sq::engine::log::error(detail::LOG_TAG, "unknown exception in the Wren error callback");
     }
 }
 
-}  // namespace scripting
+}  // namespace sq::scripting

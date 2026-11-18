@@ -6,7 +6,7 @@
 #include "audio/types/AudioConfig.hpp"
 #include "audio/types/AudioTypes.hpp"
 
-namespace audio {
+namespace sq::audio {
 
 /**
  * @brief Opens the requested audio output, falling back to a muted backend.
@@ -24,6 +24,6 @@ namespace audio {
 [[nodiscard]] std::unique_ptr<IAudioBackend> makeAudioBackend(AudioBackendKind kind = AudioBackendKind::Auto,
                                                               AudioConfig config = AudioConfig{});
 
-}  // namespace audio
+}  // namespace sq::audio
 
 // faudra add les autres icic

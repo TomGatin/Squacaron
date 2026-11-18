@@ -35,7 +35,7 @@ struct Velocity {
  * @param y Vertical position of the shooter.
  * @return The position of the ship, or nothing without any.
  */
-[[nodiscard]] std::optional<AimPoint> nearestShip(const ecs::Registry& registry, float x, float y);
+[[nodiscard]] std::optional<AimPoint> nearestShip(const sq::ecs::Registry& registry, float x, float y);
 
 /**
  * @brief Gives the velocity of a shot from (x, y) towards a target.
@@ -55,6 +55,6 @@ struct Velocity {
  * @param velocity Velocity of the missile.
  * @param look Look of the missile, sent as its `subtype`; 0 for the default look.
  */
-void spawnEnemyMissile(ecs::Registry& registry, float x, float y, Velocity velocity, std::uint8_t look = 0);
+void spawnEnemyMissile(sq::ecs::Registry& registry, float x, float y, Velocity velocity, std::uint8_t look = 0);
 
 }  // namespace rtype::server::gameplay

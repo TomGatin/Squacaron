@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <cmath>
 
-namespace audio {
+namespace sq::audio {
 
 /**
  * @brief Clamps an untrusted value, so NaN and infinities never reach the audio library.
@@ -21,4 +21,4 @@ namespace audio {
     return std::clamp(value, min, max);
 }
 
-}  // namespace audio
+}  // namespace sq::audio

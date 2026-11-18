@@ -4,7 +4,7 @@
 
 #include "INetworkManager.hpp"
 
-namespace ecs::net {
+namespace sq::net {
 
 /**
  * @brief Where `NetworkPlugin` reads incoming network events from.
@@ -34,4 +34,4 @@ class INetworkEventSource {
     virtual std::vector<NetworkEvent> poll() = 0;
 };
 
-}  // namespace ecs::net
+}  // namespace sq::net

@@ -7,7 +7,7 @@
 #include "systems/physics/components/RigidBody2D.hpp"
 
 TEST(Transform, DefaultValues) {
-    const ecs::Transform transform;
+    const sq::ecs::Transform transform;
 
     EXPECT_EQ(transform.x, 0.0F);
     EXPECT_EQ(transform.y, 0.0F);
@@ -18,7 +18,7 @@ TEST(Transform, DefaultValues) {
 }
 
 TEST(Transform, DesignatedInitializersKeepOtherDefaults) {
-    const ecs::Transform transform{.x = 100.0F, .y = 200.0F, .z = 3.0F};
+    const sq::ecs::Transform transform{.x = 100.0F, .y = 200.0F, .z = 3.0F};
 
     EXPECT_EQ(transform.x, 100.0F);
     EXPECT_EQ(transform.y, 200.0F);
@@ -28,23 +28,23 @@ TEST(Transform, DesignatedInitializersKeepOtherDefaults) {
 }
 
 TEST(Transform, WorksAsEcsComponent) {
-    ecs::Registry registry;
-    const ecs::Entity entity = registry.spawnEntity();
+    sq::ecs::Registry registry;
+    const sq::ecs::Entity entity = registry.spawnEntity();
 
-    registry.addComponent<ecs::Transform>(entity, ecs::Transform{.x = 1.0F, .y = 2.0F});
+    registry.addComponent<sq::ecs::Transform>(entity, sq::ecs::Transform{.x = 1.0F, .y = 2.0F});
 
-    ASSERT_TRUE(registry.hasComponent<ecs::Transform>(entity));
-    EXPECT_EQ(registry.getComponents<ecs::Transform>().get(entity).y, 2.0F);
+    ASSERT_TRUE(registry.hasComponent<sq::ecs::Transform>(entity));
+    EXPECT_EQ(registry.getComponents<sq::ecs::Transform>().get(entity).y, 2.0F);
 
-    registry.runSystem<ecs::Transform>(
-        []([[maybe_unused]] ecs::Entity e, ecs::Transform& transform) { transform.x += 10.0F; });
-    EXPECT_EQ(registry.getComponents<ecs::Transform>().get(entity).x, 11.0F);
+    registry.runSystem<sq::ecs::Transform>(
+        []([[maybe_unused]] sq::ecs::Entity e, sq::ecs::Transform& transform) { transform.x += 10.0F; });
+    EXPECT_EQ(registry.getComponents<sq::ecs::Transform>().get(entity).x, 11.0F);
 }
 
 TEST(RigidBody2D, DefaultValues) {
-    const ecs::RigidBody2D body;
+    const sq::ecs::RigidBody2D body;
 
-    EXPECT_EQ(body.bodyType, ecs::BodyType::Static);
+    EXPECT_EQ(body.bodyType, sq::ecs::BodyType::Static);
     EXPECT_EQ(body.velocityX, 0.0F);
     EXPECT_EQ(body.velocityY, 0.0F);
     EXPECT_EQ(body.linearDamping, 0.0F);
@@ -55,21 +55,21 @@ TEST(RigidBody2D, DefaultValues) {
 }
 
 TEST(RigidBody2D, DesignatedInitializersKeepOtherDefaults) {
-    const ecs::RigidBody2D body{
-        .bodyType = ecs::BodyType::Dynamic,
+    const sq::ecs::RigidBody2D body{
+        .bodyType = sq::ecs::BodyType::Dynamic,
         .linearDamping = 0.5F,
     };
 
-    EXPECT_EQ(body.bodyType, ecs::BodyType::Dynamic);
+    EXPECT_EQ(body.bodyType, sq::ecs::BodyType::Dynamic);
     EXPECT_EQ(body.linearDamping, 0.5F);
     EXPECT_EQ(body.velocityX, 0.0F);
     EXPECT_TRUE(body.fixedRotation);
 }
 
 TEST(Collider2D, DefaultValues) {
-    const ecs::Collider2D collider;
+    const sq::ecs::Collider2D collider;
 
-    EXPECT_EQ(collider.shape, ecs::ColliderShape::Box);
+    EXPECT_EQ(collider.shape, sq::ecs::ColliderShape::Box);
     EXPECT_EQ(collider.halfWidth, 16.0F);
     EXPECT_EQ(collider.halfHeight, 16.0F);
     EXPECT_EQ(collider.radius, 16.0F);
@@ -82,14 +82,14 @@ TEST(Collider2D, DefaultValues) {
 }
 
 TEST(Collider2D, DesignatedInitializersKeepOtherDefaults) {
-    const ecs::Collider2D collider{
-        .shape = ecs::ColliderShape::Circle,
+    const sq::ecs::Collider2D collider{
+        .shape = sq::ecs::ColliderShape::Circle,
         .radius = 24.0F,
         .density = 0.5F,
         .restitution = 0.75F,
     };
 
-    EXPECT_EQ(collider.shape, ecs::ColliderShape::Circle);
+    EXPECT_EQ(collider.shape, sq::ecs::ColliderShape::Circle);
     EXPECT_EQ(collider.radius, 24.0F);
     EXPECT_EQ(collider.density, 0.5F);
     EXPECT_EQ(collider.restitution, 0.75F);

@@ -23,16 +23,16 @@
 #include "ui/components/UiTextInput.hpp"
 #include "ui/components/UiToggle.hpp"
 
-namespace ui {
+namespace sq::ui {
 
 namespace {
 
 /** @brief Scratch buffers of `computeLayout`. */
 struct LayoutScratch {
     /** @brief Elements laid out against the screen. */
-    std::vector<ecs::Entity> roots;
+    std::vector<sq::ecs::Entity> roots;
     /** @brief Elements waiting to be laid out, with their container. */
-    std::vector<std::pair<ecs::Entity, UiScreenRect>> stack;
+    std::vector<std::pair<sq::ecs::Entity, UiScreenRect>> stack;
 };
 
 /**
@@ -51,8 +51,8 @@ LayoutScratch& layoutScratch() {
  * @param entity Element with a `UiAnchor`.
  * @return True if it has no parent, or a parent that is dead or not a HUD element.
  */
-bool isLayoutRoot(const ecs::Registry& registry, ecs::Entity entity) {
-    const std::optional<ecs::Entity> parent = hierarchy::parentOf(registry, entity);
+bool isLayoutRoot(const sq::ecs::Registry& registry, sq::ecs::Entity entity) {
+    const std::optional<sq::ecs::Entity> parent = sq::hierarchy::parentOf(registry, entity);
     return !parent.has_value() || !registry.isAlive(*parent) || !registry.hasComponent<UiAnchor>(*parent);
 }
 
@@ -65,7 +65,8 @@ bool isLayoutRoot(const ecs::Registry& registry, ecs::Entity entity) {
  * @param push Queues one row.
  */
 template <typename Push>
-void pushRowsInView(UiScrollList& list, std::span<const ecs::Entity> rows, const UiScreenRect& rect, const Push& push) {
+void pushRowsInView(UiScrollList& list, std::span<const sq::ecs::Entity> rows, const UiScreenRect& rect,
+                    const Push& push) {
     const std::size_t count = rows.size();
     const std::size_t maxFirst = count > list.visibleCount ? count - list.visibleCount : 0;
     list.first = std::min(list.first, maxFirst);
@@ -89,7 +90,7 @@ UiScreenRect resolveAnchor(const UiAnchor& anchor, const UiScreenRect& container
     };
 }
 
-UiSize elementSize(const ecs::Registry& registry, ecs::Entity entity, const UiTextMeasure& measure) {
+UiSize elementSize(const sq::ecs::Registry& registry, sq::ecs::Entity entity, const UiTextMeasure& measure) {
     if (registry.hasComponent<UiRect>(entity)) {
         const auto& rect = registry.getComponents<UiRect>().get(entity);
         return {.width = rect.width, .height = rect.height};
@@ -124,19 +125,19 @@ UiSize elementSize(const ecs::Registry& registry, ecs::Entity entity, const UiTe
     return {};
 }
 
-void computeLayout(ecs::Registry& registry, const UiScreenRect& screen, const UiTextMeasure& measure,
+void computeLayout(sq::ecs::Registry& registry, const UiScreenRect& screen, const UiTextMeasure& measure,
                    std::vector<UiLayoutNode>& out) {
     out.clear();
     LayoutScratch& scratch = layoutScratch();
-    std::vector<ecs::Entity>& roots = scratch.roots;
-    std::vector<std::pair<ecs::Entity, UiScreenRect>>& stack = scratch.stack;
+    std::vector<sq::ecs::Entity>& roots = scratch.roots;
+    std::vector<std::pair<sq::ecs::Entity, UiScreenRect>>& stack = scratch.stack;
     roots.clear();
     stack.clear();
 
-    const auto* hidden = static_cast<const ecs::Registry&>(registry).findComponents<ecs::Hidden>();
-    const auto isHidden = [hidden](ecs::Entity entity) { return hidden != nullptr && hidden->contains(entity); };
+    const auto* hidden = static_cast<const sq::ecs::Registry&>(registry).findComponents<sq::ecs::Hidden>();
+    const auto isHidden = [hidden](sq::ecs::Entity entity) { return hidden != nullptr && hidden->contains(entity); };
 
-    registry.runSystem<UiAnchor>([&registry, &isHidden, &roots](ecs::Entity entity, const UiAnchor& /*anchor*/) {
+    registry.runSystem<UiAnchor>([&registry, &isHidden, &roots](sq::ecs::Entity entity, const UiAnchor& /*anchor*/) {
         if (!isHidden(entity) && isLayoutRoot(registry, entity)) {
             roots.push_back(entity);
         }
@@ -144,13 +145,13 @@ void computeLayout(ecs::Registry& registry, const UiScreenRect& screen, const Ui
 
     auto* lists =
         registry.findComponents<UiScrollList>() != nullptr ? &registry.getComponents<UiScrollList>() : nullptr;
-    const auto pushChild = [&registry, &isHidden, &stack](ecs::Entity child, const UiScreenRect& container) {
+    const auto pushChild = [&registry, &isHidden, &stack](sq::ecs::Entity child, const UiScreenRect& container) {
         if (registry.isAlive(child) && registry.hasComponent<UiAnchor>(child) && !isHidden(child)) {
             stack.emplace_back(child, container);
         }
     };
 
-    for (const ecs::Entity root : roots) {
+    for (const sq::ecs::Entity root : roots) {
         stack.emplace_back(root, screen);
         while (!stack.empty()) {
             const auto [entity, container] = stack.back();
@@ -160,16 +161,16 @@ void computeLayout(ecs::Registry& registry, const UiScreenRect& screen, const Ui
             const UiScreenRect rect = resolveAnchor(anchor, container, elementSize(registry, entity, measure));
             out.push_back(UiLayoutNode{.entity = entity, .rect = rect});
 
-            const std::span<const ecs::Entity> children = hierarchy::childrenOf(registry, entity);
+            const std::span<const sq::ecs::Entity> children = sq::hierarchy::childrenOf(registry, entity);
             if (lists != nullptr && lists->contains(entity)) {
                 pushRowsInView(lists->get(entity), children, rect, pushChild);
                 continue;
             }
-            for (const ecs::Entity child : std::views::reverse(children)) {
+            for (const sq::ecs::Entity child : std::views::reverse(children)) {
                 pushChild(child, rect);
             }
         }
     }
 }
 
-}  // namespace ui
+}  // namespace sq::ui

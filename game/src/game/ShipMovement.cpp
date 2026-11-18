@@ -3,12 +3,12 @@
 #include <algorithm>
 #include <cmath>
 
-#include "net/components/InputBuffer.hpp"
 #include "ecs/components/Transform.hpp"
+#include "net/components/InputBuffer.hpp"
 
 namespace rtype::game {
 
-void applyShipInput(ecs::Transform& transform, const ecs::NetInput& input, const float deltaTime) {
+void applyShipInput(sq::ecs::Transform& transform, const sq::ecs::NetInput& input, const float deltaTime) {
     float moveX = 0.0F;
     float moveY = 0.0F;
     for (const auto& [action, value] : input.axes) {

@@ -10,7 +10,7 @@
 #include "net/asio/LogTag.hpp"
 
 // Byte layout of the transport framing. Private to engine_network_asio: see docs/protocol/transport.md.
-namespace ecs::net::detail::wire {
+namespace sq::net::detail::wire {
 
 /** @brief Kind of a TCP frame, in its 5th byte. Only `Data` frames reach the game. */
 enum class MessageKind : std::uint8_t {
@@ -77,16 +77,16 @@ inline bool isSendable(const Bytes& data, const Channel channel, const std::uint
         if (data.size() <= maxReliablePayload) {
             return true;
         }
-        engine::log::error(LOG_TAG, "reliable payload of ", data.size(), " bytes refused (max ", maxReliablePayload,
-                           ')');
+        sq::engine::log::error(LOG_TAG, "reliable payload of ", data.size(), " bytes refused (max ", maxReliablePayload,
+                               ')');
         return false;
     }
     if (!data.empty() && data.size() <= MAX_UNRELIABLE_PAYLOAD) {
         return true;
     }
-    engine::log::error(LOG_TAG, "unreliable payload of ", data.size(), " bytes refused (1-", MAX_UNRELIABLE_PAYLOAD,
-                       ')');
+    sq::engine::log::error(LOG_TAG, "unreliable payload of ", data.size(), " bytes refused (1-", MAX_UNRELIABLE_PAYLOAD,
+                           ')');
     return false;
 }
 
-}  // namespace ecs::net::detail::wire
+}  // namespace sq::net::detail::wire

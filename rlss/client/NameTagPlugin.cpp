@@ -34,7 +34,7 @@ namespace rlss::client {
 
 namespace {
 
-constexpr ecs::Rgba BACKGROUND_COLOR{.r = 6, .g = 10, .b = 22, .a = 165};
+constexpr sq::ecs::Rgba BACKGROUND_COLOR{.r = 6, .g = 10, .b = 22, .a = 165};
 /** @brief Height of the capital letters, in pixels: the label keeps its size whatever the zoom. */
 constexpr float CAP_HEIGHT = 13.0F;
 /** @brief Space around the letters, in pixels. */
@@ -46,34 +46,34 @@ constexpr float HEIGHT_ABOVE_CAR = 74.0F;
 /** @brief The player color is mixed with this much white, to read well on the dark label. */
 constexpr float WHITE_MIX = 0.45F;
 
-ecs::Rgba lighter(const Rgb color) {
+sq::ecs::Rgba lighter(const Rgb color) {
     const auto mixed = [](const std::uint8_t channel) {
         const auto value = static_cast<float>(channel);
         return static_cast<std::uint8_t>(value + ((255.0F - value) * WHITE_MIX));
     };
-    return ecs::Rgba{.r = mixed(color.r), .g = mixed(color.g), .b = mixed(color.b), .a = 255};
+    return sq::ecs::Rgba{.r = mixed(color.r), .g = mixed(color.g), .b = mixed(color.b), .a = 255};
 }
 
 }  // namespace
 
-void NameTagPlugin::build(engine::PluginBuilder& builder) {
-    builder.require<ecs::net::NetworkPlugin>();
-    builder.require<ecs::net::ClientReplicationPlugin>();
+void NameTagPlugin::build(sq::engine::PluginBuilder& builder) {
+    builder.require<sq::net::NetworkPlugin>();
+    builder.require<sq::net::ClientReplicationPlugin>();
     // The camera script runs in the ScriptPlugin update: the labels are placed after it, with the final camera.
-    builder.require<scripting::ScriptPlugin>();
+    builder.require<sq::scripting::ScriptPlugin>();
     builder.require<CameraPlugin>();
     builder.require<AssetsPlugin>();
-    builder.optionally<tools::ConsolePlugin>();
+    builder.optionally<sq::tools::ConsolePlugin>();
 }
 
-void NameTagPlugin::init(engine::Engine& engine) {
-    if (auto cvars = engine.mediator().getService<tools::CVarManager>(); cvars) {
+void NameTagPlugin::init(sq::engine::Engine& engine) {
+    if (auto cvars = engine.mediator().getService<sq::tools::CVarManager>(); cvars) {
         _visible = cvars->get().add("cl_nametags", true, "Shows the player names above the cars");
     }
     _typeface =
-        Typeface(engine.service<engine::IScreenDrawService>(), engine.registry().getResource<GameAssets>().font);
+        Typeface(engine.service<sq::engine::IScreenDrawService>(), engine.registry().getResource<GameAssets>().font);
     auto& events = engine.eventBus();
-    _packets = events.subscribe<ecs::net::PacketReceived>([this](const ecs::net::PacketReceived& packet) {
+    _packets = events.subscribe<sq::net::PacketReceived>([this](const sq::net::PacketReceived& packet) {
         const auto message = protocol::decode(packet.data);
         const auto* names = message ? std::get_if<protocol::PlayerNames>(&*message) : nullptr;
         if (names == nullptr || !_inMatch) {
@@ -92,10 +92,10 @@ void NameTagPlugin::init(engine::Engine& engine) {
     });
 }
 
-void NameTagPlugin::update(engine::Engine& engine, const ecs::time::Time& /*time*/) {
-    ecs::Registry& registry = engine.registry();
-    const auto& map = registry.getResource<ecs::net::NetworkEntityMap>();
-    auto& transforms = registry.getComponents<ecs::Transform>();
+void NameTagPlugin::update(sq::engine::Engine& engine, const sq::time::Time& /*time*/) {
+    sq::ecs::Registry& registry = engine.registry();
+    const auto& map = registry.getResource<sq::net::NetworkEntityMap>();
+    auto& transforms = registry.getComponents<sq::ecs::Transform>();
 
     // Drop the labels whose name or car is gone, or whose name changed.
     std::vector<std::uint32_t> stale;
@@ -131,7 +131,7 @@ void NameTagPlugin::update(engine::Engine& engine, const ecs::time::Time& /*time
         };
         tag.canvas.rect(plate, BACKGROUND_COLOR);
         tag.canvas.rect({.x = plate.x, .y = plate.y + plate.height, .width = plate.width, .height = ACCENT},
-                        ecs::Rgba{.r = color.r, .g = color.g, .b = color.b, .a = 255});
+                        sq::ecs::Rgba{.r = color.r, .g = color.g, .b = color.b, .a = 255});
         tag.canvas.text(name, 0.0F, plate.y + PADDING, CAP_HEIGHT, lighter(color));
     }
 
@@ -139,27 +139,27 @@ void NameTagPlugin::update(engine::Engine& engine, const ecs::time::Time& /*time
     if (_visible && !_visible.get()) {
         return;
     }
-    const ecs::Entity cameraEntity = engine.getPlugin<CameraPlugin>().camera();
-    const auto& cameras = registry.getComponents<ecs::CameraComponent>();
+    const sq::ecs::Entity cameraEntity = engine.getPlugin<CameraPlugin>().camera();
+    const auto& cameras = registry.getComponents<sq::ecs::CameraComponent>();
     if (!cameras.contains(cameraEntity)) {
         return;
     }
-    const ecs::CameraComponent camera = cameras.get(cameraEntity);
+    const sq::ecs::CameraComponent camera = cameras.get(cameraEntity);
     const float zoom = camera.zoom > 0.0F ? camera.zoom : 1.0F;
     for (const auto& [carId, tag] : _tags) {
-        const ecs::Transform& car = transforms.get(tag.car);
+        const sq::ecs::Transform& car = transforms.get(tag.car);
         const float screenX = camera.offsetX + ((car.x - camera.targetX) * zoom);
         const float screenY = camera.offsetY + ((car.y - HEIGHT_ABOVE_CAR - camera.targetY) * zoom);
         tag.canvas.draw(_typeface, screenX, screenY);
     }
 }
 
-void NameTagPlugin::clearTags(engine::Engine& /*engine*/) { _tags.clear(); }
+void NameTagPlugin::clearTags(sq::engine::Engine& /*engine*/) { _tags.clear(); }
 
-void NameTagPlugin::shutdown(engine::Engine& engine) {
+void NameTagPlugin::shutdown(sq::engine::Engine& engine) {
     auto& events = engine.eventBus();
     if (_packets) {
-        events.unsubscribe<ecs::net::PacketReceived>(*_packets);
+        events.unsubscribe<sq::net::PacketReceived>(*_packets);
         _packets.reset();
     }
     if (_joined) {

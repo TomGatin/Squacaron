@@ -21,9 +21,7 @@
 #include "input/InputConstants.hpp"
 #endif
 
-namespace input {
-
-namespace detail {
+namespace sq::input::detail {
 
 bool isAzertyLocale(std::string_view locale) noexcept {
     return locale.starts_with("fr_FR") || locale.starts_with("fr-FR") || locale.starts_with("fr_BE") ||
@@ -86,7 +84,9 @@ std::optional<KeyboardLayout> detectFromEnvironment() noexcept {
     return std::nullopt;
 }
 
-}  // namespace detail
+}  // namespace sq::input::detail
+
+namespace sq::input {
 
 KeyboardLayout detectKeyboardLayout() noexcept {
     if (const auto fromPlatform = detail::detectFromPlatform(); fromPlatform.has_value()) {
@@ -109,4 +109,4 @@ const char* keyboardLayoutToString(KeyboardLayout layout) noexcept {
     }
 }
 
-}  // namespace input
+}  // namespace sq::input

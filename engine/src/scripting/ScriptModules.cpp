@@ -21,7 +21,7 @@
 #include "scripting/detail/ScriptSupport.hpp"
 #include "utils/Paths.hpp"
 
-namespace scripting {
+namespace sq::scripting {
 
 using detail::LOG_TAG;
 
@@ -43,7 +43,9 @@ std::optional<std::string> readFile(const std::filesystem::path& path) {
 
 }  // namespace
 
-namespace detail {
+}  // namespace sq::scripting
+
+namespace sq::scripting::detail {
 
 std::string formatScriptError(std::string_view error) {
     std::string text;
@@ -66,23 +68,25 @@ std::string formatScriptError(std::string_view error) {
 }
 
 std::optional<std::filesystem::path> resolveScriptFile(const std::filesystem::path& root, std::string_view moduleName) {
-    std::optional<std::string> normalized = utils::normalizePath(moduleName);
-    if (!normalized || !utils::isConfinedPath(*normalized)) {
+    std::optional<std::string> normalized = sq::utils::normalizePath(moduleName);
+    if (!normalized || !sq::utils::isConfinedPath(*normalized)) {
         return std::nullopt;
     }
     if (!normalized->ends_with(SCRIPT_EXTENSION)) {
         *normalized += SCRIPT_EXTENSION;
     }
-    std::filesystem::path const file = utils::fromUtf8(*normalized);
+    std::filesystem::path const file = sq::utils::fromUtf8(*normalized);
     return root.empty() ? file : root / file;
 }
 
 void logRefusedScriptModule(std::string_view moduleName) {
-    engine::log::warning(LOG_TAG, "script module ", utils::quoteForLog(moduleName),
-                         " refused: it must be a relative path inside the script root, without '..'");
+    sq::engine::log::warning(LOG_TAG, "script module ", sq::utils::quoteForLog(moduleName),
+                             " refused: it must be a relative path inside the script root, without '..'");
 }
 
-}  // namespace detail
+}  // namespace sq::scripting::detail
+
+namespace sq::scripting {
 
 void ScriptSystem::installModuleLoader() {
     // The system is not movable: the loader, copied into the staging VMs, can read its modules and root.
@@ -104,7 +108,7 @@ void ScriptSystem::installModuleLoader() {
 
     auto const res = _vm.interpret("_internal", INTERNAL_DISPATCHER_SOURCE);
     if (!res) {
-        engine::log::error(LOG_TAG, "cannot run the internal dispatcher: ", detail::formatScriptError(res.error()));
+        sq::engine::log::error(LOG_TAG, "cannot run the internal dispatcher: ", detail::formatScriptError(res.error()));
     }
 }
 
@@ -116,7 +120,7 @@ bool ScriptSystem::ensureScriptModuleLoaded(const std::string& moduleName) {
         }
         return false;
     }
-    std::string const filename = utils::toUtf8(*resolved);
+    std::string const filename = sq::utils::toUtf8(*resolved);
 
     std::error_code ec;
     if (std::filesystem::exists(filename, ec)) {
@@ -132,16 +136,16 @@ bool ScriptSystem::ensureScriptModuleLoaded(const std::string& moduleName) {
     std::optional<std::string> source = readFile(filename);
     if (!source) {
         if (_errors.reportOnce(moduleName)) {
-            engine::log::warning(LOG_TAG, "script module ", utils::quoteForLog(moduleName), ": file ",
-                                 utils::quoteForLog(filename, utils::MAX_PATH_LENGTH), " not found");
+            sq::engine::log::warning(LOG_TAG, "script module ", sq::utils::quoteForLog(moduleName), ": file ",
+                                     sq::utils::quoteForLog(filename, sq::utils::MAX_PATH_LENGTH), " not found");
         }
         return false;
     }
     auto res = _vm.interpret(moduleName, *source);
     if (!res) {
         if (_errors.reportOnce(moduleName)) {
-            engine::log::warning(LOG_TAG, "cannot load script module ", utils::quoteForLog(moduleName), ": ",
-                                 detail::formatScriptError(res.error()));
+            sq::engine::log::warning(LOG_TAG, "cannot load script module ", sq::utils::quoteForLog(moduleName), ": ",
+                                     detail::formatScriptError(res.error()));
         }
         return false;
     }
@@ -149,4 +153,4 @@ bool ScriptSystem::ensureScriptModuleLoaded(const std::string& moduleName) {
     return true;
 }
 
-}  // namespace scripting
+}  // namespace sq::scripting

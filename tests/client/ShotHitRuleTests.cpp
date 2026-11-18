@@ -28,17 +28,17 @@ constexpr float STEP = 1.0F / 60.0F;
 /** @brief Physics world, router and rule wired on one registry and bus, as in RTypeGamePlugin. */
 class ShotHitRuleTest : public ::testing::Test {
   protected:
-    ecs::Entity spawnBullet(float x, float y) {
-        const ecs::Entity e = registry.spawnEntity();
-        client::prefabs::buildClientBullet(e, registry, ::prefabs::PrefabParams{{"x", x}, {"y", y}});
+    sq::ecs::Entity spawnBullet(float x, float y) {
+        const sq::ecs::Entity e = registry.spawnEntity();
+        client::prefabs::buildClientBullet(e, registry, sq::prefabs::PrefabParams{{"x", x}, {"y", y}});
         return e;
     }
 
-    ecs::Entity spawnEnemy(float x, float y) {
-        const ecs::Entity e = registry.spawnEntity();
+    sq::ecs::Entity spawnEnemy(float x, float y) {
+        const sq::ecs::Entity e = registry.spawnEntity();
         client::prefabs::buildClientEnemy(
             e, registry,
-            ::prefabs::PrefabParams{{"x", x}, {"y", y}, {"speed", 0.0F}, {"scaleX", 2.0F}, {"scaleY", 2.0F}});
+            sq::prefabs::PrefabParams{{"x", x}, {"y", y}, {"speed", 0.0F}, {"scaleX", 2.0F}, {"scaleY", 2.0F}});
         return e;
     }
 
@@ -48,16 +48,16 @@ class ShotHitRuleTest : public ::testing::Test {
         }
     }
 
-    ecs::Registry registry;
-    ecs::EventBus bus;
-    systems::PhysicsSystem physics{registry, bus};
+    sq::ecs::Registry registry;
+    sq::events::EventBus bus;
+    sq::systems::PhysicsSystem physics{registry, bus};
     CollisionRouter router{bus};
     ShotHitRule rule{bus, registry};
 };
 
 TEST_F(ShotHitRuleTest, BulletDestroysTheEnemyItHitsAndItself) {
-    const ecs::Entity bullet = spawnBullet(100.0F, 300.0F);
-    const ecs::Entity enemy = spawnEnemy(300.0F, 300.0F);
+    const sq::ecs::Entity bullet = spawnBullet(100.0F, 300.0F);
+    const sq::ecs::Entity enemy = spawnEnemy(300.0F, 300.0F);
 
     run(60);
 
@@ -67,8 +67,8 @@ TEST_F(ShotHitRuleTest, BulletDestroysTheEnemyItHitsAndItself) {
 }
 
 TEST_F(ShotHitRuleTest, BulletOnAnotherLaneMissesTheEnemy) {
-    const ecs::Entity bullet = spawnBullet(100.0F, 100.0F);
-    const ecs::Entity enemy = spawnEnemy(300.0F, 400.0F);
+    const sq::ecs::Entity bullet = spawnBullet(100.0F, 100.0F);
+    const sq::ecs::Entity enemy = spawnEnemy(300.0F, 400.0F);
 
     run(60);
 
@@ -79,8 +79,8 @@ TEST_F(ShotHitRuleTest, BulletOnAnotherLaneMissesTheEnemy) {
 
 TEST_F(ShotHitRuleTest, OneBulletDestroysOnlyOneOfTwoOverlappingEnemies) {
     spawnBullet(100.0F, 300.0F);
-    const ecs::Entity first = spawnEnemy(300.0F, 300.0F);
-    const ecs::Entity second = spawnEnemy(305.0F, 300.0F);
+    const sq::ecs::Entity first = spawnEnemy(300.0F, 300.0F);
+    const sq::ecs::Entity second = spawnEnemy(305.0F, 300.0F);
 
     run(60);
 
@@ -89,8 +89,8 @@ TEST_F(ShotHitRuleTest, OneBulletDestroysOnlyOneOfTwoOverlappingEnemies) {
 }
 
 TEST_F(ShotHitRuleTest, EnemyShotsAreIgnored) {
-    const ecs::Entity shot = registry.spawnEntity();
-    const ecs::Entity target = registry.spawnEntity();
+    const sq::ecs::Entity shot = registry.spawnEntity();
+    const sq::ecs::Entity target = registry.spawnEntity();
 
     bus.publish(ShotHitEvent{
         .shot = shot, .target = target, .targetCategory = ::prefabs::collision::PLAYER, .byPlayer = false});
@@ -100,8 +100,8 @@ TEST_F(ShotHitRuleTest, EnemyShotsAreIgnored) {
 }
 
 TEST_F(ShotHitRuleTest, ObstacleOnlyDestroysTheShot) {
-    const ecs::Entity shot = registry.spawnEntity();
-    const ecs::Entity wall = registry.spawnEntity();
+    const sq::ecs::Entity shot = registry.spawnEntity();
+    const sq::ecs::Entity wall = registry.spawnEntity();
 
     bus.publish(
         ShotHitEvent{.shot = shot, .target = wall, .targetCategory = ::prefabs::collision::OBSTACLE, .byPlayer = true});
@@ -112,23 +112,23 @@ TEST_F(ShotHitRuleTest, ObstacleOnlyDestroysTheShot) {
 }
 
 TEST(ClientPrefabTexture, ATextureAliasIsResolvedByTheAssetManager) {
-    ecs::Registry registry;
-    auto& manager = registry.emplaceResource<assets::AssetManager>();
-    manager.setLoader<assets::Texture>(assets::AssetLoader<assets::Texture>{
-        .load = [](const std::string& /*path*/, const assets::LoadOptions& /*options*/,
-                   ecs::TextureId /*preferred*/) { return ecs::TextureId{7}; },
-        .unload = [](ecs::TextureId /*id*/) {},
+    sq::ecs::Registry registry;
+    auto& manager = registry.emplaceResource<sq::assets::AssetManager>();
+    manager.setLoader<sq::assets::Texture>(sq::assets::AssetLoader<sq::assets::Texture>{
+        .load = [](const std::string& /*path*/, const sq::assets::LoadOptions& /*options*/,
+                   sq::ecs::TextureId /*preferred*/) { return sq::ecs::TextureId{7}; },
+        .unload = [](sq::ecs::TextureId /*id*/) {},
     });
-    manager.declare<assets::Texture>("bydos", "sprites/spritesheet5.png");
-    manager.loadGroup(assets::AssetManager::GLOBAL_GROUP);
+    manager.declare<sq::assets::Texture>("bydos", "sprites/spritesheet5.png");
+    manager.loadGroup(sq::assets::AssetManager::GLOBAL_GROUP);
 
-    const ecs::Entity byAlias = registry.spawnEntity();
-    client::prefabs::buildClientEnemy(byAlias, registry, ::prefabs::PrefabParams{{"texture", std::string("bydos")}});
-    EXPECT_EQ(registry.getComponents<ecs::Renderable>().get(byAlias).textureId, 7U);
+    const sq::ecs::Entity byAlias = registry.spawnEntity();
+    client::prefabs::buildClientEnemy(byAlias, registry, sq::prefabs::PrefabParams{{"texture", std::string("bydos")}});
+    EXPECT_EQ(registry.getComponents<sq::ecs::Renderable>().get(byAlias).textureId, 7U);
 
-    const ecs::Entity unknown = registry.spawnEntity();
-    client::prefabs::buildClientBullet(unknown, registry, ::prefabs::PrefabParams{{"texture", std::string("nope")}});
-    EXPECT_EQ(registry.getComponents<ecs::Renderable>().get(unknown).textureId, ecs::NO_TEXTURE);
+    const sq::ecs::Entity unknown = registry.spawnEntity();
+    client::prefabs::buildClientBullet(unknown, registry, sq::prefabs::PrefabParams{{"texture", std::string("nope")}});
+    EXPECT_EQ(registry.getComponents<sq::ecs::Renderable>().get(unknown).textureId, sq::ecs::NO_TEXTURE);
 }
 
 }  // namespace

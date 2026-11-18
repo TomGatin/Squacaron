@@ -14,7 +14,7 @@
 #include "scripting/ForeignCall.hpp"
 #include "scripting/WrenVM.hpp"
 
-namespace scripting::detail {
+namespace sq::scripting::detail {
 
 /**
  * @brief Primary template declaration for the ECS component property accessor.
@@ -57,14 +57,14 @@ struct PropertyAccessor<ComponentType, MemberPtr> {
                 call.retNull();
                 return;
             }
-            auto& registry = *static_cast<ecs::Registry*>(vmWrapper->getRegistry());
+            auto& registry = *static_cast<sq::ecs::Registry*>(vmWrapper->getRegistry());
 
-            auto* entityPtr = call.argForeign<ecs::Entity>(0);
+            auto* entityPtr = call.argForeign<sq::ecs::Entity>(0);
             if (entityPtr == nullptr) {
                 call.retNull();
                 return;
             }
-            ecs::Entity const e = *entityPtr;
+            sq::ecs::Entity const e = *entityPtr;
             if (!registry.template getComponents<ComponentType>().contains(e)) {
                 call.retNull();
                 return;
@@ -95,13 +95,13 @@ struct PropertyAccessor<ComponentType, MemberPtr> {
             if (vmWrapper == nullptr || vmWrapper->getRegistry() == nullptr) {
                 return;
             }
-            auto& registry = *static_cast<ecs::Registry*>(vmWrapper->getRegistry());
+            auto& registry = *static_cast<sq::ecs::Registry*>(vmWrapper->getRegistry());
 
-            auto* entityPtr = call.argForeign<ecs::Entity>(0);
+            auto* entityPtr = call.argForeign<sq::ecs::Entity>(0);
             if (entityPtr == nullptr) {
                 return;
             }
-            ecs::Entity const e = *entityPtr;
+            sq::ecs::Entity const e = *entityPtr;
             if (!registry.template getComponents<ComponentType>().contains(e)) {
                 return;
             }
@@ -130,4 +130,4 @@ struct PropertyAccessor<ComponentType, MemberPtr> {
     }
 };
 
-}  // namespace scripting::detail
+}  // namespace sq::scripting::detail

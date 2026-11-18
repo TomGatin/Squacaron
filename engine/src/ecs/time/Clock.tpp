@@ -5,7 +5,7 @@
 
 #include "ecs/time/Clock.hpp"  // NOLINT(misc-header-include-cycle)
 
-namespace ecs::time {
+namespace sq::time {
 
 template <typename Step>
 std::size_t Clock::tick(float fixedDt, Step step) {
@@ -35,4 +35,4 @@ std::size_t Clock::tick(float fixedDt, Step step) {
     return steps;
 }
 
-}  // namespace ecs::time
+}  // namespace sq::time

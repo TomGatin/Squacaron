@@ -145,7 +145,7 @@ using PrefabCatalog = std::function<std::optional<std::vector<std::string>>(std:
  * @param warnings Receives one message per corrected value or skipped event.
  * @return The level.
  */
-[[nodiscard]] Level buildLevel(const config::ConfigFile& file, const PrefabCatalog& prefabs,
+[[nodiscard]] Level buildLevel(const sq::config::ConfigFile& file, const PrefabCatalog& prefabs,
                                std::vector<std::string>& warnings);
 
 /**

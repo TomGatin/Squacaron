@@ -22,7 +22,7 @@
 #include "utils/MoveOnlyFunction.hpp"
 #include "utils/Paths.hpp"
 
-namespace scripting {
+namespace sq::scripting {
 
 OwnerScope::OwnerScope(ScriptSystem& system, ScriptOwner owner) noexcept
     : _system(system), _previous(system._currentOwner) {
@@ -52,13 +52,13 @@ void ScriptSystem::makeCallHandles() {
     _fiberCallHandle = _vm.makeCallHandle("call()");
 }
 
-void ScriptSystem::init(ecs::Registry& registry, ecs::EventBus& bus) {
+void ScriptSystem::init(sq::ecs::Registry& registry, sq::events::EventBus& bus) {
     detachDestroyListener();
     _registry = &registry;
     // Entities killed by C++ code (game rules, physics, network despawn...) never go through `queueDestroyEntity`:
     // their `onDestroy()` runs here while their components still exist. The hook calls into Wren synchronously, so
     // `Registry::killEntity` must not be called from inside a foreign method; scripts use `queueDestroyEntity`.
-    _destroyListenerId = registry.addDestroyListener([this](ecs::Entity e) { triggerDestroyHook(e); });
+    _destroyListenerId = registry.addDestroyListener([this](sq::ecs::Entity e) { triggerDestroyHook(e); });
     _bus = &bus;
 
     _vm.setRegistry(_registry);
@@ -101,7 +101,7 @@ void ScriptSystem::update(float dt) {
     }
 
     auto& scripts = _registry->getComponents<ScriptComponent>();
-    for (ecs::Entity const e : scripts.getDenseEntities()) {
+    for (sq::ecs::Entity const e : scripts.getDenseEntities()) {
         auto& script = scripts.get(e);
         if (!script.initialized) {
             instantiateScript(e, script);
@@ -118,7 +118,7 @@ void ScriptSystem::update(float dt) {
                      "a fiber resumed after Engine.wait");
     });
 
-    for (ecs::Entity const e : _updatingEntities) {
+    for (sq::ecs::Entity const e : _updatingEntities) {
         auto it = _instanceHandles.find(e);
         if (it == _instanceHandles.end() || isScriptDisabled(e)) {
             continue;
@@ -126,9 +126,9 @@ void ScriptSystem::update(float dt) {
         const OwnerScope scope(*this, e);
         recordResult(e, _vm.call(_updateHandle, it->second.get(), static_cast<double>(dt)), "update(_)");
     }
-    std::erase_if(_updatingEntities, [this](ecs::Entity e) { return !_instanceHandles.contains(e); });
+    std::erase_if(_updatingEntities, [this](sq::ecs::Entity e) { return !_instanceHandles.contains(e); });
 
-    for (ecs::Entity const e : _pendingDestroyEntities) {
+    for (sq::ecs::Entity const e : _pendingDestroyEntities) {
         triggerDestroyHook(e);
     }
     _pendingDestroyEntities.clear();
@@ -160,18 +160,18 @@ bool ScriptSystem::requestPrefabSpawn(std::string_view name, double x, double y)
             return true;
         }
     }
-    engine::log::warning(detail::LOG_TAG, "Engine.spawnPrefab(", utils::quoteForLog(name),
-                         "): no extension spawns prefabs (add prefabs::PrefabScriptingPlugin)");
+    sq::engine::log::warning(detail::LOG_TAG, "Engine.spawnPrefab(", sq::utils::quoteForLog(name),
+                             "): no extension spawns prefabs (add sq::prefabs::PrefabScriptingPlugin)");
     return false;
 }
 
-ecs::MoveOnlyFunction<void(ecs::Entity, ecs::Registry&)> ScriptSystem::spawnObserver() {
+sq::ecs::MoveOnlyFunction<void(sq::ecs::Entity, sq::ecs::Registry&)> ScriptSystem::spawnObserver() {
     // The system is not movable and owns the command buffer the spawns usually go through: `this` stays valid.
-    return [this, owner = _currentOwner](ecs::Entity spawned, ecs::Registry& registry) {
+    return [this, owner = _currentOwner](sq::ecs::Entity spawned, sq::ecs::Registry& registry) {
         for (IScriptExtension* extension : _extensions) {
             extension->onScriptSpawn(registry, spawned, owner);
         }
     };
 }
 
-}  // namespace scripting
+}  // namespace sq::scripting

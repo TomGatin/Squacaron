@@ -13,7 +13,7 @@
 #include "scripting/WrenVM.hpp"
 #include "scripting/detail/Bindings.hpp"
 
-namespace scripting::detail {
+namespace sq::scripting::detail {
 
 namespace {
 
@@ -62,7 +62,7 @@ void entityDestroy(ForeignCall& call) {
     if (scriptSystem == nullptr) {
         return;
     }
-    auto const e = call.arg<ecs::Entity>(1);
+    auto const e = call.arg<sq::ecs::Entity>(1);
     if (!e.has_value()) {
         return;
     }
@@ -76,7 +76,7 @@ void entityDestroy(ForeignCall& call) {
  */
 void retEntityIdList(ForeignCall& call, ScriptSystem& scriptSystem) {
     call.retList();
-    for (ecs::Entity const e : scriptSystem.getQueryBuffer()) {
+    for (sq::ecs::Entity const e : scriptSystem.getQueryBuffer()) {
         if (!scriptSystem.isPendingDestroy(e)) {
             call.listAppend(static_cast<double>(e));
         }
@@ -97,7 +97,7 @@ void worldIdsWithTag(ForeignCall& call) {
         call.retList();
         return;
     }
-    ecs::entitiesWithTag(*scriptSystem->getRegistry(), *tag, scriptSystem->getQueryBuffer());
+    sq::ecs::entitiesWithTag(*scriptSystem->getRegistry(), *tag, scriptSystem->getQueryBuffer());
     retEntityIdList(call, *scriptSystem);
 }
 
@@ -118,7 +118,7 @@ void worldNearestIdWithTag(ForeignCall& call) {
         return;
     }
     auto const nearest =
-        ecs::nearestWithTag(*scriptSystem->getRegistry(), *x, *y, *tag, scriptSystem->getPendingDestroyEntities());
+        sq::ecs::nearestWithTag(*scriptSystem->getRegistry(), *x, *y, *tag, scriptSystem->getPendingDestroyEntities());
     if (nearest.has_value()) {
         call.ret(static_cast<double>(*nearest));
     } else {
@@ -142,7 +142,7 @@ void worldIdsInRadius(ForeignCall& call) {
         call.retList();
         return;
     }
-    ecs::entitiesInRadius(*scriptSystem->getRegistry(), *x, *y, *radius, scriptSystem->getQueryBuffer());
+    sq::ecs::entitiesInRadius(*scriptSystem->getRegistry(), *x, *y, *radius, scriptSystem->getQueryBuffer());
     retEntityIdList(call, *scriptSystem);
 }
 
@@ -157,4 +157,4 @@ void registerCoreBindings(WrenVM& vm) {
     vm.registerForeignMethod<&worldIdsInRadius>("core/World", "World", true, "idsInRadius_(_,_,_)");
 }
 
-}  // namespace scripting::detail
+}  // namespace sq::scripting::detail

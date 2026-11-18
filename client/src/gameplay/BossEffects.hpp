@@ -18,7 +18,7 @@ namespace client::gameplay {
 /** @brief Seconds a hit entity stays tinted. */
 inline constexpr float HIT_FLASH_DURATION = 0.08F;
 /** @brief Tint of a hit entity during its flash. */
-inline constexpr ecs::Rgba HIT_FLASH_TINT = {.r = 255, .g = 90, .b = 90, .a = 255};
+inline constexpr sq::ecs::Rgba HIT_FLASH_TINT = {.r = 255, .g = 90, .b = 90, .a = 255};
 /** @brief Bursts of a boss explosion. */
 inline constexpr int EXPLOSION_BURSTS = 9;
 /** @brief Seconds between the first and the last burst of a boss explosion. */
@@ -44,7 +44,7 @@ struct HitFlash {
     /** @brief Seconds of flash left. */
     float remaining = 0.0F;
     /** @brief Tint outside of a flash. */
-    ecs::Rgba baseTint;
+    sq::ecs::Rgba baseTint;
 };
 
 /**
@@ -52,7 +52,7 @@ struct HitFlash {
  * @param registry Client registry.
  * @param deltaTime Seconds since the previous frame.
  */
-void updateHitFlashes(ecs::Registry& registry, float deltaTime);
+void updateHitFlashes(sq::ecs::Registry& registry, float deltaTime);
 
 /**
  * @brief Tells whether an entity that left the snapshots was killed, rather than removed with its game.
@@ -122,7 +122,7 @@ struct BossHealth {
  * @param registry Client registry.
  * @return Their hit points, or nothing when no boss is on screen.
  */
-[[nodiscard]] std::optional<BossHealth> bossHealth(const ecs::Registry& registry);
+[[nodiscard]] std::optional<BossHealth> bossHealth(const sq::ecs::Registry& registry);
 
 /** @brief One burst of an explosion: hidden during its delay, then it grows, fades and is destroyed. */
 struct ExplosionBurst {
@@ -137,7 +137,7 @@ struct ExplosionBurst {
     /** @brief Scale reached at the end, as a multiple of `startScale`; 1 for a sprite, which animates on its own. */
     float growth = EXPLOSION_BURST_GROWTH;
     /** @brief Tint when it appears; its opacity goes down to 0. */
-    ecs::Rgba tint;
+    sq::ecs::Rgba tint;
 };
 
 /**
@@ -145,6 +145,6 @@ struct ExplosionBurst {
  * @param registry Client registry.
  * @param deltaTime Seconds since the previous frame.
  */
-void updateExplosions(ecs::Registry& registry, float deltaTime);
+void updateExplosions(sq::ecs::Registry& registry, float deltaTime);
 
 }  // namespace client::gameplay

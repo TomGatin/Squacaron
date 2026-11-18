@@ -8,7 +8,7 @@
 #include "ecs/Registry.hpp"
 #include "utils/MoveOnlyFunction.hpp"
 
-namespace ecs {
+namespace sq::ecs {
 
 void CommandBuffer::deferDestroy(Entity e) { _destroyQueue.push_back(e); }
 
@@ -45,4 +45,4 @@ void CommandBuffer::flush(Registry& registry) {
     }
 }
 
-}  // namespace ecs
+}  // namespace sq::ecs

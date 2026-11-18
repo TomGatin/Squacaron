@@ -13,7 +13,7 @@
 #include "scripting/ScriptSystem.hpp"
 #include "scripting/detail/WrenTypes.hpp"
 
-namespace scripting {
+namespace sq::scripting {
 
 namespace {
 
@@ -22,7 +22,7 @@ const std::string ON_COLLISION_SIGNATURE = "onCollision(_)";
 
 }  // namespace
 
-void ScriptSystem::invokeEntityMethod(ecs::Entity target, std::string const& signature, double arg) {
+void ScriptSystem::invokeEntityMethod(sq::ecs::Entity target, std::string const& signature, double arg) {
     auto itInst = _instanceHandles.find(target);
     if (itInst == _instanceHandles.end()) {
         return;
@@ -42,11 +42,11 @@ void ScriptSystem::invokeEntityMethod(ecs::Entity target, std::string const& sig
     recordResult(target, res, signature);
 }
 
-bool ScriptSystem::isPendingDestroy(ecs::Entity e) const noexcept {
+bool ScriptSystem::isPendingDestroy(sq::ecs::Entity e) const noexcept {
     return std::ranges::find(_pendingDestroyEntities, e) != _pendingDestroyEntities.end();
 }
 
-void ScriptSystem::forwardCollision(ecs::Entity target, ecs::Entity other) {
+void ScriptSystem::forwardCollision(sq::ecs::Entity target, sq::ecs::Entity other) {
     if (_registry == nullptr || isScriptDisabled(target) || !_registry->hasComponent<ScriptComponent>(target) ||
         !_registry->getComponents<ScriptComponent>().get(target).hasCollision) {
         return;
@@ -71,4 +71,4 @@ void ScriptSystem::stopForwardingCollisions() {
     }
 }
 
-}  // namespace scripting
+}  // namespace sq::scripting

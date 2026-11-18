@@ -21,7 +21,7 @@
 #include "net/asio/TransportCounters.hpp"
 #include "net/asio/Wire.hpp"
 
-namespace ecs::net::detail {
+namespace sq::net::detail {
 
 namespace {
 
@@ -97,8 +97,8 @@ void TcpSession::send(const wire::MessageKind kind, const Bytes& payload) {
         return;
     }
     if (payload.size() > _limits.maxPayload) {
-        engine::log::error(LOG_TAG, "reliable payload of ", payload.size(), " bytes refused (max ", _limits.maxPayload,
-                           ')');
+        sq::engine::log::error(LOG_TAG, "reliable payload of ", payload.size(), " bytes refused (max ",
+                               _limits.maxPayload, ')');
         return;
     }
 
@@ -108,7 +108,7 @@ void TcpSession::send(const wire::MessageKind kind, const Bytes& payload) {
     std::ranges::copy(payload, frame.begin() + wire::TCP_HEADER_SIZE);
 
     if (_queuedBytes + frame.size() > _limits.maxQueueBytes) {
-        engine::log::warning(LOG_TAG, "peer ", _id, " does not read its TCP socket anymore: disconnected");
+        sq::engine::log::warning(LOG_TAG, "peer ", _id, " does not read its TCP socket anymore: disconnected");
         close();
         return;
     }
@@ -193,4 +193,4 @@ void TcpSession::closeNow() {
     }
 }
 
-}  // namespace ecs::net::detail
+}  // namespace sq::net::detail

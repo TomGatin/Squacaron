@@ -17,7 +17,7 @@
 #include "assets/detail/IAssetCache.hpp"
 #include "utils/Paths.hpp"
 
-namespace assets {
+namespace sq::assets {
 
 AssetManager::AssetManager(std::filesystem::path root) : _owner(std::this_thread::get_id()) {
     _context.root = std::move(root);
@@ -74,7 +74,7 @@ bool AssetManager::loadGroup(const std::string_view group) {
 GroupProgress AssetManager::loadGroupStep(const std::string_view group, const std::size_t maxLoads) {
     checkThread();
     if (!isValidAssetName(group)) {
-        _context.diagnostics.warn("invalid group name " + utils::quoteForLog(group));
+        _context.diagnostics.warn("invalid group name " + sq::utils::quoteForLog(group));
         return {};
     }
     if (!isGroupLoaded(group)) {
@@ -161,7 +161,8 @@ detail::IAssetCache* AssetManager::findCache(const std::string_view kind) const 
 detail::IAssetCache* AssetManager::cacheOrWarn(const std::string_view kind) {
     checkThread();
     if (!hasKind(kind)) {
-        _context.diagnostics.warnOnce("kind:" + std::string(kind), "unknown asset kind " + utils::quoteForLog(kind));
+        _context.diagnostics.warnOnce("kind:" + std::string(kind),
+                                      "unknown asset kind " + sq::utils::quoteForLog(kind));
         return nullptr;
     }
     return findCache(kind);
@@ -169,7 +170,7 @@ detail::IAssetCache* AssetManager::cacheOrWarn(const std::string_view kind) {
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static): reads `_owner` in debug builds.
 void AssetManager::checkThread() const noexcept {
-    assert(std::this_thread::get_id() == _owner && "assets::AssetManager is used from another thread");
+    assert(std::this_thread::get_id() == _owner && "sq::assets::AssetManager is used from another thread");
 }
 
-}  // namespace assets
+}  // namespace sq::assets

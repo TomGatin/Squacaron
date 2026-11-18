@@ -88,52 +88,52 @@ int main(int ac, char** av) {
     const std::string host = values.empty() ? DEFAULT_HOST : values.front();
 
     try {
-        const std::shared_ptr<ecs::net::INetworkClient> transport =
-            ecs::net::createClient({.protocolId = rlss::protocol::PROTOCOL_ID});
-        engine::log::info(LOG_TAG, "connecting to ", host, ":", *port, "...");
+        const std::shared_ptr<sq::net::INetworkClient> transport =
+            sq::net::createClient({.protocolId = rlss::protocol::PROTOCOL_ID});
+        sq::engine::log::info(LOG_TAG, "connecting to ", host, ":", *port, "...");
         auto received = rlss::client::connectToServer(*transport, host, *port, CONNECT_TIMEOUT);
         if (!received) {
-            engine::log::error(LOG_TAG, "cannot connect: ", rlss::client::describe(transport->disconnectReason()));
+            sq::engine::log::error(LOG_TAG, "cannot connect: ", rlss::client::describe(transport->disconnectReason()));
             return EXIT_ERROR;
         }
-        engine::log::info(LOG_TAG, "connected");
+        sq::engine::log::info(LOG_TAG, "connected");
         // Snapshots and inputs travel over UDP, on the same port number as the TCP connection.
         if (!transport->openUdp(*port)) {
-            engine::log::error(LOG_TAG, "cannot open the UDP channel");
+            sq::engine::log::error(LOG_TAG, "cannot open the UDP channel");
             return EXIT_ERROR;
         }
         const auto link = std::make_shared<rlss::client::ServerLink>(transport, std::move(*received));
 
         // Connected: open the game window, on the menu. Scripts and assets are read next to the executable, so the
         // client runs from any working directory.
-        const std::filesystem::path root = engine::contentRoot();
-        engine::Engine engine;
+        const std::filesystem::path root = sq::engine::contentRoot();
+        sq::engine::Engine engine;
         // Escape means "back" in the menus; on the main menu and in a match it still quits.
         engine
-            .addPlugin<render::RenderPlugin>(
-                render::WindowConfig{.title = std::string(rlss::protocol::GAME_TITLE), .escapeClosesWindow = false})
-            .addPlugin<input::InputPlugin>(rlss::client::makeControls())
-            .addPlugin<systems::AnimationPlugin>()
-            .addPlugin<audio::AudioPlugin>()
-            .addPlugin<ecs::net::NetworkPlugin>(link, link)
-            .addPlugin<ecs::net::ClientReplicationPlugin>(std::make_shared<rlss::game::ReplicationCodec>())
+            .addPlugin<sq::render::RenderPlugin>(
+                sq::render::WindowConfig{.title = std::string(rlss::protocol::GAME_TITLE), .escapeClosesWindow = false})
+            .addPlugin<sq::input::InputPlugin>(rlss::client::makeControls())
+            .addPlugin<sq::systems::AnimationPlugin>()
+            .addPlugin<sq::audio::AudioPlugin>()
+            .addPlugin<sq::net::NetworkPlugin>(link, link)
+            .addPlugin<sq::net::ClientReplicationPlugin>(std::make_shared<rlss::game::ReplicationCodec>())
             // After the replication: the CarView scripts read the car transforms once interpolated.
-            .addPlugin<scripting::ScriptPlugin>(scripting::ScriptTick::EveryFrame, root)
-            .addPlugin<assets::AssetPlugin>(root)
-            .addPlugin<assets::AssetScriptingPlugin>(std::string(rlss::client::ASSET_DECLARATIONS))
-            .addPlugin<assets::RenderAssetsPlugin>()
-            .addPlugin<assets::AudioAssetsPlugin>()
+            .addPlugin<sq::scripting::ScriptPlugin>(sq::scripting::ScriptTick::EveryFrame, root)
+            .addPlugin<sq::assets::AssetPlugin>(root)
+            .addPlugin<sq::assets::AssetScriptingPlugin>(std::string(rlss::client::ASSET_DECLARATIONS))
+            .addPlugin<sq::assets::RenderAssetsPlugin>()
+            .addPlugin<sq::assets::AudioAssetsPlugin>()
             .addPlugin<rlss::client::SessionPlugin>(transport)
             .addPlugin<rlss::client::AssetsPlugin>()
             .addPlugin<rlss::client::ArenaViewPlugin>()
             .addPlugin<rlss::client::CarViewPlugin>()
             .addPlugin<rlss::client::BallViewPlugin>()
             .addPlugin<rlss::client::CameraPlugin>()
-            .addPlugin<hierarchy::HierarchyPlugin>()
-            .addPlugin<ui::UiPlugin>()
-            .addPlugin<scene::ScenePlugin>()
-            .addPlugin<assets::SceneAssetsPlugin>()
-            .addPlugin<settings::SettingsPlugin>(config::userConfigDirectory("rlss") / "settings.toml")
+            .addPlugin<sq::hierarchy::HierarchyPlugin>()
+            .addPlugin<sq::ui::UiPlugin>()
+            .addPlugin<sq::scene::ScenePlugin>()
+            .addPlugin<sq::assets::SceneAssetsPlugin>()
+            .addPlugin<sq::settings::SettingsPlugin>(sq::config::userConfigDirectory("rlss") / "settings.toml")
             // Drawn on screen in this order: name tags, HUD, then the menus on top (UiPlugin draws in lateUpdate).
             .addPlugin<rlss::client::NameTagPlugin>()
             .addPlugin<rlss::client::HudPlugin>()
@@ -143,9 +143,9 @@ int main(int ac, char** av) {
             .addPlugin<rlss::client::MenuScenesPlugin>(link)
             // Developer console (~ / ²): drawn last, over the HUD and the menus.
             // Cheats only reach this client: the server stays authoritative and runs its own rules.
-            .addPlugin<tools::ConsolePlugin>(tools::ConsoleConfig{.allowCheats = true})
-            .addPlugin<tools::ConsoleScriptingPlugin>()
-            .addPlugin<tools::DevConsolePlugin>()
+            .addPlugin<sq::tools::ConsolePlugin>(sq::tools::ConsoleConfig{.allowCheats = true})
+            .addPlugin<sq::tools::ConsoleScriptingPlugin>()
+            .addPlugin<sq::tools::DevConsolePlugin>()
             .addPlugin<rlss::client::VolumeCVarsPlugin>();
         engine.run();
         return engine.getPlugin<rlss::client::SessionPlugin>().connectionLost() ? EXIT_ERROR : 0;

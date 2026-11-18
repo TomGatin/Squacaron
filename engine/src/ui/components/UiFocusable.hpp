@@ -5,7 +5,7 @@
 
 #pragma once
 
-namespace ui {
+namespace sq::ui {
 
 /**
  * @brief Marks a widget (button, toggle, slider, text input) as reachable by focus navigation.
@@ -18,4 +18,4 @@ struct UiFocusable {
     int order = 0;
 };
 
-}  // namespace ui
+}  // namespace sq::ui

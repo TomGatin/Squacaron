@@ -20,9 +20,9 @@
 #include "ecs/time/Clock.hpp"
 #include "ecs/time/Time.hpp"
 
-namespace engine {
+namespace sq::engine {
 
-Engine::Engine(ecs::time::Clock::TimeSource timeSource) : _clock(std::move(timeSource)) {}
+Engine::Engine(sq::time::Clock::TimeSource timeSource) : _clock(std::move(timeSource)) {}
 
 Engine::~Engine() {
     if (_initialized) {
@@ -134,12 +134,12 @@ std::size_t Engine::advance() {
     for (IPlugin* plugin : _pluginGraph.executionOrder()) {
         plugin->preUpdate(*this);
     }
-    const std::size_t steps = _clock.tick(_fixedDt, [&](const ecs::time::Time& fixedTime) {
+    const std::size_t steps = _clock.tick(_fixedDt, [&](const sq::time::Time& fixedTime) {
         for (IPlugin* plugin : _pluginGraph.executionOrder()) {
             plugin->fixedUpdate(*this, fixedTime);
         }
     });
-    const ecs::time::Time frameTime = _clock.frameTime();
+    const sq::time::Time frameTime = _clock.frameTime();
     for (IPlugin* plugin : _pluginGraph.executionOrder()) {
         plugin->update(*this, frameTime);
     }
@@ -149,4 +149,4 @@ std::size_t Engine::advance() {
     return steps;
 }
 
-}  // namespace engine
+}  // namespace sq::engine

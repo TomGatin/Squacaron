@@ -30,7 +30,7 @@ namespace rtype::server::gameplay {
 inline constexpr float INTERMISSION_DURATION = 3.0F;
 
 /**
- * @brief Plays the level of a room with `timeline::TimelinePlugin`, the cursor moving at the scroll speed.
+ * @brief Plays the level of a room with `sq::timeline::TimelinePlugin`, the cursor moving at the scroll speed.
  *
  * - Publishes every event it plays as a `LevelEventPlayed`, for the plugins that handle `terrain` and `boss`. It
  *   handles the others: `spawn` creates the enemies, `scroll` changes the speed, and `end` restarts the level
@@ -44,7 +44,7 @@ inline constexpr float INTERMISSION_DURATION = 3.0F;
  *   step as a boss) wait for it, so a `scroll` does not restart the scroll and an `end` does not restart the level
  *   during a fight. A `boss` event is never held: another boss joins the current fight.
  */
-class LevelDirectorPlugin final : public engine::IPlugin {
+class LevelDirectorPlugin final : public sq::engine::IPlugin {
   public:
     /**
      * @brief Creates the plugin.
@@ -56,29 +56,29 @@ class LevelDirectorPlugin final : public engine::IPlugin {
     [[nodiscard]] std::string_view name() const noexcept override { return "RTypeLevelDirectorPlugin"; }
 
     /**
-     * @brief Requires `timeline::TimelinePlugin`, which plays the level.
+     * @brief Requires `sq::timeline::TimelinePlugin`, which plays the level.
      * @param builder Dependency builder.
      */
-    void build(engine::PluginBuilder& builder) override;
+    void build(sq::engine::PluginBuilder& builder) override;
 
     /**
      * @brief Subscribes to the timeline and to the events that hold the scroll, and starts the level.
      * @param engine Host engine.
      */
-    void init(engine::Engine& engine) override;
+    void init(sq::engine::Engine& engine) override;
 
     /**
      * @brief Counts the intermission down between two levels of a campaign, then starts the next level.
      * @param engine Host engine.
      * @param time Fixed step time.
      */
-    void fixedUpdate(engine::Engine& engine, const ecs::time::Time& time) override;
+    void fixedUpdate(sq::engine::Engine& engine, const sq::time::Time& time) override;
 
     /**
      * @brief Unsubscribes from the bus before the engine tears it down.
      * @param engine Host engine.
      */
-    void shutdown(engine::Engine& engine) override;
+    void shutdown(sq::engine::Engine& engine) override;
 
     /**
      * @brief Starts the game: publishes the `protocol::LevelStart` of the first level, which the room sends to its
@@ -107,9 +107,9 @@ class LevelDirectorPlugin final : public engine::IPlugin {
      * @brief Plays a level event, or keeps it until the scroll resumes.
      * @param event Event to play.
      */
-    void play(const timeline::TimelineEvent& event);
+    void play(const sq::timeline::TimelineEvent& event);
     /** @brief Spawns the replicated enemy of a level `spawn` event. */
-    void spawnEnemy(const prefabs::PrefabParams& params);
+    void spawnEnemy(const sq::prefabs::PrefabParams& params);
     /** @brief Puts the level at its start: events pending again, initial scroll speed. */
     void startLevel();
     /** @brief Publishes the `protocol::LevelStart` of the current level. */
@@ -130,13 +130,15 @@ class LevelDirectorPlugin final : public engine::IPlugin {
     /** @brief Seconds left before the next level, while positive. */
     float _intermission = 0.0F;
     /** @brief Registry of the room, set by `init()`. */
-    ecs::Registry* _registry = nullptr;
+    sq::ecs::Registry* _registry = nullptr;
     /** @brief Event bus of the room, set by `init()`. */
-    ecs::EventBus* _bus = nullptr;
+    sq::events::EventBus* _bus = nullptr;
     /** @brief Plays the level, set by `init()`. */
-    timeline::TimelinePlugin* _timeline = nullptr;
+    sq::timeline::TimelinePlugin* _timeline = nullptr;
     /** @brief Subscriptions, removed by `shutdown()`. */
-    std::vector<std::pair<ecs::EventBus::EventToken, void (*)(ecs::EventBus&, ecs::EventBus::EventToken)>> _tokens;
+    std::vector<
+        std::pair<sq::events::EventBus::EventToken, void (*)(sq::events::EventBus&, sq::events::EventBus::EventToken)>>
+        _tokens;
     /** @brief True once `startGame()` was called. */
     bool _gameStarted = false;
     /** @brief True from the `end` of a level during a game until the next level starts: nothing is played. */
@@ -150,7 +152,7 @@ class LevelDirectorPlugin final : public engine::IPlugin {
     /** @brief Scroll speed when the scroll was held, restored once it resumes. */
     float _speedBeforeHold = 0.0F;
     /** @brief Level events reached while the scroll is held, played once it resumes. */
-    std::vector<timeline::TimelineEvent> _heldEvents;
+    std::vector<sq::timeline::TimelineEvent> _heldEvents;
 };
 
 }  // namespace rtype::server::gameplay

@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace ecs {
+namespace sq::ecs {
 
 /** @brief Simulation modes supported by a 2D rigid body. */
 enum class BodyType : std::uint8_t {
@@ -43,4 +43,4 @@ struct RigidBody2D {
     bool bullet = false;
 };
 
-}  // namespace ecs
+}  // namespace sq::ecs

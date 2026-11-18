@@ -27,13 +27,13 @@ inline constexpr float DEFAULT_OBSTACLE_HALF_HEIGHT = 32.0F;
  *
  * The body is static and the collider is solid: ships and projectiles collide with it.
  *
- * Parameters: the transform keys (see `makeTransform`, `x`/`y` being the block center), `halfWidth` and
+ * Parameters: the transform keys (see `sq::prefabs::makeTransform`, `x`/`y` being the block center), `halfWidth` and
  * `halfHeight` (collision box half-size in pixels, `DEFAULT_OBSTACLE_HALF_WIDTH`/`HEIGHT` by default).
  *
  * @param e Freshly spawned entity.
  * @param registry Registry owning the entity.
  * @param params Spawn parameters.
  */
-void buildObstacle(ecs::Entity e, ecs::Registry& registry, PrefabParams const& params);
+void buildObstacle(sq::ecs::Entity e, sq::ecs::Registry& registry, sq::prefabs::PrefabParams const& params);
 
 }  // namespace prefabs

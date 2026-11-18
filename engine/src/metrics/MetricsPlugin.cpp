@@ -10,7 +10,7 @@
 #include "metrics/MetricsBoard.hpp"
 #include "metrics/ProcessUsage.hpp"
 
-namespace metrics {
+namespace sq::metrics {
 
 namespace {
 
@@ -30,9 +30,9 @@ MetricLevel frameLevel(const float averageSeconds) noexcept {
     return averageSeconds * FPS_WARNING > 1.0F ? MetricLevel::Warning : MetricLevel::Normal;
 }
 
-void MetricsPlugin::build(engine::PluginBuilder& builder) { builder.require<engine::CorePlugin>(); }
+void MetricsPlugin::build(sq::engine::PluginBuilder& builder) { builder.require<sq::engine::CorePlugin>(); }
 
-void MetricsPlugin::init(engine::Engine& engine) {
+void MetricsPlugin::init(sq::engine::Engine& engine) {
     auto& registry = engine.registry();
     _ownsBoard = !registry.hasResource<MetricsBoard>();
     if (_ownsBoard) {
@@ -41,14 +41,14 @@ void MetricsPlugin::init(engine::Engine& engine) {
     _lastProcess = sampleProcess();
 }
 
-void MetricsPlugin::update(engine::Engine& engine, const ecs::time::Time& time) {
+void MetricsPlugin::update(sq::engine::Engine& engine, const sq::time::Time& time) {
     _frames.push(time.deltaTime);
     if (const auto elapsed = _timer.tick(time.deltaTime)) {
         publish(engine.registry(), *elapsed);
     }
 }
 
-void MetricsPlugin::shutdown(engine::Engine& engine) {
+void MetricsPlugin::shutdown(sq::engine::Engine& engine) {
     auto& registry = engine.registry();
     if (_ownsBoard && registry.hasResource<MetricsBoard>()) {
         registry.removeResource<MetricsBoard>();
@@ -59,7 +59,7 @@ void MetricsPlugin::shutdown(engine::Engine& engine) {
     _lastProcess.reset();
 }
 
-void MetricsPlugin::publish(ecs::Registry& registry, const float elapsed) {
+void MetricsPlugin::publish(sq::ecs::Registry& registry, const float elapsed) {
     auto& board = registry.getResource<MetricsBoard>();
 
     const float average = _frames.average();
@@ -84,4 +84,4 @@ void MetricsPlugin::publish(ecs::Registry& registry, const float elapsed) {
     _lastProcess = process;
 }
 
-}  // namespace metrics
+}  // namespace sq::metrics

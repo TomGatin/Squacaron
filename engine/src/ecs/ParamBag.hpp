@@ -17,9 +17,7 @@
 #include <utility>
 #include <variant>
 
-namespace ecs {
-
-namespace detail {
+namespace sq::ecs::detail {
 
 /** @brief Transparent hash allowing `std::string_view` lookups without allocation. */
 struct StringHash {
@@ -34,20 +32,22 @@ struct StringHash {
     [[nodiscard]] std::size_t operator()(std::string_view s) const noexcept { return std::hash<std::string_view>{}(s); }
 };
 
-}  // namespace detail
+}  // namespace sq::ecs::detail
+
+namespace sq::ecs {
 
 /**
  * @brief Key/value bag of named, loosely typed parameters.
  *
  * Generic data carried by engine modules that know nothing about its meaning: the parameters of a prefab instance
- * (`prefabs::PrefabParams` is this type), the data of a timeline event... Each reader takes the keys it understands
+ * (`sq::prefabs::PrefabParams` is this type), the data of a timeline event... Each reader takes the keys it understands
  * and falls back to its own defaults for the missing ones, so any number of parameters can be passed without changing
  * an API.
  * Values are stored as `bool`, `std::int64_t`, `double` or `std::string`, which matches what scripts
  * and network messages can carry.
  *
  * @code
- * ecs::ParamBag params{{"x", 800.0F}, {"name", std::string("scout")}};
+ * sq::ecs::ParamBag params{{"x", 800.0F}, {"name", std::string("scout")}};
  * const float x = params.get("x", 0.0F);
  * @endcode
  */
@@ -144,4 +144,4 @@ class ParamBag {
     std::unordered_map<std::string, Value, detail::StringHash, std::equal_to<>> _values;
 };
 
-}  // namespace ecs
+}  // namespace sq::ecs

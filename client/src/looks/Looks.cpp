@@ -53,7 +53,7 @@ bool isSafeTexturePath(const std::string_view path) {
  * @param entry Dotted key of the entry, such as `boss.0`.
  * @return The sprite, or nothing without a usable texture and frame size.
  */
-std::optional<SpriteLook> readSprite(const config::ConfigFile& file, config::ConfigReader& reader,
+std::optional<SpriteLook> readSprite(const sq::config::ConfigFile& file, sq::config::ConfigReader& reader,
                                      const std::string& entry) {
     const auto key = [&entry](const std::string_view field) { return std::format("{}.{}", entry, field); };
     // Every key is read first, so that none of them is reported as unknown when the sprite is ignored.
@@ -103,7 +103,7 @@ std::optional<SpriteLook> readSprite(const config::ConfigFile& file, config::Con
  * @param entry Dotted key of the entry, such as `boss.0`.
  * @return The look.
  */
-Look readLook(const config::ConfigFile& file, config::ConfigReader& reader, const std::string& entry) {
+Look readLook(const sq::config::ConfigFile& file, sq::config::ConfigReader& reader, const std::string& entry) {
     Look look;
     look.width = reader.number(std::format("{}.width", entry), 0.0F, 0.0F, MAX_BOX_SIZE);
     look.height = reader.number(std::format("{}.height", entry), 0.0F, 0.0F, MAX_BOX_SIZE);
@@ -121,7 +121,7 @@ Look readLook(const config::ConfigFile& file, config::ConfigReader& reader, cons
  * @param out Receives the looks by id.
  * @param stages Receives the damaged looks by id (entries with `below_health`).
  */
-void readEntries(const config::ConfigFile& file, config::ConfigReader& reader, const std::string_view array,
+void readEntries(const sq::config::ConfigFile& file, sq::config::ConfigReader& reader, const std::string_view array,
                  const std::string_view idKey, std::map<std::uint8_t, Look>& out,
                  std::map<std::uint8_t, std::vector<HealthStage>>& stages) {
     std::size_t count = file.arraySize(array);
@@ -155,7 +155,7 @@ void readEntries(const config::ConfigFile& file, config::ConfigReader& reader, c
  * @param reader Reader reporting corrections.
  * @param out Receives the looks by prefab name, and by prefab name and `subtype` for the entries that set one.
  */
-void readEntities(const config::ConfigFile& file, config::ConfigReader& reader, Looks& out) {
+void readEntities(const sq::config::ConfigFile& file, sq::config::ConfigReader& reader, Looks& out) {
     std::size_t count = file.arraySize("entity");
     if (count > MAX_LOOKS) {
         reader.warn(std::format("entity: {} entries, only the first {} are kept", count, MAX_LOOKS));
@@ -181,8 +181,8 @@ void readEntities(const config::ConfigFile& file, config::ConfigReader& reader, 
 
 }  // namespace
 
-Looks readLooks(const config::ConfigFile& file, std::vector<std::string>& warnings) {
-    config::ConfigReader reader(file, warnings);
+Looks readLooks(const sq::config::ConfigFile& file, std::vector<std::string>& warnings) {
+    sq::config::ConfigReader reader(file, warnings);
     Looks looks;
     readEntries(file, reader, "boss", "variant", looks.bosses, looks.bossStages);
     readEntries(file, reader, "part", "look", looks.parts, looks.partStages);

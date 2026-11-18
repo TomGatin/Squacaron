@@ -5,7 +5,7 @@
 #include "ecs/Registry.hpp"
 #include "utils/MoveOnlyFunction.hpp"
 
-namespace ecs {
+namespace sq::ecs {
 
 /**
  * @brief Deferred command buffer for recording structural ECS mutations during iteration loops.
@@ -75,4 +75,4 @@ class CommandBuffer {
     std::vector<MoveOnlyFunction<void(Entity, Registry&)>> _spawnQueue;
 };
 
-}  // namespace ecs
+}  // namespace sq::ecs

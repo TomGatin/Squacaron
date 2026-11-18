@@ -19,24 +19,24 @@ constexpr const char* LOG_TAG = "client";
 
 }  // namespace
 
-SessionPlugin::SessionPlugin(std::shared_ptr<ecs::net::INetworkClient> transport) : _transport(std::move(transport)) {}
+SessionPlugin::SessionPlugin(std::shared_ptr<sq::net::INetworkClient> transport) : _transport(std::move(transport)) {}
 
-void SessionPlugin::build(engine::PluginBuilder& builder) { builder.require<ecs::net::NetworkPlugin>(); }
+void SessionPlugin::build(sq::engine::PluginBuilder& builder) { builder.require<sq::net::NetworkPlugin>(); }
 
-void SessionPlugin::init(engine::Engine& engine) {
+void SessionPlugin::init(sq::engine::Engine& engine) {
     auto& events = engine.eventBus();
     _disconnected =
-        events.subscribe<ecs::net::PeerDisconnected>([this, &engine](const ecs::net::PeerDisconnected& /*event*/) {
-            engine::log::error(LOG_TAG, "disconnected: ", describe(_transport->disconnectReason()));
+        events.subscribe<sq::net::PeerDisconnected>([this, &engine](const sq::net::PeerDisconnected& /*event*/) {
+            sq::engine::log::error(LOG_TAG, "disconnected: ", describe(_transport->disconnectReason()));
             _lost = true;
             engine.stop();
         });
 }
 
-void SessionPlugin::shutdown(engine::Engine& engine) {
+void SessionPlugin::shutdown(sq::engine::Engine& engine) {
     auto& events = engine.eventBus();
     if (_disconnected) {
-        events.unsubscribe<ecs::net::PeerDisconnected>(*_disconnected);
+        events.unsubscribe<sq::net::PeerDisconnected>(*_disconnected);
         _disconnected.reset();
     }
 }

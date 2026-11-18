@@ -29,13 +29,13 @@ inline constexpr float ALIEN_SCOUT_HALF_SIZE = 16.0F;
  *
  * The collider belongs to the `ENEMY` category: it hits the player and is hit by player shots.
  *
- * Parameters: the transform keys (see `makeTransform`) and `speed` (horizontal velocity in pixels per second,
- * `DEFAULT_ALIEN_SCOUT_SPEED` by default).
+ * Parameters: the transform keys (see `sq::prefabs::makeTransform`) and `speed` (horizontal velocity in pixels per
+ * second, `DEFAULT_ALIEN_SCOUT_SPEED` by default).
  *
  * @param e Freshly spawned entity.
  * @param registry Registry owning the entity.
  * @param params Spawn parameters.
  */
-void buildAlienScout(ecs::Entity e, ecs::Registry& registry, PrefabParams const& params);
+void buildAlienScout(sq::ecs::Entity e, sq::ecs::Registry& registry, sq::prefabs::PrefabParams const& params);
 
 }  // namespace prefabs

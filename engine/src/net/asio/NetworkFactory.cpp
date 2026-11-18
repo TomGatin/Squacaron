@@ -9,7 +9,7 @@
 #include "net/asio/NetworkClient.hpp"
 #include "net/asio/NetworkServer.hpp"
 
-namespace ecs::net {
+namespace sq::net {
 
 std::unique_ptr<INetworkServer> createServer(const NetworkConfig& config) {
     if (!isValid(config)) {
@@ -25,4 +25,4 @@ std::unique_ptr<INetworkClient> createClient(const NetworkConfig& config) {
     return std::make_unique<detail::NetworkClient>(config);
 }
 
-}  // namespace ecs::net
+}  // namespace sq::net

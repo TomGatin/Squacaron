@@ -5,7 +5,7 @@
 
 #include "input/InputConstants.hpp"
 
-namespace input {
+namespace sq::input {
 
 /**
  * @brief Numeric identifier for semantic input actions (computed via FNV-1a hash).
@@ -43,4 +43,4 @@ enum class ActionState : std::uint8_t {
     Down = 2,
 };
 
-}  // namespace input
+}  // namespace sq::input

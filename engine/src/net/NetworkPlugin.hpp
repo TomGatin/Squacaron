@@ -10,7 +10,7 @@
 #include "core/IPlugin.hpp"
 #include "core/PluginBuilder.hpp"
 
-namespace ecs::net {
+namespace sq::net {
 
 /**
  * @brief Connects a network transport to the engine loop.
@@ -19,7 +19,7 @@ namespace ecs::net {
  * `PacketReceived`. The service is registered in the Mediator so that systems can send. The plugin also owns the
  * `NetworkEntityMap` resource and unbinds an entity from it when the entity is killed.
  */
-class NetworkPlugin final : public engine::IPlugin {
+class NetworkPlugin final : public sq::engine::IPlugin {
   public:
     /**
      * @brief Creates the plugin.
@@ -38,25 +38,25 @@ class NetworkPlugin final : public engine::IPlugin {
      * @brief Declares the dependency on CorePlugin.
      * @param builder Dependency builder.
      */
-    void build(engine::PluginBuilder& builder) override;
+    void build(sq::engine::PluginBuilder& builder) override;
 
     /**
      * @brief Registers `INetworkService`, creates the `NetworkEntityMap` resource and its destroy listener.
      * @param engine Host engine.
      */
-    void init(engine::Engine& engine) override;
+    void init(sq::engine::Engine& engine) override;
 
     /**
      * @brief Publishes every event received since the last frame, before the simulation runs.
      * @param engine Host engine.
      */
-    void preUpdate(engine::Engine& engine) override;
+    void preUpdate(sq::engine::Engine& engine) override;
 
     /**
      * @brief Removes the destroy listener and unregisters the service.
      * @param engine Host engine.
      */
-    void shutdown(engine::Engine& engine) override;
+    void shutdown(sq::engine::Engine& engine) override;
 
   private:
     /** @brief Incoming events. */
@@ -67,4 +67,4 @@ class NetworkPlugin final : public engine::IPlugin {
     std::optional<std::size_t> _destroyListener;
 };
 
-}  // namespace ecs::net
+}  // namespace sq::net

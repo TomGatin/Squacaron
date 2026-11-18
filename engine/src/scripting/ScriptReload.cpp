@@ -16,7 +16,7 @@
 #include "scripting/detail/LogTag.hpp"
 #include "scripting/detail/ScriptSupport.hpp"
 
-namespace scripting {
+namespace sq::scripting {
 
 using detail::LOG_TAG;
 
@@ -53,7 +53,7 @@ void ScriptSystem::recreateVm() {
 
     auto const dispatcher = _vm.interpret("_internal", INTERNAL_DISPATCHER_SOURCE);
     if (!dispatcher) {
-        engine::log::error(
+        sq::engine::log::error(
             LOG_TAG, "hot reload: cannot run the internal dispatcher: ", detail::formatScriptError(dispatcher.error()));
     }
     prepareVm(_vm);
@@ -65,7 +65,7 @@ void ScriptSystem::reinstantiateActiveScripts() {
         _entitiesToReinstantiate.clear();
         return;
     }
-    for (ecs::Entity const e : _entitiesToReinstantiate) {
+    for (sq::ecs::Entity const e : _entitiesToReinstantiate) {
         if (!_registry->getComponents<ScriptComponent>().contains(e)) {
             continue;
         }
@@ -100,4 +100,4 @@ bool ScriptSystem::reloadModifiedScripts() {
     return true;
 }
 
-}  // namespace scripting
+}  // namespace sq::scripting

@@ -47,7 +47,9 @@ constexpr float DIM_SIZE = 8192.0F;
  * @param context Scene context.
  * @return The session plugin.
  */
-RTypeNetworkPlugin& sessionOf(scene::SceneContext& context) { return context.engine().getPlugin<RTypeNetworkPlugin>(); }
+RTypeNetworkPlugin& sessionOf(sq::scene::SceneContext& context) {
+    return context.engine().getPlugin<RTypeNetworkPlugin>();
+}
 
 /**
  * @brief Spawns a HUD text anchored on the screen.
@@ -58,12 +60,12 @@ RTypeNetworkPlugin& sessionOf(scene::SceneContext& context) { return context.eng
  * @param color Colour.
  * @return The text element.
  */
-ecs::Entity hudText(scene::SceneContext& context, const ui::UiAnchor& anchor, std::string text, float size,
-                    ecs::Rgba color) {
-    ecs::Registry& registry = context.registry();
-    const ecs::Entity entity = context.spawn();
+sq::ecs::Entity hudText(sq::scene::SceneContext& context, const sq::ui::UiAnchor& anchor, std::string text, float size,
+                        sq::ecs::Rgba color) {
+    sq::ecs::Registry& registry = context.registry();
+    const sq::ecs::Entity entity = context.spawn();
     registry.addComponent(entity, anchor);
-    registry.addComponent(entity, ui::UiText{.text = std::move(text), .fontSize = size, .color = color});
+    registry.addComponent(entity, sq::ui::UiText{.text = std::move(text), .fontSize = size, .color = color});
     return entity;
 }
 
@@ -85,25 +87,26 @@ constexpr float BOSS_BAR_WIDTH = 480.0F;
 /** @brief Height of the boss health bar, in pixels. */
 constexpr float BOSS_BAR_HEIGHT = 12.0F;
 /** @brief Colour of the hit points left. */
-constexpr ecs::Rgba BOSS_BAR_COLOR = {.r = 230, .g = 60, .b = 70, .a = 255};
+constexpr sq::ecs::Rgba BOSS_BAR_COLOR = {.r = 230, .g = 60, .b = 70, .a = 255};
 /** @brief Colour of the hit points lost. */
-constexpr ecs::Rgba BOSS_BAR_BACKGROUND = {.r = 50, .g = 20, .b = 30, .a = 220};
+constexpr sq::ecs::Rgba BOSS_BAR_BACKGROUND = {.r = 50, .g = 20, .b = 30, .a = 220};
 
 }  // namespace
 
 // --- Game ------------------------------------------------------------------------------------------------------------
 
-void GameScene::onEnter(scene::SceneContext& context) {
-    menu::focus(context.registry(), ecs::NULL_ENTITY);
+void GameScene::onEnter(sq::scene::SceneContext& context) {
+    menu::focus(context.registry(), sq::ecs::NULL_ENTITY);
     const RTypeNetworkPlugin& session = sessionOf(context);
     const int player = session.playerIndex().value_or(0) + 1;
-    (void)hudText(context, ui::UiAnchor{.anchorX = 0.02F, .anchorY = 0.03F}, "P" + std::to_string(player), 24.0F,
+    (void)hudText(context, sq::ui::UiAnchor{.anchorX = 0.02F, .anchorY = 0.03F}, "P" + std::to_string(player), 24.0F,
                   menu::ACCENT);
-    _level = hudText(context, ui::UiAnchor{.anchorX = 0.5F, .anchorY = 0.03F, .pivotX = 0.5F}, "", 22.0F, menu::TEXT);
-    _score = hudText(context, ui::UiAnchor{.anchorX = 0.98F, .anchorY = 0.03F, .pivotX = 1.0F}, "SCORE 0", 24.0F,
+    _level =
+        hudText(context, sq::ui::UiAnchor{.anchorX = 0.5F, .anchorY = 0.03F, .pivotX = 0.5F}, "", 22.0F, menu::TEXT);
+    _score = hudText(context, sq::ui::UiAnchor{.anchorX = 0.98F, .anchorY = 0.03F, .pivotX = 1.0F}, "SCORE 0", 24.0F,
                      menu::GOLD);
-    _personal =
-        hudText(context, ui::UiAnchor{.anchorX = 0.98F, .anchorY = 0.075F, .pivotX = 1.0F}, "YOU 0", 18.0F, menu::TEXT);
+    _personal = hudText(context, sq::ui::UiAnchor{.anchorX = 0.98F, .anchorY = 0.075F, .pivotX = 1.0F}, "YOU 0", 18.0F,
+                        menu::TEXT);
     const std::size_t self = session.playerIndex().value_or(0);
     // The total for the room, and this player's own score from the per-player list.
     const auto showScores = [this, &context, self](const std::uint32_t total,
@@ -142,27 +145,28 @@ void GameScene::onEnter(scene::SceneContext& context) {
     }
 }
 
-void GameScene::spawnLives(scene::SceneContext& context, const std::uint8_t playerIndex) {
-    ecs::Registry& registry = context.registry();
+void GameScene::spawnLives(sq::scene::SceneContext& context, const std::uint8_t playerIndex) {
+    sq::ecs::Registry& registry = context.registry();
     const gameplay::ShipIconSheet sheet = registry.hasResource<gameplay::ShipIconSheet>()
                                               ? registry.getResource<gameplay::ShipIconSheet>()
                                               : gameplay::ShipIconSheet{};
     for (std::size_t i = 0; i < _lives.size(); ++i) {
         // A column of ships at rest, next to the player label.
         _lives.at(i) = context.spawn();
-        registry.addComponent(_lives.at(i), ui::UiAnchor{.anchorX = LIVES_X,
-                                                         .anchorY = LIVES_Y + (LIVES_SPACING * static_cast<float>(i))});
+        registry.addComponent(
+            _lives.at(i),
+            sq::ui::UiAnchor{.anchorX = LIVES_X, .anchorY = LIVES_Y + (LIVES_SPACING * static_cast<float>(i))});
         registry.addComponent(_lives.at(i),
-                              ui::UiImage{.texture = sheet.texture,
-                                          .width = static_cast<float>(sheet.frameWidth) * LIFE_ICON_SCALE,
-                                          .height = static_cast<float>(sheet.frameHeight) * LIFE_ICON_SCALE,
-                                          .source = gameplay::idleShipFrame(sheet, playerIndex)});
+                              sq::ui::UiImage{.texture = sheet.texture,
+                                              .width = static_cast<float>(sheet.frameWidth) * LIFE_ICON_SCALE,
+                                              .height = static_cast<float>(sheet.frameHeight) * LIFE_ICON_SCALE,
+                                              .source = gameplay::idleShipFrame(sheet, playerIndex)});
     }
-    _out = hudText(context, ui::UiAnchor{.anchorX = LIVES_X, .anchorY = LIVES_Y}, "OUT", 20.0F, menu::ERROR);
-    ecs::hide(registry, _out);
-    context.addSystem(scene::SceneStage::Update,
-                      [this, playerIndex](engine::Engine& engine, const ecs::time::Time& time) {
-                          ecs::Registry& world = engine.registry();
+    _out = hudText(context, sq::ui::UiAnchor{.anchorX = LIVES_X, .anchorY = LIVES_Y}, "OUT", 20.0F, menu::ERROR);
+    sq::ecs::hide(registry, _out);
+    context.addSystem(sq::scene::SceneStage::Update,
+                      [this, playerIndex](sq::engine::Engine& engine, const sq::time::Time& time) {
+                          sq::ecs::Registry& world = engine.registry();
                           const gameplay::OwnShipStatus status = gameplay::ownShipStatus(world, playerIndex);
                           // Out of lives: OUT shows for a moment, then the client closes; the game goes on without it.
                           if (status.eliminated) {
@@ -173,56 +177,57 @@ void GameScene::spawnLives(scene::SceneContext& context, const std::uint8_t play
                           }
                           for (std::size_t i = 0; i < _lives.size(); ++i) {
                               if (!status.eliminated && i < status.lives) {
-                                  ecs::show(world, _lives.at(i));
+                                  sq::ecs::show(world, _lives.at(i));
                               } else {
-                                  ecs::hide(world, _lives.at(i));
+                                  sq::ecs::hide(world, _lives.at(i));
                               }
                           }
                           if (status.eliminated) {
-                              ecs::show(world, _out);
+                              sq::ecs::show(world, _out);
                           } else {
-                              ecs::hide(world, _out);
+                              sq::ecs::hide(world, _out);
                           }
                       });
 }
 
-void GameScene::spawnBossBar(scene::SceneContext& context) {
-    ecs::Registry& registry = context.registry();
-    _bossCaption = hudText(context, ui::UiAnchor{.anchorX = 0.5F, .anchorY = BOSS_BAR_Y - 0.03F, .pivotX = 0.5F},
+void GameScene::spawnBossBar(sq::scene::SceneContext& context) {
+    sq::ecs::Registry& registry = context.registry();
+    _bossCaption = hudText(context, sq::ui::UiAnchor{.anchorX = 0.5F, .anchorY = BOSS_BAR_Y - 0.03F, .pivotX = 0.5F},
                            "BOSS", 16.0F, menu::ERROR);
     _bossBar = context.spawn();
-    registry.addComponent(_bossBar, ui::UiAnchor{.anchorX = 0.5F, .anchorY = BOSS_BAR_Y, .pivotX = 0.5F});
-    registry.addComponent(_bossBar, ui::UiProgressBar{.width = BOSS_BAR_WIDTH,
-                                                      .height = BOSS_BAR_HEIGHT,
-                                                      .foreground = BOSS_BAR_COLOR,
-                                                      .background = BOSS_BAR_BACKGROUND});
-    ecs::hide(registry, _bossBar);
-    ecs::hide(registry, _bossCaption);
-    context.addSystem(scene::SceneStage::Update, [this](engine::Engine& engine, const ecs::time::Time& /*time*/) {
-        ecs::Registry& world = engine.registry();
-        const std::optional<gameplay::BossHealth> health = gameplay::bossHealth(world);
-        for (const ecs::Entity element : {_bossBar, _bossCaption}) {
-            if (health) {
-                ecs::show(world, element);
-            } else {
-                ecs::hide(world, element);
-            }
-        }
-        if (health) {
-            auto& bar = world.getComponents<ui::UiProgressBar>().get(_bossBar);
-            bar.value = health->points;
-            bar.max = std::max(health->max, 1.0F);
-        }
-    });
+    registry.addComponent(_bossBar, sq::ui::UiAnchor{.anchorX = 0.5F, .anchorY = BOSS_BAR_Y, .pivotX = 0.5F});
+    registry.addComponent(_bossBar, sq::ui::UiProgressBar{.width = BOSS_BAR_WIDTH,
+                                                          .height = BOSS_BAR_HEIGHT,
+                                                          .foreground = BOSS_BAR_COLOR,
+                                                          .background = BOSS_BAR_BACKGROUND});
+    sq::ecs::hide(registry, _bossBar);
+    sq::ecs::hide(registry, _bossCaption);
+    context.addSystem(sq::scene::SceneStage::Update,
+                      [this](sq::engine::Engine& engine, const sq::time::Time& /*time*/) {
+                          sq::ecs::Registry& world = engine.registry();
+                          const std::optional<gameplay::BossHealth> health = gameplay::bossHealth(world);
+                          for (const sq::ecs::Entity element : {_bossBar, _bossCaption}) {
+                              if (health) {
+                                  sq::ecs::show(world, element);
+                              } else {
+                                  sq::ecs::hide(world, element);
+                              }
+                          }
+                          if (health) {
+                              auto& bar = world.getComponents<sq::ui::UiProgressBar>().get(_bossBar);
+                              bar.value = health->points;
+                              bar.max = std::max(health->max, 1.0F);
+                          }
+                      });
 }
 
-void GameScene::showBanner(scene::SceneContext& context, std::string title, std::string subtitle) {
-    scene::SceneManager& scenes = context.manager();
-    const std::optional<scene::SceneId> transition = scenes.find(LEVEL_TRANSITION_SCENE);
+void GameScene::showBanner(sq::scene::SceneContext& context, std::string title, std::string subtitle) {
+    sq::scene::SceneManager& scenes = context.manager();
+    const std::optional<sq::scene::SceneId> transition = scenes.find(LEVEL_TRANSITION_SCENE);
     if (!transition) {
         return;
     }
-    ecs::Registry& registry = context.registry();
+    sq::ecs::Registry& registry = context.registry();
     if (!registry.hasResource<LevelBanner>()) {
         registry.emplaceResource<LevelBanner>();
     }
@@ -236,16 +241,16 @@ void GameScene::showBanner(scene::SceneContext& context, std::string title, std:
 
 // --- Pause -----------------------------------------------------------------------------------------------------------
 
-void PauseScene::onEnter(scene::SceneContext& context) {
-    ecs::Registry& registry = context.registry();
+void PauseScene::onEnter(sq::scene::SceneContext& context) {
+    sq::ecs::Registry& registry = context.registry();
     context.engine().getPlugin<PlayerControlPlugin>().setPaused(true);
 
-    const ecs::Entity dim = context.spawn();
-    registry.addComponent(dim, ui::UiAnchor{});
+    const sq::ecs::Entity dim = context.spawn();
+    registry.addComponent(dim, sq::ui::UiAnchor{});
     registry.addComponent(
-        dim, ui::UiRect{.width = DIM_SIZE, .height = DIM_SIZE, .fillColor = {.r = 0, .g = 0, .b = 0, .a = 150}});
+        dim, sq::ui::UiRect{.width = DIM_SIZE, .height = DIM_SIZE, .fillColor = {.r = 0, .g = 0, .b = 0, .a = 150}});
 
-    const ecs::Entity box = menu::panel(context, 420.0F, 330.0F);
+    const sq::ecs::Entity box = menu::panel(context, 420.0F, 330.0F);
     (void)menu::label(context, box, "PAUSED", 28.0F, 40.0F, menu::GOLD);
     (void)menu::label(context, box, "THE GAME GOES ON FOR THE OTHER PLAYERS", 82.0F, 14.0F, menu::MUTED);
     _resume = menu::button(context, box, "RESUME", "pause.resume", 130.0F, 0);
@@ -265,20 +270,20 @@ void PauseScene::onEnter(scene::SceneContext& context) {
     });
 }
 
-void PauseScene::onExit(scene::SceneContext& context) {
+void PauseScene::onExit(sq::scene::SceneContext& context) {
     context.engine().getPlugin<PlayerControlPlugin>().setPaused(false);
-    menu::focus(context.registry(), ecs::NULL_ENTITY);
+    menu::focus(context.registry(), sq::ecs::NULL_ENTITY);
 }
 
-void PauseScene::onResume(scene::SceneContext& context) { menu::focus(context.registry(), _resume); }
+void PauseScene::onResume(sq::scene::SceneContext& context) { menu::focus(context.registry(), _resume); }
 
 // --- Game over -------------------------------------------------------------------------------------------------------
 
-void GameOverScene::onEnter(scene::SceneContext& context) {
+void GameOverScene::onEnter(sq::scene::SceneContext& context) {
     const auto& result = sessionOf(context).lastResult();
-    const ecs::Entity box = menu::panel(context, 460.0F, 400.0F);
+    const sq::ecs::Entity box = menu::panel(context, 460.0F, 400.0F);
     std::string title = "GAME OVER";
-    ecs::Rgba color = menu::ERROR;
+    sq::ecs::Rgba color = menu::ERROR;
     if (result && result->reason == protocol::GameOverReason::Victory) {
         title = "VICTORY";
         color = menu::GOOD;
@@ -296,7 +301,7 @@ void GameOverScene::onEnter(scene::SceneContext& context) {
                               150.0F + (30.0F * static_cast<float>(i)), 20.0F);
         }
     }
-    const ecs::Entity back = menu::button(context, box, "BACK TO THE LOBBY", "over.lobby", 330.0F, 0);
+    const sq::ecs::Entity back = menu::button(context, box, "BACK TO THE LOBBY", "over.lobby", 330.0F, 0);
     menu::focus(context.registry(), back);
 
     const auto toLobby = [&context] { context.manager().switchTo<LobbyScene>(); };

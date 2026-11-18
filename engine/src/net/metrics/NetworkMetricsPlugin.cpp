@@ -16,7 +16,7 @@
 #include "net/ClientReplicationPlugin.hpp"
 #include "net/INetworkManager.hpp"
 
-namespace ecs::net {
+namespace sq::net {
 
 namespace {
 
@@ -28,11 +28,11 @@ constexpr float MISSED_CRITICAL_PERCENT = 10.0F;
 constexpr float PERCENT = 100.0F;
 
 /** @brief Gets the level of a value that gets worse as it grows. */
-metrics::MetricLevel levelOf(const float value, const float warning, const float critical) {
+sq::metrics::MetricLevel levelOf(const float value, const float warning, const float critical) {
     if (value > critical) {
-        return metrics::MetricLevel::Critical;
+        return sq::metrics::MetricLevel::Critical;
     }
-    return value > warning ? metrics::MetricLevel::Warning : metrics::MetricLevel::Normal;
+    return value > warning ? sq::metrics::MetricLevel::Warning : sq::metrics::MetricLevel::Normal;
 }
 
 /** @brief Formats a rate from a counter increase. */
@@ -45,22 +45,22 @@ NetworkMetricsPlugin::NetworkMetricsPlugin(std::shared_ptr<const INetworkManager
 
 NetworkMetricsPlugin::NetworkMetricsPlugin(StatsSource source) : _source(std::move(source)) {}
 
-void NetworkMetricsPlugin::build(engine::PluginBuilder& builder) { builder.require<metrics::MetricsPlugin>(); }
+void NetworkMetricsPlugin::build(sq::engine::PluginBuilder& builder) { builder.require<sq::metrics::MetricsPlugin>(); }
 
-void NetworkMetricsPlugin::update(engine::Engine& engine, const ecs::time::Time& time) {
+void NetworkMetricsPlugin::update(sq::engine::Engine& engine, const sq::time::Time& time) {
     const auto elapsed = _timer.tick(time.deltaTime);
     if (!elapsed) {
         return;
     }
     auto& registry = engine.registry();
-    auto& board = registry.getResource<metrics::MetricsBoard>();
+    auto& board = registry.getResource<sq::metrics::MetricsBoard>();
     publishTraffic(board, *elapsed);
     if (registry.hasResource<ReplicationStats>()) {
         publishReplication(board, registry.getResource<ReplicationStats>());
     }
 }
 
-void NetworkMetricsPlugin::publishTraffic(metrics::MetricsBoard& board, const float elapsed) {
+void NetworkMetricsPlugin::publishTraffic(sq::metrics::MetricsBoard& board, const float elapsed) {
     const TransportStats traffic = _source ? _source() : TransportStats{};
     if (traffic.bytesReceived < _lastTraffic.bytesReceived || traffic.bytesSent < _lastTraffic.bytesSent ||
         traffic.packetsReceived < _lastTraffic.packetsReceived || traffic.packetsSent < _lastTraffic.packetsSent) {
@@ -77,7 +77,7 @@ void NetworkMetricsPlugin::publishTraffic(metrics::MetricsBoard& board, const fl
     board.set("Packets", std::format("{:.0f} in, {:.0f} out /s", packetsIn, packetsOut));
 }
 
-void NetworkMetricsPlugin::publishReplication(metrics::MetricsBoard& board, const ReplicationStats& stats) {
+void NetworkMetricsPlugin::publishReplication(sq::metrics::MetricsBoard& board, const ReplicationStats& stats) {
     if (stats.inputRttMs) {
         board.set("RTT", std::format("{:.0f} ms", *stats.inputRttMs),
                   levelOf(*stats.inputRttMs, RTT_WARNING_MS, RTT_CRITICAL_MS));
@@ -97,4 +97,4 @@ void NetworkMetricsPlugin::publishReplication(metrics::MetricsBoard& board, cons
               levelOf(percent, MISSED_WARNING_PERCENT, MISSED_CRITICAL_PERCENT));
 }
 
-}  // namespace ecs::net
+}  // namespace sq::net

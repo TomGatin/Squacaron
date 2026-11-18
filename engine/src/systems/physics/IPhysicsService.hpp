@@ -7,7 +7,7 @@
 
 #include <cstddef>
 
-namespace engine {
+namespace sq::engine {
 
 /**
  * @brief Abstract physics service exposed through the Mediator.
@@ -45,4 +45,4 @@ class IPhysicsService {
     [[nodiscard]] virtual std::size_t bodyCount() const noexcept = 0;
 };
 
-}  // namespace engine
+}  // namespace sq::engine

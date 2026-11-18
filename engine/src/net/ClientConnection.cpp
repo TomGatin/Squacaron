@@ -4,7 +4,8 @@
 
 #include "INetworkManager.hpp"
 
-namespace ecs::net {
+namespace sq::net {
+
 void ClientConnection::send(PeerId peer, const Bytes& data, Channel ch) {
     if (peer == SERVER_PEER && _client) {
         _client->send(data, ch);
@@ -23,4 +24,5 @@ void ClientConnection::kick(PeerId /*unused*/) {
 }
 
 std::vector<NetworkEvent> ClientConnection::poll() { return _client ? _client->poll() : std::vector<NetworkEvent>{}; }
-}  // namespace ecs::net
+
+}  // namespace sq::net

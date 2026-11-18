@@ -19,7 +19,7 @@
 #include "assets/detail/AssetContext.hpp"
 #include "assets/detail/IAssetCache.hpp"
 
-namespace assets::detail {
+namespace sq::assets::detail {
 
 /** @brief Transparent string hash, so that maps keyed by `std::string` are searched with a `std::string_view`. */
 struct StringHash {
@@ -309,6 +309,6 @@ class AssetCache final : public IAssetCache {
     Id _highestHandle = Kind::NONE;
 };
 
-}  // namespace assets::detail
+}  // namespace sq::assets::detail
 
 #include "assets/detail/AssetCache.tpp"  // IWYU pragma: export

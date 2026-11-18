@@ -10,19 +10,21 @@
 #include "net/ClientReplicationPlugin.hpp"
 #include "net/INetworkManager.hpp"
 
-namespace ecs::time {
-struct Time;
-}
+namespace sq::time {
 
-namespace ecs::net {
+struct Time;
+
+}  // namespace sq::time
+
+namespace sq::net {
 
 /**
- * @brief Keeps the network lines of the `metrics::MetricsBoard` up to date.
+ * @brief Keeps the network lines of the `sq::metrics::MetricsBoard` up to date.
  *
  * - `Down`, `Up`, `Packets`: traffic of the transport, on any transport that measures it.
  * - `RTT`, `Missed`: from `ReplicationStats`, if the program has a `ClientReplicationPlugin`.
  */
-class NetworkMetricsPlugin final : public engine::IPlugin {
+class NetworkMetricsPlugin final : public sq::engine::IPlugin {
   public:
     /**
      * @brief Creates the plugin.
@@ -50,17 +52,17 @@ class NetworkMetricsPlugin final : public engine::IPlugin {
     [[nodiscard]] std::string_view name() const noexcept override { return "NetworkMetricsPlugin"; }
 
     /**
-     * @brief Declares the dependency on `metrics::MetricsPlugin`, which creates the board.
+     * @brief Declares the dependency on `sq::metrics::MetricsPlugin`, which creates the board.
      * @param builder Dependency builder.
      */
-    void build(engine::PluginBuilder& builder) override;
+    void build(sq::engine::PluginBuilder& builder) override;
 
     /**
-     * @brief Refreshes the board every `metrics::REFRESH_PERIOD` seconds.
+     * @brief Refreshes the board every `sq::metrics::REFRESH_PERIOD` seconds.
      * @param engine Host engine.
      * @param time Frame time.
      */
-    void update(engine::Engine& engine, const ecs::time::Time& time) override;
+    void update(sq::engine::Engine& engine, const sq::time::Time& time) override;
 
   private:
     /**
@@ -68,22 +70,22 @@ class NetworkMetricsPlugin final : public engine::IPlugin {
      * @param board The board.
      * @param elapsed Seconds since the last refresh.
      */
-    void publishTraffic(metrics::MetricsBoard& board, float elapsed);
+    void publishTraffic(sq::metrics::MetricsBoard& board, float elapsed);
     /**
      * @brief Writes the round trip and the snapshots missed since the last refresh to the board.
      * @param board The board.
      * @param stats Current replication statistics.
      */
-    void publishReplication(metrics::MetricsBoard& board, const ReplicationStats& stats);
+    void publishReplication(sq::metrics::MetricsBoard& board, const ReplicationStats& stats);
 
     /** @brief Transport to read the traffic of. */
     StatsSource _source;
     /** @brief Paces the refreshes. */
-    metrics::RefreshTimer _timer;
+    sq::metrics::RefreshTimer _timer;
     /** @brief Traffic at the last refresh. */
     TransportStats _lastTraffic;
     /** @brief Replication statistics at the last refresh. */
     ReplicationStats _lastReplication;
 };
 
-}  // namespace ecs::net
+}  // namespace sq::net

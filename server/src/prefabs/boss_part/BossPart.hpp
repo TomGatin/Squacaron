@@ -66,15 +66,15 @@ struct BossPart {
  *
  * The collider belongs to the `ENEMY` category, like the boss: it hits the player and is hit by player shots.
  *
- * Parameters: the transform keys (see `makeTransform`), `role` (`weak_point`, `turret` or `armor`; any other value
- * gives an armor), `width` and `height` (hitbox size in pixels, clamped to 8–1024, `DEFAULT_BOSS_PART_SIZE` by
- * default), `health` (hit points of a turret, clamped to 1–255, `DEFAULT_TURRET_HEALTH` by default) and `look`
+ * Parameters: the transform keys (see `sq::prefabs::makeTransform`), `role` (`weak_point`, `turret` or `armor`; any
+ * other value gives an armor), `width` and `height` (hitbox size in pixels, clamped to 8–1024, `DEFAULT_BOSS_PART_SIZE`
+ * by default), `health` (hit points of a turret, clamped to 1–255, `DEFAULT_TURRET_HEALTH` by default) and `look`
  * (clamped to 0–255, 0 by default).
  *
  * @param e Freshly spawned entity.
  * @param registry Registry owning the entity.
  * @param params Spawn parameters.
  */
-void buildBossPart(ecs::Entity e, ecs::Registry& registry, PrefabParams const& params);
+void buildBossPart(sq::ecs::Entity e, sq::ecs::Registry& registry, sq::prefabs::PrefabParams const& params);
 
 }  // namespace prefabs

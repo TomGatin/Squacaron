@@ -12,15 +12,15 @@ boss fight. See [Level Files](../gameplay/levels.md) for the R-Type format built
 The module is `engine_timeline` (`engine/src/timeline/`). It is headless and depends only on `engine_core` and
 `engine_events`: it does not know about prefabs.
 
-## `timeline::TimelineEvent`
+## `sq::timeline::TimelineEvent`
 
 | Field | Type | Description |
 |-------|------|-------------|
 | `position` | `float` | Cursor position at which the event fires. |
 | `type` | `std::string` | Event type, e.g. `"spawn"`; interpreted by whoever handles the event. |
-| `params` | `ecs::ParamBag` | Event data. `prefabs::PrefabParams` is the same type, so a spawn can hand it to a prefab as is. |
+| `params` | `sq::ecs::ParamBag` | Event data. `sq::prefabs::PrefabParams` is the same type, so a spawn can hand it to a prefab as is. |
 
-## `timeline::Timeline`
+## `sq::timeline::Timeline`
 
 A pure data structure: no clock, no engine.
 
@@ -39,7 +39,7 @@ rate. The cursor is a `double`, so small steps still add up far along a long tim
 Copies share their events: copying a loaded level into every game costs a pointer, and each copy keeps its own cursor.
 A copy that changes its events gets its own list first (copy-on-write).
 
-## `timeline::TimelinePlugin`
+## `sq::timeline::TimelinePlugin`
 
 Plays a timeline: every fixed step, it moves the cursor by `speed * dt` and publishes on the `EventBus`:
 
@@ -74,19 +74,19 @@ sequenceDiagram
 | `step(engine, delta)` | Moves the cursor right now, e.g. to start at a checkpoint or in tests. |
 
 ```cpp
-engine.addPlugin<timeline::TimelinePlugin>();
+engine.addPlugin<sq::timeline::TimelinePlugin>();
 engine.init();
 
-auto& player = engine.getPlugin<timeline::TimelinePlugin>();
+auto& player = engine.getPlugin<sq::timeline::TimelinePlugin>();
 player.timeline().add({.position = 400.0F, .type = "spawn", .params = {{"prefab", std::string("alien_scout")}}});
 player.setSpeed(60.0F);  // 60 units per second
 
-engine.eventBus().subscribe<timeline::TimelineEventFired>([](const timeline::TimelineEventFired& fired) {
+engine.eventBus().subscribe<sq::timeline::TimelineEventFired>([](const sq::timeline::TimelineEventFired& fired) {
     // The game gives a meaning to fired.event.type.
 });
 ```
 
-## TOML arrays in `config::ConfigFile`
+## TOML arrays in `sq::config::ConfigFile`
 
 Level files are TOML lists of events, so `engine_config` reads arrays too. Each element is flattened into an indexed
 key, and `arraySize(key)` gives the element count. Existing files without arrays read exactly as before.

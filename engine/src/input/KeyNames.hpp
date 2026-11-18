@@ -13,35 +13,35 @@
 #include "input/KeyboardLayout.hpp"
 #include "render/api/InputCodes.hpp"
 
-namespace input {
+namespace sq::input {
 
 /** @brief One keyboard key and its saved id. */
 struct KeyName {
     /** @brief The key (a physical position, named after the US QWERTY layout). */
-    engine::Key key = engine::Key::Unknown;
+    sq::engine::Key key = sq::engine::Key::Unknown;
     /** @brief Id written to the settings file, e.g. "Space" or "LeftShift". */
     std::string_view id;
 };
 
 /**
  * @brief Every key a controls screen can bind, in enum order.
- * @return The keys and their ids; `engine::Key::Unknown` is not in the list.
+ * @return The keys and their ids; `sq::engine::Key::Unknown` is not in the list.
  */
 [[nodiscard]] std::span<const KeyName> keyNames() noexcept;
 
 /**
  * @brief Gets the saved id of a key.
  * @param key Key.
- * @return Its id, or an empty view for `engine::Key::Unknown`.
+ * @return Its id, or an empty view for `sq::engine::Key::Unknown`.
  */
-[[nodiscard]] std::string_view keyId(engine::Key key) noexcept;
+[[nodiscard]] std::string_view keyId(sq::engine::Key key) noexcept;
 
 /**
  * @brief Reads a saved key id.
  * @param id Id written by `keyId`.
  * @return The key, or nothing if the id is unknown.
  */
-[[nodiscard]] std::optional<engine::Key> keyFromId(std::string_view id) noexcept;
+[[nodiscard]] std::optional<sq::engine::Key> keyFromId(std::string_view id) noexcept;
 
 /**
  * @brief Gets the label of a key as printed on the player's keyboard.
@@ -51,8 +51,8 @@ struct KeyName {
  *
  * @param key Key.
  * @param layout Layout of the player's keyboard.
- * @return Upper-case label, e.g. "Z", "SPACE" or "LEFT SHIFT"; "NONE" for `engine::Key::Unknown`.
+ * @return Upper-case label, e.g. "Z", "SPACE" or "LEFT SHIFT"; "NONE" for `sq::engine::Key::Unknown`.
  */
-[[nodiscard]] std::string keyLabel(engine::Key key, KeyboardLayout layout);
+[[nodiscard]] std::string keyLabel(sq::engine::Key key, KeyboardLayout layout);
 
-}  // namespace input
+}  // namespace sq::input

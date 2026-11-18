@@ -11,37 +11,37 @@
 #include "scene/SceneManager.hpp"
 #include "scene/SceneTypes.hpp"
 
-namespace scene {
+namespace sq::scene {
 
-void ScenePlugin::build(engine::PluginBuilder& builder) {
-    builder.require<engine::CorePlugin>();
+void ScenePlugin::build(sq::engine::PluginBuilder& builder) {
+    builder.require<sq::engine::CorePlugin>();
     // Not needed, but when there is one, scenes must exit while its hooks still cascade to the children.
-    builder.optionally<hierarchy::HierarchyPlugin>();
+    builder.optionally<sq::hierarchy::HierarchyPlugin>();
     builder.provides<SceneManager>();
 }
 
-void ScenePlugin::init(engine::Engine& engine) {
+void ScenePlugin::init(sq::engine::Engine& engine) {
     _manager->attach(engine);
     if (!engine.mediator().registerService<SceneManager>(_manager)) {
         throw std::logic_error("ScenePlugin: a SceneManager service is already registered");
     }
 }
 
-void ScenePlugin::preUpdate(engine::Engine& /*engine*/) { _manager->applyTransitions(); }
+void ScenePlugin::preUpdate(sq::engine::Engine& /*engine*/) { _manager->applyTransitions(); }
 
-void ScenePlugin::fixedUpdate(engine::Engine& engine, const ecs::time::Time& time) {
+void ScenePlugin::fixedUpdate(sq::engine::Engine& engine, const sq::time::Time& time) {
     _manager->runStage(SceneStage::FixedUpdate, engine, time);
 }
 
-void ScenePlugin::update(engine::Engine& engine, const ecs::time::Time& time) {
+void ScenePlugin::update(sq::engine::Engine& engine, const sq::time::Time& time) {
     _manager->runStage(SceneStage::Update, engine, time);
 }
 
-void ScenePlugin::lateUpdate(engine::Engine& engine, const ecs::time::Time& time) {
+void ScenePlugin::lateUpdate(sq::engine::Engine& engine, const sq::time::Time& time) {
     _manager->runStage(SceneStage::LateUpdate, engine, time);
 }
 
-void ScenePlugin::shutdown(engine::Engine& engine) {
+void ScenePlugin::shutdown(sq::engine::Engine& engine) {
     // A throwing hook must not keep the manager registered or bound to the engine: finish, then report it.
     std::exception_ptr error;
     try {
@@ -56,4 +56,4 @@ void ScenePlugin::shutdown(engine::Engine& engine) {
     }
 }
 
-}  // namespace scene
+}  // namespace sq::scene

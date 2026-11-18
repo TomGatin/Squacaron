@@ -44,22 +44,22 @@ int main(int ac, char** av) {
     }
 
     try {
-        const std::shared_ptr<ecs::net::INetworkServer> transport =
-            ecs::net::createServer({.protocolId = rlss::protocol::PROTOCOL_ID});
+        const std::shared_ptr<sq::net::INetworkServer> transport =
+            sq::net::createServer({.protocolId = rlss::protocol::PROTOCOL_ID});
         if (!transport->start(*port)) {
-            engine::log::error(LOG_TAG, "cannot listen on port ", *port);
+            sq::engine::log::error(LOG_TAG, "cannot listen on port ", *port);
             return EXIT_ERROR;
         }
-        engine::log::info(LOG_TAG, rlss::protocol::GAME_TITLE, " server listening on port ", *port);
+        sq::engine::log::info(LOG_TAG, rlss::protocol::GAME_TITLE, " server listening on port ", *port);
 
         {
             // The menu runs here; each match runs on its own thread, with its own engine.
             // The scripts are read next to the executable, so the server runs from any working directory.
-            rlss::server::MatchServer server(transport, true, engine::contentRoot());
-            engine::FixedRateLoop loop(MENU_LOOP_RATE);
+            rlss::server::MatchServer server(transport, true, sq::engine::contentRoot());
+            sq::engine::FixedRateLoop loop(MENU_LOOP_RATE);
             loop.stopOnSignals(true);
             loop.run([&server] { server.update(); });
-            engine::log::info(LOG_TAG, "shutting down");
+            sq::engine::log::info(LOG_TAG, "shutting down");
         }
         transport->stop();
     } catch (const std::exception& error) {

@@ -6,7 +6,7 @@
 
 #include "tools/common/TextUtils.hpp"
 
-namespace tools {
+namespace sq::tools {
 
 bool InputLine::insert(char32_t cp) {
     if (cp < U'\x20' || cp == U'\x7F') {
@@ -49,4 +49,4 @@ void InputLine::clear() noexcept {
     _cursor = 0;
 }
 
-}  // namespace tools
+}  // namespace sq::tools

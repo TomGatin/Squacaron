@@ -6,12 +6,12 @@
 
 #include <functional>
 
-namespace ecs {
+namespace sq::ecs {
 
 template <typename Signature>
 using MoveOnlyFunction = std::move_only_function<Signature>;
 
-}  // namespace ecs
+}  // namespace sq::ecs
 
 #else
 
@@ -21,7 +21,7 @@ using MoveOnlyFunction = std::move_only_function<Signature>;
 #include <type_traits>
 #include <utility>
 
-namespace ecs {
+namespace sq::ecs {
 
 /**
  * @brief Move-only callable wrapper fallback for platforms lacking std::move_only_function.
@@ -133,6 +133,6 @@ class MoveOnlyFunction<R(Args...)> {
     std::unique_ptr<Concept> _impl;
 };
 
-}  // namespace ecs
+}  // namespace sq::ecs
 
 #endif

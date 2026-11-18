@@ -1,6 +1,6 @@
 #pragma once
 
-namespace ecs {
+namespace sq::ecs {
 
 /**
  * @brief Marks the entity whose `Transform` positioned sounds are heard from (usually the camera or the player).
@@ -12,4 +12,4 @@ struct AudioListener {
     bool active = true;
 };
 
-}  // namespace ecs
+}  // namespace sq::ecs

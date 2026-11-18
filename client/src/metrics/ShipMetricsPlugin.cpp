@@ -14,18 +14,19 @@
 
 namespace client {
 
-void ShipMetricsPlugin::build(engine::PluginBuilder& builder) { builder.require<metrics::MetricsPlugin>(); }
+void ShipMetricsPlugin::build(sq::engine::PluginBuilder& builder) { builder.require<sq::metrics::MetricsPlugin>(); }
 
-void ShipMetricsPlugin::update(engine::Engine& engine, const ecs::time::Time& time) {
+void ShipMetricsPlugin::update(sq::engine::Engine& engine, const sq::time::Time& time) {
     if (!_timer.tick(time.deltaTime)) {
         return;
     }
-    ecs::Registry& registry = engine.registry();
-    auto& board = registry.getResource<metrics::MetricsBoard>();
-    registry.runSystem<ecs::Predicted, ecs::Transform>(
-        [&board](const ecs::Entity /*entity*/, const ecs::Predicted& /*predicted*/, const ecs::Transform& transform) {
-            board.set("Position", std::format("{:.0f}, {:.0f}", transform.x, transform.y));
-        });
+    sq::ecs::Registry& registry = engine.registry();
+    auto& board = registry.getResource<sq::metrics::MetricsBoard>();
+    registry.runSystem<sq::ecs::Predicted, sq::ecs::Transform>([&board](const sq::ecs::Entity /*entity*/,
+                                                                        const sq::ecs::Predicted& /*predicted*/,
+                                                                        const sq::ecs::Transform& transform) {
+        board.set("Position", std::format("{:.0f}, {:.0f}", transform.x, transform.y));
+    });
 }
 
 }  // namespace client

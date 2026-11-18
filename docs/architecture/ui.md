@@ -4,7 +4,7 @@ The `engine_ui` module draws a HUD and menus in screen space, on top of the worl
 (`IWindowService` for input, `IScreenDrawService` for drawing), so it contains no graphics-library code and is tested
 without a window. It depends on `engine_core` and `engine_hierarchy`.
 
-Add `ui::UiPlugin` (it requires `hierarchy::HierarchyPlugin`). Every frame:
+Add `sq::ui::UiPlugin` (it requires `sq::hierarchy::HierarchyPlugin`). Every frame:
 
 1. `update` lays the HUD out, runs `UiButtonSystem` (mouse clicks on buttons), then `UiInteractionSystem` (focus,
    keyboard and gamepad navigation, text inputs, sliders, toggles, list scrolling).
@@ -69,7 +69,7 @@ outline.
 
 !!! note "Escape"
     By default the window closes on Escape. A game that uses Escape for back or pause opens its window with
-    `render::WindowConfig{.escapeClosesWindow = false}` and quits through its own menu.
+    `sq::render::WindowConfig{.escapeClosesWindow = false}` and quits through its own menu.
 
 ## Scroll lists
 
@@ -83,12 +83,12 @@ rows.
 
 ## Hiding
 
-`ecs::Hidden` (`render/api/components/Hidden.hpp`, in `engine_core`) asks every renderer to skip an entity:
+`sq::ecs::Hidden` (`render/api/components/Hidden.hpp`, in `engine_core`) asks every renderer to skip an entity:
 
 - The UI layout skips a hidden element **with its whole subtree**.
 - The world `RenderSystem` skips hidden sprites.
 
-Use `ecs::hide(registry, e)` and `ecs::show(registry, e)`. Each owner has its own reason bit
+Use `sq::ecs::hide(registry, e)` and `sq::ecs::show(registry, e)`. Each owner has its own reason bit
 (`HiddenReason::Manual`, `HiddenReason::Scene`), so the scene manager hiding a covered scene never shows an element
 the game hid itself.
 

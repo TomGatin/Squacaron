@@ -13,9 +13,9 @@
 
 namespace rlss::game {
 
-/** @brief `ecs::Replicated::kind` of a car. */
+/** @brief `sq::ecs::Replicated::kind` of a car. */
 inline constexpr std::uint32_t KIND_CAR = 1;
-/** @brief `ecs::Replicated::kind` of the ball. */
+/** @brief `sq::ecs::Replicated::kind` of the ball. */
 inline constexpr std::uint32_t KIND_BALL = 2;
 
 /** @brief Horizontal axis action in [-1, 1]: drive on the ground; in the air, with `ACTION_PITCH`, where the nose aims.
@@ -28,15 +28,15 @@ inline constexpr std::string_view ACTION_JUMP = "jump";
 /** @brief Boost button action. */
 inline constexpr std::string_view ACTION_BOOST = "boost";
 /** @brief Id of `ACTION_STEER`. */
-inline constexpr input::ActionId STEER_ID = input::makeActionId(ACTION_STEER);
+inline constexpr sq::input::ActionId STEER_ID = sq::input::makeActionId(ACTION_STEER);
 /** @brief Id of `ACTION_PITCH`. */
-inline constexpr input::ActionId PITCH_ID = input::makeActionId(ACTION_PITCH);
+inline constexpr sq::input::ActionId PITCH_ID = sq::input::makeActionId(ACTION_PITCH);
 /** @brief Id of `ACTION_JUMP`. */
-inline constexpr input::ActionId JUMP_ID = input::makeActionId(ACTION_JUMP);
+inline constexpr sq::input::ActionId JUMP_ID = sq::input::makeActionId(ACTION_JUMP);
 /** @brief Id of `ACTION_BOOST`. */
-inline constexpr input::ActionId BOOST_ID = input::makeActionId(ACTION_BOOST);
+inline constexpr sq::input::ActionId BOOST_ID = sq::input::makeActionId(ACTION_BOOST);
 
-/** @brief Tag (`ecs::Tag::name`) of the entity carrying the `ArenaShape`, found by the Wren scripts. */
+/** @brief Tag (`sq::ecs::Tag::name`) of the entity carrying the `ArenaShape`, found by the Wren scripts. */
 inline constexpr std::string_view ARENA_TAG = "arena";
 
 /** @brief Wren module (file path without `.wren`, relative to the script root) of the match simulation. */
@@ -190,29 +190,29 @@ struct ArenaShape {
 /** @brief Client: entities drawing the parts of a car, placed every frame by the `CarView` script. */
 struct CarParts {
     /** @brief Body, in the player color. */
-    ecs::Entity body = 0;
+    sq::ecs::Entity body = 0;
     /** @brief Glass, trims and lights, drawn over the body. */
-    ecs::Entity cabin = 0;
+    sq::ecs::Entity cabin = 0;
     /** @brief Rear wheel. */
-    ecs::Entity rearWheel = 0;
+    sq::ecs::Entity rearWheel = 0;
     /** @brief Front wheel. */
-    ecs::Entity frontWheel = 0;
+    sq::ecs::Entity frontWheel = 0;
     /** @brief Headlight glow, shows where the car is facing. */
-    ecs::Entity headlight = 0;
+    sq::ecs::Entity headlight = 0;
     /** @brief Boost flame behind the car, hidden when not boosting. */
-    ecs::Entity flame = 0;
+    sq::ecs::Entity flame = 0;
     /** @brief Background of the boost gauge above the car. */
-    ecs::Entity gaugeBack = 0;
+    sq::ecs::Entity gaugeBack = 0;
     /** @brief Filled part of the boost gauge. */
-    ecs::Entity gaugeFill = 0;
+    sq::ecs::Entity gaugeFill = 0;
     /** @brief White body overlay, blinking after a flip reset. */
-    ecs::Entity flash = 0;
+    sq::ecs::Entity flash = 0;
 };
 
 /** @brief Client: one piece of the ball drawing, placed every frame by the `BallView` script. */
 struct BallPart {
     /** @brief Ball entity. */
-    ecs::Entity parent = 0;
+    sq::ecs::Entity parent = 0;
     /** @brief Offset from the ball center, before rotation. */
     float offsetX = 0.0F;
     /** @brief Offset from the ball center, before rotation. */
@@ -227,7 +227,7 @@ struct BallPart {
 
 /**
  * @brief "No entity" in the entity fields read by scripts (0 is a valid entity). Those fields are 64-bit signed: an
- * `ecs::Entity` (generation and index, 52 bits) fits, and so does -1.
+ * `sq::ecs::Entity` (generation and index, 52 bits) fits, and so does -1.
  */
 inline constexpr std::int64_t NO_ENTITY = -1;
 

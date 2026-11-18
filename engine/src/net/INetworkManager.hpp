@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <vector>
 
-namespace ecs::net {
+namespace sq::net {
 
 /** @brief Identifier of a remote peer, given by the transport. 0 is never assigned. */
 using PeerId = std::uint32_t;
@@ -128,4 +128,4 @@ class INetworkManager {
     [[nodiscard]] virtual TransportStats stats() const { return {}; }
 };
 
-}  // namespace ecs::net
+}  // namespace sq::net

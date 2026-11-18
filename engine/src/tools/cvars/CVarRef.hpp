@@ -11,11 +11,13 @@
 #include "tools/cvars/CVar.hpp"
 #include "tools/cvars/CVarTypes.hpp"
 
-namespace tools {
+namespace sq::tools {
 
 class CVarManager;
 
-namespace detail {
+}  // namespace sq::tools
+
+namespace sq::tools::detail {
 
 /**
  * @brief Changes a variable from code through its manager (bounds checked, flags ignored).
@@ -28,7 +30,9 @@ namespace detail {
  */
 std::expected<void, std::string> assignCVar(CVarManager& manager, CVar& cvar, CVarValue value);
 
-}  // namespace detail
+}  // namespace sq::tools::detail
+
+namespace sq::tools {
 
 /**
  * @brief Typed handle on a registered CVar, kept by the code that owns the setting.
@@ -75,6 +79,6 @@ class CVarRef {
     CVar* _cvar = nullptr;
 };
 
-}  // namespace tools
+}  // namespace sq::tools
 
 #include "tools/cvars/CVarRef.tpp"  // IWYU pragma: export

@@ -30,11 +30,11 @@
 
 namespace {
 
-using ecs::net::Bytes;
-using ecs::net::Channel;
 using rtype::server::ClientId;
 using rtype::server::MAX_PENDING_INPUTS;
 using rtype::server::Room;
+using sq::net::Bytes;
+using sq::net::Channel;
 namespace protocol = rtype::protocol;
 
 constexpr float FIXED_DT = 0.1F;
@@ -42,7 +42,7 @@ constexpr ClientId PLAYER = 1;
 constexpr ClientId OTHER_PLAYER = 2;
 
 /** @brief Records what the rooms send. */
-class FakeServer final : public ecs::net::INetworkServer {
+class FakeServer final : public sq::net::INetworkServer {
   public:
     struct Sent {
         ClientId client;
@@ -53,7 +53,7 @@ class FakeServer final : public ecs::net::INetworkServer {
     bool start(std::uint16_t /*port*/) override { return true; }
     void stop() override {}
     [[nodiscard]] bool isRunning() const override { return true; }
-    std::vector<ecs::net::NetworkEvent> poll() override { return {}; }
+    std::vector<sq::net::NetworkEvent> poll() override { return {}; }
     void send(const ClientId client, const Bytes& data, const Channel channel) override {
         sent.push_back({.client = client, .data = data, .channel = channel});
     }
@@ -115,10 +115,10 @@ class RoomInputTest : public ::testing::Test {
     }
 
     /** @brief Position of the player's ship. */
-    [[nodiscard]] ecs::Transform shipOf(const ClientId player) {
-        std::optional<ecs::Transform> found;
-        room.registry().runSystem<ecs::NetworkOwner, ecs::Transform>(
-            [&](ecs::Entity /*entity*/, const ecs::NetworkOwner& owner, const ecs::Transform& transform) {
+    [[nodiscard]] sq::ecs::Transform shipOf(const ClientId player) {
+        std::optional<sq::ecs::Transform> found;
+        room.registry().runSystem<sq::ecs::NetworkOwner, sq::ecs::Transform>(
+            [&](sq::ecs::Entity /*entity*/, const sq::ecs::NetworkOwner& owner, const sq::ecs::Transform& transform) {
                 if (owner.client == player) {
                     found = transform;
                 }
@@ -212,18 +212,19 @@ TEST_F(RoomInputTest, PayloadsThatAreNotInputsAreIgnored) {
 }
 
 TEST_F(RoomInputTest, TimeResourceIsStoredInTheRegistry) {
-    ASSERT_TRUE(room.registry().hasResource<ecs::time::Time>());
-    EXPECT_EQ(room.registry().getResource<ecs::time::Time>().tickCount, 0U);
+    ASSERT_TRUE(room.registry().hasResource<sq::time::Time>());
+    EXPECT_EQ(room.registry().getResource<sq::time::Time>().tickCount, 0U);
     step();
-    EXPECT_EQ(room.registry().getResource<ecs::time::Time>().tickCount, 1U);
+    EXPECT_EQ(room.registry().getResource<sq::time::Time>().tickCount, 1U);
 }
 
 TEST_F(RoomInputTest, PlayerEntityCarriesItsNetworkComponents) {
     int found = 0;
-    room.registry().runSystem<ecs::NetworkOwner, ecs::NetworkId, ecs::InputBuffer>(
-        [&](ecs::Entity entity, const ecs::NetworkOwner& owner, const ecs::NetworkId& id, const ecs::InputBuffer&) {
+    room.registry().runSystem<sq::ecs::NetworkOwner, sq::ecs::NetworkId, sq::ecs::InputBuffer>(
+        [&](sq::ecs::Entity entity, const sq::ecs::NetworkOwner& owner, const sq::ecs::NetworkId& id,
+            const sq::ecs::InputBuffer&) {
             EXPECT_EQ(owner.client, PLAYER);
-            EXPECT_EQ(room.registry().getResource<ecs::net::NetworkEntityMap>().entityOf(id.value), entity);
+            EXPECT_EQ(room.registry().getResource<sq::net::NetworkEntityMap>().entityOf(id.value), entity);
             ++found;
         });
     EXPECT_EQ(found, 1);
@@ -232,12 +233,12 @@ TEST_F(RoomInputTest, PlayerEntityCarriesItsNetworkComponents) {
 TEST_F(RoomInputTest, RemovedPlayerIsUnmapped) {
     room.removePlayer(PLAYER);
 
-    EXPECT_EQ(room.registry().getResource<ecs::net::NetworkEntityMap>().size(), 0U);
+    EXPECT_EQ(room.registry().getResource<sq::net::NetworkEntityMap>().size(), 0U);
     EXPECT_EQ(room.lastProcessedInput(PLAYER), 0U);
 }
 
 TEST_F(RoomInputTest, InputMovesTheShipOfItsSender) {
-    const ecs::Transform before = shipOf(PLAYER);
+    const sq::ecs::Transform before = shipOf(PLAYER);
 
     send(1, {{.action = rtype::game::ACTION_MOVE_X, .value = 1.0F}});
     step();
@@ -302,7 +303,7 @@ TEST_F(RoomInputTest, InputWithoutTheShootButtonSpawnsNoBullet) {
 }
 
 TEST_F(RoomInputTest, HoldingShootSpawnsABulletInFrontOfTheShip) {
-    const ecs::Transform ship = shipOf(PLAYER);
+    const sq::ecs::Transform ship = shipOf(PLAYER);
 
     stepHoldingShoot(1);
 
@@ -358,7 +359,7 @@ TEST_F(RoomInputTest, BulletFliesForwardOnTheServer) {
 TEST_F(RoomInputTest, OffscreenBulletIsRemoved) {
     stepHoldingShoot(1);
     ASSERT_EQ(bullets().size(), 1U);
-    ASSERT_EQ(room.registry().getResource<ecs::net::NetworkEntityMap>().size(), 2U) << "the ship and the bullet";
+    ASSERT_EQ(room.registry().getResource<sq::net::NetworkEntityMap>().size(), 2U) << "the ship and the bullet";
 
     for (int steps = 0; steps < 100 && !bullets().empty(); ++steps) {
         step();
@@ -366,7 +367,7 @@ TEST_F(RoomInputTest, OffscreenBulletIsRemoved) {
 
     EXPECT_TRUE(bullets().empty());
     const auto snapshots = network.snapshotsOf(PLAYER);
-    EXPECT_EQ(room.registry().getResource<ecs::net::NetworkEntityMap>().size(),
+    EXPECT_EQ(room.registry().getResource<sq::net::NetworkEntityMap>().size(),
               snapshots.at(snapshots.size() - 1).entities.size())
         << "the id of the bullet is released";
 }
@@ -487,12 +488,12 @@ TEST(Room, CannotJoinTwiceOrOnceStarted) {
 namespace {
 
 /** @brief Counts what a room sends from its own thread. */
-class CountingServer final : public ecs::net::INetworkServer {
+class CountingServer final : public sq::net::INetworkServer {
   public:
     bool start(std::uint16_t /*port*/) override { return true; }
     void stop() override {}
     [[nodiscard]] bool isRunning() const override { return true; }
-    std::vector<ecs::net::NetworkEvent> poll() override { return {}; }
+    std::vector<sq::net::NetworkEvent> poll() override { return {}; }
     void send(const ClientId /*client*/, const Bytes& /*data*/, const Channel /*channel*/) override { ++sent; }
     void broadcast(const Bytes& /*data*/, Channel /*channel*/) override {}
     void kick(ClientId /*client*/) override {}

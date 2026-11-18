@@ -7,23 +7,23 @@ and decoupled game engine library that can power multiple distinct games.
 
 To achieve true modularity, the engine introduces three interconnected architectural patterns:
 
-1. **The Plugin System (`engine::IPlugin`)**: Replaces manual procedural wiring with an inversion-of-control lifecycle
+1. **The Plugin System (`sq::engine::IPlugin`)**: Replaces manual procedural wiring with an inversion-of-control lifecycle
    (`build`, `init`, `preUpdate`, `fixedUpdate`, `update`, `lateUpdate`, `render`, `shutdown`).
-2. **The Dependency Graph (`engine::PluginGraph`)**: Resolves compile-time and runtime inter-plugin requirements as a
+2. **The Dependency Graph (`sq::engine::PluginGraph`)**: Resolves compile-time and runtime inter-plugin requirements as a
    Directed Acyclic Graph (DAG) using **Kahn's topological sort algorithm**, providing early cycle and
    missing-dependency detection.
-3. **The Mediator (`engine::Mediator`)**: A typed service registry where plugins register and query **abstract
+3. **The Mediator (`sq::engine::Mediator`)**: A typed service registry where plugins register and query **abstract
    interfaces** (`IWindowService`, `IRenderService`, `IInputService`, `IPhysicsService`) rather than concrete
    subsystems, decoupling modules entirely.
 
 ```mermaid
 flowchart TD
     subgraph Engine Core
-        E["engine::Engine"] --> Reg["ecs::Registry"]
-        E --> EB["ecs::EventBus"]
-        E --> Med["engine::Mediator"]
-        E --> Graph["engine::PluginGraph"]
-        E --> Clk["ecs::time::Clock"]
+        E["sq::engine::Engine"] --> Reg["sq::ecs::Registry"]
+        E --> EB["sq::events::EventBus"]
+        E --> Med["sq::engine::Mediator"]
+        E --> Graph["sq::engine::PluginGraph"]
+        E --> Clk["sq::time::Clock"]
     end
 
     subgraph Plugins
@@ -52,7 +52,7 @@ flowchart TD
 
 ## 2. Plugin Lifecycle (`IPlugin`)
 
-Every engine subsystem and game module implements the `engine::IPlugin` interface:
+Every engine subsystem and game module implements the `sq::engine::IPlugin` interface:
 
 ```cpp
 class IPlugin {
@@ -63,9 +63,9 @@ class IPlugin {
     virtual void build(PluginBuilder& builder) {}
     virtual void init(Engine& engine) {}
     virtual void preUpdate(Engine& engine) {}
-    virtual void fixedUpdate(Engine& engine, const ecs::time::Time& time) {}
-    virtual void update(Engine& engine, const ecs::time::Time& time) {}
-    virtual void lateUpdate(Engine& engine, const ecs::time::Time& time) {}
+    virtual void fixedUpdate(Engine& engine, const sq::time::Time& time) {}
+    virtual void update(Engine& engine, const sq::time::Time& time) {}
+    virtual void lateUpdate(Engine& engine, const sq::time::Time& time) {}
     virtual void render(Engine& engine) {}
     virtual void shutdown(Engine& engine) {}
 };
@@ -105,7 +105,7 @@ class IPlugin {
 
 ## 3. Dependency Graph & Resolution (`PluginGraph`)
 
-The `engine::PluginGraph` constructs a directed graph of all registered plugins and applies **Kahn's algorithm** for
+The `sq::engine::PluginGraph` constructs a directed graph of all registered plugins and applies **Kahn's algorithm** for
 topological ordering:
 
 1. **Required Dependencies (`builder.require<T>()`)**:
@@ -124,16 +124,16 @@ topological ordering:
 
 ## 4. The Mediator & Decoupled Services
 
-The `engine::Mediator` acts as an in-process service locator allowing plugins to communicate through abstract interfaces
+The `sq::engine::Mediator` acts as an in-process service locator allowing plugins to communicate through abstract interfaces
 rather than concrete types:
 
 ```cpp
 // Consuming a service through the Mediator
-auto& inputService = engine.service<engine::IInputService>();
+auto& inputService = engine.service<sq::engine::IInputService>();
 auto& mapping = inputService.mapping();
 
 // Safe optional query
-auto windowService = engine.tryService<engine::IWindowService>();
+auto windowService = engine.tryService<sq::engine::IWindowService>();
 if (windowService && !windowService->get().shouldClose()) {
     // Window is active
 }
@@ -154,15 +154,15 @@ if (windowService && !windowService->get().shouldClose()) {
 
 ## 5. Implicit Foundation Plugins
 
-To guarantee that the ECS Registry and simulation Clock are always available, `engine::Engine` automatically injects two
+To guarantee that the ECS Registry and simulation Clock are always available, `sq::engine::Engine` automatically injects two
 foundational plugins during `engine.init()` if they are not explicitly registered:
 
-1. **`engine::CorePlugin`**:
+1. **`sq::engine::CorePlugin`**:
     - Root node in the dependency graph.
     - Coordinates registry lifecycle and base cleanup.
-2. **`engine::TimePlugin`**:
+2. **`sq::engine::TimePlugin`**:
     - Depends on `CorePlugin`.
-    - Manages the `ecs::time::Time` resource in the ECS Registry across both `fixedUpdate` and `update` phases.
+    - Manages the `sq::time::Time` resource in the ECS Registry across both `fixedUpdate` and `update` phases.
 
 ---
 
@@ -175,33 +175,33 @@ Creating a new engine or game plugin is straightforward:
 #include "core/Engine.hpp"
 #include "input/IInputService.hpp"
 
-class MyCustomPlugin final : public engine::IPlugin {
+class MyCustomPlugin final : public sq::engine::IPlugin {
   public:
     [[nodiscard]] std::string_view name() const noexcept override {
         return "MyCustomPlugin";
     }
 
-    void build(engine::PluginBuilder& builder) override {
+    void build(sq::engine::PluginBuilder& builder) override {
         // Declare required dependencies
-        builder.require<engine::CorePlugin>();
-        builder.require<input::InputPlugin>();
+        builder.require<sq::engine::CorePlugin>();
+        builder.require<sq::input::InputPlugin>();
     }
 
-    void init(engine::Engine& engine) override {
+    void init(sq::engine::Engine& engine) override {
         // Retrieve services exposed by dependencies
-        auto& input = engine.service<engine::IInputService>();
+        auto& input = engine.service<sq::engine::IInputService>();
         // Initialize custom entities or resources
     }
 
-    void fixedUpdate(engine::Engine& engine, const ecs::time::Time& time) override {
+    void fixedUpdate(sq::engine::Engine& engine, const sq::time::Time& time) override {
         // Physics or simulation logic
     }
 
-    void update(engine::Engine& engine, const ecs::time::Time& time) override {
+    void update(sq::engine::Engine& engine, const sq::time::Time& time) override {
         // Frame logic
     }
 
-    void shutdown(engine::Engine& engine) override {
+    void shutdown(sq::engine::Engine& engine) override {
         // Cleanup resources
     }
 };
@@ -216,9 +216,9 @@ class MyCustomPlugin final : public engine::IPlugin {
 #include "MyCustomPlugin.hpp"
 
 int main() {
-    engine::Engine engine;
-    engine.addPlugin<render::RenderPlugin>()
-          .addPlugin<input::InputPlugin>()
+    sq::engine::Engine engine;
+    engine.addPlugin<sq::render::RenderPlugin>()
+          .addPlugin<sq::input::InputPlugin>()
           .addPlugin<MyCustomPlugin>();
 
     engine.run();
@@ -242,7 +242,7 @@ Tests that need a deterministic frame give the engine a fake time source: `Engin
 paces the loop; without one, `run()` sleeps between frames (one frame per fixed step), so a headless program does not
 take a whole core. `run({.frameRate = 120.0})` picks another rate, `run({.frameRate = -1.0})` never sleeps, and
 `.stopOnSignals = false` leaves Ctrl+C to the program. A loop of your own (several engines, a lobby) uses
-`engine::FixedRateLoop`, the loop `run()` is built on. `advance()` returns the
+`sq::engine::FixedRateLoop`, the loop `run()` is built on. `advance()` returns the
 number of fixed steps it executed, `0` when less than one `fixedDt` has elapsed: the caller uses it to know whether the
 simulation moved (for example, to send a snapshot only when it did). The clock caps the steps per call at
 `Clock::DEFAULT_MAX_STEPS_PER_TICK`; call `engine.clock().reset()` before the first `advance()` when the engine was

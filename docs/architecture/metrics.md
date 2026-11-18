@@ -7,14 +7,14 @@ and responsiveness.
 ## Architecture
 
 Whoever measures a value does not know how it is shown, and the other way around. Everything goes through one registry
-resource, the `metrics::MetricsBoard`:
+resource, the `sq::metrics::MetricsBoard`:
 
 ```mermaid
 flowchart LR
-    MP["metrics::MetricsPlugin"] -->|"FPS, Frame, Entities, CPU, RAM"| B[("MetricsBoard")]
-    NP["ecs::net::NetworkMetricsPlugin"] -->|"Down, Up, Packets, RTT, Missed"| B
+    MP["sq::metrics::MetricsPlugin"] -->|"FPS, Frame, Entities, CPU, RAM"| B[("MetricsBoard")]
+    NP["sq::net::NetworkMetricsPlugin"] -->|"Down, Up, Packets, RTT, Missed"| B
     SP["The game (ShipMetricsPlugin)"] -->|Position| B
-    B --> O["metrics::MetricsOverlayPlugin"]
+    B --> O["sq::metrics::MetricsOverlayPlugin"]
 ```
 
 | Target | Content | Depends on |
@@ -27,10 +27,10 @@ flowchart LR
 `engine_network_metrics` turns them into lines of the board.
 
 No target above contains graphics-library code: the overlay draws with the `ui` components, through
-`engine::IScreenDrawService`. This is why it is tested without a window, and why a headless program can collect metrics
+`sq::engine::IScreenDrawService`. This is why it is tested without a window, and why a headless program can collect metrics
 too.
 
-Producers refresh their lines every `metrics::REFRESH_PERIOD` (0.5 s) of real time. The overlay only rewrites its text
+Producers refresh their lines every `sq::metrics::REFRESH_PERIOD` (0.5 s) of real time. The overlay only rewrites its text
 when `MetricsBoard::version()` changes, so most frames allocate nothing.
 
 ## What each line means
@@ -84,7 +84,7 @@ late was counted as missed when the next one came, so it is removed from the cou
 `RTT` and `Missed` also depend on when the server wakes up, not only on the network. Its loops sleep 1 ms between two
 passes, which Windows turns into about 15.6 ms by default: steps would then run up to 15 ms late, adding about 8 ms to
 `RTT` on average, and any wake-up later than one step would merge two steps into one snapshot and count as `Missed`.
-This is why the server loops run on `engine::FixedRateLoop`, which holds an `ecs::time::PreciseSleepScope` (see
+This is why the server loops run on `sq::engine::FixedRateLoop`, which holds an `sq::time::PreciseSleepScope` (see
 [Engine Clock](clock.md#sleeping-between-two-passes)). The client needs nothing: its raylib window asks for the same
 timer period.
 
@@ -93,13 +93,13 @@ timer period.
 Any plugin can write to the board. A new line goes at the end, and lines never change order:
 
 ```cpp
-if (registry.hasResource<metrics::MetricsBoard>()) {
-    registry.getResource<metrics::MetricsBoard>().set("Bosses", std::format("{}", count));
+if (registry.hasResource<sq::metrics::MetricsBoard>()) {
+    registry.getResource<sq::metrics::MetricsBoard>().set("Bosses", std::format("{}", count));
 }
 ```
 
-Pass a `metrics::MetricLevel` as third argument to colour the line. Use a `metrics::RefreshTimer` to avoid writing a new
-value at every frame. Keep it in a plugin of its own that requires `metrics::MetricsPlugin`, rather than in a gameplay
+Pass a `sq::metrics::MetricLevel` as third argument to colour the line. Use a `sq::metrics::RefreshTimer` to avoid writing a new
+value at every frame. Keep it in a plugin of its own that requires `sq::metrics::MetricsPlugin`, rather than in a gameplay
 plugin: `client/src/metrics/ShipMetricsPlugin.cpp` does this for the `Position` line.
 
 ## Showing or hiding the overlay
@@ -108,7 +108,7 @@ plugin: `client/src/metrics/ShipMetricsPlugin.cpp` does this for the `Position` 
 it with:
 
 ```cpp
-engine.getPlugin<metrics::MetricsOverlayPlugin>().setVisible(false);
+engine.getPlugin<sq::metrics::MetricsOverlayPlugin>().setVisible(false);
 ```
 
 The change applies at the next frame: hiding destroys the panel and its lines, showing builds them again with the current

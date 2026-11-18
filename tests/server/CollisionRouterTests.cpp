@@ -19,8 +19,9 @@ using rtype::server::collision::PowerUpTouchedEvent;
 using rtype::server::collision::ShipContactEvent;
 using rtype::server::collision::ShotHitEvent;
 
-events::CollisionBeginEvent contact(ecs::Entity a, std::uint16_t categoryA, ecs::Entity b, std::uint16_t categoryB) {
-    return events::CollisionBeginEvent{
+sq::events::CollisionBeginEvent contact(sq::ecs::Entity a, std::uint16_t categoryA, sq::ecs::Entity b,
+                                        std::uint16_t categoryB) {
+    return sq::events::CollisionBeginEvent{
         .entityA = a, .entityB = b, .categoryA = categoryA, .categoryB = categoryB, .isSensor = true};
 }
 
@@ -71,7 +72,7 @@ TEST(CollisionRouter, UnknownPairIsIgnored) {
 }
 
 TEST(CollisionRouter, RepublishesOnTheBusUntilDestroyed) {
-    ecs::EventBus bus;
+    sq::events::EventBus bus;
     std::vector<ShotHitEvent> hits;
     bus.subscribe<ShotHitEvent>([&](const ShotHitEvent& event) { hits.push_back(event); });
 

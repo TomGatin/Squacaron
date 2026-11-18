@@ -25,13 +25,13 @@
 namespace {
 
 /** @brief Scene running a hook in `onEnter`. */
-class HookScene final : public scene::IScene {
+class HookScene final : public sq::scene::IScene {
   public:
     HookScene(std::string name, std::function<void()> hook) : _name(std::move(name)), _hook(std::move(hook)) {}
 
     [[nodiscard]] std::string_view name() const noexcept override { return _name; }
 
-    void onEnter(scene::SceneContext& /*context*/) override {
+    void onEnter(sq::scene::SceneContext& /*context*/) override {
         if (_hook) {
             _hook();
         }
@@ -46,74 +46,75 @@ class HookScene final : public scene::IScene {
 class SceneAssetsTest : public ::testing::Test {
   protected:
     void SetUp() override {
-        engine.addPlugin<scene::ScenePlugin>()
-            .addPlugin<hierarchy::HierarchyPlugin>()
-            .addPlugin<assets::AssetPlugin>()
-            .addPlugin<assets::SceneAssetsPlugin>();
+        engine.addPlugin<sq::scene::ScenePlugin>()
+            .addPlugin<sq::hierarchy::HierarchyPlugin>()
+            .addPlugin<sq::assets::AssetPlugin>()
+            .addPlugin<sq::assets::SceneAssetsPlugin>();
         engine.init();
-        manager().setLoader<assets::Texture>(assets::AssetLoader<assets::Texture>{
+        manager().setLoader<sq::assets::Texture>(sq::assets::AssetLoader<sq::assets::Texture>{
             .load =
-                [this](const std::string& path, const assets::LoadOptions& /*options*/, ecs::TextureId /*preferred*/) {
+                [this](const std::string& path, const sq::assets::LoadOptions& /*options*/,
+                       sq::ecs::TextureId /*preferred*/) {
                     loads.push_back(path);
-                    return static_cast<ecs::TextureId>(loads.size());
+                    return static_cast<sq::ecs::TextureId>(loads.size());
                 },
-            .unload = [this](ecs::TextureId id) { unloads.push_back(id); },
+            .unload = [this](sq::ecs::TextureId id) { unloads.push_back(id); },
             .fallback = {},
             .reserve = {},
         });
-        manager().declare<assets::Texture>("boss", "sprites/boss.png", "Level1");
-        manager().declare<assets::Texture>("ship", "sprites/ship.png", "Level1");
-        manager().declare<assets::Texture>("ship", "sprites/ship.png", "global");
+        manager().declare<sq::assets::Texture>("boss", "sprites/boss.png", "Level1");
+        manager().declare<sq::assets::Texture>("ship", "sprites/ship.png", "Level1");
+        manager().declare<sq::assets::Texture>("ship", "sprites/ship.png", "global");
         manager().loadGroup("global");
     }
 
     void TearDown() override { engine.shutdown(); }
 
-    assets::AssetManager& manager() { return engine.registry().getResource<assets::AssetManager>(); }
-    scene::SceneManager& scenes() { return engine.getPlugin<scene::ScenePlugin>().manager(); }
+    sq::assets::AssetManager& manager() { return engine.registry().getResource<sq::assets::AssetManager>(); }
+    sq::scene::SceneManager& scenes() { return engine.getPlugin<sq::scene::ScenePlugin>().manager(); }
 
     std::vector<std::string> loads;
-    std::vector<ecs::TextureId> unloads;
-    engine::Engine engine;
+    std::vector<sq::ecs::TextureId> unloads;
+    sq::engine::Engine engine;
 };
 
 }  // namespace
 
 TEST_F(SceneAssetsTest, ASceneFindsItsGroupLoadedInOnEnterAndReleasesItOnExit) {
-    ecs::TextureId seenInOnEnter = ecs::NO_TEXTURE;
-    const scene::SceneId level =
-        scenes().registerScene<HookScene>("Level1", [&] { seenInOnEnter = manager().get<assets::Texture>("boss"); });
+    sq::ecs::TextureId seenInOnEnter = sq::ecs::NO_TEXTURE;
+    const sq::scene::SceneId level = scenes().registerScene<HookScene>(
+        "Level1", [&] { seenInOnEnter = manager().get<sq::assets::Texture>("boss"); });
     scenes().push(level);
     scenes().applyTransitions();
-    EXPECT_NE(seenInOnEnter, ecs::NO_TEXTURE);
+    EXPECT_NE(seenInOnEnter, sq::ecs::NO_TEXTURE);
     EXPECT_TRUE(manager().isGroupLoaded("Level1"));
 
     scenes().pop();
     scenes().applyTransitions();
     EXPECT_FALSE(manager().isGroupLoaded("Level1"));
-    EXPECT_EQ(manager().get<assets::Texture>("boss"), ecs::NO_TEXTURE);
+    EXPECT_EQ(manager().get<sq::assets::Texture>("boss"), sq::ecs::NO_TEXTURE);
     // Shared with the global group: kept.
-    EXPECT_NE(manager().get<assets::Texture>("ship"), ecs::NO_TEXTURE);
-    EXPECT_EQ(unloads, std::vector<ecs::TextureId>{seenInOnEnter});
+    EXPECT_NE(manager().get<sq::assets::Texture>("ship"), sq::ecs::NO_TEXTURE);
+    EXPECT_EQ(unloads, std::vector<sq::ecs::TextureId>{seenInOnEnter});
 }
 
 TEST_F(SceneAssetsTest, ASceneThatFailsToEnterReleasesItsGroup) {
-    const scene::SceneId level =
+    const sq::scene::SceneId level =
         scenes().registerScene<HookScene>("Level1", [] { throw std::runtime_error("broken level"); });
     scenes().push(level);
     EXPECT_THROW(scenes().applyTransitions(), std::runtime_error);
     EXPECT_FALSE(manager().isGroupLoaded("Level1"));
-    EXPECT_EQ(manager().get<assets::Texture>("boss"), ecs::NO_TEXTURE);
+    EXPECT_EQ(manager().get<sq::assets::Texture>("boss"), sq::ecs::NO_TEXTURE);
 }
 
 TEST_F(SceneAssetsTest, ASceneNamedGlobalNeverReleasesTheGlobalGroup) {
-    const scene::SceneId global = scenes().registerScene<HookScene>("global", nullptr);
+    const sq::scene::SceneId global = scenes().registerScene<HookScene>("global", nullptr);
     scenes().push(global);
     scenes().applyTransitions();
     scenes().pop();
     scenes().applyTransitions();
     EXPECT_TRUE(manager().isGroupLoaded("global"));
-    EXPECT_NE(manager().get<assets::Texture>("ship"), ecs::NO_TEXTURE);
+    EXPECT_NE(manager().get<sq::assets::Texture>("ship"), sq::ecs::NO_TEXTURE);
 }
 
 int main(int argc, char** argv) {

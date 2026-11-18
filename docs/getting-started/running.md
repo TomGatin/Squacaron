@@ -63,12 +63,12 @@ With `--logs-colorful`, the timestamp is dim, the level is colored by severity (
 bold yellow `WARN`, bold white on red `ERROR`), the tag is bold in a color picked from its name (`server` and `network`
 always get the same one), and the text of warnings and errors is yellow and red.
 
-In code, log through `engine::log` (`engine/src/log/Logger.hpp`, xmake target `engine_log`), never `std::cout`:
+In code, log through `sq::engine::log` (`engine/src/log/Logger.hpp`, xmake target `engine_log`), never `std::cout`:
 
 ```cpp
 #include "log/Logger.hpp"
 
-engine::log::debug("server", "client ", client, " joined room ", roomId);
+sq::engine::log::debug("server", "client ", client, " joined room ", roomId);
 ```
 
 ## Running the Client

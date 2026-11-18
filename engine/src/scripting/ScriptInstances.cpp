@@ -15,20 +15,20 @@
 #include "scripting/detail/ScriptSupport.hpp"
 #include "utils/Paths.hpp"
 
-namespace scripting {
+namespace sq::scripting {
 
 using detail::LOG_TAG;
 
-ScriptObject* ScriptSystem::getScriptInstance(ecs::Entity e) const noexcept {
+ScriptObject* ScriptSystem::getScriptInstance(sq::ecs::Entity e) const noexcept {
     auto it = _instanceHandles.find(e);
     return it != _instanceHandles.end() ? it->second.get() : nullptr;
 }
 
-detail::UniqueWrenHandle ScriptSystem::createScriptInstance(ecs::Entity e, const ScriptComponent& script) {
+detail::UniqueWrenHandle ScriptSystem::createScriptInstance(sq::ecs::Entity e, const ScriptComponent& script) {
     if (!_vm.hasVariable(script.moduleName, script.className)) {
         if (_errors.reportOnce(script.moduleName + ':' + script.className)) {
-            engine::log::warning(LOG_TAG, "class ", utils::quoteForLog(script.className),
-                                 " not found in script module ", utils::quoteForLog(script.moduleName));
+            sq::engine::log::warning(LOG_TAG, "class ", sq::utils::quoteForLog(script.className),
+                                     " not found in script module ", sq::utils::quoteForLog(script.moduleName));
         }
         return {};
     }
@@ -43,7 +43,7 @@ detail::UniqueWrenHandle ScriptSystem::createScriptInstance(ecs::Entity e, const
     return _vm.newInstanceWithHandle(_newHandle, script.moduleName, script.className, static_cast<double>(e));
 }
 
-void ScriptSystem::instantiateScript(ecs::Entity e, ScriptComponent& script, bool isReload) {
+void ScriptSystem::instantiateScript(sq::ecs::Entity e, ScriptComponent& script, bool isReload) {
     if (script.initialized || !ensureScriptModuleLoaded(script.moduleName)) {
         return;
     }
@@ -67,7 +67,7 @@ void ScriptSystem::instantiateScript(ecs::Entity e, ScriptComponent& script, boo
     }
 }
 
-void ScriptSystem::triggerDestroyHook(ecs::Entity e) {
+void ScriptSystem::triggerDestroyHook(sq::ecs::Entity e) {
     auto it = _instanceHandles.find(e);
     if (it == _instanceHandles.end()) {
         return;
@@ -79,8 +79,8 @@ void ScriptSystem::triggerDestroyHook(ecs::Entity e) {
         _vm.getVariable("_internal", "Dispatcher", 0);
         _vm.setSlot(1, it->second.get());
         if (_vm.call(tryDestroyHandle.get()) != CallResult::Success) {
-            engine::log::warning(LOG_TAG, "entity ", e,
-                                 ": onDestroy() failed: ", detail::formatScriptError(_vm.lastError()));
+            sq::engine::log::warning(LOG_TAG, "entity ", e,
+                                     ": onDestroy() failed: ", detail::formatScriptError(_vm.lastError()));
         }
     }
     _instanceHandles.erase(it);
@@ -91,9 +91,9 @@ void ScriptSystem::triggerDestroyHook(ecs::Entity e) {
     }
 }
 
-void ScriptSystem::queueDestroyEntity(ecs::Entity e) {
+void ScriptSystem::queueDestroyEntity(sq::ecs::Entity e) {
     _pendingDestroyEntities.push_back(e);
     _commandBuffer.deferDestroy(e);
 }
 
-}  // namespace scripting
+}  // namespace sq::scripting

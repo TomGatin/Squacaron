@@ -4,7 +4,7 @@
 
 #include "core/AudioHandles.hpp"  // IWYU pragma: export
 
-namespace audio {
+namespace sq::audio {
 
 /** @brief What became of a playing instance of a sound. */
 enum class VoiceState : std::uint8_t {
@@ -45,4 +45,4 @@ enum class AudioBus : std::uint8_t {
     Sfx,
 };
 
-}  // namespace audio
+}  // namespace sq::audio

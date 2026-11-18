@@ -3,7 +3,7 @@
 #include "INetworkManager.hpp"
 
 // Events published on the engine EventBus by `NetworkPlugin::preUpdate`, one per transport event.
-namespace ecs::net {
+namespace sq::net {
 
 /** @brief A peer finished the transport handshake: it can now send and receive. */
 struct PeerConnected {
@@ -27,4 +27,4 @@ struct PacketReceived {
     Bytes data;
 };
 
-}  // namespace ecs::net
+}  // namespace sq::net

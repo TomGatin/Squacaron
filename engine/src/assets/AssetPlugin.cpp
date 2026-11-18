@@ -4,21 +4,21 @@
 #include "core/Engine.hpp"
 #include "ecs/Registry.hpp"
 
-namespace assets {
+namespace sq::assets {
 
-void AssetPlugin::init(engine::Engine& engine) {
-    ecs::Registry& registry = engine.registry();
+void AssetPlugin::init(sq::engine::Engine& engine) {
+    sq::ecs::Registry& registry = engine.registry();
     if (!registry.hasResource<AssetManager>()) {
         registry.emplaceResource<AssetManager>(_root);
     }
 }
 
-void AssetPlugin::shutdown(engine::Engine& engine) {
-    ecs::Registry& registry = engine.registry();
+void AssetPlugin::shutdown(sq::engine::Engine& engine) {
+    sq::ecs::Registry& registry = engine.registry();
     if (registry.hasResource<AssetManager>()) {
         registry.getResource<AssetManager>().unloadAll();
         registry.removeResource<AssetManager>();
     }
 }
 
-}  // namespace assets
+}  // namespace sq::assets

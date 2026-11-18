@@ -30,27 +30,27 @@ struct Position {
 };
 
 struct CollisionEvent {
-    ecs::Entity entityA;
-    ecs::Entity entityB;
+    sq::ecs::Entity entityA;
+    sq::ecs::Entity entityB;
 };
 
 TEST(Scripting, ComponentBinderDirectAccess) {
-    ecs::Registry registry;
-    ecs::EventBus bus;
+    sq::ecs::Registry registry;
+    sq::events::EventBus bus;
     registry.registerComponent<Position>();
-    registry.registerComponent<scripting::ScriptComponent>();
+    registry.registerComponent<sq::scripting::ScriptComponent>();
 
-    scripting::ScriptSystem scriptSystem;
+    sq::scripting::ScriptSystem scriptSystem;
     scriptSystem.init(registry, bus);
 
-    scripting::ComponentBinder<Position> binder(scriptSystem.getVm(), "core/Position", "Position");
+    sq::scripting::ComponentBinder<Position> binder(scriptSystem.getVm(), "core/Position", "Position");
     binder.property<&Position::x>("x");
     binder.property<&Position::y>("y");
 
     std::string const wrenPositionClass = binder.generateWrenClass();
     EXPECT_TRUE(scriptSystem.getVm().interpret("core/Position", wrenPositionClass));
 
-    ecs::Entity const e1 = registry.spawnEntity();
+    sq::ecs::Entity const e1 = registry.spawnEntity();
     registry.addComponent<Position>(e1, Position{.x = 10.0F, .y = 20.0F});
 
     const char* scriptCode =
@@ -69,19 +69,19 @@ TEST(Scripting, ComponentBinderDirectAccess) {
 
     EXPECT_TRUE(scriptSystem.getVm().interpret("game", scriptCode));
 
-    registry.addComponent<scripting::ScriptComponent>(
-        e1, scripting::ScriptComponent{
+    registry.addComponent<sq::scripting::ScriptComponent>(
+        e1, sq::scripting::ScriptComponent{
                 .moduleName = "game", .className = "TestScript", .hasUpdate = false, .initialized = false});
 
     scriptSystem.update(0.016F);
 
-    auto& script = registry.getComponents<scripting::ScriptComponent>().get(e1);
+    auto& script = registry.getComponents<sq::scripting::ScriptComponent>().get(e1);
     EXPECT_TRUE(script.initialized);
     EXPECT_NE(scriptSystem.getScriptInstance(e1), nullptr);
 
     auto modifyHandle = scriptSystem.getVm().makeCallHandle("modifyPosition()");
     EXPECT_EQ(scriptSystem.getVm().call(modifyHandle, scriptSystem.getScriptInstance(e1)),
-              scripting::CallResult::Success);
+              sq::scripting::CallResult::Success);
 
     auto& pos = registry.getComponents<Position>().get(e1);
     EXPECT_EQ(pos.x, 42.0F);
@@ -89,14 +89,14 @@ TEST(Scripting, ComponentBinderDirectAccess) {
 }
 
 TEST(Scripting, DeferredCommandBufferDestruction) {
-    ecs::Registry registry;
-    ecs::EventBus bus;
-    registry.registerComponent<scripting::ScriptComponent>();
+    sq::ecs::Registry registry;
+    sq::events::EventBus bus;
+    registry.registerComponent<sq::scripting::ScriptComponent>();
 
-    scripting::ScriptSystem scriptSystem;
+    sq::scripting::ScriptSystem scriptSystem;
     scriptSystem.init(registry, bus);
 
-    ecs::Entity const e1 = registry.spawnEntity();
+    sq::ecs::Entity const e1 = registry.spawnEntity();
 
     const char* scriptCode =
         "import \"core/Entity\" for Entity\n"
@@ -111,32 +111,33 @@ TEST(Scripting, DeferredCommandBufferDestruction) {
 
     EXPECT_TRUE(scriptSystem.getVm().interpret("gameplay", scriptCode));
 
-    registry.addComponent<scripting::ScriptComponent>(
-        e1, scripting::ScriptComponent{
+    registry.addComponent<sq::scripting::ScriptComponent>(
+        e1, sq::scripting::ScriptComponent{
                 .moduleName = "gameplay", .className = "SuicidalScript", .hasUpdate = false, .initialized = false});
 
     scriptSystem.update(0.016F);
 
     auto dieHandle = scriptSystem.getVm().makeCallHandle("die()");
-    EXPECT_EQ(scriptSystem.getVm().call(dieHandle, scriptSystem.getScriptInstance(e1)), scripting::CallResult::Success);
+    EXPECT_EQ(scriptSystem.getVm().call(dieHandle, scriptSystem.getScriptInstance(e1)),
+              sq::scripting::CallResult::Success);
 
     // Entity is NOT destroyed immediately (deferred safely)
     EXPECT_FALSE(scriptSystem.getCommandBuffer().empty());
-    EXPECT_TRUE(registry.getComponents<scripting::ScriptComponent>().contains(e1));
+    EXPECT_TRUE(registry.getComponents<sq::scripting::ScriptComponent>().contains(e1));
 
     // Next update flushes the command buffer
     scriptSystem.update(0.016F);
 
     EXPECT_TRUE(scriptSystem.getCommandBuffer().empty());
-    EXPECT_FALSE(registry.getComponents<scripting::ScriptComponent>().contains(e1));
+    EXPECT_FALSE(registry.getComponents<sq::scripting::ScriptComponent>().contains(e1));
 }
 
 TEST(Scripting, EventForwardingMagicMethod) {
-    ecs::Registry registry;
-    ecs::EventBus bus;
-    registry.registerComponent<scripting::ScriptComponent>();
+    sq::ecs::Registry registry;
+    sq::events::EventBus bus;
+    registry.registerComponent<sq::scripting::ScriptComponent>();
 
-    scripting::ScriptSystem scriptSystem;
+    sq::scripting::ScriptSystem scriptSystem;
     scriptSystem.init(registry, bus);
 
     scriptSystem.registerEventForwarding<CollisionEvent>(
@@ -157,11 +158,11 @@ TEST(Scripting, EventForwardingMagicMethod) {
 
     EXPECT_TRUE(scriptSystem.getVm().interpret("gameplay", scriptCode));
 
-    ecs::Entity const e1 = registry.spawnEntity();
-    ecs::Entity const e2 = registry.spawnEntity();
+    sq::ecs::Entity const e1 = registry.spawnEntity();
+    sq::ecs::Entity const e2 = registry.spawnEntity();
 
-    registry.addComponent<scripting::ScriptComponent>(
-        e1, scripting::ScriptComponent{
+    registry.addComponent<sq::scripting::ScriptComponent>(
+        e1, sq::scripting::ScriptComponent{
                 .moduleName = "gameplay", .className = "BumperScript", .hasUpdate = false, .initialized = false});
 
     scriptSystem.update(0.016F);
@@ -170,18 +171,18 @@ TEST(Scripting, EventForwardingMagicMethod) {
 
     auto getHitOther = scriptSystem.getVm().makeCallHandle("hitOther");
     EXPECT_EQ(scriptSystem.getVm().call(getHitOther, scriptSystem.getScriptInstance(e1)),
-              scripting::CallResult::Success);
+              sq::scripting::CallResult::Success);
     double const hit = scriptSystem.getVm().getSlot<double>(0);
 
     EXPECT_EQ(hit, static_cast<double>(e2));
 }
 
 TEST(Scripting, CoroutineFiberWait) {
-    ecs::Registry registry;
-    ecs::EventBus bus;
-    registry.registerComponent<scripting::ScriptComponent>();
+    sq::ecs::Registry registry;
+    sq::events::EventBus bus;
+    registry.registerComponent<sq::scripting::ScriptComponent>();
 
-    scripting::ScriptSystem scriptSystem;
+    sq::scripting::ScriptSystem scriptSystem;
     scriptSystem.init(registry, bus);
 
     const char* scriptCode =
@@ -202,21 +203,21 @@ TEST(Scripting, CoroutineFiberWait) {
 
     EXPECT_TRUE(scriptSystem.getVm().interpret("gameplay", scriptCode));
 
-    ecs::Entity const e1 = registry.spawnEntity();
-    registry.addComponent<scripting::ScriptComponent>(
-        e1, scripting::ScriptComponent{
+    sq::ecs::Entity const e1 = registry.spawnEntity();
+    registry.addComponent<sq::scripting::ScriptComponent>(
+        e1, sq::scripting::ScriptComponent{
                 .moduleName = "gameplay", .className = "BossScript", .hasUpdate = false, .initialized = false});
 
     scriptSystem.update(0.016F);
 
     auto startHandle = scriptSystem.getVm().makeCallHandle("startSequence()");
     EXPECT_EQ(scriptSystem.getVm().call(startHandle, scriptSystem.getScriptInstance(e1)),
-              scripting::CallResult::Success);
+              sq::scripting::CallResult::Success);
 
     auto stateHandle = scriptSystem.getVm().makeCallHandle("state");
     auto checkState = [&](double expected) {
         EXPECT_EQ(scriptSystem.getVm().call(stateHandle, scriptSystem.getScriptInstance(e1)),
-                  scripting::CallResult::Success);
+                  sq::scripting::CallResult::Success);
         EXPECT_EQ(scriptSystem.getVm().getSlot<double>(0), expected);
     };
 
@@ -232,11 +233,11 @@ TEST(Scripting, CoroutineFiberWait) {
 }
 
 TEST(Scripting, HybridOptionalUpdateLoop) {
-    ecs::Registry registry;
-    ecs::EventBus bus;
-    registry.registerComponent<scripting::ScriptComponent>();
+    sq::ecs::Registry registry;
+    sq::events::EventBus bus;
+    registry.registerComponent<sq::scripting::ScriptComponent>();
 
-    scripting::ScriptSystem scriptSystem;
+    sq::scripting::ScriptSystem scriptSystem;
     scriptSystem.init(registry, bus);
 
     const char* scriptCode =
@@ -252,12 +253,12 @@ TEST(Scripting, HybridOptionalUpdateLoop) {
 
     EXPECT_TRUE(scriptSystem.getVm().interpret("gameplay", scriptCode));
 
-    ecs::Entity const e1 = registry.spawnEntity();
-    registry.addComponent<scripting::ScriptComponent>(
-        e1, scripting::ScriptComponent{.moduleName = "gameplay",
-                                       .className = "ContinuousMover",
-                                       .hasUpdate = true,  // Opt-in to update loop
-                                       .initialized = false});
+    sq::ecs::Entity const e1 = registry.spawnEntity();
+    registry.addComponent<sq::scripting::ScriptComponent>(
+        e1, sq::scripting::ScriptComponent{.moduleName = "gameplay",
+                                           .className = "ContinuousMover",
+                                           .hasUpdate = true,  // Opt-in to update loop
+                                           .initialized = false});
 
     scriptSystem.update(0.016F);  // 1st frame: initializes & calls update once
 
@@ -265,7 +266,7 @@ TEST(Scripting, HybridOptionalUpdateLoop) {
 
     auto getTicks = [&]() -> double {
         EXPECT_EQ(scriptSystem.getVm().call(ticksHandle, scriptSystem.getScriptInstance(e1)),
-                  scripting::CallResult::Success);
+                  sq::scripting::CallResult::Success);
         return scriptSystem.getVm().getSlot<double>(0);
     };
 
@@ -279,17 +280,17 @@ TEST(Scripting, HybridOptionalUpdateLoop) {
 }
 
 TEST(Scripting, HotReloadValidCode) {
-    ecs::Registry registry;
-    ecs::EventBus bus;
+    sq::ecs::Registry registry;
+    sq::events::EventBus bus;
     registry.registerComponent<Position>();
-    registry.registerComponent<scripting::ScriptComponent>();
+    registry.registerComponent<sq::scripting::ScriptComponent>();
 
-    scripting::ScriptSystem scriptSystem;
+    sq::scripting::ScriptSystem scriptSystem;
     scriptSystem.init(registry, bus);
     scriptSystem.enableHotReload(true);
 
-    auto registerPosition = [](scripting::WrenVM& vm) {
-        scripting::ComponentBinder<Position> binder(vm, "core/Position", "Position");
+    auto registerPosition = [](sq::scripting::WrenVM& vm) {
+        sq::scripting::ComponentBinder<Position> binder(vm, "core/Position", "Position");
         binder.property<&Position::x>("x");
         binder.property<&Position::y>("y");
         std::string const wrenPositionClass = binder.generateWrenClass();
@@ -314,21 +315,22 @@ TEST(Scripting, HotReloadValidCode) {
             << "}\n";
     }
 
-    ecs::Entity const e1 = registry.spawnEntity();
+    sq::ecs::Entity const e1 = registry.spawnEntity();
     registry.addComponent<Position>(e1, Position{.x = 10.0F, .y = 20.0F});
-    registry.addComponent<scripting::ScriptComponent>(e1, scripting::ScriptComponent{.moduleName = "TestReloadEntity",
-                                                                                     .className = "TestReloadEntity",
-                                                                                     .hasUpdate = false,
-                                                                                     .initialized = false});
+    registry.addComponent<sq::scripting::ScriptComponent>(
+        e1, sq::scripting::ScriptComponent{.moduleName = "TestReloadEntity",
+                                           .className = "TestReloadEntity",
+                                           .hasUpdate = false,
+                                           .initialized = false});
 
     scriptSystem.update(0.016F);
-    auto& script = registry.getComponents<scripting::ScriptComponent>().get(e1);
+    auto& script = registry.getComponents<sq::scripting::ScriptComponent>().get(e1);
     EXPECT_TRUE(script.initialized);
 
     auto callApplyMove = [&]() {
         auto applyHandle = scriptSystem.getVm().makeCallHandle("applyMove()");
         EXPECT_EQ(scriptSystem.getVm().call(applyHandle, scriptSystem.getScriptInstance(e1)),
-                  scripting::CallResult::Success);
+                  sq::scripting::CallResult::Success);
     };
 
     callApplyMove();
@@ -363,17 +365,17 @@ TEST(Scripting, HotReloadValidCode) {
 }
 
 TEST(Scripting, HotReloadSyntaxErrorResilience) {
-    ecs::Registry registry;
-    ecs::EventBus bus;
+    sq::ecs::Registry registry;
+    sq::events::EventBus bus;
     registry.registerComponent<Position>();
-    registry.registerComponent<scripting::ScriptComponent>();
+    registry.registerComponent<sq::scripting::ScriptComponent>();
 
-    scripting::ScriptSystem scriptSystem;
+    sq::scripting::ScriptSystem scriptSystem;
     scriptSystem.init(registry, bus);
     scriptSystem.enableHotReload(true);
 
-    auto registerPosition = [](scripting::WrenVM& vm) {
-        scripting::ComponentBinder<Position> binder(vm, "core/Position", "Position");
+    auto registerPosition = [](sq::scripting::WrenVM& vm) {
+        sq::scripting::ComponentBinder<Position> binder(vm, "core/Position", "Position");
         binder.property<&Position::x>("x");
         binder.property<&Position::y>("y");
         std::string const wrenPositionClass = binder.generateWrenClass();
@@ -391,20 +393,20 @@ TEST(Scripting, HotReloadSyntaxErrorResilience) {
             << "}\n";
     }
 
-    ecs::Entity const e1 = registry.spawnEntity();
-    registry.addComponent<scripting::ScriptComponent>(
+    sq::ecs::Entity const e1 = registry.spawnEntity();
+    registry.addComponent<sq::scripting::ScriptComponent>(
         e1,
-        scripting::ScriptComponent{
+        sq::scripting::ScriptComponent{
             .moduleName = "TestSyntaxError", .className = "TestSyntaxError", .hasUpdate = false, .initialized = false});
 
     scriptSystem.update(0.016F);
-    auto& script = registry.getComponents<scripting::ScriptComponent>().get(e1);
+    auto& script = registry.getComponents<sq::scripting::ScriptComponent>().get(e1);
     EXPECT_TRUE(script.initialized);
 
     auto getValue = [&]() -> double {
         auto valHandle = scriptSystem.getVm().makeCallHandle("value");
         EXPECT_EQ(scriptSystem.getVm().call(valHandle, scriptSystem.getScriptInstance(e1)),
-                  scripting::CallResult::Success);
+                  sq::scripting::CallResult::Success);
         return scriptSystem.getVm().getSlot<double>(0);
     };
 
@@ -429,19 +431,19 @@ TEST(Scripting, HotReloadSyntaxErrorResilience) {
 
 namespace {
 int g_destroyHookCallCount = 0;
-void recordDestroyHook(scripting::ForeignCall& /*call*/) { ++g_destroyHookCallCount; }
+void recordDestroyHook(sq::scripting::ForeignCall& /*call*/) { ++g_destroyHookCallCount; }
 
 int g_reloadHookCallCount = 0;
-void recordReloadHook(scripting::ForeignCall& /*call*/) { ++g_reloadHookCallCount; }
+void recordReloadHook(sq::scripting::ForeignCall& /*call*/) { ++g_reloadHookCallCount; }
 }  // namespace
 
 TEST(Scripting, LifecycleOnDestroy) {
     g_destroyHookCallCount = 0;
-    ecs::Registry registry;
-    ecs::EventBus bus;
-    registry.registerComponent<scripting::ScriptComponent>();
+    sq::ecs::Registry registry;
+    sq::events::EventBus bus;
+    registry.registerComponent<sq::scripting::ScriptComponent>();
 
-    scripting::ScriptSystem scriptSystem;
+    sq::scripting::ScriptSystem scriptSystem;
     scriptSystem.init(registry, bus);
 
     scriptSystem.getVm().registerForeignMethod<&recordDestroyHook>("gameplay", "LifecycleDestroyScript", true,
@@ -464,52 +466,53 @@ TEST(Scripting, LifecycleOnDestroy) {
 
     EXPECT_TRUE(scriptSystem.getVm().interpret("gameplay", scriptCode));
 
-    ecs::Entity const e1 = registry.spawnEntity();
-    registry.addComponent<scripting::ScriptComponent>(
+    sq::ecs::Entity const e1 = registry.spawnEntity();
+    registry.addComponent<sq::scripting::ScriptComponent>(
         e1,
-        scripting::ScriptComponent{
+        sq::scripting::ScriptComponent{
             .moduleName = "gameplay", .className = "LifecycleDestroyScript", .hasUpdate = false, .initialized = false});
 
     scriptSystem.update(0.016F);
 
     auto dieHandle = scriptSystem.getVm().makeCallHandle("die()");
-    EXPECT_EQ(scriptSystem.getVm().call(dieHandle, scriptSystem.getScriptInstance(e1)), scripting::CallResult::Success);
+    EXPECT_EQ(scriptSystem.getVm().call(dieHandle, scriptSystem.getScriptInstance(e1)),
+              sq::scripting::CallResult::Success);
 
     // Destruction is deferred, onDestroy has NOT run yet
     EXPECT_EQ(g_destroyHookCallCount, 0);
-    EXPECT_TRUE(registry.getComponents<scripting::ScriptComponent>().contains(e1));
+    EXPECT_TRUE(registry.getComponents<sq::scripting::ScriptComponent>().contains(e1));
 
     // Next update flushes command buffer and triggers onDestroy()
     scriptSystem.update(0.016F);
 
     EXPECT_EQ(g_destroyHookCallCount, 1);
-    EXPECT_FALSE(registry.getComponents<scripting::ScriptComponent>().contains(e1));
+    EXPECT_FALSE(registry.getComponents<sq::scripting::ScriptComponent>().contains(e1));
 }
 
 namespace {
 int g_externalDestroyCount = 0;
 double g_externalDestroyX = 0.0;
 int g_replacementUpdateCount = 0;
-void recordExternalDestroy(scripting::ForeignCall& call) {
+void recordExternalDestroy(sq::scripting::ForeignCall& call) {
     ++g_externalDestroyCount;
     g_externalDestroyX = call.arg<double>(1).value_or(-1.0);
 }
-void recordReplacementUpdate(scripting::ForeignCall& /*call*/) { ++g_replacementUpdateCount; }
+void recordReplacementUpdate(sq::scripting::ForeignCall& /*call*/) { ++g_replacementUpdateCount; }
 }  // namespace
 
 TEST(Scripting, LifecycleOnDestroyWhenKilledOutsideScripts) {
     g_externalDestroyCount = 0;
     g_externalDestroyX = 0.0;
     g_replacementUpdateCount = 0;
-    ecs::Registry registry;
-    ecs::EventBus bus;
+    sq::ecs::Registry registry;
+    sq::events::EventBus bus;
     registry.registerComponent<Position>();
-    registry.registerComponent<scripting::ScriptComponent>();
+    registry.registerComponent<sq::scripting::ScriptComponent>();
 
-    scripting::ScriptSystem scriptSystem;
+    sq::scripting::ScriptSystem scriptSystem;
     scriptSystem.init(registry, bus);
 
-    scripting::ComponentBinder<Position> binder(scriptSystem.getVm(), "core/Position", "Position");
+    sq::scripting::ComponentBinder<Position> binder(scriptSystem.getVm(), "core/Position", "Position");
     binder.property<&Position::x>("x");
     EXPECT_TRUE(scriptSystem.getVm().interpret("core/Position", binder.generateWrenClass()));
 
@@ -537,13 +540,13 @@ TEST(Scripting, LifecycleOnDestroyWhenKilledOutsideScripts) {
         "}\n";
     EXPECT_TRUE(scriptSystem.getVm().interpret("gameplay_external", scriptCode));
 
-    ecs::Entity const e1 = registry.spawnEntity();
+    sq::ecs::Entity const e1 = registry.spawnEntity();
     registry.addComponent<Position>(e1, Position{.x = 7.0F, .y = 0.0F});
-    registry.addComponent<scripting::ScriptComponent>(e1,
-                                                      scripting::ScriptComponent{.moduleName = "gameplay_external",
-                                                                                 .className = "ExternalDestroyScript",
-                                                                                 .hasUpdate = false,
-                                                                                 .initialized = false});
+    registry.addComponent<sq::scripting::ScriptComponent>(
+        e1, sq::scripting::ScriptComponent{.moduleName = "gameplay_external",
+                                           .className = "ExternalDestroyScript",
+                                           .hasUpdate = false,
+                                           .initialized = false});
     scriptSystem.update(0.016F);
     ASSERT_NE(scriptSystem.getScriptInstance(e1), nullptr);
 
@@ -556,13 +559,14 @@ TEST(Scripting, LifecycleOnDestroyWhenKilledOutsideScripts) {
     EXPECT_EQ(scriptSystem.getScriptInstance(e1), nullptr);
 
     // The slot is recycled with a new generation and its own script: it must not be affected by the old instance.
-    ecs::Entity const e2 = registry.spawnEntity();
-    ASSERT_EQ(ecs::entityIndex(e2), ecs::entityIndex(e1));
+    sq::ecs::Entity const e2 = registry.spawnEntity();
+    ASSERT_EQ(sq::ecs::entityIndex(e2), sq::ecs::entityIndex(e1));
     ASSERT_NE(e2, e1);
-    registry.addComponent<scripting::ScriptComponent>(e2, scripting::ScriptComponent{.moduleName = "gameplay_external",
-                                                                                     .className = "ReplacementScript",
-                                                                                     .hasUpdate = true,
-                                                                                     .initialized = false});
+    registry.addComponent<sq::scripting::ScriptComponent>(
+        e2, sq::scripting::ScriptComponent{.moduleName = "gameplay_external",
+                                           .className = "ReplacementScript",
+                                           .hasUpdate = true,
+                                           .initialized = false});
 
     scriptSystem.update(0.016F);
     scriptSystem.update(0.016F);
@@ -574,7 +578,7 @@ TEST(Scripting, LifecycleOnDestroyWhenKilledOutsideScripts) {
 }
 
 TEST(Scripting, GetSlotRejectsOutOfRangeUnsigned64) {
-    scripting::WrenVM vm;
+    sq::scripting::WrenVM vm;
     vm.ensureSlots(1);
 
     vm.setSlot(0, std::ldexp(1.0, 64));
@@ -593,15 +597,15 @@ TEST(Scripting, GetSlotRejectsOutOfRangeUnsigned64) {
 
 TEST(Scripting, LifecycleOnReload) {
     g_reloadHookCallCount = 0;
-    ecs::Registry registry;
-    ecs::EventBus bus;
-    registry.registerComponent<scripting::ScriptComponent>();
+    sq::ecs::Registry registry;
+    sq::events::EventBus bus;
+    registry.registerComponent<sq::scripting::ScriptComponent>();
 
-    scripting::ScriptSystem scriptSystem;
+    sq::scripting::ScriptSystem scriptSystem;
     scriptSystem.init(registry, bus);
     scriptSystem.enableHotReload(true);
 
-    auto registerForeigns = [](scripting::WrenVM& vm) {
+    auto registerForeigns = [](sq::scripting::WrenVM& vm) {
         vm.registerForeignMethod<&recordReloadHook>("TestReloadHook", "ReloadHookScript", true, "recordReloaded()");
     };
     registerForeigns(scriptSystem.getVm());
@@ -621,10 +625,10 @@ TEST(Scripting, LifecycleOnReload) {
             << "}\n";
     }
 
-    ecs::Entity const e1 = registry.spawnEntity();
-    registry.addComponent<scripting::ScriptComponent>(
+    sq::ecs::Entity const e1 = registry.spawnEntity();
+    registry.addComponent<sq::scripting::ScriptComponent>(
         e1,
-        scripting::ScriptComponent{
+        sq::scripting::ScriptComponent{
             .moduleName = "TestReloadHook", .className = "ReloadHookScript", .hasUpdate = false, .initialized = false});
 
     scriptSystem.update(0.016F);
@@ -645,11 +649,11 @@ TEST(Scripting, LifecycleOnReload) {
 }
 
 TEST(Scripting, CoroutineChainedWait) {
-    ecs::Registry registry;
-    ecs::EventBus bus;
-    registry.registerComponent<scripting::ScriptComponent>();
+    sq::ecs::Registry registry;
+    sq::events::EventBus bus;
+    registry.registerComponent<sq::scripting::ScriptComponent>();
 
-    scripting::ScriptSystem scriptSystem;
+    sq::scripting::ScriptSystem scriptSystem;
     scriptSystem.init(registry, bus);
 
     const char* scriptCode =
@@ -672,21 +676,21 @@ TEST(Scripting, CoroutineChainedWait) {
 
     EXPECT_TRUE(scriptSystem.getVm().interpret("gameplay", scriptCode));
 
-    ecs::Entity const e1 = registry.spawnEntity();
-    registry.addComponent<scripting::ScriptComponent>(
-        e1, scripting::ScriptComponent{
+    sq::ecs::Entity const e1 = registry.spawnEntity();
+    registry.addComponent<sq::scripting::ScriptComponent>(
+        e1, sq::scripting::ScriptComponent{
                 .moduleName = "gameplay", .className = "ChainedBossScript", .hasUpdate = false, .initialized = false});
 
     scriptSystem.update(0.016F);
 
     auto startHandle = scriptSystem.getVm().makeCallHandle("start()");
     EXPECT_EQ(scriptSystem.getVm().call(startHandle, scriptSystem.getScriptInstance(e1)),
-              scripting::CallResult::Success);
+              sq::scripting::CallResult::Success);
 
     auto stepHandle = scriptSystem.getVm().makeCallHandle("step");
     auto checkStep = [&](double expected) {
         EXPECT_EQ(scriptSystem.getVm().call(stepHandle, scriptSystem.getScriptInstance(e1)),
-                  scripting::CallResult::Success);
+                  sq::scripting::CallResult::Success);
         EXPECT_EQ(scriptSystem.getVm().getSlot<double>(0), expected);
     };
 
@@ -702,9 +706,9 @@ TEST(Scripting, CoroutineChainedWait) {
 }
 
 TEST(Scripting, TeardownHandleRelease) {
-    ecs::Registry registry;
-    ecs::EventBus bus;
-    registry.registerComponent<scripting::ScriptComponent>();
+    sq::ecs::Registry registry;
+    sq::events::EventBus bus;
+    registry.registerComponent<sq::scripting::ScriptComponent>();
 
     const char* scriptCode =
         "class TeardownScript {\n"
@@ -712,13 +716,13 @@ TEST(Scripting, TeardownHandleRelease) {
         "}\n";
 
     {
-        scripting::ScriptSystem scriptSystem;
+        sq::scripting::ScriptSystem scriptSystem;
         scriptSystem.init(registry, bus);
         EXPECT_TRUE(scriptSystem.getVm().interpret("gameplay", scriptCode));
 
-        ecs::Entity const e1 = registry.spawnEntity();
-        registry.addComponent<scripting::ScriptComponent>(
-            e1, scripting::ScriptComponent{
+        sq::ecs::Entity const e1 = registry.spawnEntity();
+        registry.addComponent<sq::scripting::ScriptComponent>(
+            e1, sq::scripting::ScriptComponent{
                     .moduleName = "gameplay", .className = "TeardownScript", .hasUpdate = false, .initialized = false});
 
         scriptSystem.update(0.016F);
@@ -728,32 +732,32 @@ TEST(Scripting, TeardownHandleRelease) {
     }
 
     // Entity is still in registry but uninitialized
-    EXPECT_FALSE(registry.getComponents<scripting::ScriptComponent>().get(0).initialized);
+    EXPECT_FALSE(registry.getComponents<sq::scripting::ScriptComponent>().get(0).initialized);
 }
 
 TEST(Scripting, InputModuleBindings) {
-    ecs::Registry registry;
-    ecs::EventBus bus;
+    sq::ecs::Registry registry;
+    sq::events::EventBus bus;
     registry.registerComponent<Position>();
-    registry.registerComponent<scripting::ScriptComponent>();
+    registry.registerComponent<sq::scripting::ScriptComponent>();
 
-    scripting::ScriptSystem scriptSystem;
+    sq::scripting::ScriptSystem scriptSystem;
     scriptSystem.init(registry, bus);
 
-    const ecs::Entity player = registry.spawnEntity();
+    const sq::ecs::Entity player = registry.spawnEntity();
     auto& inputState =
-        registry.addComponent<input::InputState>(player, input::InputState{.playerIndex = 0, .actions = {}});
+        registry.addComponent<sq::input::InputState>(player, sq::input::InputState{.playerIndex = 0, .actions = {}});
     inputState.setDown("shoot", true);
     inputState.setJustPressed("shoot", true);
     inputState.setAxis("move_y", -0.75F);
 
-    scripting::ComponentBinder<Position> binder(scriptSystem.getVm(), "core/Position", "Position");
+    sq::scripting::ComponentBinder<Position> binder(scriptSystem.getVm(), "core/Position", "Position");
     binder.property<&Position::x>("x");
     binder.property<&Position::y>("y");
     std::string const wrenPositionClass = binder.generateWrenClass();
     EXPECT_TRUE(scriptSystem.getVm().interpret("core/Position", wrenPositionClass));
 
-    input::addInputScripting(scriptSystem);
+    sq::input::addInputScripting(scriptSystem);
     const char* scriptCode =
         "import \"core/Entity\" for Entity\n"
         "import \"core/Position\" for Position\n"
@@ -773,21 +777,21 @@ TEST(Scripting, InputModuleBindings) {
 
     EXPECT_TRUE(scriptSystem.getVm().interpret("game", scriptCode));
 
-    ecs::Entity const e1 = registry.spawnEntity();
+    sq::ecs::Entity const e1 = registry.spawnEntity();
     registry.addComponent<Position>(e1, Position{.x = 0.0F, .y = 0.0F});
-    registry.addComponent<scripting::ScriptComponent>(
-        e1, scripting::ScriptComponent{
+    registry.addComponent<sq::scripting::ScriptComponent>(
+        e1, sq::scripting::ScriptComponent{
                 .moduleName = "game", .className = "InputTestScript", .hasUpdate = false, .initialized = false});
 
     scriptSystem.update(0.016F);
 
-    auto& script = registry.getComponents<scripting::ScriptComponent>().get(e1);
+    auto& script = registry.getComponents<sq::scripting::ScriptComponent>().get(e1);
     EXPECT_TRUE(script.initialized);
     EXPECT_NE(scriptSystem.getScriptInstance(e1), nullptr);
 
     auto pollHandle = scriptSystem.getVm().makeCallHandle("pollInput()");
     EXPECT_EQ(scriptSystem.getVm().call(pollHandle, scriptSystem.getScriptInstance(e1)),
-              scripting::CallResult::Success);
+              sq::scripting::CallResult::Success);
 
     auto& pos = registry.getComponents<Position>().get(e1);
     EXPECT_FLOAT_EQ(pos.x, 100.0F);
@@ -799,7 +803,7 @@ TEST(Scripting, InputModuleBindings) {
     scriptSystem.getVm().getVariable("core/Input", "Input", 0);
     scriptSystem.getVm().setSlot(1, 0.0);
     scriptSystem.getVm().setSlot(2, "shoot");
-    EXPECT_EQ(scriptSystem.getVm().call(isJustPressedHandle), scripting::CallResult::Success);
+    EXPECT_EQ(scriptSystem.getVm().call(isJustPressedHandle), sq::scripting::CallResult::Success);
     EXPECT_TRUE(scriptSystem.getVm().getSlot<bool>(0));
 
     // Default wrapper query without player index
@@ -807,7 +811,7 @@ TEST(Scripting, InputModuleBindings) {
     scriptSystem.getVm().ensureSlots(2);
     scriptSystem.getVm().getVariable("core/Input", "Input", 0);
     scriptSystem.getVm().setSlot(1, "shoot");
-    EXPECT_EQ(scriptSystem.getVm().call(defaultIsJustPressedHandle), scripting::CallResult::Success);
+    EXPECT_EQ(scriptSystem.getVm().call(defaultIsJustPressedHandle), sq::scripting::CallResult::Success);
     EXPECT_TRUE(scriptSystem.getVm().getSlot<bool>(0));
 
     auto isJustReleasedHandle = scriptSystem.getVm().makeCallHandle("isJustReleased(_,_)");
@@ -815,23 +819,23 @@ TEST(Scripting, InputModuleBindings) {
     scriptSystem.getVm().getVariable("core/Input", "Input", 0);
     scriptSystem.getVm().setSlot(1, 0.0);
     scriptSystem.getVm().setSlot(2, "shoot");
-    EXPECT_EQ(scriptSystem.getVm().call(isJustReleasedHandle), scripting::CallResult::Success);
+    EXPECT_EQ(scriptSystem.getVm().call(isJustReleasedHandle), sq::scripting::CallResult::Success);
     EXPECT_FALSE(scriptSystem.getVm().getSlot<bool>(0));
 }
 
 TEST(Scripting, InputExposesMouseState) {
-    ecs::Registry registry;
-    ecs::EventBus bus;
-    registry.registerComponent<input::InputState>();
-    registry.registerComponent<scripting::ScriptComponent>();
+    sq::ecs::Registry registry;
+    sq::events::EventBus bus;
+    registry.registerComponent<sq::input::InputState>();
+    registry.registerComponent<sq::scripting::ScriptComponent>();
 
-    scripting::ScriptSystem scriptSystem;
+    sq::scripting::ScriptSystem scriptSystem;
     scriptSystem.init(registry, bus);
-    input::addInputScripting(scriptSystem);
+    sq::input::addInputScripting(scriptSystem);
 
-    input::InputState state{.playerIndex = 0, .actions = {}};
-    state.mouse = input::MouseState{.x = 12.0F, .y = 34.0F, .wheel = -1.0F};
-    registry.addComponent<input::InputState>(registry.spawnEntity(), std::move(state));
+    sq::input::InputState state{.playerIndex = 0, .actions = {}};
+    state.mouse = sq::input::MouseState{.x = 12.0F, .y = 34.0F, .wheel = -1.0F};
+    registry.addComponent<sq::input::InputState>(registry.spawnEntity(), std::move(state));
 
     const char* script =
         "import \"core/Input\" for Input\n"
@@ -847,7 +851,7 @@ TEST(Scripting, InputExposesMouseState) {
         auto handle = scriptSystem.getVm().makeCallHandle(signature);
         scriptSystem.getVm().ensureSlots(1);
         scriptSystem.getVm().getVariable("test_mouse", "MouseQuery", 0);
-        EXPECT_EQ(scriptSystem.getVm().call(handle), scripting::CallResult::Success);
+        EXPECT_EQ(scriptSystem.getVm().call(handle), sq::scripting::CallResult::Success);
         return scriptSystem.getVm().getSlot<double>(0);
     };
 
@@ -858,22 +862,22 @@ TEST(Scripting, InputExposesMouseState) {
 }
 
 TEST(Scripting, RobustnessForeignCallTypeValidation) {
-    ecs::Registry registry;
-    ecs::EventBus bus;
+    sq::ecs::Registry registry;
+    sq::events::EventBus bus;
     registry.registerComponent<Position>();
-    registry.registerComponent<scripting::ScriptComponent>();
+    registry.registerComponent<sq::scripting::ScriptComponent>();
 
-    scripting::ScriptSystem scriptSystem;
+    sq::scripting::ScriptSystem scriptSystem;
     scriptSystem.init(registry, bus);
-    input::addInputScripting(scriptSystem);
+    sq::input::addInputScripting(scriptSystem);
 
-    scripting::ComponentBinder<Position> binder(scriptSystem.getVm(), "core/Position", "Position");
+    sq::scripting::ComponentBinder<Position> binder(scriptSystem.getVm(), "core/Position", "Position");
     binder.property<&Position::x>("x");
     binder.property<&Position::y>("y");
     std::string const wrenPositionClass = binder.generateWrenClass();
     EXPECT_TRUE(scriptSystem.getVm().interpret("core/Position", wrenPositionClass));
 
-    // Test 1: Engine.spawnPrefab(null, 0, 0) -> scripting::CallResult::RuntimeError (not SIGSEGV)
+    // Test 1: Engine.spawnPrefab(null, 0, 0) -> sq::scripting::CallResult::RuntimeError (not SIGSEGV)
     const char* badSpawnScript =
         "import \"core/Engine\" for Engine\n"
         "class BadSpawn {\n"
@@ -885,9 +889,9 @@ TEST(Scripting, RobustnessForeignCallTypeValidation) {
     auto badSpawnHandle = scriptSystem.getVm().makeCallHandle("test()");
     scriptSystem.getVm().ensureSlots(1);
     scriptSystem.getVm().getVariable("test_spawn", "BadSpawn", 0);
-    EXPECT_EQ(scriptSystem.getVm().call(badSpawnHandle), scripting::CallResult::RuntimeError);
+    EXPECT_EQ(scriptSystem.getVm().call(badSpawnHandle), sq::scripting::CallResult::RuntimeError);
 
-    // Test 2: Input.isDown(0, 5) -> scripting::CallResult::RuntimeError (not SIGSEGV)
+    // Test 2: Input.isDown(0, 5) -> sq::scripting::CallResult::RuntimeError (not SIGSEGV)
     const char* badInputScript =
         "import \"core/Input\" for Input\n"
         "class BadInput {\n"
@@ -899,10 +903,10 @@ TEST(Scripting, RobustnessForeignCallTypeValidation) {
     auto badInputHandle = scriptSystem.getVm().makeCallHandle("test()");
     scriptSystem.getVm().ensureSlots(1);
     scriptSystem.getVm().getVariable("test_input", "BadInput", 0);
-    EXPECT_EQ(scriptSystem.getVm().call(badInputHandle), scripting::CallResult::RuntimeError);
+    EXPECT_EQ(scriptSystem.getVm().call(badInputHandle), sq::scripting::CallResult::RuntimeError);
 
-    // Test 3: pos.x = "abc" -> scripting::CallResult::RuntimeError (not SIGSEGV)
-    ecs::Entity const e1 = registry.spawnEntity();
+    // Test 3: pos.x = "abc" -> sq::scripting::CallResult::RuntimeError (not SIGSEGV)
+    sq::ecs::Entity const e1 = registry.spawnEntity();
     registry.addComponent<Position>(e1, Position{.x = 10.0F, .y = 20.0F});
     const char* badSetterScript =
         "import \"core/Position\" for Position\n"
@@ -917,9 +921,9 @@ TEST(Scripting, RobustnessForeignCallTypeValidation) {
     scriptSystem.getVm().ensureSlots(2);
     scriptSystem.getVm().getVariable("test_setter", "BadSetter", 0);
     scriptSystem.getVm().setSlot(1, static_cast<double>(e1));
-    EXPECT_EQ(scriptSystem.getVm().call(badSetterHandle), scripting::CallResult::RuntimeError);
+    EXPECT_EQ(scriptSystem.getVm().call(badSetterHandle), sq::scripting::CallResult::RuntimeError);
 
-    // Test 4: Position.new("abc") -> scripting::CallResult::RuntimeError (not SIGSEGV)
+    // Test 4: Position.new("abc") -> sq::scripting::CallResult::RuntimeError (not SIGSEGV)
     const char* badConstructorScript =
         "import \"core/Position\" for Position\n"
         "class BadConstructor {\n"
@@ -931,24 +935,24 @@ TEST(Scripting, RobustnessForeignCallTypeValidation) {
     auto badConstructorHandle = scriptSystem.getVm().makeCallHandle("test()");
     scriptSystem.getVm().ensureSlots(1);
     scriptSystem.getVm().getVariable("test_ctor", "BadConstructor", 0);
-    EXPECT_EQ(scriptSystem.getVm().call(badConstructorHandle), scripting::CallResult::RuntimeError);
+    EXPECT_EQ(scriptSystem.getVm().call(badConstructorHandle), sq::scripting::CallResult::RuntimeError);
 }
 
 TEST(Scripting, RobustnessForeignCallNumericConversions) {
-    ecs::Registry registry;
-    ecs::EventBus bus;
+    sq::ecs::Registry registry;
+    sq::events::EventBus bus;
     registry.registerComponent<Position>();
-    registry.registerComponent<scripting::ScriptComponent>();
+    registry.registerComponent<sq::scripting::ScriptComponent>();
 
-    scripting::ScriptSystem scriptSystem;
+    sq::scripting::ScriptSystem scriptSystem;
     scriptSystem.init(registry, bus);
 
-    scripting::ComponentBinder<Position> binder(scriptSystem.getVm(), "core/Position", "Position");
+    sq::scripting::ComponentBinder<Position> binder(scriptSystem.getVm(), "core/Position", "Position");
     binder.property<&Position::x>("x");
     std::string const wrenPositionClass = binder.generateWrenClass();
     EXPECT_TRUE(scriptSystem.getVm().interpret("core/Position", wrenPositionClass));
 
-    ecs::Entity const entity = registry.spawnEntity();
+    sq::ecs::Entity const entity = registry.spawnEntity();
     registry.addComponent<Position>(entity, Position{.x = 10.0F, .y = 20.0F});
 
     const char* script =
@@ -975,13 +979,13 @@ TEST(Scripting, RobustnessForeignCallNumericConversions) {
         return scriptSystem.getVm().call(handle);
     };
 
-    EXPECT_EQ(callStatic("fractionalEntity()"), scripting::CallResult::RuntimeError);
-    EXPECT_EQ(callStatic("tooLargeEntity()"), scripting::CallResult::RuntimeError);
+    EXPECT_EQ(callStatic("fractionalEntity()"), sq::scripting::CallResult::RuntimeError);
+    EXPECT_EQ(callStatic("tooLargeEntity()"), sq::scripting::CallResult::RuntimeError);
 
-    EXPECT_EQ(callWithEntity("tooLargeFloat(_)"), scripting::CallResult::RuntimeError);
+    EXPECT_EQ(callWithEntity("tooLargeFloat(_)"), sq::scripting::CallResult::RuntimeError);
     EXPECT_FLOAT_EQ(registry.getComponents<Position>().get(entity).x, 10.0F);
 
-    EXPECT_EQ(callWithEntity("validFloat(_)"), scripting::CallResult::Success);
+    EXPECT_EQ(callWithEntity("validFloat(_)"), sq::scripting::CallResult::Success);
     EXPECT_FLOAT_EQ(registry.getComponents<Position>().get(entity).x, 1.5F);
 }
 
@@ -1016,32 +1020,33 @@ constexpr const char* COLLISION_SCRIPTS =
     "    last { _last }\n"
     "}\n";
 
-ecs::Entity spawnScripted(ecs::Registry& registry, const char* className, bool hasCollision) {
-    const ecs::Entity e = registry.spawnEntity();
-    registry.addComponent<scripting::ScriptComponent>(e, scripting::ScriptComponent{.moduleName = "collisions",
-                                                                                    .className = className,
-                                                                                    .hasUpdate = false,
-                                                                                    .hasCollision = hasCollision,
-                                                                                    .initialized = false});
+sq::ecs::Entity spawnScripted(sq::ecs::Registry& registry, const char* className, bool hasCollision) {
+    const sq::ecs::Entity e = registry.spawnEntity();
+    registry.addComponent<sq::scripting::ScriptComponent>(e,
+                                                          sq::scripting::ScriptComponent{.moduleName = "collisions",
+                                                                                         .className = className,
+                                                                                         .hasUpdate = false,
+                                                                                         .hasCollision = hasCollision,
+                                                                                         .initialized = false});
     return e;
 }
 
-double readGetter(scripting::ScriptSystem& scriptSystem, ecs::Entity e, const char* getter) {
+double readGetter(sq::scripting::ScriptSystem& scriptSystem, sq::ecs::Entity e, const char* getter) {
     auto handle = scriptSystem.getVm().makeCallHandle(getter);
-    EXPECT_EQ(scriptSystem.getVm().call(handle, scriptSystem.getScriptInstance(e)), scripting::CallResult::Success);
+    EXPECT_EQ(scriptSystem.getVm().call(handle, scriptSystem.getScriptInstance(e)), sq::scripting::CallResult::Success);
     return scriptSystem.getVm().getSlot<double>(0);
 }
 
 /** @brief A ScriptSystem forwarding the collisions of its bus, with the collision scripts loaded. */
 struct CollisionFixture {
-    ecs::Registry registry;
-    ecs::EventBus bus;
-    scripting::ScriptSystem scriptSystem;
+    sq::ecs::Registry registry;
+    sq::events::EventBus bus;
+    sq::scripting::ScriptSystem scriptSystem;
 
     CollisionFixture() {
-        registry.registerComponent<scripting::ScriptComponent>();
+        registry.registerComponent<sq::scripting::ScriptComponent>();
         scriptSystem.init(registry, bus);
-        scriptSystem.forwardCollisions<events::CollisionBeginEvent>(bus);
+        scriptSystem.forwardCollisions<sq::events::CollisionBeginEvent>(bus);
         EXPECT_TRUE(scriptSystem.getVm().interpret("collisions", COLLISION_SCRIPTS));
     }
 };
@@ -1050,11 +1055,11 @@ struct CollisionFixture {
 
 TEST(Scripting, CollisionForwardingCallsBothFlaggedScripts) {
     CollisionFixture fx;
-    const ecs::Entity e1 = spawnScripted(fx.registry, "HitScript", true);
-    const ecs::Entity e2 = spawnScripted(fx.registry, "HitScript", true);
+    const sq::ecs::Entity e1 = spawnScripted(fx.registry, "HitScript", true);
+    const sq::ecs::Entity e2 = spawnScripted(fx.registry, "HitScript", true);
     fx.scriptSystem.update(0.016F);
 
-    fx.bus.publish(events::CollisionBeginEvent{.entityA = e1, .entityB = e2});
+    fx.bus.publish(sq::events::CollisionBeginEvent{.entityA = e1, .entityB = e2});
 
     EXPECT_EQ(readGetter(fx.scriptSystem, e1, "hits"), 1.0);
     EXPECT_EQ(readGetter(fx.scriptSystem, e1, "last"), static_cast<double>(e2));
@@ -1064,11 +1069,11 @@ TEST(Scripting, CollisionForwardingCallsBothFlaggedScripts) {
 
 TEST(Scripting, CollisionForwardingSkipsUnflaggedScripts) {
     CollisionFixture fx;
-    const ecs::Entity flagged = spawnScripted(fx.registry, "HitScript", true);
-    const ecs::Entity unflagged = spawnScripted(fx.registry, "HitScript", false);
+    const sq::ecs::Entity flagged = spawnScripted(fx.registry, "HitScript", true);
+    const sq::ecs::Entity unflagged = spawnScripted(fx.registry, "HitScript", false);
     fx.scriptSystem.update(0.016F);
 
-    fx.bus.publish(events::CollisionBeginEvent{.entityA = unflagged, .entityB = flagged});
+    fx.bus.publish(sq::events::CollisionBeginEvent{.entityA = unflagged, .entityB = flagged});
 
     EXPECT_EQ(readGetter(fx.scriptSystem, flagged, "hits"), 1.0);
     EXPECT_EQ(readGetter(fx.scriptSystem, unflagged, "hits"), 0.0);
@@ -1076,18 +1081,18 @@ TEST(Scripting, CollisionForwardingSkipsUnflaggedScripts) {
 
 TEST(Scripting, CollisionForwardingSkipsPendingDestroy) {
     CollisionFixture fx;
-    const ecs::Entity destroyer = spawnScripted(fx.registry, "DestroyerScript", true);
-    const ecs::Entity victim = spawnScripted(fx.registry, "HitScript", true);
+    const sq::ecs::Entity destroyer = spawnScripted(fx.registry, "DestroyerScript", true);
+    const sq::ecs::Entity victim = spawnScripted(fx.registry, "HitScript", true);
     fx.scriptSystem.update(0.016F);
 
     // The destroyer runs first and queues the victim for destruction: the victim's script is then skipped.
-    fx.bus.publish(events::CollisionBeginEvent{.entityA = destroyer, .entityB = victim});
+    fx.bus.publish(sq::events::CollisionBeginEvent{.entityA = destroyer, .entityB = victim});
     EXPECT_EQ(readGetter(fx.scriptSystem, destroyer, "hits"), 1.0);
     EXPECT_EQ(readGetter(fx.scriptSystem, victim, "hits"), 0.0);
     EXPECT_TRUE(fx.registry.isAlive(victim));  // deferred through the CommandBuffer
 
     // Later contacts of the queued entity are ignored too, until the deferred destruction is flushed.
-    fx.bus.publish(events::CollisionBeginEvent{.entityA = destroyer, .entityB = victim});
+    fx.bus.publish(sq::events::CollisionBeginEvent{.entityA = destroyer, .entityB = victim});
     EXPECT_EQ(readGetter(fx.scriptSystem, destroyer, "hits"), 1.0);
 
     fx.scriptSystem.update(0.016F);
@@ -1096,46 +1101,46 @@ TEST(Scripting, CollisionForwardingSkipsPendingDestroy) {
 
 TEST(Scripting, CollisionForwardingSkipsDeadEntities) {
     CollisionFixture fx;
-    const ecs::Entity survivor = spawnScripted(fx.registry, "HitScript", true);
-    const ecs::Entity victim = spawnScripted(fx.registry, "HitScript", true);
+    const sq::ecs::Entity survivor = spawnScripted(fx.registry, "HitScript", true);
+    const sq::ecs::Entity victim = spawnScripted(fx.registry, "HitScript", true);
     fx.scriptSystem.update(0.016F);
 
     // A C++ rule handled the contact first and killed the victim: the survivor must not see a dead entity.
     fx.registry.killEntity(victim);
-    fx.bus.publish(events::CollisionBeginEvent{.entityA = survivor, .entityB = victim});
+    fx.bus.publish(sq::events::CollisionBeginEvent{.entityA = survivor, .entityB = victim});
 
     EXPECT_EQ(readGetter(fx.scriptSystem, survivor, "hits"), 0.0);
 }
 
 TEST(Scripting, StopForwardingCollisionsUnsubscribes) {
     CollisionFixture fx;
-    const ecs::Entity e1 = spawnScripted(fx.registry, "HitScript", true);
-    const ecs::Entity e2 = spawnScripted(fx.registry, "HitScript", true);
+    const sq::ecs::Entity e1 = spawnScripted(fx.registry, "HitScript", true);
+    const sq::ecs::Entity e2 = spawnScripted(fx.registry, "HitScript", true);
     fx.scriptSystem.update(0.016F);
 
     fx.scriptSystem.stopForwardingCollisions();
     fx.scriptSystem.stopForwardingCollisions();  // idempotent, as ScriptPlugin::shutdown then the destructor call it
-    fx.bus.publish(events::CollisionBeginEvent{.entityA = e1, .entityB = e2});
+    fx.bus.publish(sq::events::CollisionBeginEvent{.entityA = e1, .entityB = e2});
 
     EXPECT_EQ(readGetter(fx.scriptSystem, e1, "hits"), 0.0);
     EXPECT_EQ(readGetter(fx.scriptSystem, e2, "hits"), 0.0);
 }
 
 TEST(Scripting, CollisionForwardingStopsWithTheSystem) {
-    ecs::Registry registry;
-    ecs::EventBus bus;
+    sq::ecs::Registry registry;
+    sq::events::EventBus bus;
     {
         CollisionFixture fx;
         (void)fx;
     }
     {
-        scripting::ScriptSystem scriptSystem;
-        registry.registerComponent<scripting::ScriptComponent>();
+        sq::scripting::ScriptSystem scriptSystem;
+        registry.registerComponent<sq::scripting::ScriptComponent>();
         scriptSystem.init(registry, bus);
-        scriptSystem.forwardCollisions<events::CollisionBeginEvent>(bus);
+        scriptSystem.forwardCollisions<sq::events::CollisionBeginEvent>(bus);
     }
     // The destroyed system unsubscribed: publishing must not reach a dangling `this`.
-    EXPECT_NO_FATAL_FAILURE(bus.publish(events::CollisionBeginEvent{.entityA = 0, .entityB = 1}));
+    EXPECT_NO_FATAL_FAILURE(bus.publish(sq::events::CollisionBeginEvent{.entityA = 0, .entityB = 1}));
 }
 
 int main(int argc, char** argv) {
@@ -1149,7 +1154,7 @@ namespace {
  * @brief Runs `Engine.spawnPrefab(<prefabName>, 12, 34)` from a Wren static method.
  * @return The Wren call result.
  */
-scripting::CallResult callSpawnPrefab(scripting::ScriptSystem& scriptSystem, std::string const& prefabName) {
+sq::scripting::CallResult callSpawnPrefab(sq::scripting::ScriptSystem& scriptSystem, std::string const& prefabName) {
     std::string const module = "spawn_" + prefabName;
     std::string const code =
         "import \"core/Engine\" for Engine\n"
@@ -1168,57 +1173,58 @@ scripting::CallResult callSpawnPrefab(scripting::ScriptSystem& scriptSystem, std
 }  // namespace
 
 TEST(Scripting, SpawnPrefabInstantiatesRegisteredPrefab) {
-    ecs::Registry registry;
-    ecs::EventBus bus;
-    registry.registerComponent<scripting::ScriptComponent>();
-    registry.registerComponent<ecs::Transform>();
+    sq::ecs::Registry registry;
+    sq::events::EventBus bus;
+    registry.registerComponent<sq::scripting::ScriptComponent>();
+    registry.registerComponent<sq::ecs::Transform>();
 
-    prefabs::PrefabManager manager;
-    manager.registerPrefab("probe", [](ecs::Entity e, ecs::Registry& reg, prefabs::PrefabParams const& params) {
-        reg.addComponent<ecs::Transform>(e, prefabs::makeTransform(params));
-    });
+    sq::prefabs::PrefabManager manager;
+    manager.registerPrefab("probe",
+                           [](sq::ecs::Entity e, sq::ecs::Registry& reg, sq::prefabs::PrefabParams const& params) {
+                               reg.addComponent<sq::ecs::Transform>(e, sq::prefabs::makeTransform(params));
+                           });
 
-    scripting::ScriptSystem scriptSystem;
+    sq::scripting::ScriptSystem scriptSystem;
     scriptSystem.init(registry, bus);
-    prefabs::ScriptPrefabSpawner spawner(scriptSystem, manager);
+    sq::prefabs::ScriptPrefabSpawner spawner(scriptSystem, manager);
     scriptSystem.addExtension(spawner);
 
-    EXPECT_EQ(callSpawnPrefab(scriptSystem, "probe"), scripting::CallResult::Success);
+    EXPECT_EQ(callSpawnPrefab(scriptSystem, "probe"), sq::scripting::CallResult::Success);
     EXPECT_FALSE(scriptSystem.getCommandBuffer().empty());
-    EXPECT_TRUE(registry.getComponents<ecs::Transform>().getDense().empty());
+    EXPECT_TRUE(registry.getComponents<sq::ecs::Transform>().getDense().empty());
 
     scriptSystem.update(0.016F);
 
-    auto const& transforms = registry.getComponents<ecs::Transform>().getDense();
+    auto const& transforms = registry.getComponents<sq::ecs::Transform>().getDense();
     ASSERT_EQ(transforms.size(), 1U);
     EXPECT_FLOAT_EQ(transforms.front().x, 12.0F);
     EXPECT_FLOAT_EQ(transforms.front().y, 34.0F);
 }
 
 TEST(Scripting, SpawnPrefabUnknownNameQueuesNothing) {
-    ecs::Registry registry;
-    ecs::EventBus bus;
-    registry.registerComponent<scripting::ScriptComponent>();
+    sq::ecs::Registry registry;
+    sq::events::EventBus bus;
+    registry.registerComponent<sq::scripting::ScriptComponent>();
 
-    prefabs::PrefabManager const manager;
-    scripting::ScriptSystem scriptSystem;
+    sq::prefabs::PrefabManager const manager;
+    sq::scripting::ScriptSystem scriptSystem;
     scriptSystem.init(registry, bus);
-    prefabs::ScriptPrefabSpawner spawner(scriptSystem, manager);
+    sq::prefabs::ScriptPrefabSpawner spawner(scriptSystem, manager);
     scriptSystem.addExtension(spawner);
 
-    EXPECT_EQ(callSpawnPrefab(scriptSystem, "does_not_exist"), scripting::CallResult::Success);
+    EXPECT_EQ(callSpawnPrefab(scriptSystem, "does_not_exist"), sq::scripting::CallResult::Success);
     EXPECT_TRUE(scriptSystem.getCommandBuffer().empty());
 }
 
 TEST(Scripting, SpawnPrefabWithoutManagerQueuesNothing) {
-    ecs::Registry registry;
-    ecs::EventBus bus;
-    registry.registerComponent<scripting::ScriptComponent>();
+    sq::ecs::Registry registry;
+    sq::events::EventBus bus;
+    registry.registerComponent<sq::scripting::ScriptComponent>();
 
-    scripting::ScriptSystem scriptSystem;
+    sq::scripting::ScriptSystem scriptSystem;
     scriptSystem.init(registry, bus);
 
-    EXPECT_EQ(callSpawnPrefab(scriptSystem, "probe"), scripting::CallResult::Success);
+    EXPECT_EQ(callSpawnPrefab(scriptSystem, "probe"), sq::scripting::CallResult::Success);
     EXPECT_TRUE(scriptSystem.getCommandBuffer().empty());
 }
 
@@ -1226,28 +1232,28 @@ namespace {
 
 /** @brief Registry and script system ready to run scripts, for the error and script root tests. */
 struct ScriptFixture {
-    ecs::Registry registry;
-    ecs::EventBus bus;
-    scripting::ScriptSystem scripts;
+    sq::ecs::Registry registry;
+    sq::events::EventBus bus;
+    sq::scripting::ScriptSystem scripts;
 
     ScriptFixture() {
-        registry.registerComponent<scripting::ScriptComponent>();
+        registry.registerComponent<sq::scripting::ScriptComponent>();
         scripts.init(registry, bus);
     }
 
     /** @brief Spawns an entity running `className` of `moduleName`. */
-    ecs::Entity spawnScripted(const std::string& moduleName, const std::string& className, bool hasUpdate) {
-        ecs::Entity const e = registry.spawnEntity();
-        registry.addComponent<scripting::ScriptComponent>(
-            e, scripting::ScriptComponent{
+    sq::ecs::Entity spawnScripted(const std::string& moduleName, const std::string& className, bool hasUpdate) {
+        sq::ecs::Entity const e = registry.spawnEntity();
+        registry.addComponent<sq::scripting::ScriptComponent>(
+            e, sq::scripting::ScriptComponent{
                    .moduleName = moduleName, .className = className, .hasUpdate = hasUpdate, .initialized = false});
         return e;
     }
 
     /** @brief Reads the number returned by the getter `name` of the script of `e`. */
-    double number(ecs::Entity e, const char* name) {
+    double number(sq::ecs::Entity e, const char* name) {
         auto handle = scripts.getVm().makeCallHandle(name);
-        EXPECT_EQ(scripts.getVm().call(handle, scripts.getScriptInstance(e)), scripting::CallResult::Success);
+        EXPECT_EQ(scripts.getVm().call(handle, scripts.getScriptInstance(e)), sq::scripting::CallResult::Success);
         return scripts.getVm().getSlot<double>(0);
     }
 };
@@ -1297,7 +1303,7 @@ void writeFile(const std::filesystem::path& path, const std::string& source) {
 }  // namespace
 
 TEST(ScriptErrors, LastErrorStaysBoundedOnRepeatedFailures) {
-    scripting::WrenVM vm;
+    sq::scripting::WrenVM vm;
     ASSERT_TRUE(vm.interpret("main",
                              "class Broken {\n"
                              "    static fail() { Fiber.abort(\"boom\") }\n"
@@ -1308,7 +1314,7 @@ TEST(ScriptErrors, LastErrorStaysBoundedOnRepeatedFailures) {
 
     vm.ensureSlots(1);
     vm.getVariable("main", "Broken", 0);
-    ASSERT_EQ(vm.call(fail), scripting::CallResult::RuntimeError);
+    ASSERT_EQ(vm.call(fail), sq::scripting::CallResult::RuntimeError);
     std::size_t const oneError = vm.lastError().size();
     EXPECT_GT(oneError, 0U);
     EXPECT_NE(vm.lastError().find("boom"), std::string::npos);
@@ -1317,18 +1323,18 @@ TEST(ScriptErrors, LastErrorStaysBoundedOnRepeatedFailures) {
     for (int i = 0; i < 1000; ++i) {
         vm.ensureSlots(1);
         vm.getVariable("main", "Broken", 0);
-        ASSERT_EQ(vm.call(fail), scripting::CallResult::RuntimeError);
+        ASSERT_EQ(vm.call(fail), sq::scripting::CallResult::RuntimeError);
     }
     EXPECT_EQ(vm.lastError().size(), oneError);
 
     vm.ensureSlots(1);
     vm.getVariable("main", "Broken", 0);
-    ASSERT_EQ(vm.call(ok), scripting::CallResult::Success);
+    ASSERT_EQ(vm.call(ok), sq::scripting::CallResult::Success);
     EXPECT_TRUE(vm.lastError().empty());
 }
 
 TEST(ScriptErrors, LastErrorIsCappedForDeepStackTraces) {
-    scripting::WrenVM vm;
+    sq::scripting::WrenVM vm;
     ASSERT_TRUE(vm.interpret("main",
                              "class Deep {\n"
                              "    static down(n) { n == 0 ? Fiber.abort(\"bottom\") : down(n - 1) }\n"
@@ -1337,28 +1343,28 @@ TEST(ScriptErrors, LastErrorIsCappedForDeepStackTraces) {
     vm.ensureSlots(2);
     vm.getVariable("main", "Deep", 0);
     vm.setSlot(1, 2000.0);
-    ASSERT_EQ(vm.call(down), scripting::CallResult::RuntimeError);
-    EXPECT_LE(vm.lastError().size(), scripting::WrenVM::MAX_ERROR_LENGTH + 3);
+    ASSERT_EQ(vm.call(down), sq::scripting::CallResult::RuntimeError);
+    EXPECT_LE(vm.lastError().size(), sq::scripting::WrenVM::MAX_ERROR_LENGTH + 3);
 }
 
 TEST(ScriptErrors, RepeatedUpdateFailuresDisableTheScript) {
     ScriptFixture fixture;
     ASSERT_TRUE(fixture.scripts.getVm().interpret("broken", failingUpdateScript("AlwaysFails", "true")));
-    ecs::Entity const e = fixture.spawnScripted("broken", "AlwaysFails", true);
+    sq::ecs::Entity const e = fixture.spawnScripted("broken", "AlwaysFails", true);
 
-    for (std::uint32_t i = 0; i < scripting::MAX_CONSECUTIVE_SCRIPT_FAILURES + 10; ++i) {
+    for (std::uint32_t i = 0; i < sq::scripting::MAX_CONSECUTIVE_SCRIPT_FAILURES + 10; ++i) {
         fixture.scripts.update(0.016F);
     }
     EXPECT_TRUE(fixture.scripts.isScriptDisabled(e));
-    EXPECT_EQ(fixture.number(e, "ticks"), static_cast<double>(scripting::MAX_CONSECUTIVE_SCRIPT_FAILURES));
+    EXPECT_EQ(fixture.number(e, "ticks"), static_cast<double>(sq::scripting::MAX_CONSECUTIVE_SCRIPT_FAILURES));
 }
 
 TEST(ScriptErrors, IntermittentFailuresKeepTheScriptEnabled) {
     ScriptFixture fixture;
     ASSERT_TRUE(fixture.scripts.getVm().interpret("flaky", failingUpdateScript("SometimesFails", "_ticks % 2 == 0")));
-    ecs::Entity const e = fixture.spawnScripted("flaky", "SometimesFails", true);
+    sq::ecs::Entity const e = fixture.spawnScripted("flaky", "SometimesFails", true);
 
-    std::uint32_t const frames = scripting::MAX_CONSECUTIVE_SCRIPT_FAILURES * 4;
+    std::uint32_t const frames = sq::scripting::MAX_CONSECUTIVE_SCRIPT_FAILURES * 4;
     for (std::uint32_t i = 0; i < frames; ++i) {
         fixture.scripts.update(0.016F);
     }
@@ -1369,8 +1375,8 @@ TEST(ScriptErrors, IntermittentFailuresKeepTheScriptEnabled) {
 TEST(ScriptErrors, DestroyForgetsTheFailures) {
     ScriptFixture fixture;
     ASSERT_TRUE(fixture.scripts.getVm().interpret("broken", failingUpdateScript("AlwaysFails", "true")));
-    ecs::Entity const e = fixture.spawnScripted("broken", "AlwaysFails", true);
-    for (std::uint32_t i = 0; i < scripting::MAX_CONSECUTIVE_SCRIPT_FAILURES; ++i) {
+    sq::ecs::Entity const e = fixture.spawnScripted("broken", "AlwaysFails", true);
+    for (std::uint32_t i = 0; i < sq::scripting::MAX_CONSECUTIVE_SCRIPT_FAILURES; ++i) {
         fixture.scripts.update(0.016F);
     }
     ASSERT_TRUE(fixture.scripts.isScriptDisabled(e));
@@ -1384,9 +1390,9 @@ TEST(ScriptErrors, HotReloadEnablesADisabledScriptAgain) {
     fixture.scripts.enableHotReload(true);
     std::string const path = "TestDisabledReload.wren";
     writeFile(path, failingUpdateScript("TestDisabledReload", "true"));
-    ecs::Entity const e = fixture.spawnScripted("TestDisabledReload", "TestDisabledReload", true);
+    sq::ecs::Entity const e = fixture.spawnScripted("TestDisabledReload", "TestDisabledReload", true);
 
-    for (std::uint32_t i = 0; i < scripting::MAX_CONSECUTIVE_SCRIPT_FAILURES; ++i) {
+    for (std::uint32_t i = 0; i < sq::scripting::MAX_CONSECUTIVE_SCRIPT_FAILURES; ++i) {
         fixture.scripts.update(0.016F);
     }
     ASSERT_TRUE(fixture.scripts.isScriptDisabled(e));
@@ -1421,14 +1427,14 @@ TEST(ScriptRoot, ComponentModulesOutsideTheRootAreRefused) {
     std::string const absolute = (root.path / "Abs").generic_string();
     writeFile(root.path / "Abs.wren", "class Abs {\n    construct new(entity) {}\n}\n");
 
-    ecs::Entity const climbing = fixture.spawnScripted("../Abs", "Abs", false);
-    ecs::Entity const absoluteName = fixture.spawnScripted(absolute, "Abs", false);
-    ecs::Entity const folded = fixture.spawnScripted("sub/../../Abs", "Abs", false);
+    sq::ecs::Entity const climbing = fixture.spawnScripted("../Abs", "Abs", false);
+    sq::ecs::Entity const absoluteName = fixture.spawnScripted(absolute, "Abs", false);
+    sq::ecs::Entity const folded = fixture.spawnScripted("sub/../../Abs", "Abs", false);
     fixture.scripts.update(0.016F);
 
-    EXPECT_FALSE(fixture.registry.getComponents<scripting::ScriptComponent>().get(climbing).initialized);
-    EXPECT_FALSE(fixture.registry.getComponents<scripting::ScriptComponent>().get(absoluteName).initialized);
-    EXPECT_FALSE(fixture.registry.getComponents<scripting::ScriptComponent>().get(folded).initialized);
+    EXPECT_FALSE(fixture.registry.getComponents<sq::scripting::ScriptComponent>().get(climbing).initialized);
+    EXPECT_FALSE(fixture.registry.getComponents<sq::scripting::ScriptComponent>().get(absoluteName).initialized);
+    EXPECT_FALSE(fixture.registry.getComponents<sq::scripting::ScriptComponent>().get(folded).initialized);
     EXPECT_FALSE(fixture.scripts.loadModule(absolute));
 }
 
@@ -1445,9 +1451,9 @@ TEST(ScriptRoot, ModulesAreReadFromTheRoot) {
     fixture.scripts.setScriptRoot(root.path);
     EXPECT_EQ(fixture.scripts.scriptRoot(), root.path);
 
-    ecs::Entity const e = fixture.spawnScripted("game/Unit", "Unit", false);
+    sq::ecs::Entity const e = fixture.spawnScripted("game/Unit", "Unit", false);
     fixture.scripts.update(0.016F);
 
-    ASSERT_TRUE(fixture.registry.getComponents<scripting::ScriptComponent>().get(e).initialized);
+    ASSERT_TRUE(fixture.registry.getComponents<sq::scripting::ScriptComponent>().get(e).initialized);
     EXPECT_EQ(fixture.number(e, "value"), 7.0);
 }

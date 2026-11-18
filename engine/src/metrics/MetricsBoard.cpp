@@ -5,7 +5,7 @@
 #include <string_view>
 #include <utility>
 
-namespace metrics {
+namespace sq::metrics {
 
 void MetricsBoard::set(const std::string_view name, std::string value, const MetricLevel level) {
     const auto entry = std::ranges::find(_entries, name, &Metric::name);
@@ -27,4 +27,4 @@ const Metric* MetricsBoard::find(const std::string_view name) const noexcept {
     return entry == _entries.end() ? nullptr : &*entry;
 }
 
-}  // namespace metrics
+}  // namespace sq::metrics

@@ -5,7 +5,7 @@
 
 #pragma once
 
-namespace tools {
+namespace sq::tools {
 
 class Console;
 
@@ -25,4 +25,4 @@ class Console;
  */
 void registerBuiltinCommands(Console& console);
 
-}  // namespace tools
+}  // namespace sq::tools

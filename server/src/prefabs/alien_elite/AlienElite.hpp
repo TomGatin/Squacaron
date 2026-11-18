@@ -45,15 +45,15 @@ inline constexpr float ALIEN_ELITE_HALF_SIZE = 28.0F;
  * @brief Attaches the alien elite components (`Transform`, `Renderable`, `RigidBody2D`, `Collider2D`, `Health`,
  * `SineWave`, `EnemyGun` with a `GunPattern::Spread`, `DropsPowerUp`) to an entity.
  *
- * Parameters: the transform keys (see `makeTransform`), `speed` (`DEFAULT_ALIEN_ELITE_SPEED` by default), `health`
- * (clamped to 1–255, `DEFAULT_ALIEN_ELITE_HEALTH` by default), `amplitude` (clamped to 0–360 px) and `frequency`
- * (clamped to 0–4 waves per second) of its weave, `fire_interval` (clamped to 0.3–10 s) and `shot_speed` (clamped to
- * 50–900 px/s) of its gun.
+ * Parameters: the transform keys (see `sq::prefabs::makeTransform`), `speed` (`DEFAULT_ALIEN_ELITE_SPEED` by default),
+ * `health` (clamped to 1–255, `DEFAULT_ALIEN_ELITE_HEALTH` by default), `amplitude` (clamped to 0–360 px) and
+ * `frequency` (clamped to 0–4 waves per second) of its weave, `fire_interval` (clamped to 0.3–10 s) and `shot_speed`
+ * (clamped to 50–900 px/s) of its gun.
  *
  * @param e Freshly spawned entity.
  * @param registry Registry owning the entity.
  * @param params Spawn parameters.
  */
-void buildAlienElite(ecs::Entity e, ecs::Registry& registry, PrefabParams const& params);
+void buildAlienElite(sq::ecs::Entity e, sq::ecs::Registry& registry, sq::prefabs::PrefabParams const& params);
 
 }  // namespace prefabs

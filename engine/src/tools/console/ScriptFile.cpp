@@ -10,7 +10,7 @@
 #include <system_error>
 #include <utility>
 
-namespace tools {
+namespace sq::tools {
 
 std::expected<std::filesystem::path, std::string> resolveScriptPath(const std::filesystem::path& root,
                                                                     std::string_view relative) {
@@ -66,4 +66,4 @@ std::expected<std::string, std::string> readScriptFile(const std::filesystem::pa
     return content;
 }
 
-}  // namespace tools
+}  // namespace sq::tools

@@ -12,7 +12,7 @@
 
 #include "systems/physics/PhysicsConstants.hpp"
 
-namespace physics::detail {
+namespace sq::physics::detail {
 
 namespace {
 
@@ -25,7 +25,7 @@ ContactSide sideOf(const b2Fixture& fixture) {
 
 }  // namespace
 
-Box2DContactListener::Box2DContactListener() { _pending.reserve(physics::INITIAL_CONTACT_CAPACITY); }
+Box2DContactListener::Box2DContactListener() { _pending.reserve(sq::physics::INITIAL_CONTACT_CAPACITY); }
 
 void Box2DContactListener::BeginContact(b2Contact* contact) {
     if (contact != nullptr) {
@@ -66,7 +66,7 @@ void Box2DContactListener::record(b2Contact& contact, bool begin) {
         for (const b2Vec2& manifoldPoint : std::span(manifold.points).first(static_cast<std::size_t>(pointCount))) {
             point += manifoldPoint;
         }
-        point *= physics::PPM / static_cast<float>(pointCount);
+        point *= sq::physics::PPM / static_cast<float>(pointCount);
         pending.normalX = manifold.normal.x;
         pending.normalY = manifold.normal.y;
         pending.pointX = point.x;
@@ -76,4 +76,4 @@ void Box2DContactListener::record(b2Contact& contact, bool begin) {
     _pending.emplace_back(pending);
 }
 
-}  // namespace physics::detail
+}  // namespace sq::physics::detail

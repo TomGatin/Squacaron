@@ -8,17 +8,17 @@
 #include "ecs/ParamBag.hpp"
 #include "ecs/components/Transform.hpp"
 
-namespace prefabs {
+namespace sq::prefabs::detail {
 
-namespace detail {
+/** @brief Transparent string hash, shared with `sq::ecs::ParamBag`. */
+using sq::ecs::detail::StringHash;
 
-/** @brief Transparent string hash, shared with `ecs::ParamBag`. */
-using ecs::detail::StringHash;
+}  // namespace sq::prefabs::detail
 
-}  // namespace detail
+namespace sq::prefabs {
 
 /**
- * @brief Key/value bag describing how a prefab instance must be configured: an `ecs::ParamBag`.
+ * @brief Key/value bag describing how a prefab instance must be configured: an `sq::ecs::ParamBag`.
  *
  * Each prefab reads the keys it understands and falls back to its own defaults for the missing ones, so a prefab can
  * take any number of parameters without changing the `PrefabManager` API.
@@ -27,7 +27,7 @@ using ecs::detail::StringHash;
  * manager.spawn("missile", buffer, {{"x", 800.0F}, {"y", 300.0F}, {"rotation", 0.5F}, {"speed", -900.0F}});
  * @endcode
  */
-using PrefabParams = ecs::ParamBag;
+using PrefabParams = sq::ecs::ParamBag;
 
 /**
  * @brief Builds a `Transform` from the standard spatial keys.
@@ -37,9 +37,9 @@ using PrefabParams = ecs::ParamBag;
  * @param params Spawn parameters.
  * @return The resulting transform.
  */
-[[nodiscard]] inline ecs::Transform makeTransform(PrefabParams const& params) {
-    ecs::Transform const defaults{};
-    return ecs::Transform{
+[[nodiscard]] inline sq::ecs::Transform makeTransform(PrefabParams const& params) {
+    sq::ecs::Transform const defaults{};
+    return sq::ecs::Transform{
         .x = params.get("x", defaults.x),
         .y = params.get("y", defaults.y),
         .z = params.get("z", defaults.z),
@@ -49,4 +49,4 @@ using PrefabParams = ecs::ParamBag;
     };
 }
 
-}  // namespace prefabs
+}  // namespace sq::prefabs

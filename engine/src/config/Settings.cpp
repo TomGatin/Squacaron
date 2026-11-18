@@ -18,7 +18,7 @@
 
 #include "config/ConfigFile.hpp"
 
-namespace config {
+namespace sq::config {
 
 namespace {
 
@@ -219,4 +219,4 @@ std::filesystem::path userConfigDirectory(std::string_view appName) {
     return std::filesystem::current_path(error) / app;
 }
 
-}  // namespace config
+}  // namespace sq::config

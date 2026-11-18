@@ -5,9 +5,9 @@
 #include "render/api/components/Renderable.hpp"
 
 TEST(Renderable, DefaultValues) {
-    const ecs::Renderable renderable;
+    const sq::ecs::Renderable renderable;
 
-    EXPECT_EQ(renderable.textureId, ecs::NO_TEXTURE);
+    EXPECT_EQ(renderable.textureId, sq::ecs::NO_TEXTURE);
     EXPECT_EQ(renderable.sourceRect.x, 0);
     EXPECT_EQ(renderable.sourceRect.y, 0);
     EXPECT_EQ(renderable.sourceRect.width, 0);
@@ -22,7 +22,7 @@ TEST(Renderable, DefaultValues) {
 }
 
 TEST(Renderable, DesignatedInitializers) {
-    const ecs::Renderable renderable{
+    const sq::ecs::Renderable renderable{
         .textureId = 7,
         .sourceRect = {.x = 32, .y = 16, .width = 24, .height = 24},
         .origin = {.x = 0.0F, .y = 0.0F},
@@ -43,13 +43,13 @@ TEST(Renderable, DesignatedInitializers) {
 }
 
 TEST(Renderable, WorksAsEcsComponent) {
-    ecs::Registry registry;
-    const ecs::Entity entity = registry.spawnEntity();
+    sq::ecs::Registry registry;
+    const sq::ecs::Entity entity = registry.spawnEntity();
 
-    registry.addComponent<ecs::Renderable>(entity, ecs::Renderable{.textureId = 2, .layer = -1});
+    registry.addComponent<sq::ecs::Renderable>(entity, sq::ecs::Renderable{.textureId = 2, .layer = -1});
 
-    ASSERT_TRUE(registry.hasComponent<ecs::Renderable>(entity));
-    EXPECT_EQ(registry.getComponents<ecs::Renderable>().get(entity).layer, -1);
+    ASSERT_TRUE(registry.hasComponent<sq::ecs::Renderable>(entity));
+    EXPECT_EQ(registry.getComponents<sq::ecs::Renderable>().get(entity).layer, -1);
 }
 
 int main(int argc, char** argv) {

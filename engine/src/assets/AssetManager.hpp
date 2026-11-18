@@ -25,7 +25,7 @@
 #include "assets/detail/AssetContext.hpp"
 #include "assets/detail/IAssetCache.hpp"
 
-namespace assets {
+namespace sq::assets {
 
 /**
  * @brief Knows every asset of the game, and when each one is needed.
@@ -55,7 +55,7 @@ namespace assets {
  *
  * **Threads.** Not thread-safe: use it from the thread that created it (the main thread); debug builds assert it.
  *
- * Stored as a registry resource by `AssetPlugin`: `registry.getResource<assets::AssetManager>()`.
+ * Stored as a registry resource by `AssetPlugin`: `registry.getResource<sq::assets::AssetManager>()`.
  */
 class AssetManager {
   public:
@@ -63,14 +63,14 @@ class AssetManager {
     static constexpr std::string_view GLOBAL_GROUP = "global";
 
     /** @brief Most files `preloadDirectory` takes from one directory. */
-    static constexpr std::size_t MAX_DIRECTORY_FILES = assets::MAX_DIRECTORY_FILES;
+    static constexpr std::size_t MAX_DIRECTORY_FILES = sq::assets::MAX_DIRECTORY_FILES;
 
     /** @brief Budget of `loadGroupStep` meaning "everything". */
     static constexpr std::size_t UNLIMITED = std::numeric_limits<std::size_t>::max();
 
     /**
      * @brief Creates a manager knowing the engine's four kinds, with no loader.
-     * @param root Directory relative paths are loaded from, usually `engine::contentRoot()`; empty for the working
+     * @param root Directory relative paths are loaded from, usually `sq::engine::contentRoot()`; empty for the working
      * directory.
      */
     explicit AssetManager(std::filesystem::path root = {});
@@ -416,6 +416,6 @@ class AssetManager {
     std::thread::id _owner;
 };
 
-}  // namespace assets
+}  // namespace sq::assets
 
 #include "assets/AssetManager.tpp"  // IWYU pragma: export

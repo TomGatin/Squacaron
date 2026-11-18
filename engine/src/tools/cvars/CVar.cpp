@@ -7,7 +7,7 @@
 
 #include "tools/cvars/CVarTypes.hpp"
 
-namespace tools {
+namespace sq::tools {
 
 CVar::CVar(std::string name, CVarValue defaultValue, std::string description, CVarOptions options)
     : _name(std::move(name)),
@@ -21,4 +21,4 @@ std::string_view CVar::typeName() const noexcept {
     return NAMES.at(_value.index());
 }
 
-}  // namespace tools
+}  // namespace sq::tools

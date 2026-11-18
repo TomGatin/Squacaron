@@ -5,11 +5,13 @@
 
 #pragma once
 
-namespace scripting {
-class WrenVM;
-}
+namespace sq::scripting {
 
-namespace scripting::detail {
+class WrenVM;
+
+}  // namespace sq::scripting
+
+namespace sq::scripting::detail {
 
 /**
  * @brief Registers the foreign methods of `core/Engine`, `core/Entity` and `core/World`.
@@ -17,4 +19,4 @@ namespace scripting::detail {
  */
 void registerCoreBindings(WrenVM& vm);
 
-}  // namespace scripting::detail
+}  // namespace sq::scripting::detail

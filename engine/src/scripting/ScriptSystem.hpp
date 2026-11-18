@@ -29,7 +29,7 @@
 #include "scripting/detail/WrenTypes.hpp"  // IWYU pragma: export
 #include "utils/MoveOnlyFunction.hpp"
 
-namespace scripting {
+namespace sq::scripting {
 
 /**
  * @brief Runs the Wren scripts attached to entities with `ScriptComponent`.
@@ -62,7 +62,7 @@ class ScriptSystem {
      * @param registry The ECS registry; must outlive the system.
      * @param bus The event bus.
      */
-    void init(ecs::Registry& registry, ecs::EventBus& bus);
+    void init(sq::ecs::Registry& registry, sq::events::EventBus& bus);
 
     /**
      * @brief One frame: hot reload check, new scripts, fibers, `update(dt)`, deferred destructions and mutations.
@@ -78,7 +78,7 @@ class ScriptSystem {
      * @param e Entity to check.
      * @return True if its script is disabled.
      */
-    [[nodiscard]] bool isScriptDisabled(ecs::Entity e) const noexcept { return _errors.isDisabled(e); }
+    [[nodiscard]] bool isScriptDisabled(sq::ecs::Entity e) const noexcept { return _errors.isDisabled(e); }
 
     /**
      * @brief Sets the directory script modules are read from.
@@ -86,7 +86,7 @@ class ScriptSystem {
      * A module name is a path relative to it, without `.wren` (`scripts/Boss` is `<root>/scripts/Boss.wren`), for
      * both `ScriptComponent::moduleName` and `import`. Absolute names and names climbing out of it (`..`) are
      * refused. Kept across hot reloads.
-     * @param root Script root, usually `engine::contentRoot()`; empty (the default) means the working directory.
+     * @param root Script root, usually `sq::engine::contentRoot()`; empty (the default) means the working directory.
      */
     void setScriptRoot(std::filesystem::path root) { _scriptRoot = std::move(root); }
 
@@ -99,18 +99,18 @@ class ScriptSystem {
      * @param script Its component.
      * @param isReload True when rebuilding after a hot reload.
      */
-    void instantiateScript(ecs::Entity e, ScriptComponent& script, bool isReload = false);
+    void instantiateScript(sq::ecs::Entity e, ScriptComponent& script, bool isReload = false);
 
     /**
      * @brief Calls `methodName(arg)` on the script of the target entity of each `EventType` published on `bus`.
      * @tparam EventType Event subscribed to.
-     * @tparam ArgExtractor Callable returning a `std::pair<ecs::Entity, ArgType>` (target, argument) for an event.
+     * @tparam ArgExtractor Callable returning a `std::pair<sq::ecs::Entity, ArgType>` (target, argument) for an event.
      * @param bus Bus to subscribe to.
      * @param methodName Wren method (e.g. "onHit").
      * @param extractor Extracts the target and the argument.
      */
     template <typename EventType, typename ArgExtractor>
-    void registerEventForwarding(ecs::EventBus& bus, std::string const& methodName, ArgExtractor&& extractor);
+    void registerEventForwarding(sq::events::EventBus& bus, std::string const& methodName, ArgExtractor&& extractor);
 
     /**
      * @brief Forwards a contact event (with `entityA` and `entityB`) to `onCollision(other)` of the scripts that set
@@ -118,11 +118,11 @@ class ScriptSystem {
      *
      * A side is skipped when either entity is dead or queued for destruction this frame, so a script never hits an
      * entity another system just destroyed. Calling it again moves the subscription.
-     * @tparam ContactEvent Event type, e.g. `events::CollisionBeginEvent`.
+     * @tparam ContactEvent Event type, e.g. `sq::events::CollisionBeginEvent`.
      * @param bus Bus receiving the contact events.
      */
     template <typename ContactEvent>
-    void forwardCollisions(ecs::EventBus& bus);
+    void forwardCollisions(sq::events::EventBus& bus);
 
     /** @brief Unsubscribes the collision forwarding, if any. Safe to call twice. */
     void stopForwardingCollisions();
@@ -130,9 +130,9 @@ class ScriptSystem {
     /** @brief Gets the Wren VM. */
     [[nodiscard]] WrenVM& getVm() noexcept { return _vm; }
     /** @brief Gets the command buffer the script mutations go through. */
-    [[nodiscard]] ecs::CommandBuffer& getCommandBuffer() noexcept { return _commandBuffer; }
+    [[nodiscard]] sq::ecs::CommandBuffer& getCommandBuffer() noexcept { return _commandBuffer; }
     /** @brief Gets the registry given to `init()`, or nullptr before. */
-    [[nodiscard]] ecs::Registry* getRegistry() noexcept { return _registry; }
+    [[nodiscard]] sq::ecs::Registry* getRegistry() noexcept { return _registry; }
 
     /**
      * @brief Spawns a prefab for `Engine.spawnPrefab(name, x, y)`: the first extension whose `spawnPrefab` accepts it
@@ -149,7 +149,7 @@ class ScriptSystem {
      * (`onScriptSpawn`) with the current owner. Pass it to the spawner, e.g. `PrefabManager::spawn`.
      * @return The callback.
      */
-    [[nodiscard]] ecs::MoveOnlyFunction<void(ecs::Entity, ecs::Registry&)> spawnObserver();
+    [[nodiscard]] sq::ecs::MoveOnlyFunction<void(sq::ecs::Entity, sq::ecs::Registry&)> spawnObserver();
 
     /**
      * @brief Finds an added extension by type.
@@ -160,18 +160,18 @@ class ScriptSystem {
     [[nodiscard]] Extension* findExtension() const noexcept;
 
     /** @brief Gets the scratch buffer reused by the `World` query bindings. */
-    [[nodiscard]] std::vector<ecs::Entity>& getQueryBuffer() noexcept { return _queryBuffer; }
+    [[nodiscard]] std::vector<sq::ecs::Entity>& getQueryBuffer() noexcept { return _queryBuffer; }
     /** @brief Whether an entity is queued for destruction by a script this frame. */
-    [[nodiscard]] bool isPendingDestroy(ecs::Entity e) const noexcept;
+    [[nodiscard]] bool isPendingDestroy(sq::ecs::Entity e) const noexcept;
     /** @brief Entities queued for destruction by a script this frame. */
-    [[nodiscard]] std::span<ecs::Entity const> getPendingDestroyEntities() const noexcept {
+    [[nodiscard]] std::span<sq::ecs::Entity const> getPendingDestroyEntities() const noexcept {
         return _pendingDestroyEntities;
     }
 
     /** @brief Gets the script instance of an entity, or nullptr. */
-    [[nodiscard]] ScriptObject* getScriptInstance(ecs::Entity e) const noexcept;
+    [[nodiscard]] ScriptObject* getScriptInstance(sq::ecs::Entity e) const noexcept;
     /** @brief Tells whether an entity has a script instance. */
-    [[nodiscard]] bool hasScriptInstance(ecs::Entity e) const noexcept { return _instanceHandles.contains(e); }
+    [[nodiscard]] bool hasScriptInstance(sq::ecs::Entity e) const noexcept { return _instanceHandles.contains(e); }
 
     /**
      * @brief Puts a fiber to sleep for `seconds`, on behalf of the current owner (`Engine.wait`).
@@ -207,9 +207,9 @@ class ScriptSystem {
     [[nodiscard]] bool lastReplaySucceeded() const noexcept { return _reloader.lastReplaySucceeded(); }
 
     /** @brief Calls the `onDestroy()` hook of an entity's script, then releases its instance. */
-    void triggerDestroyHook(ecs::Entity e);
+    void triggerDestroyHook(sq::ecs::Entity e);
     /** @brief Queues an entity for destruction at the end of the frame, after its `onDestroy()`. */
-    void queueDestroyEntity(ecs::Entity e);
+    void queueDestroyEntity(sq::ecs::Entity e);
 
     /**
      * @brief Adds bindings to register again on every new VM (hot reload, staging checks), e.g. game components.
@@ -240,15 +240,15 @@ class ScriptSystem {
   private:
     friend class OwnerScope;
 
-    void invokeEntityMethod(ecs::Entity target, std::string const& signature, double arg);
-    void forwardCollision(ecs::Entity target, ecs::Entity other);
+    void invokeEntityMethod(sq::ecs::Entity target, std::string const& signature, double arg);
+    void forwardCollision(sq::ecs::Entity target, sq::ecs::Entity other);
     void prepareCollisionForwarding();
     void recordResult(ScriptOwner owner, CallResult result, std::string_view hook);
     void prepareVm(WrenVM& vm);
     void installModuleLoader();
     void makeCallHandles();
     bool ensureScriptModuleLoaded(const std::string& moduleName);
-    [[nodiscard]] detail::UniqueWrenHandle createScriptInstance(ecs::Entity e, const ScriptComponent& script);
+    [[nodiscard]] detail::UniqueWrenHandle createScriptInstance(sq::ecs::Entity e, const ScriptComponent& script);
     void releaseActiveHandles();
     void recreateVm();
     void reinstantiateActiveScripts();
@@ -256,13 +256,13 @@ class ScriptSystem {
     void detachDestroyListener() noexcept;
 
     /** @brief Registry given to `init()`. */
-    ecs::Registry* _registry = nullptr;
+    sq::ecs::Registry* _registry = nullptr;
     /** @brief Id of the registry destroy listener running `onDestroy()` of killed entities. */
     std::optional<std::size_t> _destroyListenerId;
     /** @brief Bus given to `init()`. */
-    ecs::EventBus* _bus = nullptr;
+    sq::events::EventBus* _bus = nullptr;
     /** @brief Mutations made by scripts, flushed at the end of `update()`. */
-    ecs::CommandBuffer _commandBuffer;
+    sq::ecs::CommandBuffer _commandBuffer;
     /** @brief The Wren VM. */
     WrenVM _vm;
     /** @brief Directory the module files are read from. */
@@ -270,15 +270,15 @@ class ScriptSystem {
     /** @brief Built-in modules of the extensions, by import name. */
     std::unordered_map<std::string, std::string> _extraModules;
     /** @brief Entities whose script opted in to `update(dt)`. */
-    std::vector<ecs::Entity> _updatingEntities;
+    std::vector<sq::ecs::Entity> _updatingEntities;
     /** @brief Entities queued for destruction by a script this frame. */
-    std::vector<ecs::Entity> _pendingDestroyEntities;
+    std::vector<sq::ecs::Entity> _pendingDestroyEntities;
     /** @brief Scratch buffer of the `World` queries. */
-    std::vector<ecs::Entity> _queryBuffer;
+    std::vector<sq::ecs::Entity> _queryBuffer;
     /** @brief Script instances, by entity. */
-    std::unordered_map<ecs::Entity, detail::UniqueWrenHandle> _instanceHandles;
+    std::unordered_map<sq::ecs::Entity, detail::UniqueWrenHandle> _instanceHandles;
     /** @brief Entities to rebuild after a VM reset. */
-    std::vector<ecs::Entity> _entitiesToReinstantiate;
+    std::vector<sq::ecs::Entity> _entitiesToReinstantiate;
     /** @brief Call handles of `new(_)`, `update(_)`, `call()`. */
     detail::UniqueWrenHandle _newHandle, _updateHandle, _fiberCallHandle;
     /** @brief Call handles of the forwarded event methods, by signature. */
@@ -299,6 +299,6 @@ class ScriptSystem {
     ScriptHotReloader _reloader;
 };
 
-}  // namespace scripting
+}  // namespace sq::scripting
 
 #include "scripting/ScriptSystem.tpp"  // IWYU pragma: export

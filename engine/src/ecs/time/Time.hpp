@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
 
-namespace ecs::time {
+namespace sq::time {
 
 /// Default simulation step: 60 Hz.
 inline constexpr float DEFAULT_FIXED_DT = 1.0F / 60.0F;
@@ -20,4 +20,4 @@ struct Time {
     std::uint64_t tickCount = 0;
 };
 
-}  // namespace ecs::time
+}  // namespace sq::time

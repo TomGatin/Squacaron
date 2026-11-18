@@ -8,7 +8,7 @@
 #include "net/INetworkManager.hpp"
 #include "net/asio/TransportCounters.hpp"
 
-namespace ecs::net::detail {
+namespace sq::net::detail {
 
 /**
  * @brief Hands events from the network thread to the game thread.
@@ -51,4 +51,4 @@ class EventQueue {
     std::unordered_map<PeerId, std::size_t> _dataPerPeer;
 };
 
-}  // namespace ecs::net::detail
+}  // namespace sq::net::detail

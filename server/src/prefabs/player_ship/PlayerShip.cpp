@@ -11,17 +11,17 @@
 
 namespace prefabs {
 
-void buildPlayerShip(ecs::Entity e, ecs::Registry& registry, PrefabParams const& params) {
-    registry.addComponent<ecs::Transform>(e, makeTransform(params));
-    registry.addComponent<ecs::Renderable>(e, ecs::Renderable{.layer = 2});
-    registry.addComponent<ecs::RigidBody2D>(e, ecs::RigidBody2D{.bodyType = ecs::BodyType::Dynamic});
-    registry.addComponent<ecs::Collider2D>(e, ecs::Collider2D{
-                                                  .halfWidth = PLAYER_SHIP_HALF_WIDTH,
-                                                  .halfHeight = PLAYER_SHIP_HALF_HEIGHT,
-                                                  .categoryBits = collision::PLAYER,
-                                                  .maskBits = collision::PLAYER_MASK,
-                                                  .isSensor = true,
-                                              });
+void buildPlayerShip(sq::ecs::Entity e, sq::ecs::Registry& registry, sq::prefabs::PrefabParams const& params) {
+    registry.addComponent<sq::ecs::Transform>(e, sq::prefabs::makeTransform(params));
+    registry.addComponent<sq::ecs::Renderable>(e, sq::ecs::Renderable{.layer = 2});
+    registry.addComponent<sq::ecs::RigidBody2D>(e, sq::ecs::RigidBody2D{.bodyType = sq::ecs::BodyType::Dynamic});
+    registry.addComponent<sq::ecs::Collider2D>(e, sq::ecs::Collider2D{
+                                                      .halfWidth = PLAYER_SHIP_HALF_WIDTH,
+                                                      .halfHeight = PLAYER_SHIP_HALF_HEIGHT,
+                                                      .categoryBits = collision::PLAYER,
+                                                      .maskBits = collision::PLAYER_MASK,
+                                                      .isSensor = true,
+                                                  });
 }
 
 }  // namespace prefabs

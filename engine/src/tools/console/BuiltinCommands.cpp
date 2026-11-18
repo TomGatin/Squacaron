@@ -12,7 +12,7 @@
 #include "tools/cvars/CVar.hpp"
 #include "tools/cvars/CVarManager.hpp"
 
-namespace tools {
+namespace sq::tools {
 
 namespace {
 
@@ -199,4 +199,4 @@ void registerBuiltinCommands(Console& console) {
                                  });
 }
 
-}  // namespace tools
+}  // namespace sq::tools

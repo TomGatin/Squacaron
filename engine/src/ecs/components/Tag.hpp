@@ -7,7 +7,7 @@
 
 #include <string>
 
-namespace ecs {
+namespace sq::ecs {
 
 /**
  * @brief Free-form label used to find entities by role, for example from scripts with `World.getNearestWithTag`.
@@ -20,4 +20,4 @@ struct Tag {
     std::string name;
 };
 
-}  // namespace ecs
+}  // namespace sq::ecs

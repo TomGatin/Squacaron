@@ -19,15 +19,15 @@ namespace rlss::client {
 /**
  * @brief Closes the game when the connection with the server ends, and logs why.
  *
- * Reacts to the `PeerDisconnected` event published by `ecs::net::NetworkPlugin`.
+ * Reacts to the `PeerDisconnected` event published by `sq::net::NetworkPlugin`.
  */
-class SessionPlugin final : public engine::IPlugin {
+class SessionPlugin final : public sq::engine::IPlugin {
   public:
     /**
      * @brief Creates the plugin.
      * @param transport Client transport, read for the disconnection reason.
      */
-    explicit SessionPlugin(std::shared_ptr<ecs::net::INetworkClient> transport);
+    explicit SessionPlugin(std::shared_ptr<sq::net::INetworkClient> transport);
 
     /**
      * @brief Gets plugin name.
@@ -36,22 +36,22 @@ class SessionPlugin final : public engine::IPlugin {
     [[nodiscard]] std::string_view name() const noexcept override { return "SessionPlugin"; }
 
     /**
-     * @brief Declares the dependency on `ecs::net::NetworkPlugin`.
+     * @brief Declares the dependency on `sq::net::NetworkPlugin`.
      * @param builder Dependency builder.
      */
-    void build(engine::PluginBuilder& builder) override;
+    void build(sq::engine::PluginBuilder& builder) override;
 
     /**
      * @brief Subscribes to the disconnection.
      * @param engine Host engine.
      */
-    void init(engine::Engine& engine) override;
+    void init(sq::engine::Engine& engine) override;
 
     /**
      * @brief Unsubscribes from the disconnection.
      * @param engine Host engine.
      */
-    void shutdown(engine::Engine& engine) override;
+    void shutdown(sq::engine::Engine& engine) override;
 
     /**
      * @brief Whether the game stopped because the connection was lost.
@@ -61,11 +61,11 @@ class SessionPlugin final : public engine::IPlugin {
 
   private:
     /** @brief Client transport. */
-    std::shared_ptr<ecs::net::INetworkClient> _transport;
+    std::shared_ptr<sq::net::INetworkClient> _transport;
     /** @brief Set when the server connection ends. */
     bool _lost = false;
     /** @brief Subscription to `PeerDisconnected`, while initialized. */
-    std::optional<ecs::EventBus::EventToken> _disconnected;
+    std::optional<sq::events::EventBus::EventToken> _disconnected;
 };
 
 }  // namespace rlss::client

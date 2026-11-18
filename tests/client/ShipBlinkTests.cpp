@@ -18,11 +18,11 @@ namespace {
 
 constexpr std::uint8_t INVULNERABLE = rtype::game::FLAG_ALIVE | rtype::game::FLAG_INVULNERABLE;
 
-ecs::Entity spawn(ecs::Registry& registry, std::uint32_t kind, std::uint8_t flags, std::uint8_t alpha) {
-    const ecs::Entity entity = registry.spawnEntity();
-    registry.addComponent(entity, ecs::Replicated{.kind = kind});
+sq::ecs::Entity spawn(sq::ecs::Registry& registry, std::uint32_t kind, std::uint8_t flags, std::uint8_t alpha) {
+    const sq::ecs::Entity entity = registry.spawnEntity();
+    registry.addComponent(entity, sq::ecs::Replicated{.kind = kind});
     registry.addComponent(entity, rtype::game::EntityNetState{.flags = flags});
-    registry.addComponent(entity, ecs::Renderable{.tint = {.a = alpha}});
+    registry.addComponent(entity, sq::ecs::Renderable{.tint = {.a = alpha}});
     return entity;
 }
 
@@ -40,10 +40,10 @@ TEST(ShipBlink, InvulnerableEntitiesAlternate) {
 }
 
 TEST(ShipBlink, OnlyShipsBlinkAndTheyComeBackOpaque) {
-    ecs::Registry registry;
-    const ecs::Entity ship = spawn(registry, rtype::game::KIND_PLAYER_SHIP, INVULNERABLE, OPAQUE_ALPHA);
-    const ecs::Entity boss = spawn(registry, rtype::game::KIND_BOSS_CORE, INVULNERABLE, 200);
-    auto& renderables = registry.getComponents<ecs::Renderable>();
+    sq::ecs::Registry registry;
+    const sq::ecs::Entity ship = spawn(registry, rtype::game::KIND_PLAYER_SHIP, INVULNERABLE, OPAQUE_ALPHA);
+    const sq::ecs::Entity boss = spawn(registry, rtype::game::KIND_BOSS_CORE, INVULNERABLE, 200);
+    auto& renderables = registry.getComponents<sq::ecs::Renderable>();
 
     client::gameplay::blinkInvulnerableShips(registry, BLINK_PERIOD * 0.75F);
     EXPECT_EQ(renderables.get(ship).tint.a, BLINK_FADED_ALPHA);

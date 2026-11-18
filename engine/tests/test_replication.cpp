@@ -35,12 +35,12 @@
 
 namespace {
 
-using ecs::NetInput;
-using ecs::net::Bytes;
-using ecs::net::Channel;
-using ecs::net::EventType;
-using ecs::net::NetworkEvent;
-using ecs::net::PeerId;
+using sq::ecs::NetInput;
+using sq::net::Bytes;
+using sq::net::Channel;
+using sq::net::EventType;
+using sq::net::NetworkEvent;
+using sq::net::PeerId;
 
 // A power of two: exact in binary, so that adding it to the fake clock makes exactly one step due.
 constexpr float DT = 1.0F / 64.0F;
@@ -74,7 +74,7 @@ bool get(const Bytes& in, std::size_t& offset, T& value) {
  * `[id u32][kind u32][x f32][y f32]`.
  * Input: `['I'][sequence u32][held count u8]` then `count` times `[action u32]` (axes are not encoded).
  */
-class TestCodec final : public ecs::net::IReplicationCodec {
+class TestCodec final : public sq::net::IReplicationCodec {
   public:
     struct Entry {
         std::uint32_t id;
@@ -88,11 +88,11 @@ class TestCodec final : public ecs::net::IReplicationCodec {
         _written.clear();
     }
 
-    void writeEntity(const ecs::Registry& registry, const ecs::Entity entity, const std::uint32_t id,
-                     const ecs::Replicated& replicated) override {
-        ecs::Transform transform;
-        if (registry.hasComponent<ecs::Transform>(entity)) {
-            transform = registry.getComponents<ecs::Transform>().get(entity);
+    void writeEntity(const sq::ecs::Registry& registry, const sq::ecs::Entity entity, const std::uint32_t id,
+                     const sq::ecs::Replicated& replicated) override {
+        sq::ecs::Transform transform;
+        if (registry.hasComponent<sq::ecs::Transform>(entity)) {
+            transform = registry.getComponents<sq::ecs::Transform>().get(entity);
         }
         _written.push_back({.id = id, .kind = replicated.kind, .x = transform.x, .y = transform.y});
     }
@@ -149,9 +149,9 @@ class TestCodec final : public ecs::net::IReplicationCodec {
         return out;
     }
 
-    std::optional<ecs::net::SnapshotHeader> decodeSnapshot(const Bytes& data) override {
+    std::optional<sq::net::SnapshotHeader> decodeSnapshot(const Bytes& data) override {
         std::size_t offset = 1;
-        ecs::net::SnapshotHeader header;
+        sq::net::SnapshotHeader header;
         std::uint8_t part = 0;
         std::uint8_t parts = 0;
         std::uint16_t count = 0;
@@ -175,10 +175,10 @@ class TestCodec final : public ecs::net::IReplicationCodec {
         return header;
     }
 
-    void applySnapshot(ecs::net::SnapshotApplier& applier) override {
+    void applySnapshot(sq::net::SnapshotApplier& applier) override {
         for (const Entry& entry : _read) {
             if (const auto entity = applier.entity(entry.id, entry.kind)) {
-                applier.setTransform(*entity, ecs::Transform{.x = entry.x, .y = entry.y});
+                applier.setTransform(*entity, sq::ecs::Transform{.x = entry.x, .y = entry.y});
             }
         }
     }
@@ -194,7 +194,7 @@ class TestCodec final : public ecs::net::IReplicationCodec {
     std::vector<Entry> _read;
 };
 
-class FakeSource final : public ecs::net::INetworkEventSource {
+class FakeSource final : public sq::net::INetworkEventSource {
   public:
     std::vector<NetworkEvent> poll() override { return std::exchange(next, {}); }
 
@@ -206,7 +206,7 @@ class FakeSource final : public ecs::net::INetworkEventSource {
     std::vector<NetworkEvent> next;
 };
 
-class FakeService final : public ecs::net::INetworkService {
+class FakeService final : public sq::net::INetworkService {
   public:
     struct Sent {
         PeerId peer;
@@ -230,13 +230,13 @@ template <typename ReplicationPlugin>
 struct Side {
     Side() {
         engine.setFixedDeltaTime(DT);
-        engine.addPlugin<engine::CorePlugin>();
-        engine.addPlugin<ecs::net::NetworkPlugin>(source, service);
+        engine.addPlugin<sq::engine::CorePlugin>();
+        engine.addPlugin<sq::net::NetworkPlugin>(source, service);
         engine.addPlugin<ReplicationPlugin>(codec);
         engine.init();
     }
 
-    ecs::Registry& registry() { return engine.registry(); }
+    sq::ecs::Registry& registry() { return engine.registry(); }
 
     /** @brief Lets one fixed step of time elapse, and runs the engine. */
     void step() {
@@ -248,19 +248,19 @@ struct Side {
     std::shared_ptr<FakeSource> source = std::make_shared<FakeSource>();
     std::shared_ptr<FakeService> service = std::make_shared<FakeService>();
     std::shared_ptr<TestCodec> codec = std::make_shared<TestCodec>();
-    engine::Engine engine{[this]() -> double { return now; }};
+    sq::engine::Engine engine{[this]() -> double { return now; }};
 };
 
-using Server = Side<ecs::net::ServerReplicationPlugin>;
-using Client = Side<ecs::net::ClientReplicationPlugin>;
+using Server = Side<sq::net::ServerReplicationPlugin>;
+using Client = Side<sq::net::ClientReplicationPlugin>;
 
 /** @brief Spawns a player entity on the server, owned by `peer`. */
-ecs::Entity spawnPlayer(ecs::Registry& registry, const PeerId peer, const float x = 0.0F) {
-    const ecs::Entity entity = registry.spawnEntity();
-    ecs::net::replicate(registry, entity, 1);
-    registry.addComponent(entity, ecs::NetworkOwner{peer});
-    registry.addComponent(entity, ecs::InputBuffer{});
-    registry.addComponent(entity, ecs::Transform{.x = x});
+sq::ecs::Entity spawnPlayer(sq::ecs::Registry& registry, const PeerId peer, const float x = 0.0F) {
+    const sq::ecs::Entity entity = registry.spawnEntity();
+    sq::net::replicate(registry, entity, 1);
+    registry.addComponent(entity, sq::ecs::NetworkOwner{peer});
+    registry.addComponent(entity, sq::ecs::InputBuffer{});
+    registry.addComponent(entity, sq::ecs::Transform{.x = x});
     return entity;
 }
 
@@ -268,14 +268,14 @@ ecs::Entity spawnPlayer(ecs::Registry& registry, const PeerId peer, const float 
 void deliver(Server& server, Client& client, const PeerId peer) {
     for (auto& sent : server.service->sent) {
         if (sent.peer == peer) {
-            client.source->data(ecs::net::SERVER_PEER, std::move(sent.data));
+            client.source->data(sq::net::SERVER_PEER, std::move(sent.data));
         }
     }
     server.service->sent.clear();
 }
 
-std::optional<ecs::Entity> clientEntity(Client& client, const std::uint32_t id) {
-    return client.registry().getResource<ecs::net::NetworkEntityMap>().entityOf(id);
+std::optional<sq::ecs::Entity> clientEntity(Client& client, const std::uint32_t id) {
+    return client.registry().getResource<sq::net::NetworkEntityMap>().entityOf(id);
 }
 
 }  // namespace
@@ -283,56 +283,55 @@ std::optional<ecs::Entity> clientEntity(Client& client, const std::uint32_t id) 
 // --- Server ----------------------------------------------------------------------------------------------------------
 
 TEST(Replicate, GivesANetworkIdAndAKind) {
-    ecs::Registry registry;
-    const ecs::Entity entity = registry.spawnEntity();
+    sq::ecs::Registry registry;
+    const sq::ecs::Entity entity = registry.spawnEntity();
 
-    const std::uint32_t id = ecs::net::replicate(registry, entity, 7);
+    const std::uint32_t id = sq::net::replicate(registry, entity, 7);
 
     EXPECT_NE(id, 0U);
-    EXPECT_EQ(registry.getComponents<ecs::NetworkId>().get(entity).value, id);
-    EXPECT_EQ(registry.getComponents<ecs::Replicated>().get(entity).kind, 7U);
-    EXPECT_EQ(registry.getResource<ecs::net::NetworkEntityMap>().entityOf(id), entity);
+    EXPECT_EQ(registry.getComponents<sq::ecs::NetworkId>().get(entity).value, id);
+    EXPECT_EQ(registry.getComponents<sq::ecs::Replicated>().get(entity).kind, 7U);
+    EXPECT_EQ(registry.getResource<sq::net::NetworkEntityMap>().entityOf(id), entity);
 }
 
 TEST(ReceiveInput, QueuesTheInputOfTheOwnedEntityOnly) {
-    ecs::Registry registry;
-    const ecs::Entity mine = spawnPlayer(registry, 3);
-    const ecs::Entity other = spawnPlayer(registry, 4);
+    sq::ecs::Registry registry;
+    const sq::ecs::Entity mine = spawnPlayer(registry, 3);
+    const sq::ecs::Entity other = spawnPlayer(registry, 4);
 
-    EXPECT_TRUE(ecs::net::receiveInput(registry, 3, {.sequence = 1, .held = {2}, .axes = {}}));
-    EXPECT_FALSE(ecs::net::receiveInput(registry, 9, {.sequence = 1, .held = {2}, .axes = {}}))
-        << "peer without entity";
+    EXPECT_TRUE(sq::net::receiveInput(registry, 3, {.sequence = 1, .held = {2}, .axes = {}}));
+    EXPECT_FALSE(sq::net::receiveInput(registry, 9, {.sequence = 1, .held = {2}, .axes = {}})) << "peer without entity";
 
-    EXPECT_EQ(registry.getComponents<ecs::InputBuffer>().get(mine).pending.size(), 1U);
-    EXPECT_TRUE(registry.getComponents<ecs::InputBuffer>().get(other).pending.empty());
+    EXPECT_EQ(registry.getComponents<sq::ecs::InputBuffer>().get(mine).pending.size(), 1U);
+    EXPECT_TRUE(registry.getComponents<sq::ecs::InputBuffer>().get(other).pending.empty());
 }
 
 TEST(ReceiveInput, QueuesTheInputOfEveryEntityOfThePeer) {
-    ecs::Registry registry;
-    const ecs::Entity first = spawnPlayer(registry, 3);
-    const ecs::Entity second = spawnPlayer(registry, 3);
+    sq::ecs::Registry registry;
+    const sq::ecs::Entity first = spawnPlayer(registry, 3);
+    const sq::ecs::Entity second = spawnPlayer(registry, 3);
 
-    EXPECT_TRUE(ecs::net::receiveInput(registry, 3, {.sequence = 1, .held = {2}, .axes = {}}));
+    EXPECT_TRUE(sq::net::receiveInput(registry, 3, {.sequence = 1, .held = {2}, .axes = {}}));
 
-    EXPECT_EQ(registry.getComponents<ecs::InputBuffer>().get(first).pending.size(), 1U);
-    EXPECT_EQ(registry.getComponents<ecs::InputBuffer>().get(second).pending.size(), 1U);
+    EXPECT_EQ(registry.getComponents<sq::ecs::InputBuffer>().get(first).pending.size(), 1U);
+    EXPECT_EQ(registry.getComponents<sq::ecs::InputBuffer>().get(second).pending.size(), 1U);
 }
 
 TEST(ReceiveInput, ReportsAnInputEveryEntityDropped) {
-    ecs::Registry registry;
+    sq::ecs::Registry registry;
     spawnPlayer(registry, 3);
     const NetInput input{.sequence = 1, .held = {}, .axes = {}};
 
-    EXPECT_TRUE(ecs::net::receiveInput(registry, 3, input));
-    EXPECT_FALSE(ecs::net::receiveInput(registry, 3, input)) << "duplicated";
+    EXPECT_TRUE(sq::net::receiveInput(registry, 3, input));
+    EXPECT_FALSE(sq::net::receiveInput(registry, 3, input)) << "duplicated";
 }
 
 TEST(ServerReplication, AppliesOneReceivedInputPerStep) {
     Server server;
-    const ecs::Entity player = spawnPlayer(server.registry(), 3);
-    std::vector<ecs::net::InputApplied> applied;
-    server.engine.eventBus().subscribe<ecs::net::InputApplied>(
-        [&](const ecs::net::InputApplied& ev) { applied.push_back(ev); });
+    const sq::ecs::Entity player = spawnPlayer(server.registry(), 3);
+    std::vector<sq::net::InputApplied> applied;
+    server.engine.eventBus().subscribe<sq::net::InputApplied>(
+        [&](const sq::net::InputApplied& ev) { applied.push_back(ev); });
 
     server.source->data(3, server.codec->encodeInput({.sequence = 1, .held = {5}, .axes = {}}));
     server.source->data(3, server.codec->encodeInput({.sequence = 2, .held = {6}, .axes = {}}));
@@ -354,8 +353,8 @@ TEST(ServerReplication, SendsOneSnapshotPerOwnerAfterTheSteps) {
     Server server;
     spawnPlayer(server.registry(), 3);
     spawnPlayer(server.registry(), 4);
-    const ecs::Entity enemy = server.registry().spawnEntity();
-    ecs::net::replicate(server.registry(), enemy, 2);
+    const sq::ecs::Entity enemy = server.registry().spawnEntity();
+    sq::net::replicate(server.registry(), enemy, 2);
 
     server.source->data(3, server.codec->encodeInput({.sequence = 10, .held = {}, .axes = {}}));
     server.step();
@@ -371,12 +370,12 @@ TEST(ServerReplication, SendsOneSnapshotPerOwnerAfterTheSteps) {
 
 TEST(ServerReplication, SendsNothingWhenNoStepRan) {
     double now = 0.0;
-    engine::Engine engine([&] { return now; });
+    sq::engine::Engine engine([&] { return now; });
     engine.setFixedDeltaTime(DT);
     auto service = std::make_shared<FakeService>();
-    engine.addPlugin<engine::CorePlugin>();
-    engine.addPlugin<ecs::net::NetworkPlugin>(std::make_shared<FakeSource>(), service);
-    engine.addPlugin<ecs::net::ServerReplicationPlugin>(std::make_shared<TestCodec>());
+    engine.addPlugin<sq::engine::CorePlugin>();
+    engine.addPlugin<sq::net::NetworkPlugin>(std::make_shared<FakeSource>(), service);
+    engine.addPlugin<sq::net::ServerReplicationPlugin>(std::make_shared<TestCodec>());
     engine.init();
     spawnPlayer(engine.registry(), 3);
 
@@ -391,7 +390,7 @@ TEST(ServerReplication, SendsNothingWhenNoStepRan) {
 TEST(ServerReplication, DropsSnapshotsTooLargeForADatagram) {
     Server server;
     spawnPlayer(server.registry(), 3);
-    server.codec->padding = ecs::net::MAX_UNRELIABLE_PAYLOAD;
+    server.codec->padding = sq::net::MAX_UNRELIABLE_PAYLOAD;
 
     server.step();
 
@@ -402,7 +401,7 @@ TEST(ServerReplication, SendsEachPartOfASplitSnapshot) {
     Server server;
     spawnPlayer(server.registry(), 3);
     for (int i = 0; i < 4; ++i) {
-        ecs::net::replicate(server.registry(), server.registry().spawnEntity(), 2);
+        sq::net::replicate(server.registry(), server.registry().spawnEntity(), 2);
     }
     server.codec->entitiesPerPart = 2;
 
@@ -421,8 +420,8 @@ TEST(ServerReplication, ResentInputsAreAppliedOnce) {
     Server server;
     spawnPlayer(server.registry(), 3);
     std::vector<std::uint32_t> applied;
-    server.engine.eventBus().subscribe<ecs::net::InputApplied>(
-        [&](const ecs::net::InputApplied& ev) { applied.push_back(ev.input.sequence); });
+    server.engine.eventBus().subscribe<sq::net::InputApplied>(
+        [&](const sq::net::InputApplied& ev) { applied.push_back(ev.input.sequence); });
     const Bytes first = server.codec->encodeInput({.sequence = 1, .held = {}, .axes = {}});
     const Bytes second = server.codec->encodeInput({.sequence = 2, .held = {}, .axes = {}});
 
@@ -443,18 +442,18 @@ TEST(ServerReplication, ResentInputsAreAppliedOnce) {
 TEST(ClientReplication, CreatesUpdatesAndRemovesEntities) {
     Server server;
     Client client;
-    std::vector<ecs::net::ReplicatedEntitySpawned> spawned;
-    std::vector<ecs::net::ReplicatedEntityDespawned> despawned;
-    client.engine.eventBus().subscribe<ecs::net::ReplicatedEntitySpawned>(
+    std::vector<sq::net::ReplicatedEntitySpawned> spawned;
+    std::vector<sq::net::ReplicatedEntityDespawned> despawned;
+    client.engine.eventBus().subscribe<sq::net::ReplicatedEntitySpawned>(
         [&](const auto& ev) { spawned.push_back(ev); });
-    client.engine.eventBus().subscribe<ecs::net::ReplicatedEntityDespawned>(
+    client.engine.eventBus().subscribe<sq::net::ReplicatedEntityDespawned>(
         [&](const auto& ev) { despawned.push_back(ev); });
 
-    const ecs::Entity player = spawnPlayer(server.registry(), 3, 10.0F);
-    const ecs::Entity enemy = server.registry().spawnEntity();
-    const std::uint32_t enemyId = ecs::net::replicate(server.registry(), enemy, 2);
-    server.registry().addComponent(enemy, ecs::Transform{.x = 50.0F, .y = 20.0F});
-    const std::uint32_t playerId = server.registry().getComponents<ecs::NetworkId>().get(player).value;
+    const sq::ecs::Entity player = spawnPlayer(server.registry(), 3, 10.0F);
+    const sq::ecs::Entity enemy = server.registry().spawnEntity();
+    const std::uint32_t enemyId = sq::net::replicate(server.registry(), enemy, 2);
+    server.registry().addComponent(enemy, sq::ecs::Transform{.x = 50.0F, .y = 20.0F});
+    const std::uint32_t playerId = server.registry().getComponents<sq::ecs::NetworkId>().get(player).value;
 
     server.step();
     deliver(server, client, 3);
@@ -463,16 +462,16 @@ TEST(ClientReplication, CreatesUpdatesAndRemovesEntities) {
     ASSERT_EQ(spawned.size(), 2U);
     const auto local = clientEntity(client, enemyId);
     ASSERT_TRUE(local.has_value());
-    EXPECT_EQ(client.registry().getComponents<ecs::Replicated>().get(*local).kind, 2U);
-    EXPECT_FLOAT_EQ(client.registry().getComponents<ecs::Transform>().get(*local).x, 50.0F);
-    EXPECT_FLOAT_EQ(client.registry().getComponents<ecs::Transform>().get(*local).y, 20.0F);
+    EXPECT_EQ(client.registry().getComponents<sq::ecs::Replicated>().get(*local).kind, 2U);
+    EXPECT_FLOAT_EQ(client.registry().getComponents<sq::ecs::Transform>().get(*local).x, 50.0F);
+    EXPECT_FLOAT_EQ(client.registry().getComponents<sq::ecs::Transform>().get(*local).y, 20.0F);
 
-    server.registry().getComponents<ecs::Transform>().get(enemy).x = 40.0F;
+    server.registry().getComponents<sq::ecs::Transform>().get(enemy).x = 40.0F;
     server.step();
     deliver(server, client, 3);
     client.step();
     EXPECT_EQ(spawned.size(), 2U) << "known entities are not created again";
-    EXPECT_FLOAT_EQ(client.registry().getComponents<ecs::Transform>().get(*local).x, 40.0F);
+    EXPECT_FLOAT_EQ(client.registry().getComponents<sq::ecs::Transform>().get(*local).x, 40.0F);
 
     server.registry().killEntity(enemy);
     server.step();
@@ -488,26 +487,26 @@ TEST(ClientReplication, CreatesUpdatesAndRemovesEntities) {
 TEST(ClientReplication, DropsStaleAndMalformedSnapshots) {
     Server server;
     Client client;
-    const ecs::Entity player = spawnPlayer(server.registry(), 3, 1.0F);
+    const sq::ecs::Entity player = spawnPlayer(server.registry(), 3, 1.0F);
 
     server.step();
     const Bytes older = server.service->sent.at(0).data;
     server.service->sent.clear();
-    server.registry().getComponents<ecs::Transform>().get(player).x = 2.0F;
+    server.registry().getComponents<sq::ecs::Transform>().get(player).x = 2.0F;
     server.step();
     deliver(server, client, 3);
-    client.source->data(ecs::net::SERVER_PEER, older);
+    client.source->data(sq::net::SERVER_PEER, older);
     Bytes truncated = older;
     truncated.resize(truncated.size() - 1);
-    client.source->data(ecs::net::SERVER_PEER, truncated);
-    client.source->data(ecs::net::SERVER_PEER, {});
+    client.source->data(sq::net::SERVER_PEER, truncated);
+    client.source->data(sq::net::SERVER_PEER, {});
     client.step();
 
     const auto local = clientEntity(client, 1);
     ASSERT_TRUE(local.has_value());
-    EXPECT_FLOAT_EQ(client.registry().getComponents<ecs::Transform>().get(*local).x, 2.0F)
+    EXPECT_FLOAT_EQ(client.registry().getComponents<sq::ecs::Transform>().get(*local).x, 2.0F)
         << "the older snapshot arrived last but was dropped";
-    EXPECT_EQ(client.registry().getResource<ecs::net::SnapshotState>().tick, 2U);
+    EXPECT_EQ(client.registry().getResource<sq::net::SnapshotState>().tick, 2U);
 }
 
 TEST(ClientReplication, ResetForgetsTheSessionSoANewGameStartsAtTickZero) {
@@ -521,13 +520,13 @@ TEST(ClientReplication, ResetForgetsTheSessionSoANewGameStartsAtTickZero) {
     client.step();
     ASSERT_TRUE(clientEntity(client, 1).has_value());
     std::vector<std::uint32_t> despawned;
-    client.engine.eventBus().subscribe<ecs::net::ReplicatedEntityDespawned>(
+    client.engine.eventBus().subscribe<sq::net::ReplicatedEntityDespawned>(
         [&](const auto& event) { despawned.push_back(event.id); });
 
-    client.engine.getPlugin<ecs::net::ClientReplicationPlugin>().reset(client.engine);
+    client.engine.getPlugin<sq::net::ClientReplicationPlugin>().reset(client.engine);
     EXPECT_FALSE(clientEntity(client, 1).has_value());
     EXPECT_EQ(despawned, (std::vector<std::uint32_t>{1}));
-    EXPECT_FALSE(client.registry().getResource<ecs::net::SnapshotState>().tick.has_value());
+    EXPECT_FALSE(client.registry().getResource<sq::net::SnapshotState>().tick.has_value());
 
     Server next;  // a new room: its ticks start again from 1
     spawnPlayer(next.registry(), 3, 7.0F);
@@ -536,7 +535,7 @@ TEST(ClientReplication, ResetForgetsTheSessionSoANewGameStartsAtTickZero) {
     client.step();
     const auto local = clientEntity(client, 1);
     ASSERT_TRUE(local.has_value()) << "the first snapshot of the new game was not dropped as stale";
-    EXPECT_FLOAT_EQ(client.registry().getComponents<ecs::Transform>().get(*local).x, 7.0F);
+    EXPECT_FLOAT_EQ(client.registry().getComponents<sq::ecs::Transform>().get(*local).x, 7.0F);
 }
 
 /** @brief A server whose snapshots are split into one part per entity, and a client. */
@@ -544,7 +543,7 @@ struct SplitSnapshot : public ::testing::Test {
     void SetUp() override {
         spawnPlayer(server.registry(), 3);
         server.codec->entitiesPerPart = 1;
-        client.engine.eventBus().subscribe<ecs::net::ReplicatedEntityDespawned>(
+        client.engine.eventBus().subscribe<sq::net::ReplicatedEntityDespawned>(
             [this](const auto& ev) { despawned.push_back(ev.id); });
     }
 
@@ -562,7 +561,7 @@ struct SplitSnapshot : public ::testing::Test {
     /** @brief Hands packets to the client and runs it. */
     void receive(const std::vector<Bytes>& parts) {
         for (const Bytes& part : parts) {
-            client.source->data(ecs::net::SERVER_PEER, part);
+            client.source->data(sq::net::SERVER_PEER, part);
         }
         client.engine.advance();
     }
@@ -573,9 +572,9 @@ struct SplitSnapshot : public ::testing::Test {
 };
 
 TEST_F(SplitSnapshot, AppliesEveryPart) {
-    const ecs::Entity enemy = server.registry().spawnEntity();
-    const std::uint32_t id = ecs::net::replicate(server.registry(), enemy, 2);
-    server.registry().addComponent(enemy, ecs::Transform{.x = 7.0F});
+    const sq::ecs::Entity enemy = server.registry().spawnEntity();
+    const std::uint32_t id = sq::net::replicate(server.registry(), enemy, 2);
+    server.registry().addComponent(enemy, sq::ecs::Transform{.x = 7.0F});
 
     const auto parts = nextSnapshot();
     ASSERT_EQ(parts.size(), 2U);
@@ -583,13 +582,13 @@ TEST_F(SplitSnapshot, AppliesEveryPart) {
 
     const auto local = clientEntity(client, id);
     ASSERT_TRUE(local.has_value());
-    EXPECT_FLOAT_EQ(client.registry().getComponents<ecs::Transform>().get(*local).x, 7.0F);
+    EXPECT_FLOAT_EQ(client.registry().getComponents<sq::ecs::Transform>().get(*local).x, 7.0F);
     EXPECT_TRUE(despawned.empty());
 }
 
 TEST_F(SplitSnapshot, LostPartDoesNotRemoveTheEntitiesItCarried) {
-    const ecs::Entity enemy = server.registry().spawnEntity();
-    const std::uint32_t id = ecs::net::replicate(server.registry(), enemy, 2);
+    const sq::ecs::Entity enemy = server.registry().spawnEntity();
+    const std::uint32_t id = sq::net::replicate(server.registry(), enemy, 2);
     receive(nextSnapshot());
     ASSERT_TRUE(clientEntity(client, id).has_value());
 
@@ -602,10 +601,10 @@ TEST_F(SplitSnapshot, LostPartDoesNotRemoveTheEntitiesItCarried) {
 }
 
 TEST_F(SplitSnapshot, RemovesAnEntityOnceASnapshotIsComplete) {
-    const ecs::Entity enemy = server.registry().spawnEntity();
-    const std::uint32_t id = ecs::net::replicate(server.registry(), enemy, 2);
-    const ecs::Entity other = server.registry().spawnEntity();
-    const std::uint32_t otherId = ecs::net::replicate(server.registry(), other, 2);
+    const sq::ecs::Entity enemy = server.registry().spawnEntity();
+    const std::uint32_t id = sq::net::replicate(server.registry(), enemy, 2);
+    const sq::ecs::Entity other = server.registry().spawnEntity();
+    const std::uint32_t otherId = sq::net::replicate(server.registry(), other, 2);
     receive(nextSnapshot());
 
     server.registry().killEntity(enemy);
@@ -620,14 +619,14 @@ TEST_F(SplitSnapshot, RemovesAnEntityOnceASnapshotIsComplete) {
 }
 
 TEST_F(SplitSnapshot, IgnoresAPartReceivedTwice) {
-    const ecs::Entity serverShip = server.registry().spawnEntity();
-    ecs::net::replicate(server.registry(), serverShip, 2);
-    client.engine.eventBus().subscribe<ecs::net::ReplicatedEntitySpawned>(
-        [this](const auto& ev) { client.registry().addComponent(ev.entity, ecs::Predicted{}); });
+    const sq::ecs::Entity serverShip = server.registry().spawnEntity();
+    sq::net::replicate(server.registry(), serverShip, 2);
+    client.engine.eventBus().subscribe<sq::net::ReplicatedEntitySpawned>(
+        [this](const auto& ev) { client.registry().addComponent(ev.entity, sq::ecs::Predicted{}); });
     receive(nextSnapshot());
-    client.engine.eventBus().publish(ecs::net::LocalInput{.input = {.sequence = 1, .held = {}, .axes = {}}});
+    client.engine.eventBus().publish(sq::net::LocalInput{.input = {.sequence = 1, .held = {}, .axes = {}}});
     int replayed = 0;
-    client.engine.eventBus().subscribe<ecs::net::InputApplied>([&replayed](const auto& ev) {
+    client.engine.eventBus().subscribe<sq::net::InputApplied>([&replayed](const auto& ev) {
         if (ev.replayed) {
             ++replayed;
         }
@@ -641,52 +640,52 @@ TEST_F(SplitSnapshot, IgnoresAPartReceivedTwice) {
 }
 
 TEST_F(SplitSnapshot, DropsAPartOfAnOlderSnapshot) {
-    const ecs::Entity enemy = server.registry().spawnEntity();
-    const std::uint32_t id = ecs::net::replicate(server.registry(), enemy, 2);
-    server.registry().addComponent(enemy, ecs::Transform{.x = 1.0F});
+    const sq::ecs::Entity enemy = server.registry().spawnEntity();
+    const std::uint32_t id = sq::net::replicate(server.registry(), enemy, 2);
+    server.registry().addComponent(enemy, sq::ecs::Transform{.x = 1.0F});
     const auto older = nextSnapshot();
-    server.registry().getComponents<ecs::Transform>().get(enemy).x = 2.0F;
+    server.registry().getComponents<sq::ecs::Transform>().get(enemy).x = 2.0F;
     receive(nextSnapshot());
 
     receive(older);
 
-    EXPECT_FLOAT_EQ(client.registry().getComponents<ecs::Transform>().get(*clientEntity(client, id)).x, 2.0F);
+    EXPECT_FLOAT_EQ(client.registry().getComponents<sq::ecs::Transform>().get(*clientEntity(client, id)).x, 2.0F);
 }
 
 TEST(ClientReplication, DropsPartsWithAnInvalidHeader) {
     /** @brief Codec returning a fixed header, as a malicious server could announce it. */
-    class ForgedCodec final : public ecs::net::IReplicationCodec {
+    class ForgedCodec final : public sq::net::IReplicationCodec {
       public:
-        explicit ForgedCodec(const ecs::net::SnapshotHeader& forged) : _forged(forged) {}
+        explicit ForgedCodec(const sq::net::SnapshotHeader& forged) : _forged(forged) {}
         void beginSnapshot(std::uint32_t /*tick*/) override {}
-        void writeEntity(const ecs::Registry& /*registry*/, ecs::Entity /*entity*/, std::uint32_t /*id*/,
-                         const ecs::Replicated& /*replicated*/) override {}
+        void writeEntity(const sq::ecs::Registry& /*registry*/, sq::ecs::Entity /*entity*/, std::uint32_t /*id*/,
+                         const sq::ecs::Replicated& /*replicated*/) override {}
         std::vector<Bytes> encodeSnapshot(std::uint32_t /*lastProcessedInput*/) override { return {}; }
         std::optional<NetInput> decodeInput(const Bytes& /*data*/) override { return std::nullopt; }
         Bytes encodeInput(const NetInput& /*input*/) override { return {}; }
-        std::optional<ecs::net::SnapshotHeader> decodeSnapshot(const Bytes& /*data*/) override { return _forged; }
-        void applySnapshot(ecs::net::SnapshotApplier& /*applier*/) override { ++applied; }
+        std::optional<sq::net::SnapshotHeader> decodeSnapshot(const Bytes& /*data*/) override { return _forged; }
+        void applySnapshot(sq::net::SnapshotApplier& /*applier*/) override { ++applied; }
         int applied = 0;
 
       private:
-        ecs::net::SnapshotHeader _forged;
+        sq::net::SnapshotHeader _forged;
     };
 
-    const std::vector<ecs::net::SnapshotHeader> invalid{
+    const std::vector<sq::net::SnapshotHeader> invalid{
         {.tick = 1, .lastProcessedInput = 0, .partIndex = 0, .partCount = 0},
         {.tick = 1, .lastProcessedInput = 0, .partIndex = 2, .partCount = 2},
-        {.tick = 1, .lastProcessedInput = 0, .partIndex = 0, .partCount = ecs::net::MAX_SNAPSHOT_PARTS + 1},
+        {.tick = 1, .lastProcessedInput = 0, .partIndex = 0, .partCount = sq::net::MAX_SNAPSHOT_PARTS + 1},
     };
     for (const auto& header : invalid) {
         const auto codec = std::make_shared<ForgedCodec>(header);
         const auto source = std::make_shared<FakeSource>();
-        engine::Engine engine;
-        engine.addPlugin<engine::CorePlugin>();
-        engine.addPlugin<ecs::net::NetworkPlugin>(source, std::make_shared<FakeService>());
-        engine.addPlugin<ecs::net::ClientReplicationPlugin>(codec);
+        sq::engine::Engine engine;
+        engine.addPlugin<sq::engine::CorePlugin>();
+        engine.addPlugin<sq::net::NetworkPlugin>(source, std::make_shared<FakeService>());
+        engine.addPlugin<sq::net::ClientReplicationPlugin>(codec);
         engine.init();
 
-        source->data(ecs::net::SERVER_PEER, {1});
+        source->data(sq::net::SERVER_PEER, {1});
         engine.advance();
 
         EXPECT_EQ(codec->applied, 0);
@@ -694,9 +693,9 @@ TEST(ClientReplication, DropsPartsWithAnInvalidHeader) {
 }
 
 TEST(ClientReplication, IgnoresAnInvalidNetworkId) {
-    ecs::Registry registry;
-    ecs::net::NetworkEntityMap map;
-    ecs::net::SnapshotApplier applier(registry, map, DT);
+    sq::ecs::Registry registry;
+    sq::net::NetworkEntityMap map;
+    sq::net::SnapshotApplier applier(registry, map, DT);
 
     EXPECT_FALSE(applier.entity(0, 1).has_value());
     EXPECT_TRUE(applier.spawned().empty());
@@ -705,63 +704,64 @@ TEST(ClientReplication, IgnoresAnInvalidNetworkId) {
 TEST(ClientReplication, InterpolatesBetweenSnapshots) {
     Server server;
     Client client;
-    const ecs::Entity enemy = server.registry().spawnEntity();
-    const std::uint32_t id = ecs::net::replicate(server.registry(), enemy, 2);
-    server.registry().addComponent(enemy, ecs::Transform{.x = 0.0F});
+    const sq::ecs::Entity enemy = server.registry().spawnEntity();
+    const std::uint32_t id = sq::net::replicate(server.registry(), enemy, 2);
+    server.registry().addComponent(enemy, sq::ecs::Transform{.x = 0.0F});
     spawnPlayer(server.registry(), 3);
-    client.engine.eventBus().subscribe<ecs::net::ReplicatedEntitySpawned>(
-        [&](const auto& ev) { client.registry().addComponent(ev.entity, ecs::Interpolated{}); });
+    client.engine.eventBus().subscribe<sq::net::ReplicatedEntitySpawned>(
+        [&](const auto& ev) { client.registry().addComponent(ev.entity, sq::ecs::Interpolated{}); });
 
     server.step();
     deliver(server, client, 3);
     client.engine.advance();
-    const ecs::Entity local = *clientEntity(client, id);
+    const sq::ecs::Entity local = *clientEntity(client, id);
     // The component is added after the first snapshot was applied: the second one initializes it.
-    server.registry().getComponents<ecs::Transform>().get(enemy).x = 6.0F;
+    server.registry().getComponents<sq::ecs::Transform>().get(enemy).x = 6.0F;
     server.step();
     deliver(server, client, 3);
     client.engine.advance();
-    EXPECT_FLOAT_EQ(client.registry().getComponents<ecs::Transform>().get(local).x, 6.0F) << "first target: snapped";
+    EXPECT_FLOAT_EQ(client.registry().getComponents<sq::ecs::Transform>().get(local).x, 6.0F)
+        << "first target: snapped";
 
     // Two server ticks later: the interval is 2 * DT.
-    server.registry().getComponents<ecs::Transform>().get(enemy).x = 10.0F;
+    server.registry().getComponents<sq::ecs::Transform>().get(enemy).x = 10.0F;
     server.step();
     server.service->sent.clear();
     server.step();
     deliver(server, client, 3);
     client.engine.advance();
-    EXPECT_FLOAT_EQ(client.registry().getComponents<ecs::Transform>().get(local).x, 6.0F)
+    EXPECT_FLOAT_EQ(client.registry().getComponents<sq::ecs::Transform>().get(local).x, 6.0F)
         << "starts from the shown state";
     client.step();
-    EXPECT_NEAR(client.registry().getComponents<ecs::Transform>().get(local).x, 8.0F, 1e-4F) << "halfway";
+    EXPECT_NEAR(client.registry().getComponents<sq::ecs::Transform>().get(local).x, 8.0F, 1e-4F) << "halfway";
     client.step();
     client.step();
-    EXPECT_FLOAT_EQ(client.registry().getComponents<ecs::Transform>().get(local).x, 10.0F) << "stops at the target";
+    EXPECT_FLOAT_EQ(client.registry().getComponents<sq::ecs::Transform>().get(local).x, 10.0F) << "stops at the target";
 }
 
 TEST(ClientReplication, SendsAndPredictsLocalInputs) {
     Client client;
-    const ecs::Entity ship = client.registry().spawnEntity();
-    client.registry().addComponent(ship, ecs::Predicted{});
-    std::vector<ecs::net::InputApplied> applied;
-    client.engine.eventBus().subscribe<ecs::net::InputApplied>([&](const auto& ev) { applied.push_back(ev); });
+    const sq::ecs::Entity ship = client.registry().spawnEntity();
+    client.registry().addComponent(ship, sq::ecs::Predicted{});
+    std::vector<sq::net::InputApplied> applied;
+    client.engine.eventBus().subscribe<sq::net::InputApplied>([&](const auto& ev) { applied.push_back(ev); });
 
-    client.engine.eventBus().publish(ecs::net::LocalInput{.input = {.sequence = 1, .held = {4}, .axes = {}}});
+    client.engine.eventBus().publish(sq::net::LocalInput{.input = {.sequence = 1, .held = {4}, .axes = {}}});
 
     ASSERT_EQ(client.service->sent.size(), 1U);
-    EXPECT_EQ(client.service->sent[0].peer, ecs::net::SERVER_PEER);
+    EXPECT_EQ(client.service->sent[0].peer, sq::net::SERVER_PEER);
     EXPECT_EQ(client.service->sent[0].channel, Channel::Unreliable);
     EXPECT_EQ(client.codec->decodeInput(client.service->sent[0].data)->held, std::vector<std::uint32_t>{4});
     ASSERT_EQ(applied.size(), 1U);
     EXPECT_EQ(applied[0].entity, ship);
     EXPECT_FALSE(applied[0].replayed);
-    EXPECT_EQ(client.registry().getComponents<ecs::Predicted>().get(ship).history.size(), 1U);
+    EXPECT_EQ(client.registry().getComponents<sq::ecs::Predicted>().get(ship).history.size(), 1U);
 }
 
 TEST(ClientReplication, SendsTheInputsNotAcknowledgedAgain) {
     Client client;
     const auto publish = [&client](const std::uint32_t sequence) {
-        client.engine.eventBus().publish(ecs::net::LocalInput{.input = {.sequence = sequence, .held = {}, .axes = {}}});
+        client.engine.eventBus().publish(sq::net::LocalInput{.input = {.sequence = sequence, .held = {}, .axes = {}}});
     };
     const auto sentSequences = [&client] {
         std::vector<std::uint32_t> sequences;
@@ -781,7 +781,7 @@ TEST(ClientReplication, SendsTheInputsNotAcknowledgedAgain) {
     publish(4);
     EXPECT_EQ(sentSequences(), (std::vector<std::uint32_t>{2, 3, 4})) << "at most INPUT_RESEND_COUNT older inputs";
 
-    client.registry().getResource<ecs::net::SnapshotState>().lastProcessedInput = 3;
+    client.registry().getResource<sq::net::SnapshotState>().lastProcessedInput = 3;
     publish(5);
     EXPECT_EQ(sentSequences(), (std::vector<std::uint32_t>{4, 5})) << "the server already applied the others";
 }
@@ -791,12 +791,12 @@ TEST(ClientReplication, ALostInputIsRecoveredByTheNextDatagrams) {
     Client client;
     spawnPlayer(server.registry(), 3);
     std::vector<std::uint32_t> applied;
-    server.engine.eventBus().subscribe<ecs::net::InputApplied>(
-        [&](const ecs::net::InputApplied& ev) { applied.push_back(ev.input.sequence); });
+    server.engine.eventBus().subscribe<sq::net::InputApplied>(
+        [&](const sq::net::InputApplied& ev) { applied.push_back(ev.input.sequence); });
 
-    client.engine.eventBus().publish(ecs::net::LocalInput{.input = {.sequence = 1, .held = {}, .axes = {}}});
+    client.engine.eventBus().publish(sq::net::LocalInput{.input = {.sequence = 1, .held = {}, .axes = {}}});
     client.service->sent.clear();  // the datagram of input 1 is lost
-    client.engine.eventBus().publish(ecs::net::LocalInput{.input = {.sequence = 2, .held = {}, .axes = {}}});
+    client.engine.eventBus().publish(sq::net::LocalInput{.input = {.sequence = 2, .held = {}, .axes = {}}});
     for (const auto& sent : client.service->sent) {
         server.source->data(3, sent.data);
     }
@@ -809,34 +809,34 @@ TEST(ClientReplication, ALostInputIsRecoveredByTheNextDatagrams) {
 TEST(ClientReplication, ReconcilesWithTheServer) {
     Server server;
     Client client;
-    const ecs::Entity serverShip = spawnPlayer(server.registry(), 3);
+    const sq::ecs::Entity serverShip = spawnPlayer(server.registry(), 3);
     // Same movement on both sides: each input moves the ship by its number of held actions.
-    auto move = [](ecs::Registry& registry) {
-        return [&registry](const ecs::net::InputApplied& ev) {
-            registry.getComponents<ecs::Transform>().get(ev.entity).x += static_cast<float>(ev.input.held.size());
+    auto move = [](sq::ecs::Registry& registry) {
+        return [&registry](const sq::net::InputApplied& ev) {
+            registry.getComponents<sq::ecs::Transform>().get(ev.entity).x += static_cast<float>(ev.input.held.size());
         };
     };
-    server.engine.eventBus().subscribe<ecs::net::InputApplied>(move(server.registry()));
-    client.engine.eventBus().subscribe<ecs::net::InputApplied>(move(client.registry()));
-    client.engine.eventBus().subscribe<ecs::net::ReplicatedEntitySpawned>(
-        [&](const auto& ev) { client.registry().addComponent(ev.entity, ecs::Predicted{}); });
+    server.engine.eventBus().subscribe<sq::net::InputApplied>(move(server.registry()));
+    client.engine.eventBus().subscribe<sq::net::InputApplied>(move(client.registry()));
+    client.engine.eventBus().subscribe<sq::net::ReplicatedEntitySpawned>(
+        [&](const auto& ev) { client.registry().addComponent(ev.entity, sq::ecs::Predicted{}); });
     server.step();
     deliver(server, client, 3);
     client.step();
-    const ecs::Entity ship =
-        *clientEntity(client, server.registry().getComponents<ecs::NetworkId>().get(serverShip).value);
+    const sq::ecs::Entity ship =
+        *clientEntity(client, server.registry().getComponents<sq::ecs::NetworkId>().get(serverShip).value);
 
     // Three inputs predicted locally; the server only receives and applies the first one.
     for (std::uint32_t seq = 1; seq <= 3; ++seq) {
-        client.engine.eventBus().publish(ecs::net::LocalInput{.input = {.sequence = seq, .held = {1}, .axes = {}}});
+        client.engine.eventBus().publish(sq::net::LocalInput{.input = {.sequence = seq, .held = {1}, .axes = {}}});
     }
-    EXPECT_FLOAT_EQ(client.registry().getComponents<ecs::Transform>().get(ship).x, 3.0F);
+    EXPECT_FLOAT_EQ(client.registry().getComponents<sq::ecs::Transform>().get(ship).x, 3.0F);
     server.source->data(3, client.service->sent.at(0).data);
     server.step();
-    EXPECT_FLOAT_EQ(server.registry().getComponents<ecs::Transform>().get(serverShip).x, 1.0F);
+    EXPECT_FLOAT_EQ(server.registry().getComponents<sq::ecs::Transform>().get(serverShip).x, 1.0F);
 
     std::vector<std::uint32_t> replayed;
-    client.engine.eventBus().subscribe<ecs::net::InputApplied>([&](const auto& ev) {
+    client.engine.eventBus().subscribe<sq::net::InputApplied>([&](const auto& ev) {
         if (ev.replayed) {
             replayed.push_back(ev.input.sequence);
         }
@@ -845,16 +845,16 @@ TEST(ClientReplication, ReconcilesWithTheServer) {
     client.step();
 
     EXPECT_EQ(replayed, (std::vector<std::uint32_t>{2, 3}));
-    EXPECT_FLOAT_EQ(client.registry().getComponents<ecs::Transform>().get(ship).x, 3.0F)
+    EXPECT_FLOAT_EQ(client.registry().getComponents<sq::ecs::Transform>().get(ship).x, 3.0F)
         << "server state (1) + the two unacknowledged inputs";
-    EXPECT_EQ(client.registry().getComponents<ecs::Predicted>().get(ship).history.size(), 2U);
+    EXPECT_EQ(client.registry().getComponents<sq::ecs::Predicted>().get(ship).history.size(), 2U);
 }
 
 TEST(ClientReplication, ShutdownUnsubscribes) {
     Client client;
     client.engine.shutdown();
 
-    client.engine.eventBus().publish(ecs::net::LocalInput{.input = {.sequence = 1, .held = {}, .axes = {}}});
+    client.engine.eventBus().publish(sq::net::LocalInput{.input = {.sequence = 1, .held = {}, .axes = {}}});
 
     EXPECT_TRUE(client.service->sent.empty());
 }
@@ -866,19 +866,19 @@ namespace {
 /** @brief Gives the client a snapshot of no entity, received on its next frame. */
 void receiveSnapshot(Client& client, const std::uint32_t tick, const std::uint32_t lastProcessedInput) {
     client.codec->beginSnapshot(tick);
-    client.source->data(ecs::net::SERVER_PEER, client.codec->encodeSnapshot(lastProcessedInput).front());
+    client.source->data(sq::net::SERVER_PEER, client.codec->encodeSnapshot(lastProcessedInput).front());
 }
 
 void sendInput(Client& client, const std::uint32_t sequence) {
     client.engine.eventBus().publish(
-        ecs::net::LocalInput{.input = NetInput{.sequence = sequence, .held = {}, .axes = {}}});
+        sq::net::LocalInput{.input = NetInput{.sequence = sequence, .held = {}, .axes = {}}});
 }
 
 }  // namespace
 
 TEST(ReplicationStats, TickJumpsCountAsMissedSnapshots) {
     Client client;
-    const auto& stats = client.registry().getResource<ecs::net::ReplicationStats>();
+    const auto& stats = client.registry().getResource<sq::net::ReplicationStats>();
 
     for (const std::uint32_t tick : {10U, 11U, 14U}) {
         receiveSnapshot(client, tick, 0);
@@ -892,7 +892,7 @@ TEST(ReplicationStats, TickJumpsCountAsMissedSnapshots) {
 
 TEST(ReplicationStats, SnapshotOlderThanTheLastOneIsStale) {
     Client client;
-    const auto& stats = client.registry().getResource<ecs::net::ReplicationStats>();
+    const auto& stats = client.registry().getResource<sq::net::ReplicationStats>();
 
     receiveSnapshot(client, 10, 0);
     client.step();
@@ -910,14 +910,14 @@ TEST(ReplicationStats, SnapshotInSeveralPartsCountsOnce) {
     spawnPlayer(server.registry(), 3);
     spawnPlayer(server.registry(), 4);
     server.service->sent.clear();
-    server.engine.eventBus().publish(ecs::net::PeerConnected{.peer = 3});
+    server.engine.eventBus().publish(sq::net::PeerConnected{.peer = 3});
     server.step();
     deliver(server, client, 3);
     ASSERT_GE(client.source->next.size(), 2U);
 
     client.step();
 
-    EXPECT_EQ(client.registry().getResource<ecs::net::ReplicationStats>().snapshotsReceived, 1U);
+    EXPECT_EQ(client.registry().getResource<sq::net::ReplicationStats>().snapshotsReceived, 1U);
 }
 
 TEST(ReplicationStats, NoRoundTripBeforeAnInputIsAcknowledged) {
@@ -926,12 +926,12 @@ TEST(ReplicationStats, NoRoundTripBeforeAnInputIsAcknowledged) {
     receiveSnapshot(client, 1, 0);
     client.step();
 
-    EXPECT_FALSE(client.registry().getResource<ecs::net::ReplicationStats>().inputRttMs.has_value());
+    EXPECT_FALSE(client.registry().getResource<sq::net::ReplicationStats>().inputRttMs.has_value());
 }
 
 TEST(ReplicationStats, RoundTripIsTheTimeUntilAnInputIsAcknowledged) {
     Client client;
-    const auto& stats = client.registry().getResource<ecs::net::ReplicationStats>();
+    const auto& stats = client.registry().getResource<sq::net::ReplicationStats>();
 
     sendInput(client, 1);
     client.now += 0.1;
@@ -950,7 +950,7 @@ TEST(ReplicationStats, RoundTripIsTheTimeUntilAnInputIsAcknowledged) {
 
 TEST(ReplicationStats, SameAcknowledgementIsMeasuredOnce) {
     Client client;
-    const auto& stats = client.registry().getResource<ecs::net::ReplicationStats>();
+    const auto& stats = client.registry().getResource<sq::net::ReplicationStats>();
 
     sendInput(client, 1);
     client.now += 0.1;

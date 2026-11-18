@@ -6,7 +6,7 @@
 #pragma once
 #include <string_view>
 
-namespace scripting {
+namespace sq::scripting {
 
 /**
  * @brief Core Wren script source code for the `core/Engine` module.
@@ -108,4 +108,4 @@ class Dispatcher {
  */
 [[nodiscard]] std::string_view getCoreModuleSource(std::string_view moduleName) noexcept;
 
-}  // namespace scripting
+}  // namespace sq::scripting

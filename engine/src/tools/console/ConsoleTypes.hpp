@@ -14,7 +14,7 @@
 #include <string_view>
 #include <vector>
 
-namespace tools {
+namespace sq::tools {
 
 class CommandContext;
 class Console;
@@ -99,4 +99,4 @@ struct ConsoleConfig {
     std::filesystem::path scriptRoot;
 };
 
-}  // namespace tools
+}  // namespace sq::tools

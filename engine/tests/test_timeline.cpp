@@ -16,13 +16,13 @@
 
 namespace {
 
-timeline::TimelineEvent makeEvent(float position, const std::string& type) {
-    return timeline::TimelineEvent{.position = position, .type = type, .params = {}};
+sq::timeline::TimelineEvent makeEvent(float position, const std::string& type) {
+    return sq::timeline::TimelineEvent{.position = position, .type = type, .params = {}};
 }
 
-std::vector<std::string> typesOf(std::span<const timeline::TimelineEvent> events) {
+std::vector<std::string> typesOf(std::span<const sq::timeline::TimelineEvent> events) {
     std::vector<std::string> types;
-    for (const timeline::TimelineEvent& event : events) {
+    for (const sq::timeline::TimelineEvent& event : events) {
         types.push_back(event.type);
     }
     return types;
@@ -31,7 +31,7 @@ std::vector<std::string> typesOf(std::span<const timeline::TimelineEvent> events
 }  // namespace
 
 TEST(Timeline, EmptyTimelineIsFinished) {
-    timeline::Timeline line;
+    sq::timeline::Timeline line;
 
     EXPECT_TRUE(line.finished());
     EXPECT_EQ(line.pending(), 0U);
@@ -40,7 +40,7 @@ TEST(Timeline, EmptyTimelineIsFinished) {
 }
 
 TEST(Timeline, EventFiresWhenTheCursorReachesItsPosition) {
-    timeline::Timeline line;
+    sq::timeline::Timeline line;
     line.add(makeEvent(100.0F, "spawn"));
 
     EXPECT_TRUE(line.advanceTo(99.0F).empty());
@@ -52,7 +52,7 @@ TEST(Timeline, EventFiresWhenTheCursorReachesItsPosition) {
 }
 
 TEST(Timeline, EventFiresOnlyOnce) {
-    timeline::Timeline line;
+    sq::timeline::Timeline line;
     line.add(makeEvent(10.0F, "spawn"));
 
     EXPECT_EQ(line.advanceTo(20.0F).size(), 1U);
@@ -61,7 +61,7 @@ TEST(Timeline, EventFiresOnlyOnce) {
 }
 
 TEST(Timeline, EventsFireInPositionOrderWhateverTheInsertionOrder) {
-    timeline::Timeline line;
+    sq::timeline::Timeline line;
     line.add(makeEvent(300.0F, "c"));
     line.add(makeEvent(100.0F, "a"));
     line.add(makeEvent(200.0F, "b"));
@@ -71,7 +71,7 @@ TEST(Timeline, EventsFireInPositionOrderWhateverTheInsertionOrder) {
 }
 
 TEST(Timeline, EventsAtTheSamePositionKeepTheirInsertionOrder) {
-    timeline::Timeline line;
+    sq::timeline::Timeline line;
     line.add(makeEvent(50.0F, "first"));
     line.add(makeEvent(50.0F, "second"));
     line.add(makeEvent(50.0F, "third"));
@@ -81,7 +81,7 @@ TEST(Timeline, EventsAtTheSamePositionKeepTheirInsertionOrder) {
 }
 
 TEST(Timeline, LargeStepFiresEveryEventReachedWithoutSkipping) {
-    timeline::Timeline line;
+    sq::timeline::Timeline line;
     for (int i = 0; i < 100; ++i) {
         line.add(makeEvent(static_cast<float>(i) * 10.0F, "e"));
     }
@@ -92,7 +92,7 @@ TEST(Timeline, LargeStepFiresEveryEventReachedWithoutSkipping) {
 }
 
 TEST(Timeline, SmallStepsFireEachEventOnceAcrossManyFrames) {
-    timeline::Timeline line;
+    sq::timeline::Timeline line;
     line.add(makeEvent(1.0F, "a"));
     line.add(makeEvent(2.0F, "b"));
 
@@ -105,7 +105,7 @@ TEST(Timeline, SmallStepsFireEachEventOnceAcrossManyFrames) {
 }
 
 TEST(Timeline, AdvanceAccumulatesTheCursor) {
-    timeline::Timeline line;
+    sq::timeline::Timeline line;
     line.add(makeEvent(30.0F, "spawn"));
 
     EXPECT_TRUE(line.advance(10.0F).empty());
@@ -115,7 +115,7 @@ TEST(Timeline, AdvanceAccumulatesTheCursor) {
 }
 
 TEST(Timeline, CursorNeverMovesBackward) {
-    timeline::Timeline line;
+    sq::timeline::Timeline line;
     line.add(makeEvent(10.0F, "spawn"));
     EXPECT_EQ(line.advanceTo(50.0F).size(), 1U);
 
@@ -126,7 +126,7 @@ TEST(Timeline, CursorNeverMovesBackward) {
 }
 
 TEST(Timeline, NanPositionLeavesTheCursorInPlace) {
-    timeline::Timeline line;
+    sq::timeline::Timeline line;
     line.add(makeEvent(10.0F, "spawn"));
 
     EXPECT_TRUE(line.advanceTo(std::numeric_limits<float>::quiet_NaN()).empty());
@@ -136,7 +136,7 @@ TEST(Timeline, NanPositionLeavesTheCursorInPlace) {
 }
 
 TEST(Timeline, InfinitePositionFiresEverything) {
-    timeline::Timeline line;
+    sq::timeline::Timeline line;
     line.add(makeEvent(1.0F, "a"));
     line.add(makeEvent(1.0e30F, "b"));
 
@@ -145,7 +145,7 @@ TEST(Timeline, InfinitePositionFiresEverything) {
 }
 
 TEST(Timeline, EventAddedBehindTheCursorFiresOnTheNextAdvance) {
-    timeline::Timeline line;
+    sq::timeline::Timeline line;
     line.add(makeEvent(100.0F, "later"));
     EXPECT_TRUE(line.advanceTo(50.0F).empty());
 
@@ -158,7 +158,7 @@ TEST(Timeline, EventAddedBehindTheCursorFiresOnTheNextAdvance) {
 }
 
 TEST(Timeline, EventAddedAheadOfTheCursorFiresInOrder) {
-    timeline::Timeline line;
+    sq::timeline::Timeline line;
     line.add(makeEvent(10.0F, "a"));
     line.add(makeEvent(100.0F, "c"));
     EXPECT_EQ(line.advanceTo(20.0F).size(), 1U);
@@ -170,7 +170,7 @@ TEST(Timeline, EventAddedAheadOfTheCursorFiresInOrder) {
 }
 
 TEST(Timeline, PendingCountsTheEventsNotFiredYet) {
-    timeline::Timeline line;
+    sq::timeline::Timeline line;
     line.add(makeEvent(10.0F, "a"));
     line.add(makeEvent(20.0F, "b"));
     line.add(makeEvent(30.0F, "c"));
@@ -182,7 +182,7 @@ TEST(Timeline, PendingCountsTheEventsNotFiredYet) {
 }
 
 TEST(Timeline, RewindReplaysEveryEventInPositionOrder) {
-    timeline::Timeline line;
+    sq::timeline::Timeline line;
     line.add(makeEvent(100.0F, "b"));
     (void)line.advanceTo(150.0F);
     line.add(makeEvent(10.0F, "a"));
@@ -197,7 +197,7 @@ TEST(Timeline, RewindReplaysEveryEventInPositionOrder) {
 }
 
 TEST(Timeline, ClearRemovesEveryEvent) {
-    timeline::Timeline line;
+    sq::timeline::Timeline line;
     line.add(makeEvent(10.0F, "a"));
     (void)line.advanceTo(5.0F);
 
@@ -209,8 +209,8 @@ TEST(Timeline, ClearRemovesEveryEvent) {
 }
 
 TEST(Timeline, EventParametersAreKept) {
-    timeline::Timeline line;
-    line.add(timeline::TimelineEvent{
+    sq::timeline::Timeline line;
+    line.add(sq::timeline::TimelineEvent{
         .position = 5.0F,
         .type = "spawn",
         .params = {{"prefab", std::string("alien_scout")}, {"y", 200.0}},
@@ -232,21 +232,21 @@ struct Recorder {
     std::vector<std::string> fired;
     int finished = 0;
 
-    explicit Recorder(engine::Engine& engine) {
-        engine.eventBus().subscribe<timeline::TimelineEventFired>(
-            [this](const timeline::TimelineEventFired& fired) { this->fired.push_back(fired.event.type); });
-        engine.eventBus().subscribe<timeline::TimelineFinished>(
-            [this](const timeline::TimelineFinished& /*finished*/) { ++this->finished; });
+    explicit Recorder(sq::engine::Engine& engine) {
+        engine.eventBus().subscribe<sq::timeline::TimelineEventFired>(
+            [this](const sq::timeline::TimelineEventFired& fired) { this->fired.push_back(fired.event.type); });
+        engine.eventBus().subscribe<sq::timeline::TimelineFinished>(
+            [this](const sq::timeline::TimelineFinished& /*finished*/) { ++this->finished; });
     }
 };
 
-ecs::time::Time fixedStep(float dt) { return ecs::time::Time{.deltaTime = dt, .totalElapsedTime = 0.0F}; }
+sq::time::Time fixedStep(float dt) { return sq::time::Time{.deltaTime = dt, .totalElapsedTime = 0.0F}; }
 
 }  // namespace
 
 TEST(TimelinePlugin, IsStoppedByDefault) {
-    engine::Engine engine;
-    timeline::TimelinePlugin player;
+    sq::engine::Engine engine;
+    sq::timeline::TimelinePlugin player;
     player.timeline().add(makeEvent(0.5F, "spawn"));
     const Recorder recorder(engine);
 
@@ -257,8 +257,8 @@ TEST(TimelinePlugin, IsStoppedByDefault) {
 }
 
 TEST(TimelinePlugin, MovesTheCursorBySpeedTimesDeltaTime) {
-    engine::Engine engine;
-    timeline::TimelinePlugin player;
+    sq::engine::Engine engine;
+    sq::timeline::TimelinePlugin player;
     player.timeline().add(makeEvent(120.0F, "spawn"));
     player.setSpeed(60.0F);
     const Recorder recorder(engine);
@@ -273,7 +273,7 @@ TEST(TimelinePlugin, MovesTheCursorBySpeedTimesDeltaTime) {
 }
 
 TEST(Timeline, CursorKeepsMovingFarAlongALongTimeline) {
-    timeline::Timeline line;
+    sq::timeline::Timeline line;
     line.add(makeEvent(1.0e6F + 1.0F, "far"));
     (void)line.advanceTo(1.0e6);
     // 1/60 of a 1 px/s scroll: lost in a float at this distance.
@@ -285,13 +285,13 @@ TEST(Timeline, CursorKeepsMovingFarAlongALongTimeline) {
 }
 
 TEST(Timeline, AddAllGivesTheSameOrderAsAddingOneByOne) {
-    const std::vector<timeline::TimelineEvent> events{makeEvent(300.0F, "c"), makeEvent(100.0F, "a"),
-                                                      makeEvent(300.0F, "d"), makeEvent(200.0F, "b")};
-    timeline::Timeline oneByOne;
-    for (const timeline::TimelineEvent& event : events) {
+    const std::vector<sq::timeline::TimelineEvent> events{makeEvent(300.0F, "c"), makeEvent(100.0F, "a"),
+                                                          makeEvent(300.0F, "d"), makeEvent(200.0F, "b")};
+    sq::timeline::Timeline oneByOne;
+    for (const sq::timeline::TimelineEvent& event : events) {
         oneByOne.add(event);
     }
-    timeline::Timeline atOnce;
+    sq::timeline::Timeline atOnce;
     atOnce.addAll(events);
 
     EXPECT_EQ(typesOf(atOnce.events()), typesOf(oneByOne.events()));
@@ -299,7 +299,7 @@ TEST(Timeline, AddAllGivesTheSameOrderAsAddingOneByOne) {
 }
 
 TEST(Timeline, AddAllKeepsTheFiredEventsInPlace) {
-    timeline::Timeline line;
+    sq::timeline::Timeline line;
     line.add(makeEvent(100.0F, "first"));
     (void)line.advanceTo(150.0F);
     line.addAll({makeEvent(400.0F, "late"), makeEvent(120.0F, "behind")});
@@ -309,10 +309,10 @@ TEST(Timeline, AddAllKeepsTheFiredEventsInPlace) {
 }
 
 TEST(Timeline, CopiesShareTheirEventsButNotTheirCursor) {
-    timeline::Timeline level;
+    sq::timeline::Timeline level;
     level.addAll({makeEvent(100.0F, "a"), makeEvent(200.0F, "b")});
-    timeline::Timeline first = level;
-    timeline::Timeline second = level;
+    sq::timeline::Timeline first = level;
+    sq::timeline::Timeline second = level;
 
     EXPECT_EQ(first.events().data(), level.events().data()) << "copying does not copy the events";
     EXPECT_EQ(typesOf(first.advanceTo(250.0F)), (std::vector<std::string>{"a", "b"}));
@@ -321,9 +321,9 @@ TEST(Timeline, CopiesShareTheirEventsButNotTheirCursor) {
 }
 
 TEST(Timeline, ChangingACopyLeavesTheOthersUnchanged) {
-    timeline::Timeline level;
+    sq::timeline::Timeline level;
     level.add(makeEvent(100.0F, "a"));
-    timeline::Timeline copy = level;
+    sq::timeline::Timeline copy = level;
     copy.add(makeEvent(50.0F, "added"));
 
     EXPECT_EQ(typesOf(level.events()), std::vector<std::string>{"a"});
@@ -331,8 +331,8 @@ TEST(Timeline, ChangingACopyLeavesTheOthersUnchanged) {
 }
 
 TEST(TimelinePlugin, PublishesEveryReachedEventInOrderThenFinishedOnce) {
-    engine::Engine engine;
-    timeline::TimelinePlugin player;
+    sq::engine::Engine engine;
+    sq::timeline::TimelinePlugin player;
     player.timeline().add(makeEvent(10.0F, "a"));
     player.timeline().add(makeEvent(20.0F, "b"));
     const Recorder recorder(engine);
@@ -346,8 +346,8 @@ TEST(TimelinePlugin, PublishesEveryReachedEventInOrderThenFinishedOnce) {
 }
 
 TEST(TimelinePlugin, ZeroSpeedPausesPlayback) {
-    engine::Engine engine;
-    timeline::TimelinePlugin player;
+    sq::engine::Engine engine;
+    sq::timeline::TimelinePlugin player;
     player.timeline().add(makeEvent(50.0F, "spawn"));
     player.setSpeed(100.0F);
     const Recorder recorder(engine);
@@ -361,7 +361,7 @@ TEST(TimelinePlugin, ZeroSpeedPausesPlayback) {
 }
 
 TEST(TimelinePlugin, InvalidSpeedsAreIgnored) {
-    timeline::TimelinePlugin player;
+    sq::timeline::TimelinePlugin player;
     player.setSpeed(30.0F);
 
     player.setSpeed(-5.0F);
@@ -372,12 +372,12 @@ TEST(TimelinePlugin, InvalidSpeedsAreIgnored) {
 }
 
 TEST(TimelinePlugin, HandlerMayAddEventsWhileHandlingOne) {
-    engine::Engine engine;
-    timeline::TimelinePlugin player;
+    sq::engine::Engine engine;
+    sq::timeline::TimelinePlugin player;
     player.timeline().add(makeEvent(10.0F, "first"));
     player.timeline().add(makeEvent(20.0F, "second"));
     std::vector<std::string> seen;
-    engine.eventBus().subscribe<timeline::TimelineEventFired>([&](const timeline::TimelineEventFired& fired) {
+    engine.eventBus().subscribe<sq::timeline::TimelineEventFired>([&](const sq::timeline::TimelineEventFired& fired) {
         seen.push_back(fired.event.type);
         if (fired.event.type == "first") {
             for (int i = 0; i < 64; ++i) {  // forces the event storage to reallocate

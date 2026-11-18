@@ -1,6 +1,6 @@
 # Alien Elite
 
-**Name:** `alien_elite` (`prefabs::ALIEN_ELITE_PREFAB`)
+**Name:** `alien_elite` (`sq::prefabs::ALIEN_ELITE_PREFAB`)
 **Source:** `server/src/prefabs/alien_elite/`
 
 ## Purpose
@@ -10,10 +10,10 @@ fans of three shots at the nearest ship, takes several hits, and drops a `power_
 
 No script is involved:
 
-- `gameplay::EnemyMotionPlugin` moves it along its `prefabs::SineWave`, around the height it appeared at;
-- `gameplay::EnemyFirePlugin` fires its `prefabs::EnemyGun` (`GunPattern::Spread`: one shot at the nearest ship and one
+- `gameplay::EnemyMotionPlugin` moves it along its `sq::prefabs::SineWave`, around the height it appeared at;
+- `gameplay::EnemyFirePlugin` fires its `sq::prefabs::EnemyGun` (`GunPattern::Spread`: one shot at the nearest ship and one
   `SPREAD_ANGLE` on each side) while it is on the screen;
-- `gameplay::CombatPlugin` removes one of its hit points per shot, and spawns the power-up of its `prefabs::DropsPowerUp`
+- `gameplay::CombatPlugin` removes one of its hit points per shot, and spawns the power-up of its `sq::prefabs::DropsPowerUp`
   when it dies.
 
 ## Components
@@ -24,10 +24,10 @@ No script is involved:
 | `Renderable` | `layer = 1` |
 | `RigidBody2D` | `Kinematic`, `velocityX = speed` |
 | `Collider2D` | Box, `halfWidth = halfHeight = ALIEN_ELITE_HALF_SIZE` (`28` px), sensor, `ENEMY` / `ENEMY_MASK` |
-| `prefabs::Health` | `points = max = health` |
-| `prefabs::SineWave` | `amplitude`, `frequency`, centered on the spawn height |
-| `prefabs::EnemyGun` | `interval = fire_interval`, `cooldown = interval / 2`, `shotSpeed = shot_speed`, `Spread` |
-| `prefabs::DropsPowerUp` | |
+| `sq::prefabs::Health` | `points = max = health` |
+| `sq::prefabs::SineWave` | `amplitude`, `frequency`, centered on the spawn height |
+| `sq::prefabs::EnemyGun` | `interval = fire_interval`, `cooldown = interval / 2`, `shotSpeed = shot_speed`, `Spread` |
+| `sq::prefabs::DropsPowerUp` | |
 
 ## Parameters
 

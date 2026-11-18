@@ -34,6 +34,6 @@ struct FaceMotion {
  * interpolation, which writes the positions, so that the direction follows what is drawn.
  * @param registry Client registry.
  */
-void faceMotion(ecs::Registry& registry);
+void faceMotion(sq::ecs::Registry& registry);
 
 }  // namespace client::gameplay

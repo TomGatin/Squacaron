@@ -30,7 +30,7 @@
 #include "net/asio/TcpSession.hpp"
 #include "net/asio/Wire.hpp"
 
-namespace ecs::net::detail {
+namespace sq::net::detail {
 
 using wire::MessageKind;
 
@@ -87,7 +87,7 @@ void NetworkClient::onConnectFailed(const std::error_code ec) {
     if (ec == asio::error::operation_aborted) {
         return;
     }
-    engine::log::error(LOG_TAG, "cannot connect to the server: ", ec.message());
+    sq::engine::log::error(LOG_TAG, "cannot connect to the server: ", ec.message());
     _disconnectReason = DisconnectReason::Unreachable;
     _state = State::Stopped;
     _events.push({.type = EventType::Disconnected, .peer = 0, .data = {}, .channel = Channel::Reliable});
@@ -130,7 +130,7 @@ void NetworkClient::onTcpMessage(const MessageKind kind, Bytes payload) {
             break;
         case MessageKind::Refused:
             _disconnectReason = wire::readRefusal(payload);
-            engine::log::warning(LOG_TAG, "refused by the server");
+            sq::engine::log::warning(LOG_TAG, "refused by the server");
             _tcp->close();
             break;
         default:
@@ -145,14 +145,14 @@ bool NetworkClient::openUdp(const std::uint16_t port) {
     }
     auto open = [this, port] {
         if (!_welcomed) {
-            engine::log::error(LOG_TAG, "cannot open UDP: no Welcome received from the server yet");
+            sq::engine::log::error(LOG_TAG, "cannot open UDP: no Welcome received from the server yet");
             return false;
         }
         try {
             _serverUdp = {_serverAddress, port};
             _udpSocket = asio::ip::udp::socket(_io, {_serverUdp.protocol(), 0});
         } catch (const asio::system_error& e) {
-            engine::log::error(LOG_TAG, "cannot open UDP to port ", port, ": ", e.what());
+            sq::engine::log::error(LOG_TAG, "cannot open UDP to port ", port, ": ", e.what());
             return false;
         }
         _tcp->send(MessageKind::UdpOpen);
@@ -291,4 +291,4 @@ void NetworkClient::stop() {
     }
 }
 
-}  // namespace ecs::net::detail
+}  // namespace sq::net::detail

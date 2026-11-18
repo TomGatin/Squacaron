@@ -20,17 +20,17 @@
 #include "ui/system/UiLayout.hpp"
 #include "ui/system/UiRenderSystem.hpp"
 
-namespace ui {
+namespace sq::ui {
 
-void UiPlugin::build(engine::PluginBuilder& builder) {
-    builder.requireService<engine::IWindowService>();
-    builder.requireService<engine::IScreenDrawService>();
-    builder.require<hierarchy::HierarchyPlugin>();
+void UiPlugin::build(sq::engine::PluginBuilder& builder) {
+    builder.requireService<sq::engine::IWindowService>();
+    builder.requireService<sq::engine::IScreenDrawService>();
+    builder.require<sq::hierarchy::HierarchyPlugin>();
 }
 
-void UiPlugin::init(engine::Engine& engine) {
+void UiPlugin::init(sq::engine::Engine& engine) {
     _uiRenderSystem = std::make_unique<UiRenderSystem>();
-    ecs::Registry& registry = engine.registry();
+    sq::ecs::Registry& registry = engine.registry();
     if (!registry.hasResource<UiFocus>()) {
         registry.emplaceResource<UiFocus>();
     }
@@ -39,33 +39,33 @@ void UiPlugin::init(engine::Engine& engine) {
     }
 }
 
-UiScreenRect UiPlugin::screenOf(engine::Engine& engine) {
-    const auto& window = engine.service<engine::IWindowService>();
+UiScreenRect UiPlugin::screenOf(sq::engine::Engine& engine) {
+    const auto& window = engine.service<sq::engine::IWindowService>();
     return UiScreenRect{.width = static_cast<float>(window.width()), .height = static_cast<float>(window.height())};
 }
 
-void UiPlugin::update(engine::Engine& engine, const ecs::time::Time& time) {
+void UiPlugin::update(sq::engine::Engine& engine, const sq::time::Time& time) {
     if (_uiRenderSystem == nullptr) {
         return;
     }
-    const auto& draw = engine.service<engine::IScreenDrawService>();
+    const auto& draw = engine.service<sq::engine::IScreenDrawService>();
     computeLayout(engine.registry(), screenOf(engine), UiRenderSystem::measureWith(draw), _layout);
-    auto& window = engine.service<engine::IWindowService>();
+    auto& window = engine.service<sq::engine::IWindowService>();
     UiButtonSystem::update(engine.registry(), _layout, window, engine.eventBus());
     _interaction.update(engine.registry(), _layout, window, engine.eventBus(), time.deltaTime);
 }
 
-void UiPlugin::lateUpdate(engine::Engine& engine, const ecs::time::Time& /*time*/) {
+void UiPlugin::lateUpdate(sq::engine::Engine& engine, const sq::time::Time& /*time*/) {
     if (_uiRenderSystem == nullptr) {
         return;
     }
-    _uiRenderSystem->update(engine.registry(), screenOf(engine), engine.service<engine::IScreenDrawService>());
+    _uiRenderSystem->update(engine.registry(), screenOf(engine), engine.service<sq::engine::IScreenDrawService>());
 }
 
-void UiPlugin::shutdown(engine::Engine& /*engine*/) {
+void UiPlugin::shutdown(sq::engine::Engine& /*engine*/) {
     _uiRenderSystem.reset();
     _layout.clear();
     _layout.shrink_to_fit();
 }
 
-}  // namespace ui
+}  // namespace sq::ui

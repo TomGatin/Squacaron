@@ -9,10 +9,10 @@
 
 #include "scripting/ScriptSystem.hpp"
 
-namespace scripting {
+namespace sq::scripting {
 
 template <typename EventType, typename ArgExtractor>
-void ScriptSystem::registerEventForwarding(ecs::EventBus& bus, std::string const& methodName,
+void ScriptSystem::registerEventForwarding(sq::events::EventBus& bus, std::string const& methodName,
                                            ArgExtractor&& extractor) {
     std::string const signature = methodName + "(_)";
     if (!_cachedMethodHandles.contains(signature)) {
@@ -26,11 +26,11 @@ void ScriptSystem::registerEventForwarding(ecs::EventBus& bus, std::string const
 }
 
 template <typename ContactEvent>
-void ScriptSystem::forwardCollisions(ecs::EventBus& bus) {
+void ScriptSystem::forwardCollisions(sq::events::EventBus& bus) {
     stopForwardingCollisions();
     prepareCollisionForwarding();
     // The system is not movable: the subscription can capture `this`; the destructor unsubscribes.
-    const ecs::EventBus::EventToken token = bus.subscribe<ContactEvent>([this](const ContactEvent& event) {
+    const sq::events::EventBus::EventToken token = bus.subscribe<ContactEvent>([this](const ContactEvent& event) {
         forwardCollision(event.entityA, event.entityB);
         forwardCollision(event.entityB, event.entityA);
     });
@@ -47,4 +47,4 @@ Extension* ScriptSystem::findExtension() const noexcept {
     return nullptr;
 }
 
-}  // namespace scripting
+}  // namespace sq::scripting

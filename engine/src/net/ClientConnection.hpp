@@ -8,7 +8,7 @@
 #include "INetworkService.hpp"
 #include "net/INetworkClient.hpp"
 
-namespace ecs::net {
+namespace sq::net {
 
 /**
  * @brief Adapts a client transport to `NetworkPlugin`: it is both the event source and the network service.
@@ -72,4 +72,4 @@ class ClientConnection final : public INetworkService, public INetworkEventSourc
     std::shared_ptr<INetworkClient> _client;
 };
 
-}  // namespace ecs::net
+}  // namespace sq::net

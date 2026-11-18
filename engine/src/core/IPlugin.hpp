@@ -9,11 +9,13 @@
 
 #include "core/PluginBuilder.hpp"
 
-namespace ecs::time {
-struct Time;
-}
+namespace sq::time {
 
-namespace engine {
+struct Time;
+
+}  // namespace sq::time
+
+namespace sq::engine {
 
 class Engine;
 
@@ -84,7 +86,7 @@ class IPlugin {
      * @param engine Reference to the hosting Engine.
      * @param time Fixed simulation timing information.
      */
-    virtual void fixedUpdate(Engine& engine, const ecs::time::Time& time) {
+    virtual void fixedUpdate(Engine& engine, const sq::time::Time& time) {
         (void)engine;
         (void)time;
     }
@@ -94,7 +96,7 @@ class IPlugin {
      * @param engine Reference to the hosting Engine.
      * @param time Frame timing information.
      */
-    virtual void update(Engine& engine, const ecs::time::Time& time) {
+    virtual void update(Engine& engine, const sq::time::Time& time) {
         (void)engine;
         (void)time;
     }
@@ -108,7 +110,7 @@ class IPlugin {
      * @param engine Reference to the hosting Engine.
      * @param time Frame timing information (same value as the frame's `update`).
      */
-    virtual void lateUpdate(Engine& engine, const ecs::time::Time& time) {
+    virtual void lateUpdate(Engine& engine, const sq::time::Time& time) {
         (void)engine;
         (void)time;
     }
@@ -126,4 +128,4 @@ class IPlugin {
     virtual void shutdown(Engine& engine) { (void)engine; }
 };
 
-}  // namespace engine
+}  // namespace sq::engine

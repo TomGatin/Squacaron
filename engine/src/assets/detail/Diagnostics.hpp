@@ -11,7 +11,7 @@
 #include <string_view>
 #include <unordered_set>
 
-namespace assets::detail {
+namespace sq::assets::detail {
 
 /** @brief Warnings kept at most; older ones are dropped, so a script looping on a bad call cannot grow memory. */
 inline constexpr std::size_t MAX_KEPT_WARNINGS = 256;
@@ -57,4 +57,4 @@ class Diagnostics {
     std::unordered_set<std::size_t> _onceKeys;
 };
 
-}  // namespace assets::detail
+}  // namespace sq::assets::detail

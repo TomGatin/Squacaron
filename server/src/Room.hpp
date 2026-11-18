@@ -24,32 +24,32 @@
 namespace rtype::server {
 
 /** @brief Maximum number of inputs queued per player; when exceeded, the oldest one is dropped. */
-inline constexpr std::size_t MAX_PENDING_INPUTS = ecs::DEFAULT_MAX_PENDING_INPUTS;
+inline constexpr std::size_t MAX_PENDING_INPUTS = sq::ecs::DEFAULT_MAX_PENDING_INPUTS;
 /** @brief Passes per second of a room's loop: about one per millisecond, so the 60 Hz steps keep a ~1 ms jitter. */
 inline constexpr double ROOM_LOOP_RATE = 1000.0;
 
 /** @brief Network id of a player: the transport's peer id. */
-using ClientId = ecs::net::PeerId;
+using ClientId = sq::net::PeerId;
 
 /** @brief One player of a room. */
 struct RoomPlayer {
     /** @brief Network id of the player. */
     ClientId client = 0;
     /** @brief Ship of the player; its network state is in its components. */
-    ecs::Entity entity = ecs::NULL_ENTITY;
+    sq::ecs::Entity entity = sq::ecs::NULL_ENTITY;
     /** @brief Ready state in the lobby. */
     bool ready = false;
 };
 
 /**
- * @brief One game: its own `engine::Engine` and its players.
+ * @brief One game: its own `sq::engine::Engine` and its players.
  *
  * Each room runs its own engine (ECS world, event bus, clock, plugins), so games are isolated from each other: the
  * systems of a room never see the entities of another one, and its time starts at 0 when the game starts.
  *
- * The network goes through `ecs::net::NetworkPlugin` and `ecs::net::ServerReplicationPlugin`: the room receives raw
+ * The network goes through `sq::net::NetworkPlugin` and `sq::net::ServerReplicationPlugin`: the room receives raw
  * payloads from the `ServerManager`, the plugin decodes the inputs, and sends the snapshots to the players of this room
- * only. A player's entity carries `ecs::NetworkOwner`, `ecs::NetworkId` and `ecs::InputBuffer`.
+ * only. A player's entity carries `sq::ecs::NetworkOwner`, `sq::ecs::NetworkId` and `sq::ecs::InputBuffer`.
  *
  * Once started, the `ServerManager` calls `runInBackground()`: a room has its own thread, so that a room with many
  * entities does not slow down the others. The engine is only touched under `_mutex`; everything else (the players, the
@@ -69,8 +69,8 @@ class Room {
      * @param timeSource Time source of the room's clock; `nullptr` for the real time. Injectable for tests.
      * @param level Level played once the game starts, shared by every room; `nullptr` plays no level.
      */
-    Room(ecs::net::INetworkServer& network, std::uint8_t maxPlayers, float fixedDt = ecs::time::DEFAULT_FIXED_DT,
-         ecs::time::Clock::TimeSource timeSource = nullptr, const std::shared_ptr<const level::Level>& level = nullptr);
+    Room(sq::net::INetworkServer& network, std::uint8_t maxPlayers, float fixedDt = sq::time::DEFAULT_FIXED_DT,
+         sq::time::Clock::TimeSource timeSource = nullptr, const std::shared_ptr<const level::Level>& level = nullptr);
     /** @brief Stops and joins the thread of the room, if it has one. */
     ~Room();
 
@@ -104,12 +104,12 @@ class Room {
      *
      * Dropped while the game has not started: nothing would consume it, and a client must not be able to fill the
      * queue. Payloads that are not valid inputs are dropped by the codec. One input per player is applied at each
-     * simulation step, oldest first; see `ecs::net::pushInput()` for late, duplicated and excess inputs.
+     * simulation step, oldest first; see `sq::net::pushInput()` for late, duplicated and excess inputs.
      *
      * @param player Network id of the sender.
      * @param data Untrusted payload.
      */
-    void onPacket(ClientId player, const ecs::net::Bytes& data);
+    void onPacket(ClientId player, const sq::net::Bytes& data);
 
     /**
      * @brief Sets the ready state of a player. Does nothing once the game has started, or if the player is not here.
@@ -174,9 +174,9 @@ class Room {
     [[nodiscard]] std::uint32_t lastProcessedInput(ClientId player) const;
 
     /** @brief ECS world of the room. Not protected: do not use it once the room runs in the background. */
-    [[nodiscard]] ecs::Registry& registry() { return _engine.registry(); }
+    [[nodiscard]] sq::ecs::Registry& registry() { return _engine.registry(); }
     /** @brief ECS world of the room, read-only. Not protected: do not use it once the room runs in the background. */
-    [[nodiscard]] const ecs::Registry& registry() const { return _engine.registry(); }
+    [[nodiscard]] const sq::ecs::Registry& registry() const { return _engine.registry(); }
 
   private:
     /** @brief Maximum number of players. */
@@ -184,16 +184,16 @@ class Room {
     /** @brief True once the game has started. */
     bool _playing = false;
     /** @brief Network of this room: what its engine receives and the only peers it can reach. */
-    std::shared_ptr<ecs::net::PeerGroupConnection> _connection;
+    std::shared_ptr<sq::net::PeerGroupConnection> _connection;
     /** @brief Engine of this game: ECS world, event bus, clock and plugins. */
-    engine::Engine _engine;
+    sq::engine::Engine _engine;
     /** @brief Players of the room, in join order: at most `_maxPlayers`, so looking one up is a short scan. */
     std::vector<RoomPlayer> _players;
     /** @brief Protects `_engine` from the thread of the room. Mutable: `lastProcessedInput()` only reads. */
     mutable std::mutex _mutex;
     /** @brief Paces `_thread`: about every millisecond, so the steps keep a jitter around 1 ms; stopped by the
      * destructor. */
-    engine::FixedRateLoop _loop{ROOM_LOOP_RATE};
+    sq::engine::FixedRateLoop _loop{ROOM_LOOP_RATE};
     /** @brief Set from the room's thread when the game is over. */
     std::atomic<bool> _ended{false};
     /** @brief Runs the simulation once `runInBackground()` was called. */

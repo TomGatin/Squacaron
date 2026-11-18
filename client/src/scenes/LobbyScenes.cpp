@@ -43,7 +43,9 @@ constexpr std::string_view JOIN_PREFIX = "lobby.join.";
  * @param context Scene context.
  * @return The session plugin.
  */
-RTypeNetworkPlugin& sessionOf(scene::SceneContext& context) { return context.engine().getPlugin<RTypeNetworkPlugin>(); }
+RTypeNetworkPlugin& sessionOf(sq::scene::SceneContext& context) {
+    return context.engine().getPlugin<RTypeNetworkPlugin>();
+}
 
 /**
  * @brief Text of a room row.
@@ -60,7 +62,7 @@ std::string describe(const protocol::RoomEntry& room) {
  * @brief Goes back to the connect screen when the connection is lost.
  * @param context Scene context.
  */
-void returnOnSessionClosed(scene::SceneContext& context) {
+void returnOnSessionClosed(sq::scene::SceneContext& context) {
     context.subscribe<SessionClosed>(
         [&context](const SessionClosed& /*event*/) { context.manager().switchTo<ConnectScene>(); });
 }
@@ -69,19 +71,19 @@ void returnOnSessionClosed(scene::SceneContext& context) {
 
 // --- Lobby -----------------------------------------------------------------------------------------------------------
 
-void LobbyScene::onEnter(scene::SceneContext& context) {
-    ecs::Registry& registry = context.registry();
+void LobbyScene::onEnter(sq::scene::SceneContext& context) {
+    sq::ecs::Registry& registry = context.registry();
     _rows.clear();
-    const ecs::Entity box = menu::panel(context, 560.0F, 520.0F);
+    const sq::ecs::Entity box = menu::panel(context, 560.0F, 520.0F);
     (void)menu::label(context, box, "LOBBY", 24.0F, 34.0F, menu::GOLD);
 
     _list = context.spawn();
-    registry.addComponent(_list, ui::UiAnchor{.anchorX = 0.5F, .offsetY = 80.0F, .pivotX = 0.5F});
-    registry.addComponent(_list, ui::UiRect{.width = LIST_WIDTH,
-                                            .height = ROW_HEIGHT * static_cast<float>(VISIBLE_ROWS),
-                                            .fillColor = {.r = 0, .g = 0, .b = 0, .a = 60}});
-    registry.addComponent(_list, ui::UiScrollList{.visibleCount = VISIBLE_ROWS, .itemHeight = ROW_HEIGHT});
-    hierarchy::setParent(registry, _list, box);
+    registry.addComponent(_list, sq::ui::UiAnchor{.anchorX = 0.5F, .offsetY = 80.0F, .pivotX = 0.5F});
+    registry.addComponent(_list, sq::ui::UiRect{.width = LIST_WIDTH,
+                                                .height = ROW_HEIGHT * static_cast<float>(VISIBLE_ROWS),
+                                                .fillColor = {.r = 0, .g = 0, .b = 0, .a = 60}});
+    registry.addComponent(_list, sq::ui::UiScrollList{.visibleCount = VISIBLE_ROWS, .itemHeight = ROW_HEIGHT});
+    sq::hierarchy::setParent(registry, _list, box);
     _empty = menu::label(context, box, "", 200.0F, 20.0F, menu::MUTED);
 
     _create = menu::button(context, box, "CREATE A ROOM", "lobby.create", 370.0F, 100);
@@ -119,9 +121,9 @@ void LobbyScene::onEnter(scene::SceneContext& context) {
     context.bus().publish(RefreshRoomsRequest{});
 }
 
-void LobbyScene::showRooms(scene::SceneContext& context, const protocol::LobbyList& list) {
-    ecs::Registry& registry = context.registry();
-    for (const ecs::Entity row : _rows) {
+void LobbyScene::showRooms(sq::scene::SceneContext& context, const protocol::LobbyList& list) {
+    sq::ecs::Registry& registry = context.registry();
+    for (const sq::ecs::Entity row : _rows) {
         registry.killEntity(row);
     }
     _rows.clear();
@@ -129,9 +131,10 @@ void LobbyScene::showRooms(scene::SceneContext& context, const protocol::LobbyLi
     for (const protocol::RoomEntry& room : list.rooms) {
         const bool open = room.state == protocol::RoomState::Waiting && room.playerCount < room.maxPlayers;
         const std::string action = open ? std::string(JOIN_PREFIX) + std::to_string(room.roomId) : "lobby.none";
-        const ecs::Entity row = menu::button(context, _list, describe(room), action, 3.0F, order++, LIST_WIDTH - 20.0F);
+        const sq::ecs::Entity row =
+            menu::button(context, _list, describe(room), action, 3.0F, order++, LIST_WIDTH - 20.0F);
         if (!open) {
-            registry.removeComponent<ui::UiFocusable>(row);
+            registry.removeComponent<sq::ui::UiFocusable>(row);
         }
         _rows.push_back(row);
     }
@@ -140,10 +143,10 @@ void LobbyScene::showRooms(scene::SceneContext& context, const protocol::LobbyLi
 
 // --- Room ------------------------------------------------------------------------------------------------------------
 
-void RoomScene::onEnter(scene::SceneContext& context) {
+void RoomScene::onEnter(sq::scene::SceneContext& context) {
     _ready = false;
     _slots.clear();
-    const ecs::Entity box = menu::panel(context, 460.0F, 440.0F);
+    const sq::ecs::Entity box = menu::panel(context, 460.0F, 440.0F);
     _title = menu::label(context, box, "ROOM", 24.0F, 34.0F, menu::GOLD);
     (void)menu::label(context, box, "THE GAME STARTS WHEN EVERYONE IS READY", 70.0F, 16.0F, menu::MUTED);
     for (std::size_t slot = 0; slot < protocol::MAX_PLAYERS; ++slot) {
@@ -175,8 +178,8 @@ void RoomScene::onEnter(scene::SceneContext& context) {
     }
 }
 
-void RoomScene::showRoom(scene::SceneContext& context, const protocol::LobbyUpdate& room) {
-    ecs::Registry& registry = context.registry();
+void RoomScene::showRoom(sq::scene::SceneContext& context, const protocol::LobbyUpdate& room) {
+    sq::ecs::Registry& registry = context.registry();
     menu::setText(registry, _title, "ROOM " + std::to_string(room.roomId));
     for (std::size_t slot = 0; slot < _slots.size(); ++slot) {
         if (slot >= room.slots.size()) {

@@ -6,7 +6,7 @@
 #include "audio/settings/AudioSettings.hpp"
 #include "config/ConfigFile.hpp"
 
-namespace audio {
+namespace sq::audio {
 
 /**
  * @brief Reads the `[audio]` table of a configuration file.
@@ -37,6 +37,6 @@ namespace audio {
  * @param warnings Receives one message per ignored or corrected value.
  * @return The settings to use.
  */
-[[nodiscard]] AudioSettings readAudioSettings(const config::ConfigFile& file, std::vector<std::string>& warnings);
+[[nodiscard]] AudioSettings readAudioSettings(const sq::config::ConfigFile& file, std::vector<std::string>& warnings);
 
-}  // namespace audio
+}  // namespace sq::audio

@@ -7,7 +7,7 @@
 
 #include "render/api/InputCodes.hpp"
 
-namespace engine {
+namespace sq::engine {
 
 /**
  * @brief Abstract window service exposed through the Mediator.
@@ -138,4 +138,4 @@ class IWindowService {
     [[nodiscard]] virtual char32_t nextTypedCharacter() noexcept = 0;
 };
 
-}  // namespace engine
+}  // namespace sq::engine

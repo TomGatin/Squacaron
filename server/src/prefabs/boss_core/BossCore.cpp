@@ -29,7 +29,7 @@ namespace {
  * @param high Largest value.
  * @return The value, within [low, high].
  */
-double clampedParam(PrefabParams const& params, const char* key, const double fallback, const double low,
+double clampedParam(sq::prefabs::PrefabParams const& params, const char* key, const double fallback, const double low,
                     const double high) {
     const double requested = params.get(key, fallback);
     return std::isnan(requested) ? fallback : std::clamp(requested, low, high);
@@ -37,7 +37,7 @@ double clampedParam(PrefabParams const& params, const char* key, const double fa
 
 }  // namespace
 
-void buildBossCore(ecs::Entity e, ecs::Registry& registry, PrefabParams const& params) {
+void buildBossCore(sq::ecs::Entity e, sq::ecs::Registry& registry, sq::prefabs::PrefabParams const& params) {
     // Read as doubles and clamped before narrowing: any value of a level file then fits the network byte fields, where
     // a direct integer conversion of an out-of-range double would be undefined.
     constexpr auto BYTE_MAX = static_cast<double>(std::numeric_limits<std::uint8_t>::max());
@@ -49,19 +49,19 @@ void buildBossCore(ecs::Entity e, ecs::Registry& registry, PrefabParams const& p
     const auto height = static_cast<float>(
         clampedParam(params, "height", rtype::game::BOSS_CORE_HEIGHT, MIN_BOSS_CORE_SIZE, MAX_BOSS_CORE_SIZE));
 
-    registry.addComponent<ecs::Transform>(e, makeTransform(params));
-    registry.addComponent<ecs::Renderable>(e, ecs::Renderable{.layer = 1});
-    registry.addComponent<ecs::RigidBody2D>(e, ecs::RigidBody2D{
-                                                   .bodyType = ecs::BodyType::Kinematic,
-                                                   .velocityX = params.get("speed", DEFAULT_BOSS_CORE_SPEED),
-                                               });
-    registry.addComponent<ecs::Collider2D>(e, ecs::Collider2D{
-                                                  .halfWidth = width / 2.0F,
-                                                  .halfHeight = height / 2.0F,
-                                                  .categoryBits = collision::ENEMY,
-                                                  .maskBits = collision::ENEMY_MASK,
-                                                  .isSensor = true,
-                                              });
+    registry.addComponent<sq::ecs::Transform>(e, sq::prefabs::makeTransform(params));
+    registry.addComponent<sq::ecs::Renderable>(e, sq::ecs::Renderable{.layer = 1});
+    registry.addComponent<sq::ecs::RigidBody2D>(e, sq::ecs::RigidBody2D{
+                                                       .bodyType = sq::ecs::BodyType::Kinematic,
+                                                       .velocityX = params.get("speed", DEFAULT_BOSS_CORE_SPEED),
+                                                   });
+    registry.addComponent<sq::ecs::Collider2D>(e, sq::ecs::Collider2D{
+                                                      .halfWidth = width / 2.0F,
+                                                      .halfHeight = height / 2.0F,
+                                                      .categoryBits = collision::ENEMY,
+                                                      .maskBits = collision::ENEMY_MASK,
+                                                      .isSensor = true,
+                                                  });
     registry.addComponent<Health>(e, Health{.points = health, .max = health});
     registry.addComponent<BossCore>(
         e, BossCore{.stopX = params.get("stop_x", DEFAULT_BOSS_CORE_STOP_X), .variant = variant});

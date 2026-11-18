@@ -4,7 +4,7 @@
 #include <optional>
 #include <string_view>
 
-namespace input {
+namespace sq::input {
 
 /**
  * @brief Supported hardware keyboard layouts for game input bindings.
@@ -34,7 +34,9 @@ enum class KeyboardLayout : std::uint8_t {
  */
 [[nodiscard]] const char* keyboardLayoutToString(KeyboardLayout layout) noexcept;
 
-namespace detail {
+}  // namespace sq::input
+
+namespace sq::input::detail {
 
 /**
  * @brief Evaluates whether a POSIX locale string corresponds to an AZERTY region.
@@ -65,6 +67,4 @@ namespace detail {
  */
 [[nodiscard]] std::optional<KeyboardLayout> detectFromEnvironment() noexcept;
 
-}  // namespace detail
-
-}  // namespace input
+}  // namespace sq::input::detail

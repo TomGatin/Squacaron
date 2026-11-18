@@ -16,12 +16,12 @@ namespace {
 using Clock = std::chrono::steady_clock;
 
 /** @brief Counts its updates; stops the engine after `limit` of them, or raises SIGINT when asked to. */
-class FrameCounterPlugin final : public engine::IPlugin {
+class FrameCounterPlugin final : public sq::engine::IPlugin {
   public:
     FrameCounterPlugin(int& frames, const int limit, const bool raiseSignal)
         : _frames(&frames), _limit(limit), _raiseSignal(raiseSignal) {}
     [[nodiscard]] std::string_view name() const noexcept override { return "FrameCounter"; }
-    void update(engine::Engine& engine, const ecs::time::Time& /*time*/) override {
+    void update(sq::engine::Engine& engine, const sq::time::Time& /*time*/) override {
         if (++*_frames < _limit) {
             return;
         }
@@ -41,8 +41,8 @@ class FrameCounterPlugin final : public engine::IPlugin {
 /** @brief Clears the stop flag around a test, so a raised signal does not leak into the next one. */
 class RunLoopTest : public ::testing::Test {
   protected:
-    void SetUp() override { engine::platform::clearStopSignal(); }
-    void TearDown() override { engine::platform::clearStopSignal(); }
+    void SetUp() override { sq::engine::platform::clearStopSignal(); }
+    void TearDown() override { sq::engine::platform::clearStopSignal(); }
 };
 
 }  // namespace
@@ -50,7 +50,7 @@ class RunLoopTest : public ::testing::Test {
 TEST_F(RunLoopTest, PacedLoopWaitsForEachTick) {
     constexpr double RATE = 100.0;
     constexpr int TICKS = 20;
-    engine::FixedRateLoop loop(RATE);
+    sq::engine::FixedRateLoop loop(RATE);
     int ticks = 0;
 
     const auto start = Clock::now();
@@ -67,7 +67,7 @@ TEST_F(RunLoopTest, PacedLoopWaitsForEachTick) {
 }
 
 TEST_F(RunLoopTest, UnpacedLoopDoesNotSleep) {
-    engine::FixedRateLoop loop;
+    sq::engine::FixedRateLoop loop;
     int ticks = 0;
 
     const auto start = Clock::now();
@@ -82,7 +82,7 @@ TEST_F(RunLoopTest, UnpacedLoopDoesNotSleep) {
 }
 
 TEST_F(RunLoopTest, StopBeforeRunIsKept) {
-    engine::FixedRateLoop loop(1000.0);
+    sq::engine::FixedRateLoop loop(1000.0);
     loop.stop();
     int ticks = 0;
 
@@ -92,7 +92,7 @@ TEST_F(RunLoopTest, StopBeforeRunIsKept) {
 }
 
 TEST_F(RunLoopTest, StopSignalEndsTheLoopWhenAsked) {
-    engine::FixedRateLoop loop(1000.0);
+    sq::engine::FixedRateLoop loop(1000.0);
     loop.stopOnSignals(true);
     int ticks = 0;
 
@@ -103,13 +103,13 @@ TEST_F(RunLoopTest, StopSignalEndsTheLoopWhenAsked) {
     });
 
     EXPECT_EQ(ticks, 3);
-    EXPECT_TRUE(engine::platform::stopSignalReceived());
+    EXPECT_TRUE(sq::engine::platform::stopSignalReceived());
 }
 
 TEST_F(RunLoopTest, StopSignalIsIgnoredByDefault) {
-    engine::platform::installStopSignalHandlers();
+    sq::engine::platform::installStopSignalHandlers();
     std::raise(SIGTERM);
-    engine::FixedRateLoop loop(1000.0);
+    sq::engine::FixedRateLoop loop(1000.0);
     int ticks = 0;
 
     loop.run([&] {
@@ -123,7 +123,7 @@ TEST_F(RunLoopTest, StopSignalIsIgnoredByDefault) {
 
 TEST_F(RunLoopTest, HeadlessEngineRunsOneFramePerFixedStep) {
     constexpr int FRAMES = 10;
-    engine::Engine engine;
+    sq::engine::Engine engine;
     int frames = 0;
     engine.addPlugin<FrameCounterPlugin>(frames, FRAMES, false);
 
@@ -136,7 +136,7 @@ TEST_F(RunLoopTest, HeadlessEngineRunsOneFramePerFixedStep) {
 }
 
 TEST_F(RunLoopTest, HeadlessEngineStopsOnCtrlC) {
-    engine::Engine engine;
+    sq::engine::Engine engine;
     int frames = 0;
     engine.addPlugin<FrameCounterPlugin>(frames, 3, true);
 
@@ -147,7 +147,7 @@ TEST_F(RunLoopTest, HeadlessEngineStopsOnCtrlC) {
 }
 
 TEST_F(RunLoopTest, UnpacedEngineIsAvailableOnRequest) {
-    engine::Engine engine;
+    sq::engine::Engine engine;
     int frames = 0;
     engine.addPlugin<FrameCounterPlugin>(frames, 1000, false);
 
@@ -161,7 +161,7 @@ TEST_F(RunLoopTest, UnpacedEngineIsAvailableOnRequest) {
 #ifndef _WIN32  // std::clock() measures wall time on Windows, CPU time elsewhere
 TEST_F(RunLoopTest, IdleHeadlessEngineBarelyUsesTheCpu) {
     constexpr int FRAMES = 20;  // a third of a second at 60 Hz
-    engine::Engine engine;
+    sq::engine::Engine engine;
     int frames = 0;
     engine.addPlugin<FrameCounterPlugin>(frames, FRAMES, false);
 

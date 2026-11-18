@@ -5,7 +5,7 @@
  * @brief Portable "the user asked the program to stop" flag: SIGINT / SIGTERM, Ctrl+C and console close on Windows.
  */
 
-namespace engine::platform {
+namespace sq::engine::platform {
 
 /**
  * @brief Installs the handlers that set the stop flag. Idempotent; call it from the main thread.
@@ -25,4 +25,4 @@ void installStopSignalHandlers();
 /** @brief Forgets a received stop signal, e.g. in tests or before running a second loop. */
 void clearStopSignal() noexcept;
 
-}  // namespace engine::platform
+}  // namespace sq::engine::platform

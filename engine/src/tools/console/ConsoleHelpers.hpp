@@ -11,7 +11,7 @@
 #include <string_view>
 #include <vector>
 
-namespace tools::detail {
+namespace sq::tools::detail {
 
 /**
  * @brief Makes untrusted text safe to show: control characters become `?`, text past `MAX_LINE_LENGTH` is cut.
@@ -51,4 +51,4 @@ struct WordCursor {
  */
 [[nodiscard]] std::optional<WordCursor> locateLastWord(std::string_view line);
 
-}  // namespace tools::detail
+}  // namespace sq::tools::detail

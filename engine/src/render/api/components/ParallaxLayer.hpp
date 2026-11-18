@@ -7,7 +7,7 @@
 
 #pragma once
 
-namespace ecs {
+namespace sq::ecs {
 
 /**
  * @brief Controls the scrolling behaviour of a background entity.
@@ -42,4 +42,4 @@ struct ParallaxLayer {
     float wrapMaxY = 0.0F;
 };
 
-}  // namespace ecs
+}  // namespace sq::ecs

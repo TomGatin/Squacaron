@@ -26,14 +26,14 @@ namespace {
  * @param ship Player ship.
  * @return True if the ship is inside the terrain (touching edges do not count).
  */
-bool isInTerrain(ecs::Registry& registry, const ecs::Entity ship) {
-    if (!registry.hasComponent<ecs::Transform>(ship)) {
+bool isInTerrain(sq::ecs::Registry& registry, const sq::ecs::Entity ship) {
+    if (!registry.hasComponent<sq::ecs::Transform>(ship)) {
         return false;
     }
-    const auto& transform = registry.getComponents<ecs::Transform>().get(ship);
+    const auto& transform = registry.getComponents<sq::ecs::Transform>().get(ship);
     bool inside = false;
-    registry.runSystem<TerrainBlock, ecs::Transform>([&](ecs::Entity /*block*/, const TerrainBlock& block,
-                                                         const ecs::Transform& blockTransform) {
+    registry.runSystem<TerrainBlock, sq::ecs::Transform>([&](sq::ecs::Entity /*block*/, const TerrainBlock& block,
+                                                             const sq::ecs::Transform& blockTransform) {
         inside = inside ||
                  (std::fabs(transform.x - blockTransform.x) < ::prefabs::PLAYER_SHIP_HALF_WIDTH + block.halfWidth &&
                   std::fabs(transform.y - blockTransform.y) < ::prefabs::PLAYER_SHIP_HALF_HEIGHT + block.halfHeight);
@@ -43,10 +43,10 @@ bool isInTerrain(ecs::Registry& registry, const ecs::Entity ship) {
 
 }  // namespace
 
-void RespawnPlugin::init(engine::Engine& engine) {
+void RespawnPlugin::init(sq::engine::Engine& engine) {
     _bus = &engine.eventBus();
     _destroyedToken = _bus->subscribe<ShipDestroyed>([this, &engine](const ShipDestroyed& destroyed) {
-        ecs::Registry& registry = engine.registry();
+        sq::ecs::Registry& registry = engine.registry();
         if (!registry.isAlive(destroyed.ship) || registry.hasComponent<Respawning>(destroyed.ship) ||
             registry.hasComponent<Eliminated>(destroyed.ship)) {
             return;
@@ -66,44 +66,44 @@ void RespawnPlugin::init(engine::Engine& engine) {
     });
 }
 
-void giveLives(ecs::Registry& registry, const ecs::Entity ship, const std::uint8_t lives) {
+void giveLives(sq::ecs::Registry& registry, const sq::ecs::Entity ship, const std::uint8_t lives) {
     registry.addComponent(ship, Lives{.left = lives});
     if (registry.hasComponent<game::EntityNetState>(ship)) {
         registry.getComponents<game::EntityNetState>().get(ship).health = lives;
     }
 }
 
-void RespawnPlugin::eliminate(ecs::Registry& registry, const ecs::Entity ship) {
+void RespawnPlugin::eliminate(sq::ecs::Registry& registry, const sq::ecs::Entity ship) {
     registry.addComponent(ship, Eliminated{});
     if (registry.hasComponent<game::EntityNetState>(ship)) {
         auto& flags = registry.getComponents<game::EntityNetState>().get(ship).flags;
         flags = static_cast<std::uint8_t>((flags | game::FLAG_ELIMINATED) & ~game::FLAG_INVULNERABLE);
     }
-    if (registry.hasComponent<ecs::Transform>(ship)) {
-        registry.getComponents<ecs::Transform>().get(ship).x = ELIMINATED_SHIP_X;
+    if (registry.hasComponent<sq::ecs::Transform>(ship)) {
+        registry.getComponents<sq::ecs::Transform>().get(ship).x = ELIMINATED_SHIP_X;
     }
-    engine::log::info(LOG_TAG, "a ship lost its last life");
+    sq::engine::log::info(LOG_TAG, "a ship lost its last life");
     _bus->publish(ShipEliminated{.ship = ship});
     bool anyLeft = false;
-    registry.runSystem<Lives>([&registry, &anyLeft](const ecs::Entity other, const Lives& /*lives*/) {
+    registry.runSystem<Lives>([&registry, &anyLeft](const sq::ecs::Entity other, const Lives& /*lives*/) {
         anyLeft = anyLeft || !registry.hasComponent<Eliminated>(other);
     });
     if (!anyLeft) {
-        engine::log::info(LOG_TAG, "every ship is out: the game is lost");
+        sq::engine::log::info(LOG_TAG, "every ship is out: the game is lost");
         _bus->publish(AllShipsEliminated{});
     }
 }
 
-void RespawnPlugin::respawn(ecs::Registry& registry, const ecs::Entity ship) {
+void RespawnPlugin::respawn(sq::ecs::Registry& registry, const sq::ecs::Entity ship) {
     std::uint8_t playerIndex = 0;
     if (registry.hasComponent<game::EntityNetState>(ship)) {
         game::EntityNetState& state = registry.getComponents<game::EntityNetState>().get(ship);
         playerIndex = state.subtype;
         state.flags |= game::FLAG_INVULNERABLE;
     }
-    if (registry.hasComponent<ecs::Transform>(ship)) {
+    if (registry.hasComponent<sq::ecs::Transform>(ship)) {
         const ShipSpawnPoint spawn = shipSpawnPoint(playerIndex);
-        auto& transform = registry.getComponents<ecs::Transform>().get(ship);
+        auto& transform = registry.getComponents<sq::ecs::Transform>().get(ship);
         transform.x = spawn.x;
         transform.y = spawn.y;
     }
@@ -112,11 +112,11 @@ void RespawnPlugin::respawn(ecs::Registry& registry, const ecs::Entity ship) {
     _bus->publish(ShipRespawnStarted{.ship = ship});
 }
 
-void RespawnPlugin::fixedUpdate(engine::Engine& engine, const ecs::time::Time& time) {
-    ecs::Registry& registry = engine.registry();
-    std::vector<ecs::Entity> over;
+void RespawnPlugin::fixedUpdate(sq::engine::Engine& engine, const sq::time::Time& time) {
+    sq::ecs::Registry& registry = engine.registry();
+    std::vector<sq::ecs::Entity> over;
     bool stillRespawning = false;
-    registry.runSystem<Respawning>([&](const ecs::Entity ship, Respawning& respawning) {
+    registry.runSystem<Respawning>([&](const sq::ecs::Entity ship, Respawning& respawning) {
         respawning.secondsLeft -= time.deltaTime;
         if (respawning.secondsLeft <= 0.0F) {
             over.push_back(ship);
@@ -124,10 +124,10 @@ void RespawnPlugin::fixedUpdate(engine::Engine& engine, const ecs::time::Time& t
             stillRespawning = true;
         }
     });
-    for (const ecs::Entity ship : over) {
+    for (const sq::ecs::Entity ship : over) {
         registry.removeComponent<Respawning>(ship);
         if (isInTerrain(registry, ship)) {
-            engine::log::info(LOG_TAG, "a ship was still in the terrain at the end of its respawn");
+            sq::engine::log::info(LOG_TAG, "a ship was still in the terrain at the end of its respawn");
             respawn(registry, ship);
             stillRespawning = true;
             continue;
@@ -144,7 +144,7 @@ void RespawnPlugin::fixedUpdate(engine::Engine& engine, const ecs::time::Time& t
     }
 }
 
-void RespawnPlugin::shutdown(engine::Engine& /*engine*/) {
+void RespawnPlugin::shutdown(sq::engine::Engine& /*engine*/) {
     if (_destroyedToken) {
         _bus->unsubscribe<ShipDestroyed>(*_destroyedToken);
         _destroyedToken.reset();

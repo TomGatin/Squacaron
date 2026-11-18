@@ -10,7 +10,7 @@
 
 #include "tools/common/TextUtils.hpp"
 
-namespace tools {
+namespace sq::tools {
 
 namespace {
 
@@ -155,4 +155,4 @@ std::string quoteWord(std::string_view word) {
     return quoted;
 }
 
-}  // namespace tools
+}  // namespace sq::tools

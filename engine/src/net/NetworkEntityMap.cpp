@@ -5,9 +5,9 @@
 
 #include "ecs/Entity.hpp"
 
-namespace ecs::net {
+namespace sq::net {
 
-std::uint32_t NetworkEntityMap::assign(const ecs::Entity entity) {
+std::uint32_t NetworkEntityMap::assign(const sq::ecs::Entity entity) {
     if (const auto existing = idOf(entity)) {
         return *existing;
     }
@@ -17,7 +17,7 @@ std::uint32_t NetworkEntityMap::assign(const ecs::Entity entity) {
     return id;
 }
 
-bool NetworkEntityMap::bind(const std::uint32_t id, const ecs::Entity entity) {
+bool NetworkEntityMap::bind(const std::uint32_t id, const sq::ecs::Entity entity) {
     if (id == 0) {
         return false;
     }
@@ -37,7 +37,7 @@ void NetworkEntityMap::unbind(const std::uint32_t id) {
     _entities.erase(it);
 }
 
-void NetworkEntityMap::unbindEntity(const ecs::Entity entity) {
+void NetworkEntityMap::unbindEntity(const sq::ecs::Entity entity) {
     const auto it = _ids.find(entity);
     if (it == _ids.end()) {
         return;
@@ -46,14 +46,14 @@ void NetworkEntityMap::unbindEntity(const ecs::Entity entity) {
     _ids.erase(it);
 }
 
-std::optional<ecs::Entity> NetworkEntityMap::entityOf(const std::uint32_t id) const {
+std::optional<sq::ecs::Entity> NetworkEntityMap::entityOf(const std::uint32_t id) const {
     const auto it = _entities.find(id);
     return it == _entities.end() ? std::nullopt : std::optional{it->second};
 }
 
-std::optional<std::uint32_t> NetworkEntityMap::idOf(const ecs::Entity entity) const {
+std::optional<std::uint32_t> NetworkEntityMap::idOf(const sq::ecs::Entity entity) const {
     const auto it = _ids.find(entity);
     return it == _ids.end() ? std::nullopt : std::optional{it->second};
 }
 
-}  // namespace ecs::net
+}  // namespace sq::net

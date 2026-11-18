@@ -10,7 +10,7 @@
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
 
-namespace ecs {
+namespace sq::ecs {
 
 /** @brief Why an entity is hidden; each owner sets and clears its own bit. */
 enum class HiddenReason : std::uint8_t {
@@ -79,4 +79,4 @@ inline void show(Registry& registry, Entity entity, HiddenReason reason = Hidden
     return hidden != nullptr && hidden->contains(entity);
 }
 
-}  // namespace ecs
+}  // namespace sq::ecs

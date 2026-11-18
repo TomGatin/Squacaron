@@ -9,7 +9,7 @@
 
 #include "ecs/ParamBag.hpp"
 
-namespace timeline {
+namespace sq::timeline {
 
 /**
  * @brief Something that happens when a timeline cursor reaches a position.
@@ -26,7 +26,7 @@ struct TimelineEvent {
     std::string type;
 
     /** @brief Event data, e.g. the prefab name and its parameters. */
-    ecs::ParamBag params;
+    sq::ecs::ParamBag params;
 };
 
-}  // namespace timeline
+}  // namespace sq::timeline

@@ -11,7 +11,7 @@
 #include <string>
 #include <string_view>
 
-namespace tools {
+namespace sq::tools {
 
 /** @brief Largest script file `exec` reads, in bytes. */
 inline constexpr std::size_t MAX_SCRIPT_SIZE = 1024UZ * 1024UZ;
@@ -38,4 +38,4 @@ inline constexpr std::size_t MAX_SCRIPT_SIZE = 1024UZ * 1024UZ;
 [[nodiscard]] std::expected<std::string, std::string> readScriptFile(const std::filesystem::path& root,
                                                                      std::string_view relative);
 
-}  // namespace tools
+}  // namespace sq::tools

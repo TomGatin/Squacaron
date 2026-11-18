@@ -2,7 +2,7 @@
 
 #include "audio/types/AudioConstants.hpp"
 
-namespace audio {
+namespace sq::audio {
 
 /**
  * @brief Per-play settings of a sound effect, already resolved by the caller (bus volume, attenuation, panning).
@@ -20,4 +20,4 @@ struct SoundParams {
     float pitch = DEFAULT_PITCH;
 };
 
-}  // namespace audio
+}  // namespace sq::audio

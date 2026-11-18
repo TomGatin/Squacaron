@@ -11,7 +11,7 @@
 #include "scene/SceneTypes.hpp"
 #include "scripting/ScriptSystem.hpp"
 
-namespace scene {
+namespace sq::scene {
 
 /** @brief Import name of the scene module. */
 inline constexpr std::string_view SCENE_MODULE_NAME = "core/Scene";
@@ -49,19 +49,19 @@ class SceneHooks_ {
 }
 )wren";
 
-/** @brief Marker of scene owners inside the extension owner space (`scripting::makeExtensionOwner`). */
-inline constexpr scripting::ScriptOwner SCENE_OWNER_TAG = scripting::makeExtensionOwner(0x5CE0, 0);
+/** @brief Marker of scene owners inside the extension owner space (`sq::scripting::makeExtensionOwner`). */
+inline constexpr sq::scripting::ScriptOwner SCENE_OWNER_TAG = sq::scripting::makeExtensionOwner(0x5CE0, 0);
 
 /** @brief Mask selecting the marker part of a scene owner. */
-inline constexpr scripting::ScriptOwner SCENE_OWNER_MASK = ~scripting::ScriptOwner{0xFFFF};
+inline constexpr sq::scripting::ScriptOwner SCENE_OWNER_MASK = ~sq::scripting::ScriptOwner{0xFFFF};
 
 /**
  * @brief Gets the script owner standing for a scene.
  * @param id Scene id.
  * @return Owner id given to the script system while the scene's Wren code runs.
  */
-[[nodiscard]] constexpr scripting::ScriptOwner sceneOwner(SceneId id) noexcept {
-    return SCENE_OWNER_TAG | scripting::ScriptOwner{id};
+[[nodiscard]] constexpr sq::scripting::ScriptOwner sceneOwner(SceneId id) noexcept {
+    return SCENE_OWNER_TAG | sq::scripting::ScriptOwner{id};
 }
 
 /**
@@ -69,11 +69,11 @@ inline constexpr scripting::ScriptOwner SCENE_OWNER_MASK = ~scripting::ScriptOwn
  * @param owner Script owner.
  * @return The scene id, or nothing if the owner is not a scene.
  */
-[[nodiscard]] constexpr std::optional<SceneId> sceneOfOwner(scripting::ScriptOwner owner) noexcept {
+[[nodiscard]] constexpr std::optional<SceneId> sceneOfOwner(sq::scripting::ScriptOwner owner) noexcept {
     if ((owner & SCENE_OWNER_MASK) != SCENE_OWNER_TAG) {
         return std::nullopt;
     }
     return static_cast<SceneId>(owner & 0xFFFFU);
 }
 
-}  // namespace scene
+}  // namespace sq::scene

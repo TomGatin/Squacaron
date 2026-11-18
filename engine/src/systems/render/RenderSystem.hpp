@@ -8,7 +8,7 @@
 #include "render/api/components/Renderable.hpp"
 #include "render/texture/TextureStore.hpp"
 
-namespace render {
+namespace sq::render {
 
 /** @brief A point of a `CameraView`, in world pixels. */
 struct CameraPoint {
@@ -35,29 +35,29 @@ struct CameraView {
  */
 struct DrawItem {
     /** @brief Entity being drawn, used as the last sort tie-breaker. */
-    ecs::Entity entity = 0;
+    sq::ecs::Entity entity = 0;
 
-    /** @brief Draw layer copied from `ecs::Renderable`. */
+    /** @brief Draw layer copied from `sq::ecs::Renderable`. */
     int layer = 0;
 
-    /** @brief Texture to draw, or `ecs::NO_TEXTURE` for a flat colored placeholder. */
-    ecs::TextureId textureId = ecs::NO_TEXTURE;
+    /** @brief Texture to draw, or `sq::ecs::NO_TEXTURE` for a flat colored placeholder. */
+    sq::ecs::TextureId textureId = sq::ecs::NO_TEXTURE;
 
-    /** @brief Texture region copied from `ecs::Renderable`. */
-    ecs::TextureRect sourceRect;
+    /** @brief Texture region copied from `sq::ecs::Renderable`. */
+    sq::ecs::TextureRect sourceRect;
 
-    /** @brief Normalized render pivot copied from `ecs::Renderable`. */
-    ecs::RenderOrigin origin;
+    /** @brief Normalized render pivot copied from `sq::ecs::Renderable`. */
+    sq::ecs::RenderOrigin origin;
 
-    /** @brief Spatial state copied from `ecs::Transform`. */
-    ecs::Transform transform;
+    /** @brief Spatial state copied from `sq::ecs::Transform`. */
+    sq::ecs::Transform transform;
 
-    /** @brief Tint copied from `ecs::Renderable`. */
-    ecs::Rgba tint;
+    /** @brief Tint copied from `sq::ecs::Renderable`. */
+    sq::ecs::Rgba tint;
 };
 
 /**
- * @brief Draws every entity that has both `ecs::Transform` and `ecs::Renderable`.
+ * @brief Draws every entity that has both `sq::ecs::Transform` and `sq::ecs::Renderable`.
  *
  * Entities are sorted back to front by layer, then by `Transform::z`, then by texture identifier, and finally
  * by entity id. The draw queue is reused between frames: once it has grown to the number of visible entities,
@@ -77,7 +77,7 @@ class RenderSystem {
      *
      * @param registry Registry to read from.
      */
-    void collect(ecs::Registry& registry);
+    void collect(sq::ecs::Registry& registry);
 
     /**
      * @brief Draws the entities gathered by the last `collect`, through the camera.
@@ -91,7 +91,7 @@ class RenderSystem {
      *
      * @param registry Registry to read from.
      */
-    void update(ecs::Registry& registry);
+    void update(sq::ecs::Registry& registry);
 
     /**
      * @brief Entities gathered by the last `collect`, sorted back to front.
@@ -122,4 +122,4 @@ class RenderSystem {
     CameraView _camera;
 };
 
-}  // namespace render
+}  // namespace sq::render

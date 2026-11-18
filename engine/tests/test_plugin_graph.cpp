@@ -12,68 +12,68 @@
 
 namespace {
 
-class PluginA final : public engine::IPlugin {
+class PluginA final : public sq::engine::IPlugin {
   public:
     [[nodiscard]] std::string_view name() const noexcept override { return "PluginA"; }
-    void build(engine::PluginBuilder& /*builder*/) override {}
+    void build(sq::engine::PluginBuilder& /*builder*/) override {}
 };
 
-class PluginB final : public engine::IPlugin {
+class PluginB final : public sq::engine::IPlugin {
   public:
     [[nodiscard]] std::string_view name() const noexcept override { return "PluginB"; }
-    void build(engine::PluginBuilder& builder) override { builder.require<PluginA>(); }
+    void build(sq::engine::PluginBuilder& builder) override { builder.require<PluginA>(); }
 };
 
-class PluginC final : public engine::IPlugin {
+class PluginC final : public sq::engine::IPlugin {
   public:
     [[nodiscard]] std::string_view name() const noexcept override { return "PluginC"; }
-    void build(engine::PluginBuilder& builder) override { builder.require<PluginB>(); }
+    void build(sq::engine::PluginBuilder& builder) override { builder.require<PluginB>(); }
 };
 
-class CycleNode1 final : public engine::IPlugin {
+class CycleNode1 final : public sq::engine::IPlugin {
   public:
     [[nodiscard]] std::string_view name() const noexcept override { return "CycleNode1"; }
-    void build(engine::PluginBuilder& builder) override;
+    void build(sq::engine::PluginBuilder& builder) override;
 };
 
-class CycleNode2 final : public engine::IPlugin {
+class CycleNode2 final : public sq::engine::IPlugin {
   public:
     [[nodiscard]] std::string_view name() const noexcept override { return "CycleNode2"; }
-    void build(engine::PluginBuilder& builder) override { builder.require<CycleNode1>(); }
+    void build(sq::engine::PluginBuilder& builder) override { builder.require<CycleNode1>(); }
 };
 
-void CycleNode1::build(engine::PluginBuilder& builder) { builder.require<CycleNode2>(); }
+void CycleNode1::build(sq::engine::PluginBuilder& builder) { builder.require<CycleNode2>(); }
 
-class OptionalConsumer final : public engine::IPlugin {
+class OptionalConsumer final : public sq::engine::IPlugin {
   public:
     [[nodiscard]] std::string_view name() const noexcept override { return "OptionalConsumer"; }
-    void build(engine::PluginBuilder& builder) override { builder.optionally<PluginA>(); }
+    void build(sq::engine::PluginBuilder& builder) override { builder.optionally<PluginA>(); }
 };
 
 class ITestService {};
 
-class ServiceProvider final : public engine::IPlugin {
+class ServiceProvider final : public sq::engine::IPlugin {
   public:
     [[nodiscard]] std::string_view name() const noexcept override { return "ServiceProvider"; }
-    void build(engine::PluginBuilder& builder) override { builder.provides<ITestService>(); }
+    void build(sq::engine::PluginBuilder& builder) override { builder.provides<ITestService>(); }
 };
 
-class OtherServiceProvider final : public engine::IPlugin {
+class OtherServiceProvider final : public sq::engine::IPlugin {
   public:
     [[nodiscard]] std::string_view name() const noexcept override { return "OtherServiceProvider"; }
-    void build(engine::PluginBuilder& builder) override { builder.provides<ITestService>(); }
+    void build(sq::engine::PluginBuilder& builder) override { builder.provides<ITestService>(); }
 };
 
-class ServiceConsumer final : public engine::IPlugin {
+class ServiceConsumer final : public sq::engine::IPlugin {
   public:
     [[nodiscard]] std::string_view name() const noexcept override { return "ServiceConsumer"; }
-    void build(engine::PluginBuilder& builder) override { builder.requireService<ITestService>(); }
+    void build(sq::engine::PluginBuilder& builder) override { builder.requireService<ITestService>(); }
 };
 
 }  // namespace
 
 TEST(PluginGraph, OrdersServiceProviderBeforeConsumer) {
-    engine::PluginGraph graph;
+    sq::engine::PluginGraph graph;
     graph.addPlugin(std::make_unique<ServiceConsumer>(), std::type_index(typeid(ServiceConsumer)));
     graph.addPlugin(std::make_unique<ServiceProvider>(), std::type_index(typeid(ServiceProvider)));
 
@@ -86,22 +86,22 @@ TEST(PluginGraph, OrdersServiceProviderBeforeConsumer) {
 }
 
 TEST(PluginGraph, ThrowsOnMissingServiceProvider) {
-    engine::PluginGraph graph;
+    sq::engine::PluginGraph graph;
     graph.addPlugin(std::make_unique<ServiceConsumer>(), std::type_index(typeid(ServiceConsumer)));
 
-    EXPECT_THROW(graph.resolve(), engine::PluginDependencyException);
+    EXPECT_THROW(graph.resolve(), sq::engine::PluginDependencyException);
 }
 
 TEST(PluginGraph, ThrowsOnDuplicateServiceProvider) {
-    engine::PluginGraph graph;
+    sq::engine::PluginGraph graph;
     graph.addPlugin(std::make_unique<ServiceProvider>(), std::type_index(typeid(ServiceProvider)));
     graph.addPlugin(std::make_unique<OtherServiceProvider>(), std::type_index(typeid(OtherServiceProvider)));
 
-    EXPECT_THROW(graph.resolve(), engine::PluginDependencyException);
+    EXPECT_THROW(graph.resolve(), sq::engine::PluginDependencyException);
 }
 
 TEST(PluginGraph, ResolvesTopologicalOrder) {
-    engine::PluginGraph graph;
+    sq::engine::PluginGraph graph;
 
     graph.addPlugin(std::make_unique<PluginC>(), std::type_index(typeid(PluginC)));
     graph.addPlugin(std::make_unique<PluginA>(), std::type_index(typeid(PluginA)));
@@ -125,22 +125,22 @@ TEST(PluginGraph, ResolvesTopologicalOrder) {
 }
 
 TEST(PluginGraph, ThrowsOnMissingDependency) {
-    engine::PluginGraph graph;
+    sq::engine::PluginGraph graph;
     graph.addPlugin(std::make_unique<PluginB>(), std::type_index(typeid(PluginB)));
 
-    EXPECT_THROW(graph.resolve(), engine::PluginDependencyException);
+    EXPECT_THROW(graph.resolve(), sq::engine::PluginDependencyException);
 }
 
 TEST(PluginGraph, ThrowsOnCycle) {
-    engine::PluginGraph graph;
+    sq::engine::PluginGraph graph;
     graph.addPlugin(std::make_unique<CycleNode1>(), std::type_index(typeid(CycleNode1)));
     graph.addPlugin(std::make_unique<CycleNode2>(), std::type_index(typeid(CycleNode2)));
 
-    EXPECT_THROW(graph.resolve(), engine::PluginDependencyException);
+    EXPECT_THROW(graph.resolve(), sq::engine::PluginDependencyException);
 }
 
 TEST(PluginGraph, HandlesOptionalDependencyWhenPresent) {
-    engine::PluginGraph graph;
+    sq::engine::PluginGraph graph;
     graph.addPlugin(std::make_unique<OptionalConsumer>(), std::type_index(typeid(OptionalConsumer)));
     graph.addPlugin(std::make_unique<PluginA>(), std::type_index(typeid(PluginA)));
 
@@ -152,7 +152,7 @@ TEST(PluginGraph, HandlesOptionalDependencyWhenPresent) {
 }
 
 TEST(PluginGraph, HandlesOptionalDependencyWhenAbsent) {
-    engine::PluginGraph graph;
+    sq::engine::PluginGraph graph;
     graph.addPlugin(std::make_unique<OptionalConsumer>(), std::type_index(typeid(OptionalConsumer)));
 
     EXPECT_NO_THROW(graph.resolve());

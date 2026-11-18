@@ -20,13 +20,13 @@ namespace rlss::client {
 /**
  * @brief Builds the look of the ball sent by the server.
  *
- * When the ball appears (`ecs::net::ReplicatedEntitySpawned` of kind `KIND_BALL`), spawns its pieces, each tagged
+ * When the ball appears (`sq::net::ReplicatedEntitySpawned` of kind `KIND_BALL`), spawns its pieces, each tagged
  * "ball_part" with a `BallPart`: the panels (a texture that turns with the ball), its lighting (a texture that does
  * not turn, so the ball keeps looking lit from above), and one soft colored halo per shot color (red, purple, gold),
  * shown while the ball glows after that shot. Attaches the `BallView` script, which places them every frame from the
  * ball `Transform`. When it disappears, removes them.
  */
-class BallViewPlugin final : public engine::IPlugin {
+class BallViewPlugin final : public sq::engine::IPlugin {
   public:
     /**
      * @brief Gets plugin name.
@@ -38,27 +38,27 @@ class BallViewPlugin final : public engine::IPlugin {
      * @brief Declares the dependencies on the car view (which registers the Wren bindings) and the replication.
      * @param builder Dependency builder.
      */
-    void build(engine::PluginBuilder& builder) override;
+    void build(sq::engine::PluginBuilder& builder) override;
 
     /**
      * @brief Subscribes to the replicated entity events.
      * @param engine Host engine.
      */
-    void init(engine::Engine& engine) override;
+    void init(sq::engine::Engine& engine) override;
 
     /**
      * @brief Unsubscribes from the events.
      * @param engine Host engine.
      */
-    void shutdown(engine::Engine& engine) override;
+    void shutdown(sq::engine::Engine& engine) override;
 
   private:
     /** @brief Pieces of each ball on screen. */
-    std::unordered_map<ecs::Entity, std::vector<ecs::Entity>> _pieces;
+    std::unordered_map<sq::ecs::Entity, std::vector<sq::ecs::Entity>> _pieces;
     /** @brief Subscription to `ReplicatedEntitySpawned`, while initialized. */
-    std::optional<ecs::EventBus::EventToken> _spawned;
+    std::optional<sq::events::EventBus::EventToken> _spawned;
     /** @brief Subscription to `ReplicatedEntityDespawned`, while initialized. */
-    std::optional<ecs::EventBus::EventToken> _despawned;
+    std::optional<sq::events::EventBus::EventToken> _despawned;
 };
 
 }  // namespace rlss::client

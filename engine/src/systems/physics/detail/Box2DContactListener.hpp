@@ -12,7 +12,7 @@
 
 class b2Contact;
 
-namespace physics::detail {
+namespace sq::physics::detail {
 
 /** @brief Unique identifier of a Box2D body, never reused, stored in the body user data. */
 using BodySerial = std::uintptr_t;
@@ -20,7 +20,7 @@ using BodySerial = std::uintptr_t;
 /**
  * @brief One side of a recorded contact.
  *
- * It holds no entity handle: Box2D user data is a `std::uintptr_t`, which would truncate a 64-bit `ecs::Entity` on
+ * It holds no entity handle: Box2D user data is a `std::uintptr_t`, which would truncate a 64-bit `sq::ecs::Entity` on
  * 32-bit targets. `PhysicsSystem` resolves the owning entity from the body serial.
  */
 struct ContactSide {
@@ -89,4 +89,4 @@ class Box2DContactListener final : public b2ContactListener {
     bool _suppressed = false;
 };
 
-}  // namespace physics::detail
+}  // namespace sq::physics::detail

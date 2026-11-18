@@ -7,18 +7,18 @@
 #include "hierarchy/HierarchyHooks.hpp"
 #include "hierarchy/TransformPropagation.hpp"
 
-namespace hierarchy {
+namespace sq::hierarchy {
 
 HierarchyPlugin::HierarchyPlugin() = default;
 
 HierarchyPlugin::~HierarchyPlugin() = default;
 
-void HierarchyPlugin::init(engine::Engine& engine) { _hooks = std::make_unique<HierarchyHooks>(engine.registry()); }
+void HierarchyPlugin::init(sq::engine::Engine& engine) { _hooks = std::make_unique<HierarchyHooks>(engine.registry()); }
 
-void HierarchyPlugin::lateUpdate(engine::Engine& engine, const ecs::time::Time& /*time*/) {
+void HierarchyPlugin::lateUpdate(sq::engine::Engine& engine, const sq::time::Time& /*time*/) {
     propagateTransforms(engine.registry());
 }
 
-void HierarchyPlugin::shutdown(engine::Engine& /*engine*/) { _hooks.reset(); }
+void HierarchyPlugin::shutdown(sq::engine::Engine& /*engine*/) { _hooks.reset(); }
 
-}  // namespace hierarchy
+}  // namespace sq::hierarchy

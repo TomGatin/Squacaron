@@ -32,7 +32,7 @@ struct Rect {
  * @param layer Draw layer.
  * @return The component.
  */
-[[nodiscard]] ecs::Renderable makeRenderable(ecs::Rgba color, int layer);
+[[nodiscard]] sq::ecs::Renderable makeRenderable(sq::ecs::Rgba color, int layer);
 
 /**
  * @brief Spawns a flat colored rectangle.
@@ -42,7 +42,7 @@ struct Rect {
  * @param layer Draw layer.
  * @return The entity.
  */
-ecs::Entity spawnRect(ecs::Registry& registry, const Rect& rect, ecs::Rgba color, int layer);
+sq::ecs::Entity spawnRect(sq::ecs::Registry& registry, const Rect& rect, sq::ecs::Rgba color, int layer);
 
 /** @brief Which corners of a rectangle are rounded. */
 struct RoundedCorners {
@@ -65,7 +65,7 @@ struct RoundedCorners {
  * @param layer Draw layer.
  * @param rounded Corners to round; the others stay square.
  */
-void fillRoundedRect(ecs::Registry& registry, const Rect& rect, float radius, ecs::Rgba color, int layer,
+void fillRoundedRect(sq::ecs::Registry& registry, const Rect& rect, float radius, sq::ecs::Rgba color, int layer,
                      RoundedCorners rounded = {});
 
 /**
@@ -78,7 +78,7 @@ void fillRoundedRect(ecs::Registry& registry, const Rect& rect, float radius, ec
  * @param color Line color.
  * @param layer Draw layer.
  */
-void strokeCircle(ecs::Registry& registry, float centerX, float centerY, float radius, float thickness, ecs::Rgba color,
-                  int layer);
+void strokeCircle(sq::ecs::Registry& registry, float centerX, float centerY, float radius, float thickness,
+                  sq::ecs::Rgba color, int layer);
 
 }  // namespace rlss::client

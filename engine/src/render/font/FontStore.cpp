@@ -10,7 +10,7 @@
 #include "render/detail/RaylibStores.hpp"
 #include "utils/StableSlots.hpp"
 
-namespace render {
+namespace sq::render {
 
 FontStore::FontStore() : _impl(std::make_unique<Impl>()) {}
 
@@ -35,23 +35,23 @@ constexpr int GLYPH_RASTER_SIZE = 128;
 
 }  // namespace
 
-engine::FontId FontStore::load(const std::string& path, const engine::FontId preferred) {
+sq::engine::FontId FontStore::load(const std::string& path, const sq::engine::FontId preferred) {
     Font font = LoadFontEx(path.c_str(), GLYPH_RASTER_SIZE, nullptr, 0);
     // raylib falls back to its default font when the file cannot be read: that one is not ours to unload.
     if (font.texture.id == 0 || font.texture.id == GetFontDefault().texture.id) {
-        return engine::NO_FONT;
+        return sq::engine::NO_FONT;
     }
     GenTextureMipmaps(&font.texture);
     SetTextureFilter(font.texture, TEXTURE_FILTER_TRILINEAR);
-    return ecs::placeInSlot(_impl->fonts, Impl::Slot{.font = font, .loaded = true}, preferred);
+    return sq::ecs::placeInSlot(_impl->fonts, Impl::Slot{.font = font, .loaded = true}, preferred);
 }
 
-void FontStore::reserve(const engine::FontId last) { ecs::reserveSlots(_impl->fonts, last); }
+void FontStore::reserve(const sq::engine::FontId last) { sq::ecs::reserveSlots(_impl->fonts, last); }
 
-bool FontStore::contains(engine::FontId id) const { return _impl->get(id) != nullptr; }
+bool FontStore::contains(sq::engine::FontId id) const { return _impl->get(id) != nullptr; }
 
-void FontStore::unload(const engine::FontId id) {
-    if (id == engine::NO_FONT || static_cast<std::size_t>(id) > _impl->fonts.size()) {
+void FontStore::unload(const sq::engine::FontId id) {
+    if (id == sq::engine::NO_FONT || static_cast<std::size_t>(id) > _impl->fonts.size()) {
         return;
     }
     Impl::Slot& slot = _impl->fonts.at(id - 1);
@@ -64,4 +64,4 @@ void FontStore::unload(const engine::FontId id) {
     slot = Impl::Slot{};
 }
 
-}  // namespace render
+}  // namespace sq::render

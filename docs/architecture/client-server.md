@@ -109,7 +109,7 @@ Key points:
 
 ### One server loop iteration
 
-Each room owns its own `engine::Engine`, and so its own [`ecs::time::Clock`](clock.md): rooms are independent games, each
+Each room owns its own `sq::engine::Engine`, and so its own [`sq::time::Clock`](clock.md): rooms are independent games, each
 with its own game time and rate. A started room runs on its own thread, so that a room with many entities does not slow
 down the others. Two loops run at the same time, one iteration about every millisecond each:
 

@@ -8,7 +8,7 @@
 #include "core/platform/StopSignals.hpp"
 #include "ecs/time/PreciseSleep.hpp"
 
-namespace engine {
+namespace sq::engine {
 
 FixedRateLoop::FixedRateLoop(const double ticksPerSecond) noexcept {
     if (ticksPerSecond > 0.0) {
@@ -29,7 +29,7 @@ void FixedRateLoop::run(const std::function<void()>& tick) {
     }
     const bool paced = _period > std::chrono::nanoseconds::zero();
     // Only a paced loop sleeps: an unpaced one has nothing to gain from a finer system timer.
-    std::optional<ecs::time::PreciseSleepScope> preciseSleep;
+    std::optional<sq::time::PreciseSleepScope> preciseSleep;
     if (paced) {
         preciseSleep.emplace();
     }
@@ -50,4 +50,4 @@ void FixedRateLoop::run(const std::function<void()>& tick) {
     }
 }
 
-}  // namespace engine
+}  // namespace sq::engine

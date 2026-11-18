@@ -20,11 +20,11 @@
 namespace {
 
 /** @brief Spawns an entity with a Transform at (x, y) and, if not empty, a Tag. */
-ecs::Entity spawnAt(ecs::Registry& registry, float x, float y, std::string const& tag = {}) {
-    ecs::Entity const e = registry.spawnEntity();
-    registry.addComponent<ecs::Transform>(e, ecs::Transform{.x = x, .y = y});
+sq::ecs::Entity spawnAt(sq::ecs::Registry& registry, float x, float y, std::string const& tag = {}) {
+    sq::ecs::Entity const e = registry.spawnEntity();
+    registry.addComponent<sq::ecs::Transform>(e, sq::ecs::Transform{.x = x, .y = y});
     if (!tag.empty()) {
-        registry.addComponent<ecs::Tag>(e, ecs::Tag{.name = tag});
+        registry.addComponent<sq::ecs::Tag>(e, sq::ecs::Tag{.name = tag});
     }
     return e;
 }
@@ -33,13 +33,13 @@ ecs::Entity spawnAt(ecs::Registry& registry, float x, float y, std::string const
 class SpatialQueries : public ::testing::Test {
   protected:
     void SetUp() override {
-        registry.registerComponent<ecs::Tag>();
-        registry.registerComponent<ecs::Transform>();
-        registry.registerComponent<scripting::ScriptComponent>();
+        registry.registerComponent<sq::ecs::Tag>();
+        registry.registerComponent<sq::ecs::Transform>();
+        registry.registerComponent<sq::scripting::ScriptComponent>();
     }
 
-    ecs::Registry registry;
-    std::vector<ecs::Entity> out;
+    sq::ecs::Registry registry;
+    std::vector<sq::ecs::Entity> out;
 };
 
 /** @brief SpatialQueries fixture with a ScriptSystem and a `Probe` Wren class calling `World`. */
@@ -62,7 +62,7 @@ class Probe {
     }
 
     /** @brief Calls a static `Probe` method; the result is left in slot 0. */
-    scripting::CallResult callProbe(std::string const& signature, auto... args) {
+    sq::scripting::CallResult callProbe(std::string const& signature, auto... args) {
         auto& vm = scripts.getVm();
         auto handle = vm.makeCallHandle(signature);
         vm.ensureSlots(static_cast<int>(sizeof...(args)) + 1);
@@ -73,25 +73,25 @@ class Probe {
     }
 
     /** @brief Reads the list of numbers in slot 0 as entity ids. */
-    std::vector<ecs::Entity> resultIds() {
-        ::WrenVM* raw = scripting::detail::raw(scripts.getVm());
-        std::vector<ecs::Entity> ids;
+    std::vector<sq::ecs::Entity> resultIds() {
+        ::WrenVM* raw = sq::scripting::detail::raw(scripts.getVm());
+        std::vector<sq::ecs::Entity> ids;
         int const count = wrenGetListCount(raw, 0);
         wrenEnsureSlots(raw, 2);
         for (int i = 0; i < count; ++i) {
             wrenGetListElement(raw, 0, i, 1);
-            ids.push_back(static_cast<ecs::Entity>(wrenGetSlotDouble(raw, 1)));
+            ids.push_back(static_cast<sq::ecs::Entity>(wrenGetSlotDouble(raw, 1)));
         }
         return ids;
     }
 
-    ecs::EventBus bus;
-    scripting::ScriptSystem scripts;
+    sq::events::EventBus bus;
+    sq::scripting::ScriptSystem scripts;
 
   private:
-    void setArg(int slot, double value) { wrenSetSlotDouble(scripting::detail::raw(scripts.getVm()), slot, value); }
+    void setArg(int slot, double value) { wrenSetSlotDouble(sq::scripting::detail::raw(scripts.getVm()), slot, value); }
     void setArg(int slot, char const* value) {
-        wrenSetSlotString(scripting::detail::raw(scripts.getVm()), slot, value);
+        wrenSetSlotString(sq::scripting::detail::raw(scripts.getVm()), slot, value);
     }
 };
 
@@ -100,139 +100,139 @@ class Probe {
 // --- C++ API ---------------------------------------------------------------------------------------------------
 
 TEST_F(SpatialQueries, EntitiesWithTagFiltersExactly) {
-    ecs::Entity const a = spawnAt(registry, 0, 0, "enemy");
+    sq::ecs::Entity const a = spawnAt(registry, 0, 0, "enemy");
     spawnAt(registry, 0, 0, "player");
     spawnAt(registry, 0, 0, "Enemy");
-    ecs::Entity const b = spawnAt(registry, 5, 5, "enemy");
+    sq::ecs::Entity const b = spawnAt(registry, 5, 5, "enemy");
 
-    ecs::entitiesWithTag(registry, "enemy", out);
-    EXPECT_EQ(out, (std::vector<ecs::Entity>{a, b}));
+    sq::ecs::entitiesWithTag(registry, "enemy", out);
+    EXPECT_EQ(out, (std::vector<sq::ecs::Entity>{a, b}));
 
-    ecs::entitiesWithTag(registry, "boss", out);
+    sq::ecs::entitiesWithTag(registry, "boss", out);
     EXPECT_TRUE(out.empty());
 }
 
 TEST_F(SpatialQueries, NearestWithTagPicksClosestMatchWithTransform) {
     spawnAt(registry, 1, 0, "player");
-    ecs::Entity const far = spawnAt(registry, 100, 0, "enemy");
-    ecs::Entity const near = spawnAt(registry, -10, 0, "enemy");
-    ecs::Entity const noTransform = registry.spawnEntity();
-    registry.addComponent<ecs::Tag>(noTransform, ecs::Tag{.name = "enemy"});
+    sq::ecs::Entity const far = spawnAt(registry, 100, 0, "enemy");
+    sq::ecs::Entity const near = spawnAt(registry, -10, 0, "enemy");
+    sq::ecs::Entity const noTransform = registry.spawnEntity();
+    registry.addComponent<sq::ecs::Tag>(noTransform, sq::ecs::Tag{.name = "enemy"});
 
-    EXPECT_EQ(ecs::nearestWithTag(registry, 0, 0, "enemy"), near);
-    EXPECT_EQ(ecs::nearestWithTag(registry, 90, 0, "enemy"), far);
-    EXPECT_EQ(ecs::nearestWithTag(registry, 0, 0, "boss"), std::nullopt);
+    EXPECT_EQ(sq::ecs::nearestWithTag(registry, 0, 0, "enemy"), near);
+    EXPECT_EQ(sq::ecs::nearestWithTag(registry, 90, 0, "enemy"), far);
+    EXPECT_EQ(sq::ecs::nearestWithTag(registry, 0, 0, "boss"), std::nullopt);
 }
 
 TEST_F(SpatialQueries, NearestWithTagSkipsExcludedEntities) {
-    ecs::Entity const near = spawnAt(registry, 1, 0, "enemy");
-    ecs::Entity const far = spawnAt(registry, 50, 0, "enemy");
-    std::vector<ecs::Entity> const excluded{near};
+    sq::ecs::Entity const near = spawnAt(registry, 1, 0, "enemy");
+    sq::ecs::Entity const far = spawnAt(registry, 50, 0, "enemy");
+    std::vector<sq::ecs::Entity> const excluded{near};
 
-    EXPECT_EQ(ecs::nearestWithTag(registry, 0, 0, "enemy", excluded), far);
+    EXPECT_EQ(sq::ecs::nearestWithTag(registry, 0, 0, "enemy", excluded), far);
 }
 
 TEST_F(SpatialQueries, NearestWithTagRejectsNonFinitePoint) {
     spawnAt(registry, 0, 0, "enemy");
-    EXPECT_EQ(ecs::nearestWithTag(registry, std::numeric_limits<float>::quiet_NaN(), 0, "enemy"), std::nullopt);
+    EXPECT_EQ(sq::ecs::nearestWithTag(registry, std::numeric_limits<float>::quiet_NaN(), 0, "enemy"), std::nullopt);
 }
 
 TEST_F(SpatialQueries, EntitiesInRadiusIncludesBoundary) {
-    ecs::Entity const inside = spawnAt(registry, 3, 4);  // distance 5
-    ecs::Entity const tagged = spawnAt(registry, -2, 0, "enemy");
+    sq::ecs::Entity const inside = spawnAt(registry, 3, 4);  // distance 5
+    sq::ecs::Entity const tagged = spawnAt(registry, -2, 0, "enemy");
     spawnAt(registry, 6, 0);
 
-    ecs::entitiesInRadius(registry, 0, 0, 5, out);
-    EXPECT_EQ(out, (std::vector<ecs::Entity>{inside, tagged}));
+    sq::ecs::entitiesInRadius(registry, 0, 0, 5, out);
+    EXPECT_EQ(out, (std::vector<sq::ecs::Entity>{inside, tagged}));
 }
 
 TEST_F(SpatialQueries, EntitiesInRadiusBoundsTheRadius) {
     spawnAt(registry, 0, 0);
-    ecs::Entity const veryFar = spawnAt(registry, ecs::MAX_QUERY_RADIUS * 2, 0);
+    sq::ecs::Entity const veryFar = spawnAt(registry, sq::ecs::MAX_QUERY_RADIUS * 2, 0);
 
-    ecs::entitiesInRadius(registry, 0, 0, -1, out);
+    sq::ecs::entitiesInRadius(registry, 0, 0, -1, out);
     EXPECT_TRUE(out.empty());
-    ecs::entitiesInRadius(registry, 0, 0, std::numeric_limits<float>::infinity(), out);
+    sq::ecs::entitiesInRadius(registry, 0, 0, std::numeric_limits<float>::infinity(), out);
     EXPECT_TRUE(out.empty());
 
-    ecs::entitiesInRadius(registry, 0, 0, std::numeric_limits<float>::max(), out);
+    sq::ecs::entitiesInRadius(registry, 0, 0, std::numeric_limits<float>::max(), out);
     EXPECT_EQ(out.size(), 1U);
     EXPECT_NE(out.front(), veryFar);
 }
 
 TEST(SpatialQueriesUnregistered, ReturnEmptyWithoutThrowing) {
-    ecs::Registry const registry;
-    std::vector<ecs::Entity> out{42};
+    sq::ecs::Registry const registry;
+    std::vector<sq::ecs::Entity> out{42};
 
-    EXPECT_NO_THROW(ecs::entitiesWithTag(registry, "enemy", out));
+    EXPECT_NO_THROW(sq::ecs::entitiesWithTag(registry, "enemy", out));
     EXPECT_TRUE(out.empty());
-    EXPECT_EQ(ecs::nearestWithTag(registry, 0, 0, "enemy"), std::nullopt);
+    EXPECT_EQ(sq::ecs::nearestWithTag(registry, 0, 0, "enemy"), std::nullopt);
     out.push_back(1);
-    EXPECT_NO_THROW(ecs::entitiesInRadius(registry, 0, 0, 10, out));
+    EXPECT_NO_THROW(sq::ecs::entitiesInRadius(registry, 0, 0, 10, out));
     EXPECT_TRUE(out.empty());
 }
 
 // --- Wren core/World ------------------------------------------------------------------------------------------
 
 TEST_F(WorldScripting, GetEntitiesWithTagReturnsEntityWrappers) {
-    ecs::Entity const a = spawnAt(registry, 0, 0, "enemy");
+    sq::ecs::Entity const a = spawnAt(registry, 0, 0, "enemy");
     spawnAt(registry, 0, 0, "player");
-    ecs::Entity const b = spawnAt(registry, 1, 1, "enemy");
+    sq::ecs::Entity const b = spawnAt(registry, 1, 1, "enemy");
 
-    ASSERT_EQ(callProbe("tagged(_)", "enemy"), scripting::CallResult::Success);
-    EXPECT_EQ(resultIds(), (std::vector<ecs::Entity>{a, b}));
+    ASSERT_EQ(callProbe("tagged(_)", "enemy"), sq::scripting::CallResult::Success);
+    EXPECT_EQ(resultIds(), (std::vector<sq::ecs::Entity>{a, b}));
 
-    ASSERT_EQ(callProbe("tagged(_)", "boss"), scripting::CallResult::Success);
+    ASSERT_EQ(callProbe("tagged(_)", "boss"), sq::scripting::CallResult::Success);
     EXPECT_TRUE(resultIds().empty());
 }
 
 TEST_F(WorldScripting, GetNearestWithTagReturnsEntityOrNull) {
     spawnAt(registry, 100, 0, "player");
-    ecs::Entity const near = spawnAt(registry, 10, 0, "player");
+    sq::ecs::Entity const near = spawnAt(registry, 10, 0, "player");
 
-    ASSERT_EQ(callProbe("nearest(_,_,_)", 0.0, 0.0, "player"), scripting::CallResult::Success);
+    ASSERT_EQ(callProbe("nearest(_,_,_)", 0.0, 0.0, "player"), sq::scripting::CallResult::Success);
     EXPECT_EQ(scripts.getVm().getSlot<double>(0), static_cast<double>(near));
 
-    ASSERT_EQ(callProbe("nearest(_,_,_)", 0.0, 0.0, "boss"), scripting::CallResult::Success);
-    EXPECT_EQ(wrenGetSlotType(scripting::detail::raw(scripts.getVm()), 0), WREN_TYPE_NULL);
+    ASSERT_EQ(callProbe("nearest(_,_,_)", 0.0, 0.0, "boss"), sq::scripting::CallResult::Success);
+    EXPECT_EQ(wrenGetSlotType(sq::scripting::detail::raw(scripts.getVm()), 0), WREN_TYPE_NULL);
 }
 
 TEST_F(WorldScripting, GetEntitiesInRadiusForAreaOfEffect) {
-    ecs::Entity const hit1 = spawnAt(registry, 10, 0, "enemy");
-    ecs::Entity const hit2 = spawnAt(registry, 0, -20, "enemy");
+    sq::ecs::Entity const hit1 = spawnAt(registry, 10, 0, "enemy");
+    sq::ecs::Entity const hit2 = spawnAt(registry, 0, -20, "enemy");
     spawnAt(registry, 200, 0, "enemy");
 
-    ASSERT_EQ(callProbe("around(_,_,_)", 0.0, 0.0, 25.0), scripting::CallResult::Success);
-    EXPECT_EQ(resultIds(), (std::vector<ecs::Entity>{hit1, hit2}));
+    ASSERT_EQ(callProbe("around(_,_,_)", 0.0, 0.0, 25.0), sq::scripting::CallResult::Success);
+    EXPECT_EQ(resultIds(), (std::vector<sq::ecs::Entity>{hit1, hit2}));
 
-    ASSERT_EQ(callProbe("around(_,_,_)", 0.0, 0.0, -5.0), scripting::CallResult::Success);
+    ASSERT_EQ(callProbe("around(_,_,_)", 0.0, 0.0, -5.0), sq::scripting::CallResult::Success);
     EXPECT_TRUE(resultIds().empty());
 }
 
 TEST_F(WorldScripting, QueriesSkipEntitiesPendingDestroy) {
-    ecs::Entity const doomed = spawnAt(registry, 1, 0, "enemy");
-    ecs::Entity const survivor = spawnAt(registry, 50, 0, "enemy");
+    sq::ecs::Entity const doomed = spawnAt(registry, 1, 0, "enemy");
+    sq::ecs::Entity const survivor = spawnAt(registry, 50, 0, "enemy");
     scripts.queueDestroyEntity(doomed);
 
-    ASSERT_EQ(callProbe("tagged(_)", "enemy"), scripting::CallResult::Success);
-    EXPECT_EQ(resultIds(), (std::vector<ecs::Entity>{survivor}));
+    ASSERT_EQ(callProbe("tagged(_)", "enemy"), sq::scripting::CallResult::Success);
+    EXPECT_EQ(resultIds(), (std::vector<sq::ecs::Entity>{survivor}));
 
-    ASSERT_EQ(callProbe("nearest(_,_,_)", 0.0, 0.0, "enemy"), scripting::CallResult::Success);
+    ASSERT_EQ(callProbe("nearest(_,_,_)", 0.0, 0.0, "enemy"), sq::scripting::CallResult::Success);
     EXPECT_EQ(scripts.getVm().getSlot<double>(0), static_cast<double>(survivor));
 
-    ASSERT_EQ(callProbe("around(_,_,_)", 0.0, 0.0, 100.0), scripting::CallResult::Success);
-    EXPECT_EQ(resultIds(), (std::vector<ecs::Entity>{survivor}));
+    ASSERT_EQ(callProbe("around(_,_,_)", 0.0, 0.0, 100.0), sq::scripting::CallResult::Success);
+    EXPECT_EQ(resultIds(), (std::vector<sq::ecs::Entity>{survivor}));
 }
 
 TEST_F(WorldScripting, InvalidArgumentsAbortTheFiberWithoutCrashing) {
-    ASSERT_EQ(callProbe("tagged(_)", 3.0), scripting::CallResult::RuntimeError);
-    ASSERT_EQ(callProbe("nearest(_,_,_)", "x", 0.0, "enemy"), scripting::CallResult::RuntimeError);
+    ASSERT_EQ(callProbe("tagged(_)", 3.0), sq::scripting::CallResult::RuntimeError);
+    ASSERT_EQ(callProbe("nearest(_,_,_)", "x", 0.0, "enemy"), sq::scripting::CallResult::RuntimeError);
 }
 
 TEST_F(WorldScripting, HomingMissileSteersTowardNearestEnemy) {
-    scripting::ComponentBinder<ecs::Transform> binder(scripts.getVm(), "core/Transform", "Transform");
-    binder.property<&ecs::Transform::x>("x");
-    binder.property<&ecs::Transform::y>("y");
+    sq::scripting::ComponentBinder<sq::ecs::Transform> binder(scripts.getVm(), "core/Transform", "Transform");
+    binder.property<&sq::ecs::Transform::x>("x");
+    binder.property<&sq::ecs::Transform::y>("y");
     ASSERT_TRUE(scripts.getVm().interpret("core/Transform", binder.generateWrenClass()));
     ASSERT_TRUE(scripts.getVm().interpret("homing", R"wren(
 import "core/Transform" for Transform
@@ -253,16 +253,16 @@ class HomingMissile {
 }
 )wren"));
 
-    ecs::Entity const closer = spawnAt(registry, 100, 100, "enemy");
-    ecs::Entity const farther = spawnAt(registry, -400, 0, "enemy");
-    ecs::Entity const missile = spawnAt(registry, 0, 0, "missile");
-    registry.addComponent<scripting::ScriptComponent>(
-        missile, scripting::ScriptComponent{
+    sq::ecs::Entity const closer = spawnAt(registry, 100, 100, "enemy");
+    sq::ecs::Entity const farther = spawnAt(registry, -400, 0, "enemy");
+    sq::ecs::Entity const missile = spawnAt(registry, 0, 0, "missile");
+    registry.addComponent<sq::scripting::ScriptComponent>(
+        missile, sq::scripting::ScriptComponent{
                      .moduleName = "homing", .className = "HomingMissile", .hasUpdate = true, .initialized = false});
 
-    auto distanceTo = [&](ecs::Entity target) {
-        auto const& m = registry.getComponents<ecs::Transform>().get(missile);
-        auto const& t = registry.getComponents<ecs::Transform>().get(target);
+    auto distanceTo = [&](sq::ecs::Entity target) {
+        auto const& m = registry.getComponents<sq::ecs::Transform>().get(missile);
+        auto const& t = registry.getComponents<sq::ecs::Transform>().get(target);
         return std::hypot(t.x - m.x, t.y - m.y);
     };
     float const startCloser = distanceTo(closer);

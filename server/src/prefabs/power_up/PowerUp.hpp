@@ -28,13 +28,13 @@ inline constexpr float POWER_UP_RADIUS = rtype::game::POWER_UP_SIZE / 2.0F;
  *
  * The collider is a sensor: it detects the player without physically blocking it.
  *
- * Parameters: the transform keys (see `makeTransform`) and `speed` (horizontal drift in pixels per second,
+ * Parameters: the transform keys (see `sq::prefabs::makeTransform`) and `speed` (horizontal drift in pixels per second,
  * `DEFAULT_POWER_UP_DRIFT_SPEED` by default).
  *
  * @param e Freshly spawned entity.
  * @param registry Registry owning the entity.
  * @param params Spawn parameters.
  */
-void buildPowerUp(ecs::Entity e, ecs::Registry& registry, PrefabParams const& params);
+void buildPowerUp(sq::ecs::Entity e, sq::ecs::Registry& registry, sq::prefabs::PrefabParams const& params);
 
 }  // namespace prefabs

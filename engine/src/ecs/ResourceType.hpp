@@ -3,14 +3,16 @@
 #include <cstddef>
 #include <type_traits>
 
-namespace ecs {
+namespace sq::ecs {
 
 /**
  * @brief Numeric sequential identifier assigned to each resource type.
  */
 using ResourceTypeId = std::size_t;
 
-namespace detail {
+}  // namespace sq::ecs
+
+namespace sq::ecs::detail {
 
 /**
  * @brief Generates sequential integer IDs starting from 0 for resource types.
@@ -27,7 +29,9 @@ template <typename CleanResource>
     return id;
 }
 
-}  // namespace detail
+}  // namespace sq::ecs::detail
+
+namespace sq::ecs {
 
 /**
  * @brief Retrieves a unique, sequential numeric ID for a resource type.
@@ -45,4 +49,4 @@ template <typename Resource>
     return detail::getCleanResourceTypeId<std::remove_cvref_t<Resource>>();
 }
 
-}  // namespace ecs
+}  // namespace sq::ecs

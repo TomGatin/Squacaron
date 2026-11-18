@@ -5,7 +5,7 @@
 
 #pragma once
 
-namespace hierarchy::detail {
+namespace sq::hierarchy::detail {
 
 /**
  * @brief Whether a hierarchy API call is editing links on this thread (registry listeners run synchronously).
@@ -44,4 +44,4 @@ class LinkEditScope {
     bool _previous;
 };
 
-}  // namespace hierarchy::detail
+}  // namespace sq::hierarchy::detail

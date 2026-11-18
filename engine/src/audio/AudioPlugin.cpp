@@ -24,19 +24,19 @@
 #include "core/plugins/CorePlugin.hpp"
 #include "systems/audio/AudioSystem.hpp"
 
-namespace audio {
+namespace sq::audio {
 
 /**
  * @brief Concrete adapter implementing IAudioService over the plugin's backend and AudioSystem.
  */
-class AudioPlugin::AudioServiceImpl final : public engine::IAudioService {
+class AudioPlugin::AudioServiceImpl final : public sq::engine::IAudioService {
   public:
     /**
      * @brief Constructs the adapter.
      * @param backend Audio output used to load assets.
      * @param system Audio system holding the mixer state.
      */
-    AudioServiceImpl(IAudioBackend& backend, systems::AudioSystem& system) : _backend(&backend), _system(&system) {}
+    AudioServiceImpl(IAudioBackend& backend, sq::systems::AudioSystem& system) : _backend(&backend), _system(&system) {}
 
     /**
      * @brief Tells whether sound is actually output.
@@ -119,7 +119,7 @@ class AudioPlugin::AudioServiceImpl final : public engine::IAudioService {
     /** @brief Wrapped backend; never null. */
     IAudioBackend* _backend;
     /** @brief Wrapped audio system; never null. */
-    systems::AudioSystem* _system;
+    sq::systems::AudioSystem* _system;
 };
 
 AudioPlugin::AudioPlugin(AudioSettings settings) : _settings(settings) {}
@@ -137,35 +137,35 @@ AudioPlugin::~AudioPlugin() {
     _backend.reset();
 }
 
-void AudioPlugin::build(engine::PluginBuilder& builder) {
-    builder.require<engine::CorePlugin>();
-    builder.provides<engine::IAudioService>();
+void AudioPlugin::build(sq::engine::PluginBuilder& builder) {
+    builder.require<sq::engine::CorePlugin>();
+    builder.provides<sq::engine::IAudioService>();
 }
 
-void AudioPlugin::init(engine::Engine& engine) {
+void AudioPlugin::init(sq::engine::Engine& engine) {
     if (!_backend) {
         _backend = makeAudioBackend(_settings.backend, _settings.voices);
     }
-    _system = std::make_unique<systems::AudioSystem>(*_backend, engine.eventBus());
+    _system = std::make_unique<sq::systems::AudioSystem>(*_backend, engine.eventBus());
     _system->applySettings(_settings);
 
     _service = std::make_shared<AudioServiceImpl>(*_backend, *_system);
-    if (const auto res = engine.mediator().registerService<engine::IAudioService>(_service); !res) {
+    if (const auto res = engine.mediator().registerService<sq::engine::IAudioService>(_service); !res) {
         _service.reset();
         _system.reset();
-        throw engine::MediatorError(res.error());
+        throw sq::engine::MediatorError(res.error());
     }
 }
 
-void AudioPlugin::render(engine::Engine& engine) {
+void AudioPlugin::render(sq::engine::Engine& engine) {
     if (_system) {
         _system->update(engine.registry());
     }
 }
 
-void AudioPlugin::shutdown(engine::Engine& engine) {
-    if (engine.mediator().hasService<engine::IAudioService>()) {
-        engine.mediator().removeService<engine::IAudioService>();
+void AudioPlugin::shutdown(sq::engine::Engine& engine) {
+    if (engine.mediator().hasService<sq::engine::IAudioService>()) {
+        engine.mediator().removeService<sq::engine::IAudioService>();
     }
     _service.reset();
     _system.reset();
@@ -178,4 +178,4 @@ void AudioPlugin::shutdown(engine::Engine& engine) {
     }
 }
 
-}  // namespace audio
+}  // namespace sq::audio

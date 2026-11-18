@@ -26,24 +26,25 @@ namespace client::prefabs {
  * An alias that is not loaded (unknown, or its group is not loaded) is reported once and drawn as the fallback
  * checkerboard, so a typo in a prefab never makes an entity silently invisible.
  *
- * @param registry Registry holding the `assets::AssetManager`, if any.
+ * @param registry Registry holding the `sq::assets::AssetManager`, if any.
  * @param params Spawn parameters.
- * @return The texture, or `ecs::NO_TEXTURE`.
+ * @return The texture, or `sq::ecs::NO_TEXTURE`.
  */
-[[nodiscard]] inline ecs::TextureId prefabTexture(ecs::Registry& registry, const ::prefabs::PrefabParams& params) {
+[[nodiscard]] inline sq::ecs::TextureId prefabTexture(sq::ecs::Registry& registry,
+                                                      const sq::prefabs::PrefabParams& params) {
     const std::optional<std::string> alias = params.find<std::string>("texture");
-    if (!alias || !registry.hasResource<assets::AssetManager>()) {
-        return static_cast<ecs::TextureId>(params.get<std::int64_t>("textureId", 0));
+    if (!alias || !registry.hasResource<sq::assets::AssetManager>()) {
+        return static_cast<sq::ecs::TextureId>(params.get<std::int64_t>("textureId", 0));
     }
-    auto& manager = registry.getResource<assets::AssetManager>();
-    const ecs::TextureId id = manager.get<assets::Texture>(*alias);
-    if (id != ecs::NO_TEXTURE) {
+    auto& manager = registry.getResource<sq::assets::AssetManager>();
+    const sq::ecs::TextureId id = manager.get<sq::assets::Texture>(*alias);
+    if (id != sq::ecs::NO_TEXTURE) {
         return id;
     }
     manager.warnOnce("prefab-texture:" + *alias,
-                     "prefab texture " + utils::quoteForLog(*alias) +
+                     "prefab texture " + sq::utils::quoteForLog(*alias) +
                          " is not loaded: drawn as the fallback (is it declared, and its group loaded?)");
-    return manager.fallback<assets::Texture>();
+    return manager.fallback<sq::assets::Texture>();
 }
 
 }  // namespace client::prefabs

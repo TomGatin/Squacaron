@@ -36,10 +36,10 @@ struct MatchSummary {
 };
 
 /**
- * @brief One match: an `engine::Engine` running the RLSS simulation for the players of this match only.
+ * @brief One match: an `sq::engine::Engine` running the RLSS simulation for the players of this match only.
  *
  * Each match has its own ECS world, event bus, clock and Wren VM (so the `Simulation` registry of the scripts only
- * holds its own cars and ball), and its network goes through an `ecs::net::PeerGroupConnection`: its snapshots and
+ * holds its own cars and ball), and its network goes through an `sq::net::PeerGroupConnection`: its snapshots and
  * statuses only reach its players.
  *
  * The `MatchServer` owns the transport and the player list: `addPlayer()` / `removePlayer()` push a `Connected` /
@@ -56,7 +56,7 @@ class MatchRoom {
      * @param scriptRoot Directory the Wren scripts are read from; empty for the working directory.
      * @throws std::runtime_error If the engine cannot start (Wren bindings refused).
      */
-    MatchRoom(ecs::net::INetworkServer& transport, std::uint16_t id, const std::filesystem::path& scriptRoot = {});
+    MatchRoom(sq::net::INetworkServer& transport, std::uint16_t id, const std::filesystem::path& scriptRoot = {});
     /** @brief Stops and joins the thread of the match, if it has one, then shuts its engine down. */
     ~MatchRoom();
 
@@ -77,14 +77,14 @@ class MatchRoom {
      * @param peer Player.
      * @return False if the player is already in the match or the match is full.
      */
-    bool addPlayer(ecs::net::PeerId peer);
+    bool addPlayer(sq::net::PeerId peer);
 
     /**
      * @brief Removes a player: its car is removed on the next frame, and the match no longer reaches it.
      * @param peer Player.
      * @return False if the player was not in the match.
      */
-    bool removePlayer(ecs::net::PeerId peer);
+    bool removePlayer(sq::net::PeerId peer);
 
     /**
      * @brief Hands over a message a player of the match sent (inputs): it is decoded on the match's next frame.
@@ -92,7 +92,7 @@ class MatchRoom {
      * @param data Untrusted payload.
      * @param channel Channel it arrived on.
      */
-    void deliver(ecs::net::PeerId peer, const ecs::net::Bytes& data, ecs::net::Channel channel);
+    void deliver(sq::net::PeerId peer, const sq::net::Bytes& data, sq::net::Channel channel);
 
     /** @brief Runs one frame of the match (the simulation steps due, then the snapshots), then refreshes the summary.
      */
@@ -125,17 +125,17 @@ class MatchRoom {
     /** @brief Match id. */
     std::uint16_t _id;
     /** @brief Network of this match: what its engine receives and the only peers it can reach. */
-    std::shared_ptr<ecs::net::PeerGroupConnection> _connection;
+    std::shared_ptr<sq::net::PeerGroupConnection> _connection;
     /** @brief Engine of this match. */
-    engine::Engine _engine;
+    sq::engine::Engine _engine;
     /** @brief Players, in join order; only used by the thread of the `MatchServer`. */
-    std::vector<ecs::net::PeerId> _players;
+    std::vector<sq::net::PeerId> _players;
     /** @brief Protects `_summary`. Mutable: `summary()` only reads. */
     mutable std::mutex _summaryMutex;
     /** @brief What the menu shows about the match. */
     MatchSummary _summary;
     /** @brief Paces `_thread` at `MATCH_LOOP_RATE`; stopped by the destructor. */
-    engine::FixedRateLoop _loop{MATCH_LOOP_RATE};
+    sq::engine::FixedRateLoop _loop{MATCH_LOOP_RATE};
     /** @brief Runs the match once `runInBackground()` was called. */
     std::thread _thread;
 };

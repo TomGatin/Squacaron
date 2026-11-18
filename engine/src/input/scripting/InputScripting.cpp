@@ -18,12 +18,12 @@
 #include "scripting/ScriptSystem.hpp"
 #include "scripting/WrenVM.hpp"
 
-namespace input {
+namespace sq::input {
 
 namespace {
 
-using scripting::ForeignCall;
-using scripting::ScriptSystem;
+using sq::scripting::ForeignCall;
+using sq::scripting::ScriptSystem;
 
 /**
  * @brief Core Wren script source code for the `core/Input` module.
@@ -57,7 +57,7 @@ class Input {
  * @param playerIndex Logical player identifier.
  * @return Pointer to InputState or nullptr if missing.
  */
-const InputState* resolvePlayerInputState(ecs::Registry* registry, int playerIndex) {
+const InputState* resolvePlayerInputState(sq::ecs::Registry* registry, int playerIndex) {
     if (registry == nullptr) {
         return nullptr;
     }
@@ -173,11 +173,11 @@ void inputMouseField(ForeignCall& call) {
 
 }  // namespace
 
-std::vector<scripting::ModuleSource> InputScriptExtension::modules() const {
+std::vector<sq::scripting::ModuleSource> InputScriptExtension::modules() const {
     return {{.name = "core/Input", .source = std::string(CORE_INPUT_SOURCE)}};
 }
 
-void InputScriptExtension::bind(scripting::WrenVM& vm) {
+void InputScriptExtension::bind(sq::scripting::WrenVM& vm) {
     vm.registerForeignMethod<&inputIsDown>("core/Input", "Input", true, "isDown(_,_)");
     vm.registerForeignMethod<&inputIsJustPressed>("core/Input", "Input", true, "isJustPressed(_,_)");
     vm.registerForeignMethod<&inputIsJustReleased>("core/Input", "Input", true, "isJustReleased(_,_)");
@@ -187,24 +187,24 @@ void InputScriptExtension::bind(scripting::WrenVM& vm) {
     vm.registerForeignMethod<&inputMouseField<&MouseState::wheel>>("core/Input", "Input", true, "mouseWheel(_)");
 }
 
-void addInputScripting(scripting::ScriptSystem& scripts) {
+void addInputScripting(sq::scripting::ScriptSystem& scripts) {
     // Stateless: one instance serves every script system.
     static InputScriptExtension extension;
     scripts.addExtension(extension);
 }
 
-void InputScriptingPlugin::build(engine::PluginBuilder& builder) { builder.require<scripting::ScriptPlugin>(); }
+void InputScriptingPlugin::build(sq::engine::PluginBuilder& builder) { builder.require<sq::scripting::ScriptPlugin>(); }
 
-void InputScriptingPlugin::init(engine::Engine& engine) {
-    _scripts = &engine.getPlugin<scripting::ScriptPlugin>().scriptSystem();
+void InputScriptingPlugin::init(sq::engine::Engine& engine) {
+    _scripts = &engine.getPlugin<sq::scripting::ScriptPlugin>().scriptSystem();
     addInputScripting(*_scripts);
 }
 
-void InputScriptingPlugin::shutdown(engine::Engine& /*engine*/) {
+void InputScriptingPlugin::shutdown(sq::engine::Engine& /*engine*/) {
     if (auto* extension = _scripts != nullptr ? _scripts->findExtension<InputScriptExtension>() : nullptr) {
         _scripts->removeExtension(*extension);
     }
     _scripts = nullptr;
 }
 
-}  // namespace input
+}  // namespace sq::input

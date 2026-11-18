@@ -11,7 +11,7 @@
 #include <numeric>
 #include <span>
 
-namespace metrics {
+namespace sq::metrics {
 
 /** @brief Keeps the last `CAPACITY` samples of a value: pushing never allocates. */
 class RollingStats {
@@ -74,4 +74,4 @@ class RollingStats {
     std::size_t _count = 0;
 };
 
-}  // namespace metrics
+}  // namespace sq::metrics

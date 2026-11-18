@@ -14,7 +14,7 @@
 #include "audio/types/AudioTypes.hpp"
 #include "audio/types/SoundParams.hpp"
 
-namespace audio::detail {
+namespace sq::audio::detail {
 
 /**
  * @brief Audio backend built on raylib (miniaudio): owns the audio device, sound effects and music streams.
@@ -208,4 +208,4 @@ class RaylibAudioBackend final : public IAudioBackend {
     std::uint64_t _playCounter = 0;
 };
 
-}  // namespace audio::detail
+}  // namespace sq::audio::detail

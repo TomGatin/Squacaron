@@ -8,7 +8,7 @@
 #include "ecs/components/Transform.hpp"
 #include "hierarchy/HierarchyComponents.hpp"
 
-namespace hierarchy {
+namespace sq::hierarchy {
 
 /**
  * @brief Computes the world transform of a child from its parent's world transform.
@@ -24,7 +24,7 @@ namespace hierarchy {
  * @param local Transform of the child relative to the parent.
  * @return World transform of the child.
  */
-[[nodiscard]] ecs::Transform compose(const ecs::Transform& parentWorld, const LocalTransform& local) noexcept;
+[[nodiscard]] sq::ecs::Transform compose(const sq::ecs::Transform& parentWorld, const LocalTransform& local) noexcept;
 
 /**
  * @brief Computes the parent-relative transform giving a child a wanted world transform (inverse of `compose`).
@@ -36,6 +36,6 @@ namespace hierarchy {
  * @param world Wanted world transform of the child.
  * @return Local transform such that `compose(parentWorld, result)` gives back `world`.
  */
-[[nodiscard]] LocalTransform toLocal(const ecs::Transform& parentWorld, const ecs::Transform& world) noexcept;
+[[nodiscard]] LocalTransform toLocal(const sq::ecs::Transform& parentWorld, const sq::ecs::Transform& world) noexcept;
 
-}  // namespace hierarchy
+}  // namespace sq::hierarchy

@@ -14,24 +14,30 @@
 #include "scene/SceneTypes.hpp"
 #include "utils/MoveOnlyFunction.hpp"
 
-namespace engine {
+namespace sq::engine {
+
 class Engine;
-}
 
-namespace ecs {
+}  // namespace sq::engine
+
+namespace sq::ecs {
+
 class Registry;
-}
 
-namespace ecs::time {
+}  // namespace sq::ecs
+
+namespace sq::time {
+
 struct Time;
-}
 
-namespace scene {
+}  // namespace sq::time
+
+namespace sq::scene {
 
 class SceneManager;
 
 /** @brief Scene-local system: called with the engine and the time of its stage, only while its scene runs. */
-using SceneSystem = ecs::MoveOnlyFunction<void(engine::Engine&, const ecs::time::Time&)>;
+using SceneSystem = sq::ecs::MoveOnlyFunction<void(sq::engine::Engine&, const sq::time::Time&)>;
 
 /**
  * @brief What a scene owns while it is on the stack.
@@ -82,19 +88,19 @@ class SceneContext {
      * @return Host engine.
      * @throws std::logic_error before the `ScenePlugin` is initialized.
      */
-    [[nodiscard]] engine::Engine& engine() const;
+    [[nodiscard]] sq::engine::Engine& engine() const;
 
     /**
      * @brief Gets the registry of the engine.
      * @return Registry of the host engine.
      */
-    [[nodiscard]] ecs::Registry& registry() const;
+    [[nodiscard]] sq::ecs::Registry& registry() const;
 
     /**
      * @brief Gets the event bus of the engine.
      * @return Event bus of the host engine.
      */
-    [[nodiscard]] ecs::EventBus& bus() const;
+    [[nodiscard]] sq::events::EventBus& bus() const;
 
     /**
      * @brief Tells whether the scene's systems run (it is on the stack and nothing above pauses it).
@@ -112,7 +118,7 @@ class SceneContext {
      * @brief Spawns an entity owned by the scene.
      * @return New entity, holding a `SceneMember` for this scene.
      */
-    ecs::Entity spawn();
+    sq::ecs::Entity spawn();
 
     /**
      * @brief Gives an existing entity to the scene: it is destroyed when the scene exits.
@@ -120,7 +126,7 @@ class SceneContext {
      * Replaces the previous owner, if any. Does nothing for a dead entity.
      * @param entity Entity to own.
      */
-    void adopt(ecs::Entity entity);
+    void adopt(sq::ecs::Entity entity);
 
     /**
      * @brief Subscribes to an event for as long as the scene is on the stack.
@@ -130,7 +136,7 @@ class SceneContext {
      * @param callback Listener.
      */
     template <typename EventType>
-    void subscribe(ecs::MoveOnlyFunction<void(const EventType&)> callback);
+    void subscribe(sq::ecs::MoveOnlyFunction<void(const EventType&)> callback);
 
     /**
      * @brief Adds a system run at `stage` while the scene runs, until it exits.
@@ -148,7 +154,7 @@ class SceneContext {
      * @param engine Host engine.
      * @param time Time of the stage.
      */
-    void runSystems(SceneStage stage, engine::Engine& engine, const ecs::time::Time& time);
+    void runSystems(SceneStage stage, sq::engine::Engine& engine, const sq::time::Time& time);
 
     /**
      * @brief Cancels the subscriptions and drops the systems; called by the manager when the scene exits.
@@ -157,12 +163,12 @@ class SceneContext {
 
   private:
     /** @brief Cancels one subscription of a known event type. */
-    using Unsubscriber = void (*)(ecs::EventBus&, ecs::EventBus::EventToken);
+    using Unsubscriber = void (*)(sq::events::EventBus&, sq::events::EventBus::EventToken);
 
     /** @brief A subscription to cancel on exit. */
     struct Subscription {
         /** @brief Token returned by the bus. */
-        ecs::EventBus::EventToken token = 0;
+        sq::events::EventBus::EventToken token = 0;
         /** @brief Typed unsubscribe call, without allocation. */
         Unsubscriber unsubscribe = nullptr;
     };
@@ -182,7 +188,7 @@ class SceneContext {
      * @param token Token of the subscription.
      */
     template <typename EventType>
-    static void unsubscribeFrom(ecs::EventBus& bus, ecs::EventBus::EventToken token);
+    static void unsubscribeFrom(sq::events::EventBus& bus, sq::events::EventBus::EventToken token);
 
     /** @brief Moves the pending systems into their stage lists. */
     void mergePending();
@@ -201,6 +207,6 @@ class SceneContext {
     std::size_t _runDepth = 0;
 };
 
-}  // namespace scene
+}  // namespace sq::scene
 
 #include "scene/SceneContext.tpp"  // IWYU pragma: export

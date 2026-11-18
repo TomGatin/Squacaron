@@ -21,7 +21,7 @@
 #include "core/IPlugin.hpp"
 #include "core/PluginBuilder.hpp"
 
-namespace engine {
+namespace sq::engine {
 
 namespace {
 
@@ -270,4 +270,4 @@ void PluginGraph::clear() {
     _resolved = false;
 }
 
-}  // namespace engine
+}  // namespace sq::engine

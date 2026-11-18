@@ -16,7 +16,7 @@
 struct WrenVM;      // NOLINT(readability-identifier-naming): the name is Wren's
 struct WrenHandle;  // NOLINT(readability-identifier-naming): the name is Wren's
 
-namespace scripting {
+namespace sq::scripting {
 
 /** @brief The Wren C virtual machine, opaque. A foreign method receives it. */
 using NativeVm = ::WrenVM;
@@ -79,7 +79,10 @@ enum class SlotType : std::uint8_t {
 };
 
 /** @brief Raw slot access, implemented over the Wren C API in `Slots.cpp`. Used by the engine templates. */
-namespace detail::slots {
+
+}  // namespace sq::scripting
+
+namespace sq::scripting::detail::slots {
 
 /** @brief Number of slots. @param vm VM. @return The count. */
 [[nodiscard]] int count(NativeVm* vm) noexcept;
@@ -122,6 +125,4 @@ void abortFiber(NativeVm* vm, int slot) noexcept;
 /** @brief Releases a handle. @param vm VM. @param object Handle. */
 void releaseHandle(NativeVm* vm, ScriptObject* object) noexcept;
 
-}  // namespace detail::slots
-
-}  // namespace scripting
+}  // namespace sq::scripting::detail::slots

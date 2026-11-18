@@ -1,17 +1,17 @@
 /**
  * @file SceneEvents.hpp
- * @brief Events published on the `ecs::EventBus` when scenes change, so plugins can react without knowing them.
+ * @brief Events published on the `sq::events::EventBus` when scenes change, so plugins can react without knowing them.
  */
 
 #pragma once
 
 #include "scene/SceneTypes.hpp"
 
-namespace scene {
+namespace sq::scene {
 
 /**
  * @brief A scene is being pushed on the stack; published before its `onEnter`, so that listeners can prepare what it
- * needs (`assets::SceneAssetsPlugin` loads its asset group).
+ * needs (`sq::assets::SceneAssetsPlugin` loads its asset group).
  */
 struct SceneEntering {
     /** @brief Scene entering. */
@@ -56,4 +56,4 @@ struct SceneVisibilityChanged {
     bool visible = true;
 };
 
-}  // namespace scene
+}  // namespace sq::scene

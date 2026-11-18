@@ -6,7 +6,7 @@
 
 #include "render/window/WindowConfig.hpp"
 
-namespace render {
+namespace sq::render {
 
 Window::Window(const WindowConfig& config) {
     if (config.width <= 0 || config.height <= 0) {
@@ -50,4 +50,4 @@ void Window::beginFrame() {
 
 void Window::endFrame() { EndDrawing(); }
 
-}  // namespace render
+}  // namespace sq::render

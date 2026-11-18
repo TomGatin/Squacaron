@@ -5,7 +5,7 @@
 
 #include "input/ActionId.hpp"
 
-namespace input {
+namespace sq::input {
 
 /**
  * @brief State values associated with a single semantic action.
@@ -162,4 +162,4 @@ struct InputState {
     void clear() noexcept;
 };
 
-}  // namespace input
+}  // namespace sq::input

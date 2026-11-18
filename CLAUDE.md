@@ -89,7 +89,9 @@ block. R-Type consumes it as a library, and a **second, different sample game** 
 ## Conventions
 
 - Templates: declaration in `.hpp`, implementation in `.tpp` included at the end of the header.
-- `#pragma once`, namespaces per module (`ecs`, ...), `detail` namespace for internals.
+- `#pragma once`; every engine namespace is under the root `sq` (`sq::ecs`, `sq::net`, `sq::events`...), written
+  flat (`namespace sq::ecs::detail {`, never a nested `namespace detail {`), so
+  `grep -rhoE "^namespace [a-z_]+" engine/src | sort -u` shows only `sq`. `detail` namespaces hold internals.
 - Doxygen `/** @brief ... */` on every public declaration in `engine/src` (≥80% coverage enforced).
 - New source file → make sure it is matched by the target's `add_files` glob; new test suite → add a target in
   `engine/tests/xmake.lua` (engine) or `tests/xmake.lua` (games) with `add_tests`.

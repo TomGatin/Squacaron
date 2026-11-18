@@ -11,9 +11,9 @@
 #include "render/api/IWindowService.hpp"
 #include "render/api/InputCodes.hpp"
 
-namespace input {
+namespace sq::input {
 
-float ActionMapping::sampleKeyboardComposite(const engine::IWindowService& window, const ActionBinding& binding) {
+float ActionMapping::sampleKeyboardComposite(const sq::engine::IWindowService& window, const ActionBinding& binding) {
     float value = 0.0F;
     for (std::size_t i = 0; i < binding.negativeKeyCount; ++i) {
         if (window.isKeyDown(binding.negativeKeys.at(i))) {
@@ -30,8 +30,8 @@ float ActionMapping::sampleKeyboardComposite(const engine::IWindowService& windo
     return value;
 }
 
-float ActionMapping::sampleGamepadButtonComposite(const engine::IWindowService& window, const ActionBinding& binding,
-                                                  int gamepadIndex) {
+float ActionMapping::sampleGamepadButtonComposite(const sq::engine::IWindowService& window,
+                                                  const ActionBinding& binding, int gamepadIndex) {
     float value = 0.0F;
     for (std::size_t i = 0; i < binding.negativePadButtonCount; ++i) {
         if (window.isGamepadButtonDown(gamepadIndex, binding.negativePadButtons.at(i))) {
@@ -48,9 +48,9 @@ float ActionMapping::sampleGamepadButtonComposite(const engine::IWindowService& 
     return value;
 }
 
-float ActionMapping::sampleGamepadStick(const engine::IWindowService& window, const ActionBinding& binding,
+float ActionMapping::sampleGamepadStick(const sq::engine::IWindowService& window, const ActionBinding& binding,
                                         int gamepadIndex, float deadzone) {
-    if (binding.padAxis == engine::GamepadAxis::None) {
+    if (binding.padAxis == sq::engine::GamepadAxis::None) {
         return 0.0F;
     }
     const float raw = window.gamepadAxis(gamepadIndex, binding.padAxis);
@@ -75,7 +75,7 @@ ActionId ActionMapping::registerAction(std::string_view name, ActionType type) {
             .name = std::string(name),
             .padAxisDirection = 1.0F,
             .type = type,
-            .padAxis = engine::GamepadAxis::None,
+            .padAxis = sq::engine::GamepadAxis::None,
             .padButtons = {},
             .negativePadButtons = {},
             .mouseButtons = {},
@@ -104,7 +104,7 @@ void ActionMapping::clear() {
     _bindings.clear();
 }
 
-bool ActionMapping::hasKey(ActionId action, engine::Key key) const {
+bool ActionMapping::hasKey(ActionId action, sq::engine::Key key) const {
     const ActionBinding* binding = getBinding(action);
     if (binding == nullptr) {
         return false;
@@ -122,8 +122,8 @@ bool ActionMapping::hasKey(ActionId action, engine::Key key) const {
     return false;
 }
 
-bool ActionMapping::bindKey(ActionId action, engine::Key key) {
-    if (key == engine::Key::Unknown || hasKey(action, key)) {
+bool ActionMapping::bindKey(ActionId action, sq::engine::Key key) {
+    if (key == sq::engine::Key::Unknown || hasKey(action, key)) {
         return false;
     }
     ActionBinding& binding = getOrCreateBinding(action);
@@ -134,7 +134,7 @@ bool ActionMapping::bindKey(ActionId action, engine::Key key) {
     return true;
 }
 
-bool ActionMapping::unbindKey(ActionId action, engine::Key key) {
+bool ActionMapping::unbindKey(ActionId action, sq::engine::Key key) {
     const auto it = _bindings.find(action);
     if (it == _bindings.end()) {
         return false;
@@ -146,7 +146,7 @@ bool ActionMapping::unbindKey(ActionId action, engine::Key key) {
             for (std::size_t j = i; j + 1 < binding.keyCount; ++j) {
                 binding.keys.at(j) = binding.keys.at(j + 1);
             }
-            binding.keys.at(--binding.keyCount) = engine::Key::Unknown;
+            binding.keys.at(--binding.keyCount) = sq::engine::Key::Unknown;
             found = true;
             break;
         }
@@ -156,7 +156,7 @@ bool ActionMapping::unbindKey(ActionId action, engine::Key key) {
             for (std::size_t j = i; j + 1 < binding.negativeKeyCount; ++j) {
                 binding.negativeKeys.at(j) = binding.negativeKeys.at(j + 1);
             }
-            binding.negativeKeys.at(--binding.negativeKeyCount) = engine::Key::Unknown;
+            binding.negativeKeys.at(--binding.negativeKeyCount) = sq::engine::Key::Unknown;
             found = true;
             break;
         }
@@ -168,14 +168,14 @@ void ActionMapping::clearKeyBindings(ActionId action) {
     const auto it = _bindings.find(action);
     if (it != _bindings.end()) {
         it->second.keyCount = 0;
-        it->second.keys.fill(engine::Key::Unknown);
+        it->second.keys.fill(sq::engine::Key::Unknown);
         it->second.negativeKeyCount = 0;
-        it->second.negativeKeys.fill(engine::Key::Unknown);
+        it->second.negativeKeys.fill(sq::engine::Key::Unknown);
     }
 }
 
-bool ActionMapping::bindGamepadButton(ActionId action, engine::GamepadButton button) {
-    if (button == engine::GamepadButton::Unknown) {
+bool ActionMapping::bindGamepadButton(ActionId action, sq::engine::GamepadButton button) {
+    if (button == sq::engine::GamepadButton::Unknown) {
         return false;
     }
     ActionBinding& binding = getOrCreateBinding(action);
@@ -191,8 +191,8 @@ bool ActionMapping::bindGamepadButton(ActionId action, engine::GamepadButton but
     return true;
 }
 
-bool ActionMapping::bindMouseButton(ActionId action, engine::MouseButton button) {
-    if (button == engine::MouseButton::Unknown) {
+bool ActionMapping::bindMouseButton(ActionId action, sq::engine::MouseButton button) {
+    if (button == sq::engine::MouseButton::Unknown) {
         return false;
     }
     ActionBinding& binding = getOrCreateBinding(action);
@@ -208,24 +208,24 @@ bool ActionMapping::bindMouseButton(ActionId action, engine::MouseButton button)
     return true;
 }
 
-void ActionMapping::bindGamepadAxis(ActionId action, engine::GamepadAxis axis, float scale) {
+void ActionMapping::bindGamepadAxis(ActionId action, sq::engine::GamepadAxis axis, float scale) {
     ActionBinding& binding = getOrCreateBinding(action);
     binding.padAxis = axis;
     binding.padAxisDirection = scale;
 }
 
-void ActionMapping::bindAxisComposite(ActionId axis, engine::Key negativeKey, engine::Key positiveKey) {
+void ActionMapping::bindAxisComposite(ActionId axis, sq::engine::Key negativeKey, sq::engine::Key positiveKey) {
     ActionBinding& binding = getOrCreateBinding(axis);
     binding.type = ActionType::Axis;
-    if (negativeKey != engine::Key::Unknown && binding.negativeKeyCount < MAX_KEY_BINDINGS) {
+    if (negativeKey != sq::engine::Key::Unknown && binding.negativeKeyCount < MAX_KEY_BINDINGS) {
         binding.negativeKeys.at(binding.negativeKeyCount++) = negativeKey;
     }
-    if (positiveKey != engine::Key::Unknown && binding.keyCount < MAX_KEY_BINDINGS) {
+    if (positiveKey != sq::engine::Key::Unknown && binding.keyCount < MAX_KEY_BINDINGS) {
         binding.keys.at(binding.keyCount++) = positiveKey;
     }
 }
 
-bool ActionMapping::isActionDown(const engine::IWindowService& window, ActionId action, int gamepadIndex) const {
+bool ActionMapping::isActionDown(const sq::engine::IWindowService& window, ActionId action, int gamepadIndex) const {
     const ActionBinding* binding = getBinding(action);
     if (binding == nullptr) {
         return false;
@@ -246,7 +246,7 @@ bool ActionMapping::isActionDown(const engine::IWindowService& window, ActionId 
                 return true;
             }
         }
-        if (binding->padAxis != engine::GamepadAxis::None) {
+        if (binding->padAxis != sq::engine::GamepadAxis::None) {
             const float val = window.gamepadAxis(gamepadIndex, binding->padAxis);
             if (binding->padAxisDirection > 0.0F && val > _deadzone) {
                 return true;
@@ -259,7 +259,7 @@ bool ActionMapping::isActionDown(const engine::IWindowService& window, ActionId 
     return false;
 }
 
-float ActionMapping::getAxis(const engine::IWindowService& window, ActionId action, int gamepadIndex) const {
+float ActionMapping::getAxis(const sq::engine::IWindowService& window, ActionId action, int gamepadIndex) const {
     const ActionBinding* binding = getBinding(action);
     if (binding == nullptr) {
         return 0.0F;
@@ -272,4 +272,4 @@ float ActionMapping::getAxis(const engine::IWindowService& window, ActionId acti
     return std::clamp(axisValue, -1.0F, 1.0F);
 }
 
-}  // namespace input
+}  // namespace sq::input

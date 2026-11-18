@@ -11,7 +11,7 @@
 #include "net/components/InputBuffer.hpp"
 #include "net/components/Replicated.hpp"
 
-namespace ecs::net {
+namespace sq::net {
 
 /** @brief Largest number of parts one snapshot can be split into. */
 inline constexpr std::uint32_t MAX_SNAPSHOT_PARTS = 64;
@@ -66,8 +66,8 @@ class IReplicationCodec {
      * @param id Its network id.
      * @param replicated Its game-defined kind.
      */
-    virtual void writeEntity(const ecs::Registry& registry, ecs::Entity entity, std::uint32_t id,
-                             const ecs::Replicated& replicated) = 0;
+    virtual void writeEntity(const sq::ecs::Registry& registry, sq::ecs::Entity entity, std::uint32_t id,
+                             const sq::ecs::Replicated& replicated) = 0;
 
     /**
      * @brief Server: encodes the current snapshot for one peer. Called once per peer, with the same entities.
@@ -86,14 +86,14 @@ class IReplicationCodec {
      * @param data Payload received from the client (untrusted).
      * @return The input, or nothing if the payload is not a valid input.
      */
-    [[nodiscard]] virtual std::optional<NetInput> decodeInput(const Bytes& data) = 0;
+    [[nodiscard]] virtual std::optional<ecs::NetInput> decodeInput(const Bytes& data) = 0;
 
     /**
      * @brief Client: encodes an input of the local player.
      * @param input Input to send.
      * @return The payload, at most `MAX_UNRELIABLE_PAYLOAD` bytes.
      */
-    [[nodiscard]] virtual Bytes encodeInput(const NetInput& input) = 0;
+    [[nodiscard]] virtual Bytes encodeInput(const ecs::NetInput& input) = 0;
 
     /**
      * @brief Client: decodes one part of a snapshot and keeps it for `applySnapshot()`.
@@ -114,4 +114,4 @@ class IReplicationCodec {
     virtual void applySnapshot(SnapshotApplier& applier) = 0;
 };
 
-}  // namespace ecs::net
+}  // namespace sq::net

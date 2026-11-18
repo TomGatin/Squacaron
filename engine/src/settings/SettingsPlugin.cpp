@@ -15,17 +15,17 @@
 #include "events/EventBus.hpp"
 #include "settings/SettingsEvents.hpp"
 
-namespace settings {
+namespace sq::settings {
 
 SettingsPlugin::SettingsPlugin(std::filesystem::path file, float saveDelay)
-    : _settings(std::make_shared<config::Settings>(std::move(file))), _saveDelay(saveDelay) {}
+    : _settings(std::make_shared<sq::config::Settings>(std::move(file))), _saveDelay(saveDelay) {}
 
-void SettingsPlugin::build(engine::PluginBuilder& builder) {
-    builder.require<engine::CorePlugin>();
-    builder.provides<config::Settings>();
+void SettingsPlugin::build(sq::engine::PluginBuilder& builder) {
+    builder.require<sq::engine::CorePlugin>();
+    builder.provides<sq::config::Settings>();
 }
 
-void SettingsPlugin::init(engine::Engine& engine) {
+void SettingsPlugin::init(sq::engine::Engine& engine) {
     if (auto loaded = _settings->load(); !loaded) {
         _lastError = loaded.error();
         std::cerr << "[Settings] " << _lastError << " (defaults are used)\n";
@@ -33,13 +33,13 @@ void SettingsPlugin::init(engine::Engine& engine) {
     for (const std::string& warning : _settings->warnings()) {
         std::cerr << "[Settings] " << warning << "\n";
     }
-    if (!engine.mediator().registerService<config::Settings>(_settings)) {
+    if (!engine.mediator().registerService<sq::config::Settings>(_settings)) {
         throw std::logic_error("SettingsPlugin: a Settings service is already registered");
     }
 }
 
-void SettingsPlugin::update(engine::Engine& engine, const ecs::time::Time& time) {
-    ecs::EventBus& bus = engine.eventBus();
+void SettingsPlugin::update(sq::engine::Engine& engine, const sq::time::Time& time) {
+    sq::events::EventBus& bus = engine.eventBus();
     bool changed = false;
     _settings->drainChanged([&bus, &changed](std::string_view key) {
         changed = true;
@@ -57,11 +57,11 @@ void SettingsPlugin::update(engine::Engine& engine, const ecs::time::Time& time)
     }
 }
 
-void SettingsPlugin::shutdown(engine::Engine& engine) {
+void SettingsPlugin::shutdown(sq::engine::Engine& engine) {
     if (_settings->dirty()) {
         save();
     }
-    engine.mediator().removeService<config::Settings>();
+    engine.mediator().removeService<sq::config::Settings>();
 }
 
 void SettingsPlugin::save() {
@@ -72,4 +72,4 @@ void SettingsPlugin::save() {
     }
 }
 
-}  // namespace settings
+}  // namespace sq::settings

@@ -9,7 +9,7 @@
 #include "net/INetworkManager.hpp"
 #include "net/asio/LogTag.hpp"
 
-namespace ecs::net::detail {
+namespace sq::net::detail {
 
 bool EventQueue::push(NetworkEvent event) {
     const std::scoped_lock lock(_mutex);
@@ -18,8 +18,8 @@ bool EventQueue::push(NetworkEvent event) {
         if (queued >= _maxDataPerPeer) {
             // Logged once per full queue: the next drops of this peer, until the game polls, are only counted.
             if (queued == _maxDataPerPeer) {
-                engine::log::warning(LOG_TAG, "peer ", event.peer, " has ", _maxDataPerPeer,
-                                     " messages waiting for the game: dropping its next ones");
+                sq::engine::log::warning(LOG_TAG, "peer ", event.peer, " has ", _maxDataPerPeer,
+                                         " messages waiting for the game: dropping its next ones");
                 ++queued;
             }
             _counters->onEventDropped();
@@ -46,4 +46,4 @@ std::size_t EventQueue::size() {
     return _events.size();
 }
 
-}  // namespace ecs::net::detail
+}  // namespace sq::net::detail

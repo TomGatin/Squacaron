@@ -37,106 +37,106 @@
 namespace {
 
 TEST(PrefabManager, MissileHasAllComponents) {
-    prefabs::PrefabManager manager;
+    sq::prefabs::PrefabManager manager;
     manager.registerPrefab(prefabs::MISSILE_PREFAB, prefabs::buildMissile);
-    ecs::Registry registry;
-    ecs::CommandBuffer buffer;
+    sq::ecs::Registry registry;
+    sq::ecs::CommandBuffer buffer;
 
     manager.spawn(prefabs::MISSILE_PREFAB, buffer, {{"x", 800.0F}, {"y", 300.0F}});
     buffer.flush(registry);
-    ecs::Entity const missile = 0;
+    sq::ecs::Entity const missile = 0;
 
-    ASSERT_TRUE(registry.hasComponent<ecs::Transform>(missile));
-    ASSERT_TRUE(registry.hasComponent<ecs::Renderable>(missile));
-    ASSERT_TRUE(registry.hasComponent<ecs::RigidBody2D>(missile));
-    ASSERT_TRUE(registry.hasComponent<ecs::Collider2D>(missile));
+    ASSERT_TRUE(registry.hasComponent<sq::ecs::Transform>(missile));
+    ASSERT_TRUE(registry.hasComponent<sq::ecs::Renderable>(missile));
+    ASSERT_TRUE(registry.hasComponent<sq::ecs::RigidBody2D>(missile));
+    ASSERT_TRUE(registry.hasComponent<sq::ecs::Collider2D>(missile));
 
-    auto const& transform = registry.getComponents<ecs::Transform>().get(missile);
+    auto const& transform = registry.getComponents<sq::ecs::Transform>().get(missile);
     EXPECT_FLOAT_EQ(transform.x, 800.0F);
     EXPECT_FLOAT_EQ(transform.y, 300.0F);
-    auto const& body = registry.getComponents<ecs::RigidBody2D>().get(missile);
-    EXPECT_EQ(body.bodyType, ecs::BodyType::Dynamic);
+    auto const& body = registry.getComponents<sq::ecs::RigidBody2D>().get(missile);
+    EXPECT_EQ(body.bodyType, sq::ecs::BodyType::Dynamic);
     EXPECT_FLOAT_EQ(body.velocityX, prefabs::DEFAULT_MISSILE_SPEED);
     EXPECT_TRUE(body.bullet);
 }
 
 TEST(PrefabManager, MissileVariantUsesCustomSpeed) {
-    prefabs::PrefabManager manager;
+    sq::prefabs::PrefabManager manager;
     manager.registerPrefab(prefabs::MISSILE_PREFAB, prefabs::buildMissile);
     manager.registerPrefab("fast_missile", prefabs::buildMissile, {{"speed", -1200.0F}});
-    ecs::Registry registry;
-    ecs::CommandBuffer buffer;
+    sq::ecs::Registry registry;
+    sq::ecs::CommandBuffer buffer;
 
     manager.spawn(prefabs::MISSILE_PREFAB, buffer);
     manager.spawn("fast_missile", buffer);
     buffer.flush(registry);
 
-    auto const& bodies = registry.getComponents<ecs::RigidBody2D>();
+    auto const& bodies = registry.getComponents<sq::ecs::RigidBody2D>();
     EXPECT_FLOAT_EQ(bodies.get(0).velocityX, prefabs::DEFAULT_MISSILE_SPEED);
     EXPECT_FLOAT_EQ(bodies.get(1).velocityX, -1200.0F);
 }
 
 TEST(PrefabManager, SalvoOfFiveMissilesDuringIteration) {
-    prefabs::PrefabManager manager;
+    sq::prefabs::PrefabManager manager;
     manager.registerPrefab(prefabs::MISSILE_PREFAB, prefabs::buildMissile);
-    ecs::Registry registry;
-    ecs::CommandBuffer buffer;
+    sq::ecs::Registry registry;
+    sq::ecs::CommandBuffer buffer;
 
-    ecs::Entity const boss = registry.spawnEntity();
-    registry.addComponent<ecs::Transform>(boss, ecs::Transform{.x = 900.0F, .y = 400.0F});
+    sq::ecs::Entity const boss = registry.spawnEntity();
+    registry.addComponent<sq::ecs::Transform>(boss, sq::ecs::Transform{.x = 900.0F, .y = 400.0F});
 
     // Spawning while iterating a sparse array is safe: nothing is created until flush.
-    for (auto const& transform : registry.getComponents<ecs::Transform>().getDense()) {
+    for (auto const& transform : registry.getComponents<sq::ecs::Transform>().getDense()) {
         for (int i = 0; i < 5; ++i) {
             manager.spawn(prefabs::MISSILE_PREFAB, buffer,
                           {{"x", transform.x}, {"y", transform.y + static_cast<float>(i * 20)}});
         }
     }
-    EXPECT_EQ(registry.getComponents<ecs::Transform>().getDense().size(), 1U);
+    EXPECT_EQ(registry.getComponents<sq::ecs::Transform>().getDense().size(), 1U);
 
     buffer.flush(registry);
 
-    EXPECT_EQ(registry.getComponents<ecs::RigidBody2D>().getDense().size(), 5U);
-    EXPECT_EQ(registry.getComponents<ecs::Transform>().getDense().size(), 6U);
+    EXPECT_EQ(registry.getComponents<sq::ecs::RigidBody2D>().getDense().size(), 5U);
+    EXPECT_EQ(registry.getComponents<sq::ecs::Transform>().getDense().size(), 6U);
 }
 
 TEST(PrefabManager, PowerUpIsDriftingSensor) {
-    prefabs::PrefabManager manager;
+    sq::prefabs::PrefabManager manager;
     manager.registerPrefab(prefabs::POWER_UP_PREFAB, prefabs::buildPowerUp);
-    ecs::Registry registry;
-    ecs::CommandBuffer buffer;
+    sq::ecs::Registry registry;
+    sq::ecs::CommandBuffer buffer;
 
     ASSERT_TRUE(manager.spawn(prefabs::POWER_UP_PREFAB, buffer, {{"x", 500.0F}, {"y", 200.0F}}));
     buffer.flush(registry);
-    ecs::Entity const powerUp = 0;
+    sq::ecs::Entity const powerUp = 0;
 
-    ASSERT_TRUE(registry.hasComponent<ecs::Transform>(powerUp));
-    ASSERT_TRUE(registry.hasComponent<ecs::Renderable>(powerUp));
-    ASSERT_TRUE(registry.hasComponent<ecs::RigidBody2D>(powerUp));
-    ASSERT_TRUE(registry.hasComponent<ecs::Collider2D>(powerUp));
+    ASSERT_TRUE(registry.hasComponent<sq::ecs::Transform>(powerUp));
+    ASSERT_TRUE(registry.hasComponent<sq::ecs::Renderable>(powerUp));
+    ASSERT_TRUE(registry.hasComponent<sq::ecs::RigidBody2D>(powerUp));
+    ASSERT_TRUE(registry.hasComponent<sq::ecs::Collider2D>(powerUp));
 
-    auto const& body = registry.getComponents<ecs::RigidBody2D>().get(powerUp);
-    EXPECT_EQ(body.bodyType, ecs::BodyType::Kinematic);
+    auto const& body = registry.getComponents<sq::ecs::RigidBody2D>().get(powerUp);
+    EXPECT_EQ(body.bodyType, sq::ecs::BodyType::Kinematic);
     EXPECT_FLOAT_EQ(body.velocityX, prefabs::DEFAULT_POWER_UP_DRIFT_SPEED);
-    auto const& collider = registry.getComponents<ecs::Collider2D>().get(powerUp);
-    EXPECT_EQ(collider.shape, ecs::ColliderShape::Circle);
+    auto const& collider = registry.getComponents<sq::ecs::Collider2D>().get(powerUp);
+    EXPECT_EQ(collider.shape, sq::ecs::ColliderShape::Circle);
     EXPECT_TRUE(collider.isSensor);
 }
 
 TEST(PrefabManager, ObstacleIsStaticSolidBox) {
-    prefabs::PrefabManager manager;
+    sq::prefabs::PrefabManager manager;
     manager.registerPrefab(prefabs::OBSTACLE_PREFAB, prefabs::buildObstacle);
     manager.registerPrefab("obstacle_wide", prefabs::buildObstacle, {{"halfWidth", 128.0F}, {"halfHeight", 16.0F}});
-    ecs::Registry registry;
-    ecs::CommandBuffer buffer;
+    sq::ecs::Registry registry;
+    sq::ecs::CommandBuffer buffer;
 
     manager.spawn(prefabs::OBSTACLE_PREFAB, buffer, {{"x", 300.0F}, {"y", 400.0F}});
     manager.spawn("obstacle_wide", buffer, {{"x", 600.0F}, {"y", 400.0F}});
     buffer.flush(registry);
 
-    auto const& bodies = registry.getComponents<ecs::RigidBody2D>();
-    EXPECT_EQ(bodies.get(0).bodyType, ecs::BodyType::Static);
-    auto const& colliders = registry.getComponents<ecs::Collider2D>();
+    auto const& bodies = registry.getComponents<sq::ecs::RigidBody2D>();
+    EXPECT_EQ(bodies.get(0).bodyType, sq::ecs::BodyType::Static);
+    auto const& colliders = registry.getComponents<sq::ecs::Collider2D>();
     EXPECT_FALSE(colliders.get(0).isSensor);
     EXPECT_FLOAT_EQ(colliders.get(0).halfWidth, prefabs::DEFAULT_OBSTACLE_HALF_WIDTH);
     EXPECT_FLOAT_EQ(colliders.get(1).halfWidth, 128.0F);
@@ -144,51 +144,53 @@ TEST(PrefabManager, ObstacleIsStaticSolidBox) {
 }
 
 TEST(PrefabManager, PlayerBulletFliesTowardsEnemies) {
-    prefabs::PrefabManager manager;
+    sq::prefabs::PrefabManager manager;
     manager.registerPrefab(prefabs::PLAYER_BULLET_PREFAB, prefabs::buildPlayerBullet);
-    ecs::Registry registry;
-    ecs::CommandBuffer buffer;
+    sq::ecs::Registry registry;
+    sq::ecs::CommandBuffer buffer;
 
     ASSERT_TRUE(manager.spawn(prefabs::PLAYER_BULLET_PREFAB, buffer, {{"x", 100.0F}, {"y", 300.0F}}));
     buffer.flush(registry);
 
-    auto const& body = registry.getComponents<ecs::RigidBody2D>().get(0);
-    EXPECT_EQ(body.bodyType, ecs::BodyType::Dynamic);
+    auto const& body = registry.getComponents<sq::ecs::RigidBody2D>().get(0);
+    EXPECT_EQ(body.bodyType, sq::ecs::BodyType::Dynamic);
     EXPECT_FLOAT_EQ(body.velocityX, prefabs::DEFAULT_PLAYER_BULLET_SPEED);
     EXPECT_TRUE(body.bullet);
-    EXPECT_EQ(registry.getComponents<ecs::Collider2D>().get(0).categoryBits, prefabs::collision::PLAYER_SHOT);
+    EXPECT_EQ(registry.getComponents<sq::ecs::Collider2D>().get(0).categoryBits, prefabs::collision::PLAYER_SHOT);
 }
 
 TEST(PrefabManager, AlienScoutHasNoScriptYet) {
-    prefabs::PrefabManager manager;
+    sq::prefabs::PrefabManager manager;
     manager.registerPrefab(prefabs::ALIEN_SCOUT_PREFAB, prefabs::buildAlienScout);
-    ecs::Registry registry;
-    ecs::CommandBuffer buffer;
+    sq::ecs::Registry registry;
+    sq::ecs::CommandBuffer buffer;
 
     ASSERT_TRUE(manager.spawn(prefabs::ALIEN_SCOUT_PREFAB, buffer, {{"x", 800.0F}, {"y", 300.0F}}));
     buffer.flush(registry);
 
-    ASSERT_TRUE(registry.hasComponent<ecs::Transform>(0));
-    ASSERT_TRUE(registry.hasComponent<ecs::Renderable>(0));
-    ASSERT_TRUE(registry.hasComponent<ecs::RigidBody2D>(0));
-    ASSERT_TRUE(registry.hasComponent<ecs::Collider2D>(0));
-    EXPECT_EQ(registry.getComponents<ecs::RigidBody2D>().get(0).bodyType, ecs::BodyType::Kinematic);
-    EXPECT_FLOAT_EQ(registry.getComponents<ecs::RigidBody2D>().get(0).velocityX, prefabs::DEFAULT_ALIEN_SCOUT_SPEED);
-    EXPECT_EQ(registry.getComponents<ecs::Collider2D>().get(0).categoryBits, prefabs::collision::ENEMY);
+    ASSERT_TRUE(registry.hasComponent<sq::ecs::Transform>(0));
+    ASSERT_TRUE(registry.hasComponent<sq::ecs::Renderable>(0));
+    ASSERT_TRUE(registry.hasComponent<sq::ecs::RigidBody2D>(0));
+    ASSERT_TRUE(registry.hasComponent<sq::ecs::Collider2D>(0));
+    EXPECT_EQ(registry.getComponents<sq::ecs::RigidBody2D>().get(0).bodyType, sq::ecs::BodyType::Kinematic);
+    EXPECT_FLOAT_EQ(registry.getComponents<sq::ecs::RigidBody2D>().get(0).velocityX,
+                    prefabs::DEFAULT_ALIEN_SCOUT_SPEED);
+    EXPECT_EQ(registry.getComponents<sq::ecs::Collider2D>().get(0).categoryBits, prefabs::collision::ENEMY);
 }
 
 TEST(PrefabManager, AlienGunnerIsAnEnemyWithAGun) {
-    prefabs::PrefabManager manager;
+    sq::prefabs::PrefabManager manager;
     prefabs::registerRtypePrefabs(manager);
-    ecs::Registry registry;
-    ecs::CommandBuffer buffer;
+    sq::ecs::Registry registry;
+    sq::ecs::CommandBuffer buffer;
 
     manager.spawn(prefabs::ALIEN_GUNNER_PREFAB, buffer, {});
     manager.spawn(prefabs::ALIEN_GUNNER_PREFAB, buffer, {{"fire_interval", 0.01F}, {"shot_speed", 99999.0F}});
     buffer.flush(registry);
 
-    EXPECT_EQ(registry.getComponents<ecs::Collider2D>().get(0).categoryBits, prefabs::collision::ENEMY);
-    EXPECT_FLOAT_EQ(registry.getComponents<ecs::RigidBody2D>().get(0).velocityX, prefabs::DEFAULT_ALIEN_GUNNER_SPEED);
+    EXPECT_EQ(registry.getComponents<sq::ecs::Collider2D>().get(0).categoryBits, prefabs::collision::ENEMY);
+    EXPECT_FLOAT_EQ(registry.getComponents<sq::ecs::RigidBody2D>().get(0).velocityX,
+                    prefabs::DEFAULT_ALIEN_GUNNER_SPEED);
     const auto& gun = registry.getComponents<prefabs::EnemyGun>().get(0);
     EXPECT_FLOAT_EQ(gun.interval, prefabs::DEFAULT_ALIEN_GUNNER_FIRE_INTERVAL);
     EXPECT_FLOAT_EQ(gun.cooldown, prefabs::DEFAULT_ALIEN_GUNNER_FIRE_INTERVAL / 2.0F);
@@ -198,10 +200,10 @@ TEST(PrefabManager, AlienGunnerIsAnEnemyWithAGun) {
 }
 
 TEST(PrefabManager, AlienEliteIsAToughWeavingEnemyWithLoot) {
-    prefabs::PrefabManager manager;
+    sq::prefabs::PrefabManager manager;
     prefabs::registerRtypePrefabs(manager);
-    ecs::Registry registry;
-    ecs::CommandBuffer buffer;
+    sq::ecs::Registry registry;
+    sq::ecs::CommandBuffer buffer;
 
     manager.spawn(prefabs::ALIEN_ELITE_PREFAB, buffer, {{"y", 300.0F}});
     manager.spawn(prefabs::ALIEN_ELITE_PREFAB, buffer, {{"health", 1.0e9}, {"amplitude", -5.0}, {"frequency", 99.0}});
@@ -217,10 +219,10 @@ TEST(PrefabManager, AlienEliteIsAToughWeavingEnemyWithLoot) {
 }
 
 TEST(PrefabManager, BossCoreIsAnArmoredEnemy) {
-    prefabs::PrefabManager manager;
+    sq::prefabs::PrefabManager manager;
     prefabs::registerRtypePrefabs(manager);
-    ecs::Registry registry;
-    ecs::CommandBuffer buffer;
+    sq::ecs::Registry registry;
+    sq::ecs::CommandBuffer buffer;
 
     ASSERT_TRUE(manager.spawn(prefabs::BOSS_CORE_PREFAB, buffer, {{"x", 1328.0F}, {"y", 360.0F}}));
     buffer.flush(registry);
@@ -230,20 +232,20 @@ TEST(PrefabManager, BossCoreIsAnArmoredEnemy) {
     EXPECT_EQ(registry.getComponents<prefabs::Health>().get(0).points, prefabs::DEFAULT_BOSS_CORE_HEALTH);
     EXPECT_EQ(registry.getComponents<prefabs::Health>().get(0).max, prefabs::DEFAULT_BOSS_CORE_HEALTH);
     EXPECT_FLOAT_EQ(registry.getComponents<prefabs::BossCore>().get(0).stopX, prefabs::DEFAULT_BOSS_CORE_STOP_X);
-    auto const& body = registry.getComponents<ecs::RigidBody2D>().get(0);
-    EXPECT_EQ(body.bodyType, ecs::BodyType::Kinematic);
+    auto const& body = registry.getComponents<sq::ecs::RigidBody2D>().get(0);
+    EXPECT_EQ(body.bodyType, sq::ecs::BodyType::Kinematic);
     EXPECT_FLOAT_EQ(body.velocityX, prefabs::DEFAULT_BOSS_CORE_SPEED);
-    auto const& collider = registry.getComponents<ecs::Collider2D>().get(0);
+    auto const& collider = registry.getComponents<sq::ecs::Collider2D>().get(0);
     EXPECT_EQ(collider.categoryBits, prefabs::collision::ENEMY);
     EXPECT_FLOAT_EQ(collider.halfWidth, prefabs::BOSS_CORE_HALF_WIDTH);
     EXPECT_FLOAT_EQ(collider.halfHeight, prefabs::BOSS_CORE_HALF_HEIGHT);
 }
 
 TEST(PrefabManager, BossCoreHealthAndStopCanBeSetPerSpawn) {
-    prefabs::PrefabManager manager;
+    sq::prefabs::PrefabManager manager;
     prefabs::registerRtypePrefabs(manager);
-    ecs::Registry registry;
-    ecs::CommandBuffer buffer;
+    sq::ecs::Registry registry;
+    sq::ecs::CommandBuffer buffer;
 
     manager.spawn(prefabs::BOSS_CORE_PREFAB, buffer, {{"health", std::int64_t{60}}, {"stop_x", 900.0F}});
     buffer.flush(registry);
@@ -253,10 +255,10 @@ TEST(PrefabManager, BossCoreHealthAndStopCanBeSetPerSpawn) {
 }
 
 TEST(PrefabManager, BossCoreVariantAndHitboxComeFromItsParameters) {
-    prefabs::PrefabManager manager;
+    sq::prefabs::PrefabManager manager;
     prefabs::registerRtypePrefabs(manager);
-    ecs::Registry registry;
-    ecs::CommandBuffer buffer;
+    sq::ecs::Registry registry;
+    sq::ecs::CommandBuffer buffer;
 
     manager.spawn(prefabs::BOSS_CORE_PREFAB, buffer,
                   {{"variant", std::int64_t{3}}, {"width", 300.0}, {"height", std::int64_t{200}}});
@@ -264,17 +266,17 @@ TEST(PrefabManager, BossCoreVariantAndHitboxComeFromItsParameters) {
     buffer.flush(registry);
 
     EXPECT_EQ(registry.getComponents<prefabs::BossCore>().get(0).variant, 3);
-    EXPECT_FLOAT_EQ(registry.getComponents<ecs::Collider2D>().get(0).halfWidth, 150.0F);
-    EXPECT_FLOAT_EQ(registry.getComponents<ecs::Collider2D>().get(0).halfHeight, 100.0F);
+    EXPECT_FLOAT_EQ(registry.getComponents<sq::ecs::Collider2D>().get(0).halfWidth, 150.0F);
+    EXPECT_FLOAT_EQ(registry.getComponents<sq::ecs::Collider2D>().get(0).halfHeight, 100.0F);
     EXPECT_EQ(registry.getComponents<prefabs::BossCore>().get(1).variant, 0);
-    EXPECT_FLOAT_EQ(registry.getComponents<ecs::Collider2D>().get(1).halfWidth, prefabs::BOSS_CORE_HALF_WIDTH);
+    EXPECT_FLOAT_EQ(registry.getComponents<sq::ecs::Collider2D>().get(1).halfWidth, prefabs::BOSS_CORE_HALF_WIDTH);
 }
 
 TEST(PrefabManager, BossCoreVariantAndHitboxAreClamped) {
-    prefabs::PrefabManager manager;
+    sq::prefabs::PrefabManager manager;
     prefabs::registerRtypePrefabs(manager);
-    ecs::Registry registry;
-    ecs::CommandBuffer buffer;
+    sq::ecs::Registry registry;
+    sq::ecs::CommandBuffer buffer;
 
     manager.spawn(prefabs::BOSS_CORE_PREFAB, buffer, {{"variant", 1.0e30}, {"width", 1.0e30}, {"height", -4.0}});
     manager.spawn(prefabs::BOSS_CORE_PREFAB, buffer,
@@ -282,7 +284,7 @@ TEST(PrefabManager, BossCoreVariantAndHitboxAreClamped) {
     buffer.flush(registry);
 
     auto const& cores = registry.getComponents<prefabs::BossCore>();
-    auto const& colliders = registry.getComponents<ecs::Collider2D>();
+    auto const& colliders = registry.getComponents<sq::ecs::Collider2D>();
     EXPECT_EQ(cores.get(0).variant, std::numeric_limits<std::uint8_t>::max());
     EXPECT_FLOAT_EQ(colliders.get(0).halfWidth, prefabs::MAX_BOSS_CORE_SIZE / 2.0F);
     EXPECT_FLOAT_EQ(colliders.get(0).halfHeight, prefabs::MIN_BOSS_CORE_SIZE / 2.0F);
@@ -292,10 +294,10 @@ TEST(PrefabManager, BossCoreVariantAndHitboxAreClamped) {
 }
 
 TEST(PrefabManager, BossPartTakesItsRoleAndSize) {
-    prefabs::PrefabManager manager;
+    sq::prefabs::PrefabManager manager;
     prefabs::registerRtypePrefabs(manager);
-    ecs::Registry registry;
-    ecs::CommandBuffer buffer;
+    sq::ecs::Registry registry;
+    sq::ecs::CommandBuffer buffer;
 
     manager.spawn(prefabs::BOSS_PART_PREFAB, buffer,
                   {{"role", std::string("turret")}, {"width", 20.0}, {"health", 3.0}, {"look", 4.0}});
@@ -307,9 +309,10 @@ TEST(PrefabManager, BossPartTakesItsRoleAndSize) {
     EXPECT_EQ(parts.get(0).role, prefabs::BossPartRole::Turret);
     EXPECT_EQ(parts.get(0).look, 4);
     EXPECT_EQ(registry.getComponents<prefabs::Health>().get(0).points, 3);
-    EXPECT_FLOAT_EQ(registry.getComponents<ecs::Collider2D>().get(0).halfWidth, 10.0F);
-    EXPECT_FLOAT_EQ(registry.getComponents<ecs::Collider2D>().get(0).halfHeight, prefabs::DEFAULT_BOSS_PART_SIZE / 2);
-    EXPECT_EQ(registry.getComponents<ecs::Collider2D>().get(0).categoryBits, prefabs::collision::ENEMY);
+    EXPECT_FLOAT_EQ(registry.getComponents<sq::ecs::Collider2D>().get(0).halfWidth, 10.0F);
+    EXPECT_FLOAT_EQ(registry.getComponents<sq::ecs::Collider2D>().get(0).halfHeight,
+                    prefabs::DEFAULT_BOSS_PART_SIZE / 2);
+    EXPECT_EQ(registry.getComponents<sq::ecs::Collider2D>().get(0).categoryBits, prefabs::collision::ENEMY);
     EXPECT_EQ(parts.get(1).role, prefabs::BossPartRole::WeakPoint);
     EXPECT_FALSE(registry.hasComponent<prefabs::Health>(1)) << "only a turret has its own hit points";
     EXPECT_EQ(parts.get(2).role, prefabs::BossPartRole::Armor) << "an unknown role gives an armor";
@@ -323,10 +326,10 @@ TEST(PrefabManager, BossPartRoleNames) {
 }
 
 TEST(PrefabManager, BossCoreHealthIsClampedToTheNetworkRange) {
-    prefabs::PrefabManager manager;
+    sq::prefabs::PrefabManager manager;
     prefabs::registerRtypePrefabs(manager);
-    ecs::Registry registry;
-    ecs::CommandBuffer buffer;
+    sq::ecs::Registry registry;
+    sq::ecs::CommandBuffer buffer;
 
     manager.spawn(prefabs::BOSS_CORE_PREFAB, buffer, {{"health", 1.0e30}});
     manager.spawn(prefabs::BOSS_CORE_PREFAB, buffer, {{"health", std::int64_t{-5}}});
@@ -340,24 +343,24 @@ TEST(PrefabManager, BossCoreHealthIsClampedToTheNetworkRange) {
 }
 
 TEST(PrefabManager, ObstacleSizeCanBeSetPerSpawn) {
-    prefabs::PrefabManager manager;
+    sq::prefabs::PrefabManager manager;
     prefabs::registerRtypePrefabs(manager);
-    ecs::Registry registry;
-    ecs::CommandBuffer buffer;
+    sq::ecs::Registry registry;
+    sq::ecs::CommandBuffer buffer;
 
     manager.spawn(prefabs::OBSTACLE_PREFAB, buffer, {{"halfWidth", 200.0F}, {"halfHeight", 8}});
     buffer.flush(registry);
 
-    auto const& collider = registry.getComponents<ecs::Collider2D>().get(0);
+    auto const& collider = registry.getComponents<sq::ecs::Collider2D>().get(0);
     EXPECT_FLOAT_EQ(collider.halfWidth, 200.0F);
     EXPECT_FLOAT_EQ(collider.halfHeight, 8.0F);
 }
 
 TEST(PrefabManager, CollisionCategoriesFilterPairs) {
-    prefabs::PrefabManager manager;
+    sq::prefabs::PrefabManager manager;
     prefabs::registerRtypePrefabs(manager);
-    ecs::Registry registry;
-    ecs::CommandBuffer buffer;
+    sq::ecs::Registry registry;
+    sq::ecs::CommandBuffer buffer;
 
     manager.spawn(prefabs::MISSILE_PREFAB, buffer);
     manager.spawn(prefabs::PLAYER_BULLET_PREFAB, buffer);
@@ -366,14 +369,14 @@ TEST(PrefabManager, CollisionCategoriesFilterPairs) {
     manager.spawn(prefabs::POWER_UP_PREFAB, buffer);
     buffer.flush(registry);
 
-    auto const& colliders = registry.getComponents<ecs::Collider2D>();
+    auto const& colliders = registry.getComponents<sq::ecs::Collider2D>();
     auto const& missile = colliders.get(0);
     auto const& playerBullet = colliders.get(1);
     auto const& alienScout = colliders.get(2);
     auto const& obstacle = colliders.get(3);
     auto const& powerUp = colliders.get(4);
-    ecs::Collider2D const player{.categoryBits = prefabs::collision::PLAYER,
-                                 .maskBits = prefabs::collision::PLAYER_MASK};
+    sq::ecs::Collider2D const player{.categoryBits = prefabs::collision::PLAYER,
+                                     .maskBits = prefabs::collision::PLAYER_MASK};
 
     using prefabs::collision::canCollide;
     EXPECT_TRUE(canCollide(playerBullet, alienScout));

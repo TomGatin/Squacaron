@@ -21,7 +21,7 @@
 
 #include "config/ConfigConstants.hpp"
 
-namespace config {
+namespace sq::config {
 
 namespace {
 
@@ -233,4 +233,4 @@ std::expected<void, std::string> ConfigFile::save(const std::filesystem::path& p
     return {};
 }
 
-}  // namespace config
+}  // namespace sq::config

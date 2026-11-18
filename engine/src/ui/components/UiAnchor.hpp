@@ -1,6 +1,6 @@
 #pragma once
 
-namespace ui {
+namespace sq::ui {
 
 /**
  * @brief Screen-space position for a HUD entity.
@@ -41,4 +41,4 @@ struct UiAnchor {
     float pivotY = 0.0F;
 };
 
-}  // namespace ui
+}  // namespace sq::ui

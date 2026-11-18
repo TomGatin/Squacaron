@@ -9,30 +9,32 @@
 
 #include "core/IPlugin.hpp"
 
-namespace scripting {
-class ScriptSystem;
-}
+namespace sq::scripting {
 
-namespace systems {
+class ScriptSystem;
+
+}  // namespace sq::scripting
+
+namespace sq::systems {
 
 /**
- * @brief Forwards `events::CollisionBeginEvent` to `onCollision(other)` of the scripts that set
+ * @brief Forwards `sq::events::CollisionBeginEvent` to `onCollision(other)` of the scripts that set
  * `ScriptComponent::hasCollision`. Without it, physics and scripting ignore each other.
  */
-class PhysicsScriptingPlugin final : public engine::IPlugin {
+class PhysicsScriptingPlugin final : public sq::engine::IPlugin {
   public:
     /** @brief Gets the plugin name. @return "PhysicsScriptingPlugin". */
     [[nodiscard]] std::string_view name() const noexcept override { return "PhysicsScriptingPlugin"; }
     /** @brief Requires the `ScriptPlugin`. @param builder Dependency builder. */
-    void build(engine::PluginBuilder& builder) override;
+    void build(sq::engine::PluginBuilder& builder) override;
     /** @brief Subscribes the script system to the contacts. @param engine Host engine. */
-    void init(engine::Engine& engine) override;
+    void init(sq::engine::Engine& engine) override;
     /** @brief Unsubscribes it. @param engine Host engine. */
-    void shutdown(engine::Engine& engine) override;
+    void shutdown(sq::engine::Engine& engine) override;
 
   private:
     /** @brief Script system, between `init` and `shutdown`. */
-    scripting::ScriptSystem* _scripts = nullptr;
+    sq::scripting::ScriptSystem* _scripts = nullptr;
 };
 
-}  // namespace systems
+}  // namespace sq::systems

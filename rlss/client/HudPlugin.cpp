@@ -81,28 +81,28 @@ constexpr float BOOST_CAP = 50.0F;
 constexpr float BOOST_EASING = 14.0F;
 
 /** @brief Source region selecting a whole texture. */
-constexpr ecs::TextureRect WHOLE{};
+constexpr sq::ecs::TextureRect WHOLE{};
 
-constexpr ecs::Rgba WHITE{.r = 255, .g = 255, .b = 255, .a = 255};
-constexpr ecs::Rgba SHADOW_COLOR{.r = 0, .g = 0, .b = 0, .a = 120};
-constexpr ecs::Rgba CLOCK_PANEL{.r = 10, .g = 14, .b = 30, .a = 225};
-constexpr ecs::Rgba CLOCK_EDGE{.r = 255, .g = 255, .b = 255, .a = 40};
-constexpr ecs::Rgba GOLD{.r = 255, .g = 206, .b = 64, .a = 255};
-constexpr ecs::Rgba DIM{.r = 170, .g = 182, .b = 205, .a = 255};
-constexpr ecs::Rgba TICK_OFF{.r = 255, .g = 255, .b = 255, .a = 38};
-constexpr ecs::Rgba BOOST_LOW{.r = 255, .g = 214, .b = 70, .a = 255};
-constexpr ecs::Rgba BOOST_HIGH{.r = 255, .g = 120, .b = 24, .a = 255};
+constexpr sq::ecs::Rgba WHITE{.r = 255, .g = 255, .b = 255, .a = 255};
+constexpr sq::ecs::Rgba SHADOW_COLOR{.r = 0, .g = 0, .b = 0, .a = 120};
+constexpr sq::ecs::Rgba CLOCK_PANEL{.r = 10, .g = 14, .b = 30, .a = 225};
+constexpr sq::ecs::Rgba CLOCK_EDGE{.r = 255, .g = 255, .b = 255, .a = 40};
+constexpr sq::ecs::Rgba GOLD{.r = 255, .g = 206, .b = 64, .a = 255};
+constexpr sq::ecs::Rgba DIM{.r = 170, .g = 182, .b = 205, .a = 255};
+constexpr sq::ecs::Rgba TICK_OFF{.r = 255, .g = 255, .b = 255, .a = 38};
+constexpr sq::ecs::Rgba BOOST_LOW{.r = 255, .g = 214, .b = 70, .a = 255};
+constexpr sq::ecs::Rgba BOOST_HIGH{.r = 255, .g = 120, .b = 24, .a = 255};
 
-ecs::Rgba opaque(const Rgb color, const std::uint8_t alpha = 255) {
-    return ecs::Rgba{.r = color.r, .g = color.g, .b = color.b, .a = alpha};
+sq::ecs::Rgba opaque(const Rgb color, const std::uint8_t alpha = 255) {
+    return sq::ecs::Rgba{.r = color.r, .g = color.g, .b = color.b, .a = alpha};
 }
 
-ecs::Rgba withAlpha(ecs::Rgba color, const float alpha) {
+sq::ecs::Rgba withAlpha(sq::ecs::Rgba color, const float alpha) {
     color.a = static_cast<std::uint8_t>(static_cast<float>(color.a) * std::clamp(alpha, 0.0F, 1.0F));
     return color;
 }
 
-ecs::Rgba blend(const ecs::Rgba from, const ecs::Rgba to, const float t) {
+sq::ecs::Rgba blend(const sq::ecs::Rgba from, const sq::ecs::Rgba to, const float t) {
     const auto channel = [t](const std::uint8_t a, const std::uint8_t b) {
         return static_cast<std::uint8_t>(static_cast<float>(a) + ((static_cast<float>(b) - static_cast<float>(a)) * t));
     };
@@ -129,21 +129,21 @@ float pop(const float elapsed) {
 
 }  // namespace
 
-void HudPlugin::build(engine::PluginBuilder& builder) {
+void HudPlugin::build(sq::engine::PluginBuilder& builder) {
     builder.require<AssetsPlugin>();
     builder.require<CameraPlugin>();
-    builder.require<ecs::net::NetworkPlugin>();
-    builder.optionally<tools::ConsolePlugin>();
+    builder.require<sq::net::NetworkPlugin>();
+    builder.optionally<sq::tools::ConsolePlugin>();
 }
 
-void HudPlugin::init(engine::Engine& engine) {
-    if (auto cvars = engine.mediator().getService<tools::CVarManager>(); cvars) {
+void HudPlugin::init(sq::engine::Engine& engine) {
+    if (auto cvars = engine.mediator().getService<sq::tools::CVarManager>(); cvars) {
         _visible =
             cvars->get().add("cl_hud", true, "Shows the score, the clock, the boost gauge and the announcements");
     }
-    ecs::Registry& registry = engine.registry();
+    sq::ecs::Registry& registry = engine.registry();
     const GameAssets& assets = registry.getResource<GameAssets>();
-    _typeface = Typeface(engine.service<engine::IScreenDrawService>(), assets.font);
+    _typeface = Typeface(engine.service<sq::engine::IScreenDrawService>(), assets.font);
     _disc = assets.hudDisc;
     _tick = assets.hudTick;
     _slantLeft = assets.hudSlantLeft;
@@ -155,7 +155,7 @@ void HudPlugin::init(engine::Engine& engine) {
     registry.addComponent(_hud, game::MatchState{.phase = game::NO_MATCH});
 
     _packets =
-        engine.eventBus().subscribe<ecs::net::PacketReceived>([this, &engine](const ecs::net::PacketReceived& packet) {
+        engine.eventBus().subscribe<sq::net::PacketReceived>([this, &engine](const sq::net::PacketReceived& packet) {
             const auto message = protocol::decode(packet.data);
             const auto* status = message ? std::get_if<protocol::MatchStatus>(&*message) : nullptr;
             // A late status of a match just left must not show the HUD again in the menu.
@@ -182,7 +182,7 @@ void HudPlugin::init(engine::Engine& engine) {
     });
 }
 
-void HudPlugin::setState(engine::Engine& engine, const game::MatchState& state) {
+void HudPlugin::setState(sq::engine::Engine& engine, const game::MatchState& state) {
     const game::MatchState previous = _state;
     if (state.countdown != previous.countdown) {
         _countdownTime = 0.0F;
@@ -201,7 +201,7 @@ void HudPlugin::setState(engine::Engine& engine, const game::MatchState& state) 
     }
 }
 
-void HudPlugin::lateUpdate(engine::Engine& engine, const ecs::time::Time& time) {
+void HudPlugin::lateUpdate(sq::engine::Engine& engine, const sq::time::Time& time) {
     const float dt = time.deltaTime;
     _countdownTime += dt;
     _goTime += dt;
@@ -209,7 +209,7 @@ void HudPlugin::lateUpdate(engine::Engine& engine, const ecs::time::Time& time) 
     if (!_inMatch || _state.phase == game::NO_MATCH || _state.phase == PHASE_ENDED || (_visible && !_visible.get())) {
         return;
     }
-    const auto& window = engine.service<engine::IWindowService>();
+    const auto& window = engine.service<sq::engine::IWindowService>();
     const auto width = static_cast<float>(window.width());
     const auto height = static_cast<float>(window.height());
     const float scale = std::clamp(height / DESIGN_HEIGHT, MIN_SCALE, MAX_SCALE);
@@ -219,7 +219,7 @@ void HudPlugin::lateUpdate(engine::Engine& engine, const ecs::time::Time& time) 
 }
 
 void HudPlugin::drawScore(const float width, const float scale) const {
-    engine::IScreenDrawService* draw = _typeface.service();
+    sq::engine::IScreenDrawService* draw = _typeface.service();
     if (draw == nullptr) {
         return;
     }
@@ -231,13 +231,13 @@ void HudPlugin::drawScore(const float width, const float scale) const {
     const float shadow = SHADOW * scale;
 
     // Team panels on both sides of the clock, slanted on their outer edge.
-    const engine::ScreenRect blue{
+    const sq::engine::ScreenRect blue{
         .x = middle - (clockWidth / 2.0F) - panelWidth,
         .y = top,
         .width = panelWidth,
         .height = panelHeight,
     };
-    const engine::ScreenRect orange{
+    const sq::engine::ScreenRect orange{
         .x = middle + (clockWidth / 2.0F),
         .y = top,
         .width = panelWidth,
@@ -251,7 +251,7 @@ void HudPlugin::drawScore(const float width, const float scale) const {
                       SHADOW_COLOR);
     draw->drawTexture(_slantLeft, WHOLE, blue, 0.0F, opaque(BLUE_TEAM));
     draw->drawTexture(_slantRight, WHOLE, orange, 0.0F, opaque(ORANGE_TEAM));
-    const engine::ScreenRect clock{
+    const sq::engine::ScreenRect clock{
         .x = middle - (clockWidth / 2.0F),
         .y = top,
         .width = clockWidth,
@@ -294,12 +294,12 @@ void HudPlugin::drawScore(const float width, const float scale) const {
 }
 
 void HudPlugin::drawAnnouncements(const float width, const float height, const float scale) const {
-    engine::IScreenDrawService* draw = _typeface.service();
+    sq::engine::IScreenDrawService* draw = _typeface.service();
     if (draw == nullptr) {
         return;
     }
     const float middle = width / 2.0F;
-    const auto bigText = [&](const std::string& text, const float centerY, const float cap, const ecs::Rgba color) {
+    const auto bigText = [&](const std::string& text, const float centerY, const float cap, const sq::ecs::Rgba color) {
         const float shadow = cap * 0.05F;
         _typeface.draw(text, middle + shadow, centerY - (cap / 2.0F) + shadow, cap,
                        withAlpha(SHADOW_COLOR, static_cast<float>(color.a) / 255.0F), Align::Center);
@@ -338,20 +338,20 @@ void HudPlugin::drawAnnouncements(const float width, const float height, const f
     }
 }
 
-void HudPlugin::drawBoost(engine::Engine& engine, const float width, const float height, const float scale,
+void HudPlugin::drawBoost(sq::engine::Engine& engine, const float width, const float height, const float scale,
                           const float dt) {
-    engine::IScreenDrawService* draw = _typeface.service();
+    sq::engine::IScreenDrawService* draw = _typeface.service();
     if (draw == nullptr) {
         return;
     }
     // The local car, found by the camera rig.
-    ecs::Registry& registry = engine.registry();
+    sq::ecs::Registry& registry = engine.registry();
     const auto& rigs = registry.getComponents<game::CameraRig>();
-    const ecs::Entity camera = engine.getPlugin<CameraPlugin>().camera();
+    const sq::ecs::Entity camera = engine.getPlugin<CameraPlugin>().camera();
     if (!rigs.contains(camera) || rigs.get(camera).car == game::NO_ENTITY) {
         return;
     }
-    const auto car = static_cast<ecs::Entity>(rigs.get(camera).car);
+    const auto car = static_cast<sq::ecs::Entity>(rigs.get(camera).car);
     const auto& statuses = registry.getComponents<game::CarStatus>();
     if (!statuses.contains(car)) {
         return;
@@ -377,7 +377,7 @@ void HudPlugin::drawBoost(engine::Engine& engine, const float width, const float
         const float x = centerX + (ringRadius * std::cos(angle));
         const float y = centerY + (ringRadius * std::sin(angle));
         const float on = std::clamp(lit - static_cast<float>(i), 0.0F, 1.0F);
-        ecs::Rgba color = blend(TICK_OFF, blend(BOOST_LOW, BOOST_HIGH, t), on);
+        sq::ecs::Rgba color = blend(TICK_OFF, blend(BOOST_LOW, BOOST_HIGH, t), on);
         if (status.boosting && on > 0.0F) {
             color = blend(color, WHITE, 0.35F);
         }
@@ -394,9 +394,9 @@ void HudPlugin::drawBoost(engine::Engine& engine, const float width, const float
     _typeface.draw("BOOST", centerX, centerY + (cap * 0.55F), labelCap, DIM, Align::Center);
 }
 
-void HudPlugin::shutdown(engine::Engine& engine) {
+void HudPlugin::shutdown(sq::engine::Engine& engine) {
     if (_packets) {
-        engine.eventBus().unsubscribe<ecs::net::PacketReceived>(*_packets);
+        engine.eventBus().unsubscribe<sq::net::PacketReceived>(*_packets);
         _packets.reset();
     }
     if (_joined) {

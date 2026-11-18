@@ -12,7 +12,7 @@ namespace {
 namespace looks = client::looks;
 
 looks::Looks read(std::string_view toml, std::vector<std::string>& warnings) {
-    return looks::readLooks(config::ConfigFile::parse(toml), warnings);
+    return looks::readLooks(sq::config::ConfigFile::parse(toml), warnings);
 }
 
 bool anyWarningMentions(const std::vector<std::string>& warnings, std::string_view text) {
@@ -261,7 +261,7 @@ TEST(Looks, ReadsTheDamagedLooksOfABoss) {
 TEST(Looks, ShippedFileReadsWithoutWarnings) {
     std::vector<std::string> warnings;
     const looks::Looks shipped =
-        looks::readLooks(config::ConfigFile::load(std::string(RTYPE_CLIENT_CONFIG_DIR) + "/looks.toml"), warnings);
+        looks::readLooks(sq::config::ConfigFile::load(std::string(RTYPE_CLIENT_CONFIG_DIR) + "/looks.toml"), warnings);
     EXPECT_TRUE(warnings.empty()) << (warnings.empty() ? "" : warnings.front());
     EXPECT_FALSE(shipped.bosses.empty());
 }

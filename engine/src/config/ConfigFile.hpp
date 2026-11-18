@@ -12,7 +12,7 @@
 #include <variant>
 #include <vector>
 
-namespace config {
+namespace sq::config {
 
 /**
  * @brief Settings read from a TOML file, looked up by dotted key (`"audio.spatial.max_pan"`).
@@ -142,4 +142,4 @@ class ConfigFile {
     std::vector<std::string> _warnings;
 };
 
-}  // namespace config
+}  // namespace sq::config

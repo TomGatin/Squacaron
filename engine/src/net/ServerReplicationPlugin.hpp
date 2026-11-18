@@ -10,11 +10,13 @@
 #include "events/EventBus.hpp"
 #include "net/IReplicationCodec.hpp"
 
-namespace ecs::time {
-struct Time;
-}
+namespace sq::time {
 
-namespace ecs::net {
+struct Time;
+
+}  // namespace sq::time
+
+namespace sq::net {
 
 /**
  * @brief Server side of the replication: inputs in, snapshots out.
@@ -27,7 +29,7 @@ namespace ecs::net {
  *
  * Requires `NetworkPlugin`, which provides the events and the service.
  */
-class ServerReplicationPlugin final : public engine::IPlugin {
+class ServerReplicationPlugin final : public sq::engine::IPlugin {
   public:
     /**
      * @brief Creates the plugin.
@@ -45,41 +47,41 @@ class ServerReplicationPlugin final : public engine::IPlugin {
      * @brief Declares the dependency on NetworkPlugin.
      * @param builder Dependency builder.
      */
-    void build(engine::PluginBuilder& builder) override;
+    void build(sq::engine::PluginBuilder& builder) override;
 
     /**
      * @brief Subscribes to the received packets.
      * @param engine Host engine.
      */
-    void init(engine::Engine& engine) override;
+    void init(sq::engine::Engine& engine) override;
 
     /**
      * @brief Applies one pending input per entity.
      * @param engine Host engine.
      * @param time Time of this step.
      */
-    void fixedUpdate(engine::Engine& engine, const ecs::time::Time& time) override;
+    void fixedUpdate(sq::engine::Engine& engine, const sq::time::Time& time) override;
 
     /**
      * @brief Sends a snapshot if the simulation advanced this frame.
      * @param engine Host engine.
      * @param time Frame time.
      */
-    void update(engine::Engine& engine, const ecs::time::Time& time) override;
+    void update(sq::engine::Engine& engine, const sq::time::Time& time) override;
 
     /**
      * @brief Unsubscribes from the received packets.
      * @param engine Host engine.
      */
-    void shutdown(engine::Engine& engine) override;
+    void shutdown(sq::engine::Engine& engine) override;
 
   private:
     /** @brief Game wire format. */
     std::shared_ptr<IReplicationCodec> _codec;
     /** @brief Subscription to `PacketReceived`, while initialized. */
-    std::optional<ecs::EventBus::EventToken> _packets;
+    std::optional<sq::events::EventBus::EventToken> _packets;
     /** @brief Tick of the last fixed step not sent yet. */
     std::optional<std::uint32_t> _pendingTick;
 };
 
-}  // namespace ecs::net
+}  // namespace sq::net

@@ -7,7 +7,7 @@
 
 #include "render/api/components/Renderable.hpp"
 
-namespace render {
+namespace sq::render {
 
 /** @brief How a texture is sampled when drawn bigger or smaller than its pixel size. */
 enum class TextureFilter : std::uint8_t {
@@ -18,7 +18,7 @@ enum class TextureFilter : std::uint8_t {
 };
 
 /**
- * @brief Loads textures and hands them out by `ecs::TextureId`.
+ * @brief Loads textures and hands them out by `sq::ecs::TextureId`.
  *
  * Minimal owner of GPU textures for the rendering module. Textures can only be loaded once a `Window`
  * exists, and the store must be destroyed before that window.
@@ -46,24 +46,24 @@ class TextureStore {
      * @param path Image file path.
      * @param filter Sampling used when the texture is scaled.
      * @param preferred Identifier to give back if it is free (the one this texture had before it was released), or
-     * `ecs::NO_TEXTURE` for a new one.
-     * @return The identifier, or `ecs::NO_TEXTURE` if the file could not be loaded.
+     * `sq::ecs::NO_TEXTURE` for a new one.
+     * @return The identifier, or `sq::ecs::NO_TEXTURE` if the file could not be loaded.
      */
-    ecs::TextureId load(const std::string& path, TextureFilter filter = TextureFilter::Nearest,
-                        ecs::TextureId preferred = ecs::NO_TEXTURE);
+    sq::ecs::TextureId load(const std::string& path, TextureFilter filter = TextureFilter::Nearest,
+                            sq::ecs::TextureId preferred = sq::ecs::NO_TEXTURE);
 
     /**
      * @brief Keeps every identifier up to `last` for loads that ask for it as `preferred`.
      * @param last Highest identifier to keep.
      */
-    void reserve(ecs::TextureId last);
+    void reserve(sq::ecs::TextureId last);
 
     /**
      * @brief Tells whether an identifier names a loaded texture.
      * @param id Identifier returned by `load`.
-     * @return False for `ecs::NO_TEXTURE`, an unknown or an unloaded id.
+     * @return False for `sq::ecs::NO_TEXTURE`, an unknown or an unloaded id.
      */
-    [[nodiscard]] bool contains(ecs::TextureId id) const;
+    [[nodiscard]] bool contains(sq::ecs::TextureId id) const;
 
     /** @brief The GPU textures, defined in `render/detail/RaylibStores.hpp` for the render module only. */
     struct Impl;
@@ -77,16 +77,16 @@ class TextureStore {
     /**
      * @brief Releases a texture; its identifier is never given to another texture, and now resolves to nothing.
      *
-     * Unknown identifiers, `ecs::NO_TEXTURE` and the placeholder are ignored.
+     * Unknown identifiers, `sq::ecs::NO_TEXTURE` and the placeholder are ignored.
      * @param id Identifier returned by `load`.
      */
-    void unload(ecs::TextureId id);
+    void unload(sq::ecs::TextureId id);
 
     /**
      * @brief Gets the texture drawn in place of a missing file: a magenta and black checkerboard, made on first use.
-     * @return Its identifier, or `ecs::NO_TEXTURE` if it cannot be created (no window).
+     * @return Its identifier, or `sq::ecs::NO_TEXTURE` if it cannot be created (no window).
      */
-    ecs::TextureId placeholder();
+    sq::ecs::TextureId placeholder();
 
     /**
      * @brief Counts the textures held, the placeholder included.
@@ -99,4 +99,4 @@ class TextureStore {
     std::unique_ptr<Impl> _impl;
 };
 
-}  // namespace render
+}  // namespace sq::render

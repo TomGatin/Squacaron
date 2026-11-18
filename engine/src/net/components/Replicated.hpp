@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace ecs {
+namespace sq::ecs {
 
 /**
  * @brief Marks an entity whose state is sent to the clients in snapshots.
@@ -14,4 +14,4 @@ struct Replicated {
     std::uint32_t kind = 0;
 };
 
-}  // namespace ecs
+}  // namespace sq::ecs

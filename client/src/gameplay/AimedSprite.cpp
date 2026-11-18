@@ -32,39 +32,40 @@ int aimedFrame(const AimedSprite& sprite, const float degrees) noexcept {
     return static_cast<int>(std::lround(relative / step)) % sprite.frames;
 }
 
-void aimSprites(ecs::Registry& registry) {
+void aimSprites(sq::ecs::Registry& registry) {
     std::vector<std::pair<float, float>> ships;
-    registry.runSystem<ecs::Replicated, ecs::Transform>(
-        [&ships](ecs::Entity /*entity*/, const ecs::Replicated& replicated, const ecs::Transform& transform) {
-            if (replicated.kind == rtype::game::KIND_PLAYER_SHIP) {
-                ships.emplace_back(transform.x, transform.y);
-            }
-        });
+    registry.runSystem<sq::ecs::Replicated, sq::ecs::Transform>([&ships](sq::ecs::Entity /*entity*/,
+                                                                         const sq::ecs::Replicated& replicated,
+                                                                         const sq::ecs::Transform& transform) {
+        if (replicated.kind == rtype::game::KIND_PLAYER_SHIP) {
+            ships.emplace_back(transform.x, transform.y);
+        }
+    });
     if (ships.empty()) {
         return;
     }
-    registry.runSystem<AimedSprite, ecs::Transform, ecs::Renderable>([&ships](ecs::Entity /*entity*/,
-                                                                              const AimedSprite& sprite,
-                                                                              const ecs::Transform& transform,
-                                                                              ecs::Renderable& renderable) {
-        std::optional<std::pair<float, float>> target;
-        float best = std::numeric_limits<float>::infinity();
-        for (const auto& [x, y] : ships) {
-            const float distance = ((x - transform.x) * (x - transform.x)) + ((y - transform.y) * (y - transform.y));
-            if (distance < best) {
-                best = distance;
-                target = {x, y};
+    registry.runSystem<AimedSprite, sq::ecs::Transform, sq::ecs::Renderable>(
+        [&ships](sq::ecs::Entity /*entity*/, const AimedSprite& sprite, const sq::ecs::Transform& transform,
+                 sq::ecs::Renderable& renderable) {
+            std::optional<std::pair<float, float>> target;
+            float best = std::numeric_limits<float>::infinity();
+            for (const auto& [x, y] : ships) {
+                const float distance =
+                    ((x - transform.x) * (x - transform.x)) + ((y - transform.y) * (y - transform.y));
+                if (distance < best) {
+                    best = distance;
+                    target = {x, y};
+                }
             }
-        }
-        const float degrees =
-            std::atan2(target->second - transform.y, target->first - transform.x) * 180.0F / std::numbers::pi_v<float>;
-        const int frame = aimedFrame(sprite, degrees);
-        const int stride = sprite.frameStride > 0 ? sprite.frameStride : sprite.frameWidth;
-        renderable.sourceRect = {.x = sprite.startX + (frame * stride),
-                                 .y = sprite.startY,
-                                 .width = sprite.frameWidth,
-                                 .height = sprite.frameHeight};
-    });
+            const float degrees = std::atan2(target->second - transform.y, target->first - transform.x) * 180.0F /
+                                  std::numbers::pi_v<float>;
+            const int frame = aimedFrame(sprite, degrees);
+            const int stride = sprite.frameStride > 0 ? sprite.frameStride : sprite.frameWidth;
+            renderable.sourceRect = {.x = sprite.startX + (frame * stride),
+                                     .y = sprite.startY,
+                                     .width = sprite.frameWidth,
+                                     .height = sprite.frameHeight};
+        });
 }
 
 }  // namespace client::gameplay

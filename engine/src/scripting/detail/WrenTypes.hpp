@@ -11,7 +11,7 @@
 
 #include "scripting/detail/WrenFwd.hpp"  // IWYU pragma: export
 
-namespace scripting::detail {
+namespace sq::scripting::detail {
 
 template <typename...>
 inline constexpr bool always_false_v = false;
@@ -77,4 +77,4 @@ struct WrenHandleDeleter {
  */
 using UniqueWrenHandle = std::unique_ptr<ScriptObject, WrenHandleDeleter>;
 
-}  // namespace scripting::detail
+}  // namespace sq::scripting::detail

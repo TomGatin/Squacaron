@@ -16,7 +16,7 @@
 #include "ui/system/UiLayout.hpp"
 #include "ui/system/UiRenderSystem.hpp"
 
-namespace ui {
+namespace sq::ui {
 
 /**
  * @brief Engine plugin driving HUD layout, button interaction and HUD drawing.
@@ -25,15 +25,15 @@ namespace ui {
  * - `update`: lays the HUD out, runs `UiButtonSystem` (hover, press, click events), then `UiInteractionSystem`
  *   (focus navigation, text inputs, sliders, toggles, list scrolling).
  * - `lateUpdate`: lays the HUD out again, after every plugin's `update`, and submits it to
- *   `engine::IScreenDrawService`, which draws it on top of the world in the same frame.
+ *   `sq::engine::IScreenDrawService`, which draws it on top of the world in the same frame.
  *
- * Depends only on services (`engine::IWindowService`, `engine::IScreenDrawService`), never on the render backend,
- * so this module contains no graphics-library code. Fonts are loaded through `IScreenDrawService::loadFont`.
+ * Depends only on services (`sq::engine::IWindowService`, `sq::engine::IScreenDrawService`), never on the render
+ * backend, so this module contains no graphics-library code. Fonts are loaded through `IScreenDrawService::loadFont`.
  *
- * HUD elements can be nested with `hierarchy::setParent`: a child element is anchored inside its parent's rectangle
- * (see `computeLayout`). `hierarchy::HierarchyPlugin` is required so that destroying a panel destroys its widgets.
+ * HUD elements can be nested with `sq::hierarchy::setParent`: a child element is anchored inside its parent's rectangle
+ * (see `computeLayout`). `sq::hierarchy::HierarchyPlugin` is required so that destroying a panel destroys its widgets.
  */
-class UiPlugin final : public engine::IPlugin {
+class UiPlugin final : public sq::engine::IPlugin {
   public:
     /** @brief Constructs UiPlugin. */
     UiPlugin() = default;
@@ -63,33 +63,33 @@ class UiPlugin final : public engine::IPlugin {
      * @brief Declares the window and screen-draw services and the hierarchy plugin as dependencies.
      * @param builder Dependency builder.
      */
-    void build(engine::PluginBuilder& builder) override;
+    void build(sq::engine::PluginBuilder& builder) override;
 
     /**
      * @brief Creates the UI render system and the navigation resources.
      * @param engine Reference to host Engine.
      */
-    void init(engine::Engine& engine) override;
+    void init(sq::engine::Engine& engine) override;
 
     /**
      * @brief Lays the HUD out and updates button interaction states.
      * @param engine Reference to host Engine.
      * @param time   Current frame time (key repeat, caret blink).
      */
-    void update(engine::Engine& engine, const ecs::time::Time& time) override;
+    void update(sq::engine::Engine& engine, const sq::time::Time& time) override;
 
     /**
      * @brief Submits the HUD to the screen-draw service for this frame.
      * @param engine Reference to host Engine.
      * @param time   Current frame time (unused).
      */
-    void lateUpdate(engine::Engine& engine, const ecs::time::Time& time) override;
+    void lateUpdate(sq::engine::Engine& engine, const sq::time::Time& time) override;
 
     /**
      * @brief Releases the UI render system and the layout buffer.
      * @param engine Reference to host Engine (unused).
      */
-    void shutdown(engine::Engine& engine) override;
+    void shutdown(sq::engine::Engine& engine) override;
 
   private:
     /**
@@ -97,7 +97,7 @@ class UiPlugin final : public engine::IPlugin {
      * @param engine Reference to host Engine.
      * @return `{0, 0, windowWidth, windowHeight}`.
      */
-    [[nodiscard]] static UiScreenRect screenOf(engine::Engine& engine);
+    [[nodiscard]] static UiScreenRect screenOf(sq::engine::Engine& engine);
 
     /** @brief Owned UI render system; valid between init() and shutdown(). */
     std::unique_ptr<UiRenderSystem> _uiRenderSystem;
@@ -107,4 +107,4 @@ class UiPlugin final : public engine::IPlugin {
     UiInteractionSystem _interaction;
 };
 
-}  // namespace ui
+}  // namespace sq::ui

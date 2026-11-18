@@ -7,7 +7,7 @@
 
 #include <cstddef>
 
-namespace ui {
+namespace sq::ui {
 
 /**
  * @brief Vertical list of its `hierarchy` children, of which only `visibleCount` rows are laid out from `first`.
@@ -26,4 +26,4 @@ struct UiScrollList {
     float itemHeight = 40.0F;
 };
 
-}  // namespace ui
+}  // namespace sq::ui

@@ -9,7 +9,7 @@
 
 #include "render/api/components/Renderable.hpp"
 
-namespace ui {
+namespace sq::ui {
 
 /**
  * @brief Check box: a click, or confirm while it has the focus, flips `on` and publishes a `UiToggleChangedEvent`.
@@ -29,9 +29,9 @@ struct UiToggle {
     /** @brief Height of the box in pixels. */
     float height = DEFAULT_SIZE;
     /** @brief Box colour. */
-    ecs::Rgba box = {.r = 60, .g = 60, .b = 60, .a = 255};
+    sq::ecs::Rgba box = {.r = 60, .g = 60, .b = 60, .a = 255};
     /** @brief Mark colour, drawn while `on`. */
-    ecs::Rgba mark = {.r = 70, .g = 150, .b = 255, .a = 255};
+    sq::ecs::Rgba mark = {.r = 70, .g = 150, .b = 255, .a = 255};
 };
 
-}  // namespace ui
+}  // namespace sq::ui

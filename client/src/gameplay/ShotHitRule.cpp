@@ -16,7 +16,7 @@ namespace client::gameplay {
 
 using rtype::server::collision::ShotHitEvent;
 
-ShotHitRule::ShotHitRule(ecs::EventBus& bus, ecs::Registry& registry)
+ShotHitRule::ShotHitRule(sq::events::EventBus& bus, sq::ecs::Registry& registry)
     : _bus(&bus),
       _registry(&registry),
       _token(bus.subscribe<ShotHitEvent>([this](const ShotHitEvent& hit) { onShotHit(hit); })) {}

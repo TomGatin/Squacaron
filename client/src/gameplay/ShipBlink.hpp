@@ -35,6 +35,6 @@ inline constexpr std::uint8_t OPAQUE_ALPHA = 255;
  * @param registry Client registry.
  * @param seconds Time since any fixed origin.
  */
-void blinkInvulnerableShips(ecs::Registry& registry, float seconds);
+void blinkInvulnerableShips(sq::ecs::Registry& registry, float seconds);
 
 }  // namespace client::gameplay

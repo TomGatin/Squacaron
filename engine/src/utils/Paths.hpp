@@ -11,7 +11,7 @@
 #include <string>
 #include <string_view>
 
-namespace utils {
+namespace sq::utils {
 
 /** @brief Longest accepted path, in bytes. */
 inline constexpr std::size_t MAX_PATH_LENGTH = 1024;
@@ -61,4 +61,4 @@ inline constexpr std::size_t DEFAULT_QUOTE_LENGTH = 128;
  */
 [[nodiscard]] std::string quoteForLog(std::string_view text, std::size_t limit = DEFAULT_QUOTE_LENGTH);
 
-}  // namespace utils
+}  // namespace sq::utils

@@ -16,15 +16,15 @@
 #include "render/window/WindowConfig.hpp"
 #include "systems/render/RenderSystem.hpp"
 
-namespace render {
+namespace sq::render {
 
 /**
  * @brief Plugin responsible for window lifecycle, texture management, and 2D ECS rendering.
  *
- * Provides `engine::IWindowService`, `engine::IRenderService` and `engine::IScreenDrawService`. Each frame it draws
- * the world, then the screen-space calls queued through `IScreenDrawService`, then presents the frame.
+ * Provides `sq::engine::IWindowService`, `sq::engine::IRenderService` and `sq::engine::IScreenDrawService`. Each frame
+ * it draws the world, then the screen-space calls queued through `IScreenDrawService`, then presents the frame.
  */
-class RenderPlugin final : public engine::IPlugin {
+class RenderPlugin final : public sq::engine::IPlugin {
   public:
     /**
      * @brief Constructs RenderPlugin with optional window configuration.
@@ -57,25 +57,25 @@ class RenderPlugin final : public engine::IPlugin {
      * @brief Declares plugin dependencies.
      * @param builder Dependency builder.
      */
-    void build(engine::PluginBuilder& builder) override;
+    void build(sq::engine::PluginBuilder& builder) override;
 
     /**
      * @brief Initializes Window, TextureStore, RenderSystem and registers services.
      * @param engine Reference to host Engine.
      */
-    void init(engine::Engine& engine) override;
+    void init(sq::engine::Engine& engine) override;
 
     /**
      * @brief Frame rendering phase: collects visible entities and presents through window.
      * @param engine Reference to host Engine.
      */
-    void render(engine::Engine& engine) override;
+    void render(sq::engine::Engine& engine) override;
 
     /**
      * @brief Tears down rendering resources.
      * @param engine Reference to host Engine.
      */
-    void shutdown(engine::Engine& engine) override;
+    void shutdown(sq::engine::Engine& engine) override;
 
     /** @brief Gets mutable pointer to the internal TextureStore, or nullptr if uninitialized. */
     [[nodiscard]] TextureStore* textures() noexcept { return _textures.get(); }
@@ -112,4 +112,4 @@ class RenderPlugin final : public engine::IPlugin {
     std::shared_ptr<ScreenDrawService> _screenDrawService = nullptr;
 };
 
-}  // namespace render
+}  // namespace sq::render

@@ -12,11 +12,11 @@
 #include "tools/cvars/CVarRef.hpp"
 #include "tools/cvars/CVarTypes.hpp"
 
-namespace tools {
+namespace sq::tools {
 
 template <CVarType T>
 std::expected<void, std::string> CVarRef<T>::set(T value) const {
     return detail::assignCVar(*_manager, *_cvar, CVarValue{std::move(value)});
 }
 
-}  // namespace tools
+}  // namespace sq::tools

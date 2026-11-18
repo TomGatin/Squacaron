@@ -20,7 +20,7 @@
 #include <vector>
 #endif
 
-namespace engine {
+namespace sq::engine {
 
 namespace {
 
@@ -85,4 +85,4 @@ std::filesystem::path resolveContentPath(const std::filesystem::path& root, cons
     return root / path;
 }
 
-}  // namespace engine
+}  // namespace sq::engine

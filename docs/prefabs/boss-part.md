@@ -1,6 +1,6 @@
 # Boss Part
 
-**Name:** `boss_part` (`prefabs::BOSS_PART_PREFAB`)
+**Name:** `boss_part` (`sq::prefabs::BOSS_PART_PREFAB`)
 **Source:** `server/src/prefabs/boss_part/`
 
 ## Purpose
@@ -25,8 +25,8 @@ the boss and makes them its children in the entity hierarchy: they move with the
 | `Renderable` | `layer = 2` |
 | `RigidBody2D` | `Kinematic`, no velocity: the hierarchy moves it |
 | `Collider2D` | Box of `width` × `height`, sensor, `ENEMY` / `ENEMY_MASK` |
-| `prefabs::BossPart` | `role`, `look` |
-| `prefabs::Health` | turrets only: `points = max = health` |
+| `sq::prefabs::BossPart` | `role`, `look` |
+| `sq::prefabs::Health` | turrets only: `points = max = health` |
 
 ## Parameters
 
@@ -47,6 +47,6 @@ the other parts).
 ## API
 
 ```cpp
-void buildBossPart(ecs::Entity e, ecs::Registry& registry, PrefabParams const& params);
+void buildBossPart(sq::ecs::Entity e, sq::ecs::Registry& registry, PrefabParams const& params);
 std::optional<BossPartRole> bossPartRole(std::string_view name);
 ```

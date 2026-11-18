@@ -23,7 +23,7 @@
 
 namespace client {
 
-namespace log = engine::log;
+namespace log = sq::engine::log;
 namespace protocol = rtype::protocol;
 
 namespace {
@@ -35,15 +35,15 @@ constexpr const char* LOG_TAG = "client";
  * @param reason Why the transport closed.
  * @return Message for the player.
  */
-constexpr const char* describe(const ecs::net::DisconnectReason reason) {
+constexpr const char* describe(const sq::net::DisconnectReason reason) {
     switch (reason) {
-        case ecs::net::DisconnectReason::ProtocolMismatch:
+        case sq::net::DisconnectReason::ProtocolMismatch:
             return "the server runs another version of the game";
-        case ecs::net::DisconnectReason::ServerFull:
+        case sq::net::DisconnectReason::ServerFull:
             return "the server is full";
-        case ecs::net::DisconnectReason::Unreachable:
+        case sq::net::DisconnectReason::Unreachable:
             return "the server cannot be reached";
-        case ecs::net::DisconnectReason::ConnectionLost:
+        case sq::net::DisconnectReason::ConnectionLost:
             break;
     }
     return "connection to the server lost";
@@ -51,28 +51,28 @@ constexpr const char* describe(const ecs::net::DisconnectReason reason) {
 
 }  // namespace
 
-RTypeNetworkPlugin::RTypeNetworkPlugin(std::shared_ptr<ecs::net::ClientConnection> connection, TransportFactory factory)
+RTypeNetworkPlugin::RTypeNetworkPlugin(std::shared_ptr<sq::net::ClientConnection> connection, TransportFactory factory)
     : _connection(std::move(connection)), _factory(std::move(factory)) {}
 
-void RTypeNetworkPlugin::build(engine::PluginBuilder& builder) {
-    builder.require<ecs::net::NetworkPlugin>();
-    builder.require<ecs::net::ClientReplicationPlugin>();
+void RTypeNetworkPlugin::build(sq::engine::PluginBuilder& builder) {
+    builder.require<sq::net::NetworkPlugin>();
+    builder.require<sq::net::ClientReplicationPlugin>();
 }
 
 template <typename Event, typename Handler>
-void RTypeNetworkPlugin::listen(engine::Engine& engine, Handler handler) {
-    ecs::EventBus& bus = engine.eventBus();
+void RTypeNetworkPlugin::listen(sq::engine::Engine& engine, Handler handler) {
+    sq::events::EventBus& bus = engine.eventBus();
     const auto token = bus.subscribe<Event>(std::move(handler));
     _unsubscribe.emplace_back([&bus, token] { bus.unsubscribe<Event>(token); });
 }
 
-void RTypeNetworkPlugin::init(engine::Engine& engine) {
-    listen<ecs::net::PeerConnected>(
-        engine, [&engine](const ecs::net::PeerConnected& /*event*/) { sendMessage(engine, protocol::Hello{}); });
-    listen<ecs::net::PeerDisconnected>(
-        engine, [this, &engine](const ecs::net::PeerDisconnected& /*event*/) { onDisconnected(engine); });
-    listen<ecs::net::PacketReceived>(
-        engine, [this, &engine](const ecs::net::PacketReceived& packet) { onPacket(engine, packet); });
+void RTypeNetworkPlugin::init(sq::engine::Engine& engine) {
+    listen<sq::net::PeerConnected>(
+        engine, [&engine](const sq::net::PeerConnected& /*event*/) { sendMessage(engine, protocol::Hello{}); });
+    listen<sq::net::PeerDisconnected>(
+        engine, [this, &engine](const sq::net::PeerDisconnected& /*event*/) { onDisconnected(engine); });
+    listen<sq::net::PacketReceived>(
+        engine, [this, &engine](const sq::net::PacketReceived& packet) { onPacket(engine, packet); });
 
     listen<ConnectRequest>(engine, [this, &engine](const ConnectRequest& request) { onConnect(engine, request); });
     listen<DisconnectRequest>(engine, [this, &engine](const DisconnectRequest& /*request*/) {
@@ -112,11 +112,11 @@ void RTypeNetworkPlugin::init(engine::Engine& engine) {
     });
 }
 
-void RTypeNetworkPlugin::onConnect(engine::Engine& engine, const ConnectRequest& request) {
+void RTypeNetworkPlugin::onConnect(sq::engine::Engine& engine, const ConnectRequest& request) {
     if (_state != SessionState::Offline) {
         return;
     }
-    const std::shared_ptr<ecs::net::INetworkClient> transport = _factory ? _factory() : nullptr;
+    const std::shared_ptr<sq::net::INetworkClient> transport = _factory ? _factory() : nullptr;
     if (!transport) {
         close(engine, "no network available", true);
         return;
@@ -130,7 +130,7 @@ void RTypeNetworkPlugin::onConnect(engine::Engine& engine, const ConnectRequest&
     }
 }
 
-void RTypeNetworkPlugin::onDisconnected(engine::Engine& engine) {
+void RTypeNetworkPlugin::onDisconnected(sq::engine::Engine& engine) {
     if (_state == SessionState::Offline) {
         return;
     }
@@ -140,7 +140,7 @@ void RTypeNetworkPlugin::onDisconnected(engine::Engine& engine) {
     close(engine, reason, _state == SessionState::Connecting);
 }
 
-void RTypeNetworkPlugin::close(engine::Engine& engine, const std::string& reason, const bool duringConnection) {
+void RTypeNetworkPlugin::close(sq::engine::Engine& engine, const std::string& reason, const bool duringConnection) {
     if (_state != SessionState::Offline && _state != SessionState::Connecting && reason.empty()) {
         sendMessage(engine, protocol::Leave{});
     }
@@ -160,20 +160,20 @@ void RTypeNetworkPlugin::close(engine::Engine& engine, const std::string& reason
     }
 }
 
-void RTypeNetworkPlugin::leaveGame(engine::Engine& engine) {
+void RTypeNetworkPlugin::leaveGame(sq::engine::Engine& engine) {
     if (!_playerIndex) {
         return;
     }
     if (const auto& transport = _connection->client()) {
         transport->closeUdp();
     }
-    engine.getPlugin<ecs::net::ClientReplicationPlugin>().reset(engine);
+    engine.getPlugin<sq::net::ClientReplicationPlugin>().reset(engine);
     _playerIndex.reset();
     _level.reset();
 }
 
-void RTypeNetworkPlugin::onPacket(engine::Engine& engine, const ecs::net::PacketReceived& packet) {
-    if (packet.channel != ecs::net::Channel::Reliable) {
+void RTypeNetworkPlugin::onPacket(sq::engine::Engine& engine, const sq::net::PacketReceived& packet) {
+    if (packet.channel != sq::net::Channel::Reliable) {
         return;
     }
     if (const auto message = protocol::decode(packet.data)) {
@@ -181,8 +181,8 @@ void RTypeNetworkPlugin::onPacket(engine::Engine& engine, const ecs::net::Packet
     }
 }
 
-void RTypeNetworkPlugin::onMessage(engine::Engine& engine, const protocol::Message& message) {
-    ecs::EventBus& bus = engine.eventBus();
+void RTypeNetworkPlugin::onMessage(sq::engine::Engine& engine, const protocol::Message& message) {
+    sq::events::EventBus& bus = engine.eventBus();
     if (const auto* welcome = std::get_if<protocol::Welcome>(&message)) {
         if (_state != SessionState::Connecting) {
             return;
@@ -230,7 +230,7 @@ void RTypeNetworkPlugin::onMessage(engine::Engine& engine, const protocol::Messa
     }
 }
 
-void RTypeNetworkPlugin::onGameStart(engine::Engine& engine, const protocol::GameStart& start) {
+void RTypeNetworkPlugin::onGameStart(sq::engine::Engine& engine, const protocol::GameStart& start) {
     if (_state != SessionState::InRoom) {
         return;
     }
@@ -247,9 +247,9 @@ void RTypeNetworkPlugin::onGameStart(engine::Engine& engine, const protocol::Gam
     engine.eventBus().publish(GameStarted{.playerIndex = start.playerIndex, .playerCount = start.playerCount});
 }
 
-void RTypeNetworkPlugin::update(engine::Engine& /*engine*/, const ecs::time::Time& /*time*/) { _retired.reset(); }
+void RTypeNetworkPlugin::update(sq::engine::Engine& /*engine*/, const sq::time::Time& /*time*/) { _retired.reset(); }
 
-void RTypeNetworkPlugin::shutdown(engine::Engine& engine) {
+void RTypeNetworkPlugin::shutdown(sq::engine::Engine& engine) {
     // The service is still there: NetworkPlugin, a dependency, shuts down after this plugin.
     if (_state != SessionState::Offline && _state != SessionState::Connecting) {
         sendMessage(engine, protocol::Leave{});
@@ -261,9 +261,9 @@ void RTypeNetworkPlugin::shutdown(engine::Engine& engine) {
     _retired.reset();
 }
 
-void RTypeNetworkPlugin::sendMessage(engine::Engine& engine, const protocol::Message& message) {
-    engine.service<ecs::net::INetworkService>().send(ecs::net::SERVER_PEER, protocol::encode(message),
-                                                     ecs::net::Channel::Reliable);
+void RTypeNetworkPlugin::sendMessage(sq::engine::Engine& engine, const protocol::Message& message) {
+    engine.service<sq::net::INetworkService>().send(sq::net::SERVER_PEER, protocol::encode(message),
+                                                    sq::net::Channel::Reliable);
 }
 
 }  // namespace client

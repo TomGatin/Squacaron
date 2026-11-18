@@ -17,7 +17,7 @@
 #include "ui/components/UiButton.hpp"
 #include "ui/system/UiLayout.hpp"
 
-namespace ui {
+namespace sq::ui {
 
 UiButtonState UiButtonSystem::nextState(UiButtonState current, const UiPointerSample& pointer) noexcept {
     if (current == UiButtonState::Pressed) {
@@ -36,13 +36,13 @@ UiButtonState UiButtonSystem::nextState(UiButtonState current, const UiPointerSa
     return pointer.pressed ? UiButtonState::Pressed : UiButtonState::Hovered;
 }
 
-void UiButtonSystem::update(ecs::Registry& registry, std::span<const UiLayoutNode> layout,
-                            const engine::IWindowService& window, ecs::EventBus& bus) {
-    const engine::MousePosition mouse = window.mousePosition();
+void UiButtonSystem::update(sq::ecs::Registry& registry, std::span<const UiLayoutNode> layout,
+                            const sq::engine::IWindowService& window, sq::events::EventBus& bus) {
+    const sq::engine::MousePosition mouse = window.mousePosition();
     UiPointerSample pointer{
-        .down = window.isMouseButtonDown(engine::MouseButton::Left),
-        .pressed = window.isMouseButtonPressed(engine::MouseButton::Left),
-        .released = window.isMouseButtonReleased(engine::MouseButton::Left),
+        .down = window.isMouseButtonDown(sq::engine::MouseButton::Left),
+        .pressed = window.isMouseButtonPressed(sq::engine::MouseButton::Left),
+        .released = window.isMouseButtonReleased(sq::engine::MouseButton::Left),
     };
 
     for (const UiLayoutNode& node : layout) {
@@ -61,4 +61,4 @@ void UiButtonSystem::update(ecs::Registry& registry, std::span<const UiLayoutNod
     }
 }
 
-}  // namespace ui
+}  // namespace sq::ui

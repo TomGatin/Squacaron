@@ -2,28 +2,28 @@
 
 ## Purpose
 
-A prefab is a named entity template: a factory that attaches a pre-configured set of components to a freshly spawned entity. The generic `prefabs::PrefabManager` lives in the engine (`engine/src/prefabs/`, target `engine_prefabs`). Concrete prefabs depend on the game, so they live in the game server (`server/src/prefabs/`, target `rtype_prefabs`): each game ships its own set.
+A prefab is a named entity template: a factory that attaches a pre-configured set of components to a freshly spawned entity. The generic `sq::prefabs::PrefabManager` lives in the engine (`engine/src/prefabs/`, target `engine_prefabs`). Concrete prefabs depend on the game, so they live in the game server (`server/src/prefabs/`, target `rtype_prefabs`): each game ships its own set.
 
-## `prefabs::PrefabManager`
+## `sq::prefabs::PrefabManager`
 
 | Method | Description |
 |--------|-------------|
 | `registerPrefab(name, factory, defaults = {})` | Registers a factory under `name`, replacing any previous one. `defaults` are parameters applied to every spawn of this name. |
 | `has(name)` | Returns whether a factory exists for `name`. |
-| `spawn(name, buffer, params = {})` | Queues the creation of an instance into an `ecs::CommandBuffer`. `params` are merged over the registration defaults. Returns `false` and logs a warning if `name` is unknown. |
+| `spawn(name, buffer, params = {})` | Queues the creation of an instance into an `sq::ecs::CommandBuffer`. `params` are merged over the registration defaults. Returns `false` and logs a warning if `name` is unknown. |
 
 A factory has the signature:
 
 ```cpp
-using Factory = std::function<void(ecs::Entity, ecs::Registry&, PrefabParams const&)>;
+using Factory = std::function<void(sq::ecs::Entity, sq::ecs::Registry&, PrefabParams const&)>;
 ```
 
 !!! note "Deferred spawning"
     `spawn` never touches the `Registry` directly. The factory is queued with `CommandBuffer::deferSpawn` and only runs on the next `CommandBuffer::flush`. Prefabs can therefore be requested from inside a system loop without invalidating sparse array iterators.
 
-## `prefabs::PrefabParams`
+## `sq::prefabs::PrefabParams`
 
-A key/value bag of spawn parameters (`engine/src/prefabs/PrefabParams.hpp`). It is an alias of `ecs::ParamBag` (`engine/src/ecs/ParamBag.hpp`, in `engine_core`), the generic bag also used by other modules such as the timeline events. A prefab reads the keys it understands and uses its own default for every missing key, so prefabs can take any number of parameters (position, rotation, speed, size...) without changing the `PrefabManager` API.
+A key/value bag of spawn parameters (`engine/src/prefabs/PrefabParams.hpp`). It is an alias of `sq::ecs::ParamBag` (`engine/src/ecs/ParamBag.hpp`, in `engine_core`), the generic bag also used by other modules such as the timeline events. A prefab reads the keys it understands and uses its own default for every missing key, so prefabs can take any number of parameters (position, rotation, speed, size...) without changing the `PrefabManager` API.
 
 | Method | Description |
 |--------|-------------|
@@ -36,7 +36,7 @@ A key/value bag of spawn parameters (`engine/src/prefabs/PrefabParams.hpp`). It 
 
 Values are stored as `bool`, `std::int64_t`, `double` or `std::string`. Numbers convert between each other (`{"halfHeight", 8}` is read fine as a `float`); `bool` and strings only match themselves.
 
-`makeTransform(params)` builds an `ecs::Transform` from the standard keys `x`, `y`, `z`, `rotation` (radians), `scaleX` and `scaleY`. Every built-in prefab uses it.
+`makeTransform(params)` builds an `sq::ecs::Transform` from the standard keys `x`, `y`, `z`, `rotation` (radians), `scaleX` and `scaleY`. Every built-in prefab uses it.
 
 ## Usage
 
@@ -46,14 +46,14 @@ Values are stored as `bool`, `std::int64_t`, `double` or `std::string`. Numbers 
 #include "prefabs/missile/Missile.hpp"
 #include "prefabs/obstacle/Obstacle.hpp"
 
-prefabs::PrefabManager manager;
-prefabs::registerRtypePrefabs(manager);  // every R-Type prefab under its default name
+sq::prefabs::PrefabManager manager;
+sq::prefabs::registerRtypePrefabs(manager);  // every R-Type prefab under its default name
 
 // Variants: same factory, other defaults
-manager.registerPrefab("fast_missile", prefabs::buildMissile, {{"speed", -1200.0F}});
-manager.registerPrefab("obstacle_wide", prefabs::buildObstacle, {{"halfWidth", 128.0F}, {"halfHeight", 16.0F}});
+manager.registerPrefab("fast_missile", sq::prefabs::buildMissile, {{"speed", -1200.0F}});
+manager.registerPrefab("obstacle_wide", sq::prefabs::buildObstacle, {{"halfWidth", 128.0F}, {"halfHeight", 16.0F}});
 
-ecs::CommandBuffer buffer;
+sq::ecs::CommandBuffer buffer;
 manager.spawn("missile", buffer, {{"x", 800.0F}, {"y", 300.0F}, {"rotation", 0.3F}, {"speed", -900.0F}});
 manager.spawn("obstacle_wide", buffer, {{"x", 600.0F}, {"y", 400.0F}});
 buffer.flush(registry);  // the entities are created here
@@ -75,7 +75,7 @@ Every built-in prefab exposes a single `buildXxx(entity, registry, params)` func
 | `obstacle` | Level geometry | Static | Box 64×64, solid | `OBSTACLE` | [Obstacle](obstacle.md) |
 | `power_up` | Collectible bonus | Kinematic | Circle r=12, sensor | `POWER_UP` | [Power-Up](power-up.md) |
 
-Every prefab attaches `ecs::Transform`, `ecs::Renderable`, `ecs::RigidBody2D` and `ecs::Collider2D` (`boss_core` adds `prefabs::Health` and `prefabs::BossCore`, `boss_part` adds `prefabs::BossPart` and, for a turret, `prefabs::Health`). Who can touch whom is described in [Collision Categories](collision-categories.md).
+Every prefab attaches `sq::ecs::Transform`, `sq::ecs::Renderable`, `sq::ecs::RigidBody2D` and `sq::ecs::Collider2D` (`boss_core` adds `sq::prefabs::Health` and `sq::prefabs::BossCore`, `boss_part` adds `sq::prefabs::BossPart` and, for a turret, `sq::prefabs::Health`). Who can touch whom is described in [Collision Categories](collision-categories.md).
 
 ## Scripting
 

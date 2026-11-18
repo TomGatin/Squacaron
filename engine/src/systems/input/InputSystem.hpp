@@ -4,15 +4,19 @@
 #include "events/EventBus.hpp"
 #include "input/ActionMapping.hpp"
 
-namespace input {
+namespace sq::input {
+
 class InputState;
-}
 
-namespace engine {
+}  // namespace sq::input
+
+namespace sq::engine {
+
 class IWindowService;
-}
 
-namespace systems {
+}  // namespace sq::engine
+
+namespace sq::systems {
 
 /**
  * @brief System that samples hardware inputs, updates matching InputState components, and publishes input action
@@ -28,7 +32,7 @@ class InputSystem {
      * @param playerIndex Logical index of the controlled player entity.
      * @param gamepadIndex Hardware index of the polled gamepad device.
      */
-    explicit InputSystem(input::ActionMapping mapping = input::ActionMapping{}, int playerIndex = 0,
+    explicit InputSystem(sq::input::ActionMapping mapping = sq::input::ActionMapping{}, int playerIndex = 0,
                          int gamepadIndex = 0);
 
     /**
@@ -38,13 +42,14 @@ class InputSystem {
      * @param registry ECS registry containing entities and resources.
      * @param eventBus Optional event bus to publish InputActionEvent on state transitions.
      */
-    void update(const engine::IWindowService& window, ecs::Registry& registry, ecs::EventBus* eventBus = nullptr);
+    void update(const sq::engine::IWindowService& window, sq::ecs::Registry& registry,
+                sq::events::EventBus* eventBus = nullptr);
 
     /** @brief Gets mutable reference to the internal action mapping configuration. */
-    [[nodiscard]] input::ActionMapping& mapping() noexcept { return _mapping; }
+    [[nodiscard]] sq::input::ActionMapping& mapping() noexcept { return _mapping; }
 
     /** @brief Gets const reference to the internal action mapping configuration. */
-    [[nodiscard]] const input::ActionMapping& mapping() const noexcept { return _mapping; }
+    [[nodiscard]] const sq::input::ActionMapping& mapping() const noexcept { return _mapping; }
 
     /** @brief Gets the logical player index handled by this system. */
     [[nodiscard]] int playerIndex() const noexcept { return _playerIndex; }
@@ -60,10 +65,11 @@ class InputSystem {
 
   private:
     /** @brief Updates an individual InputState instance against hardware bindings and publishes events. */
-    void updateState(const engine::IWindowService& window, input::InputState& state, ecs::EventBus* eventBus);
+    void updateState(const sq::engine::IWindowService& window, sq::input::InputState& state,
+                     sq::events::EventBus* eventBus);
 
     /** @brief Active input action mapping configuration. */
-    input::ActionMapping _mapping;
+    sq::input::ActionMapping _mapping;
 
     /** @brief Logical player index assigned to this input system instance. */
     int _playerIndex = 0;
@@ -72,4 +78,4 @@ class InputSystem {
     int _gamepadIndex = 0;
 };
 
-}  // namespace systems
+}  // namespace sq::systems

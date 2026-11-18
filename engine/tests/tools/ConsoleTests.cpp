@@ -18,20 +18,20 @@
 
 namespace {
 
-using tools::Command;
-using tools::CommandContext;
-using tools::Console;
-using tools::CVarFlag;
-using tools::CVarManager;
-using tools::CVarOptions;
-using tools::OutputLevel;
-using tools::Statement;
+using sq::tools::Command;
+using sq::tools::CommandContext;
+using sq::tools::Console;
+using sq::tools::CVarFlag;
+using sq::tools::CVarManager;
+using sq::tools::CVarOptions;
+using sq::tools::OutputLevel;
+using sq::tools::Statement;
 
 /** @brief A console with the built-in commands and a few cvars. */
 class ConsoleTest : public ::testing::Test {
   protected:
     ConsoleTest() {
-        tools::registerBuiltinCommands(console);
+        sq::tools::registerBuiltinCommands(console);
         cvars.setCheatsAllowed(true);
     }
 
@@ -43,7 +43,7 @@ class ConsoleTest : public ::testing::Test {
 
     /** @brief Whether some output line contains a text. */
     [[nodiscard]] bool printed(const std::string& text) const {
-        for (const tools::OutputLine& line : console.output()) {
+        for (const sq::tools::OutputLine& line : console.output()) {
             if (line.text.find(text) != std::string::npos) {
                 return true;
             }
@@ -53,49 +53,49 @@ class ConsoleTest : public ::testing::Test {
 
     CVarManager cvars;
     Console console{cvars};
-    tools::CVarRef<float> gravity =
+    sq::tools::CVarRef<float> gravity =
         cvars.add("sv_gravity", 9.8F, "World gravity", CVarOptions{.flags = CVarFlag::Cheat});
-    tools::CVarRef<bool> colliders = cvars.add("r_draw_colliders", false, "Draws the colliders");
-    tools::CVarRef<bool> wireframe = cvars.add("r_wireframe", false);
-    tools::CVarRef<std::string> playerName = cvars.add("name", std::string("Player"));
+    sq::tools::CVarRef<bool> colliders = cvars.add("r_draw_colliders", false, "Draws the colliders");
+    sq::tools::CVarRef<bool> wireframe = cvars.add("r_wireframe", false);
+    sq::tools::CVarRef<std::string> playerName = cvars.add("name", std::string("Player"));
 };
 
 // --- Line splitting ---------------------------------------------------------------------------------------------
 
 TEST(CommandLine, SplitsWordsStatementsQuotesAndComments) {
-    const auto parsed = tools::splitCommandLine(R"(  set name "Big \"Boss\"" ; echo a;;b // ignored)");
+    const auto parsed = sq::tools::splitCommandLine(R"(  set name "Big \"Boss\"" ; echo a;;b // ignored)");
     ASSERT_TRUE(parsed);
     const std::vector<Statement> expected{{"set", "name", R"(Big "Boss")"}, {"echo", "a"}, {"b"}};
     EXPECT_EQ(*parsed, expected);
 }
 
 TEST(CommandLine, KeepsEmptyQuotedWordsAndQuotedSemicolons) {
-    const auto parsed = tools::splitCommandLine(R"(echo "" "a;b" "x // y")");
+    const auto parsed = sq::tools::splitCommandLine(R"(echo "" "a;b" "x // y")");
     ASSERT_TRUE(parsed);
     EXPECT_EQ(*parsed, (std::vector<Statement>{{"echo", "", "a;b", "x // y"}}));
 }
 
 TEST(CommandLine, RefusesUntrustedInput) {
-    EXPECT_FALSE(tools::splitCommandLine(R"(echo "open)"));
-    EXPECT_FALSE(tools::splitCommandLine("echo \x1b[2J"));
-    EXPECT_FALSE(tools::splitCommandLine(std::string("echo a\0b", 8)));
-    EXPECT_FALSE(tools::splitCommandLine(std::string(tools::MAX_LINE_LENGTH + 1, 'a')));
+    EXPECT_FALSE(sq::tools::splitCommandLine(R"(echo "open)"));
+    EXPECT_FALSE(sq::tools::splitCommandLine("echo \x1b[2J"));
+    EXPECT_FALSE(sq::tools::splitCommandLine(std::string("echo a\0b", 8)));
+    EXPECT_FALSE(sq::tools::splitCommandLine(std::string(sq::tools::MAX_LINE_LENGTH + 1, 'a')));
     std::string many;
-    for (std::size_t i = 0; i <= tools::MAX_LINE_WORDS; ++i) {
+    for (std::size_t i = 0; i <= sq::tools::MAX_LINE_WORDS; ++i) {
         many += "w ";
     }
-    EXPECT_FALSE(tools::splitCommandLine(many));
-    EXPECT_TRUE(tools::splitCommandLine("echo\ta"));
+    EXPECT_FALSE(sq::tools::splitCommandLine(many));
+    EXPECT_TRUE(sq::tools::splitCommandLine("echo\ta"));
 }
 
 TEST(CommandLine, QuoteWordRoundTrips) {
     for (const std::string word : {"plain", "", "two words", R"(q"uote)", R"(back\slash)", "semi;colon", "a//b"}) {
-        const auto parsed = tools::splitCommandLine("echo " + tools::quoteWord(word));
+        const auto parsed = sq::tools::splitCommandLine("echo " + sq::tools::quoteWord(word));
         ASSERT_TRUE(parsed) << word;
         ASSERT_EQ(parsed->size(), 1U) << word;
         EXPECT_EQ(parsed->front().at(1), word);
     }
-    EXPECT_EQ(tools::quoteWord("plain"), "plain");
+    EXPECT_EQ(sq::tools::quoteWord("plain"), "plain");
 }
 
 // --- Execution --------------------------------------------------------------------------------------------------
@@ -113,10 +113,10 @@ TEST_F(ConsoleTest, ReadsAndChangesACVarByItsName) {
 TEST_F(ConsoleTest, DescribesEveryFlagOfACVar) {
     (void)cvars.add("sv_version", 3, "Protocol version",
                     CVarOptions{.flags = CVarFlag::Cheat | CVarFlag::Archived | CVarFlag::ReadOnly});
-    EXPECT_EQ(tools::describeCVar(cvars, "sv_version"),
+    EXPECT_EQ(sq::tools::describeCVar(cvars, "sv_version"),
               "sv_version = 3 (int, default 3) [cheat] [archived] [read-only] - Protocol version");
-    EXPECT_EQ(tools::describeCVar(cvars, "r_wireframe"), "r_wireframe = false (bool, default false)");
-    EXPECT_EQ(tools::describeCVar(cvars, "missing"), "");
+    EXPECT_EQ(sq::tools::describeCVar(cvars, "r_wireframe"), "r_wireframe = false (bool, default false)");
+    EXPECT_EQ(sq::tools::describeCVar(cvars, "missing"), "");
 }
 
 TEST_F(ConsoleTest, SetResetAndToggle) {
@@ -286,7 +286,7 @@ TEST_F(ConsoleTest, PrintSplitsLines) {
 // --- Completion -------------------------------------------------------------------------------------------------
 
 TEST_F(ConsoleTest, CompletesAUniqueNameWithATrailingSpace) {
-    const tools::Completion completion = console.complete("sv_g");
+    const sq::tools::Completion completion = console.complete("sv_g");
     EXPECT_EQ(completion.line, "sv_gravity ");
     EXPECT_EQ(completion.candidates, std::vector<std::string>{"sv_gravity"});
     EXPECT_EQ(console.complete("cvar_l").line, "cvar_list ");
@@ -294,11 +294,11 @@ TEST_F(ConsoleTest, CompletesAUniqueNameWithATrailingSpace) {
 }
 
 TEST_F(ConsoleTest, CompletesTheSharedPrefixAndListsTheCandidates) {
-    const tools::Completion completion = console.complete("r_");
+    const sq::tools::Completion completion = console.complete("r_");
     EXPECT_EQ(completion.line, "r_");
     EXPECT_EQ(completion.candidates, (std::vector<std::string>{"r_draw_colliders", "r_wireframe"}));
 
-    const tools::Completion commands = console.complete("re");
+    const sq::tools::Completion commands = console.complete("re");
     EXPECT_EQ(commands.line, "reset ");
 }
 
@@ -309,7 +309,7 @@ TEST_F(ConsoleTest, CompletesCommandArgumentsAndBoolValues) {
     EXPECT_EQ(console.complete("r_wireframe t").line, "r_wireframe true ");
     EXPECT_EQ(console.complete("echo a; set r_d").line, "echo a; set r_draw_colliders ");
 
-    const tools::Completion all = console.complete("set ");
+    const sq::tools::Completion all = console.complete("set ");
     EXPECT_EQ(all.candidates.size(), cvars.size());
     EXPECT_EQ(all.line, "set ");
 }
@@ -347,7 +347,7 @@ TEST_F(ConsoleTest, ARawCommandGetsTheRestOfTheLineUntouched) {
 TEST_F(ConsoleTest, RawLinesStillRespectTheLineLimits) {
     console.addCommand("code", {.handler = [](CommandContext& /*context*/) {}, .raw = true});
     EXPECT_FALSE(console.execute("code \x1b[2J"));
-    EXPECT_FALSE(console.execute("code " + std::string(tools::MAX_LINE_LENGTH, 'a')));
+    EXPECT_FALSE(console.execute("code " + std::string(sq::tools::MAX_LINE_LENGTH, 'a')));
 }
 
 TEST_F(ConsoleTest, RunNeitherEchoesNorRemembers) {
@@ -447,7 +447,7 @@ TEST_F(ConsoleTest, ExecStaysInsideTheScriptDirectory) {
 
 TEST_F(ConsoleTest, ExecRefusesFilesTooLarge) {
     const ScriptDir dir;
-    dir.write("huge.cfg", std::string(tools::MAX_SCRIPT_SIZE + 1, '\n'));
+    dir.write("huge.cfg", std::string(sq::tools::MAX_SCRIPT_SIZE + 1, '\n'));
     console.setScriptRoot(dir.path());
     EXPECT_FALSE(console.execute("exec huge.cfg"));
     EXPECT_NE(last().find("larger than"), std::string::npos);

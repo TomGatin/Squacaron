@@ -61,7 +61,7 @@ inline constexpr std::uint16_t POWER_UP_MASK = PLAYER;
  * @param b Second collider.
  * @return True if each collider's category is accepted by the other one's mask.
  */
-[[nodiscard]] constexpr bool canCollide(ecs::Collider2D const& a, ecs::Collider2D const& b) noexcept {
+[[nodiscard]] constexpr bool canCollide(sq::ecs::Collider2D const& a, sq::ecs::Collider2D const& b) noexcept {
     return (a.categoryBits & b.maskBits) != 0 && (b.categoryBits & a.maskBits) != 0;
 }
 

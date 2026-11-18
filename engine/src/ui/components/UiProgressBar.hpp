@@ -2,7 +2,7 @@
 
 #include "render/api/components/Renderable.hpp"
 
-namespace ui {
+namespace sq::ui {
 
 /**
  * @brief Draws a value-based fill bar in screen space.
@@ -18,10 +18,10 @@ struct UiProgressBar {
     static constexpr float DEFAULT_HEIGHT = 16.0F;
 
     /** @brief Default colour of the filled portion (green). */
-    static constexpr ecs::Rgba DEFAULT_FOREGROUND = {.r = 0, .g = 200, .b = 0, .a = 255};
+    static constexpr sq::ecs::Rgba DEFAULT_FOREGROUND = {.r = 0, .g = 200, .b = 0, .a = 255};
 
     /** @brief Default colour of the empty portion (dark gray). */
-    static constexpr ecs::Rgba DEFAULT_BACKGROUND = {.r = 60, .g = 60, .b = 60, .a = 255};
+    static constexpr sq::ecs::Rgba DEFAULT_BACKGROUND = {.r = 60, .g = 60, .b = 60, .a = 255};
 
     /** @brief Current value. */
     float value = 0.0F;
@@ -39,10 +39,10 @@ struct UiProgressBar {
     float height = DEFAULT_HEIGHT;
 
     /** @brief Color of the filled portion. */
-    ecs::Rgba foreground = DEFAULT_FOREGROUND;
+    sq::ecs::Rgba foreground = DEFAULT_FOREGROUND;
 
     /** @brief Color of the empty portion. */
-    ecs::Rgba background = DEFAULT_BACKGROUND;
+    sq::ecs::Rgba background = DEFAULT_BACKGROUND;
 };
 
-}  // namespace ui
+}  // namespace sq::ui

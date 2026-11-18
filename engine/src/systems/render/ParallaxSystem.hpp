@@ -9,7 +9,7 @@
 
 #include "ecs/Registry.hpp"
 
-namespace systems {
+namespace sq::systems {
 
 /**
  * @brief Moves every entity that has both Transform and ParallaxLayer.
@@ -26,7 +26,7 @@ class ParallaxSystem {
      * @param registry Registry containing the scene.
      * @param deltaTime Elapsed time since the last frame in seconds.
      */
-    void update(ecs::Registry& registry, float deltaTime);
+    void update(sq::ecs::Registry& registry, float deltaTime);
 
   private:
     /// @brief Previous camera position, used to compute the camera delta.
@@ -36,4 +36,4 @@ class ParallaxSystem {
     float _prevCameraY = 0.0F;
 };
 
-}  // namespace systems
+}  // namespace sq::systems

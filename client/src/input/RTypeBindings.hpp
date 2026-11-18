@@ -12,7 +12,7 @@
 namespace client::input {
 
 /** @brief Button action that toggles the ready state in the lobby; it is never sent as a game input. */
-inline constexpr ::input::ActionId ACTION_READY = ::input::makeActionId("ready");
+inline constexpr sq::input::ActionId ACTION_READY = sq::input::makeActionId("ready");
 
 /** @brief A control the player can rebind from the controls screen. */
 enum class Control : std::uint8_t {
@@ -36,7 +36,7 @@ enum class Control : std::uint8_t {
 inline constexpr std::size_t CONTROL_COUNT = 7;
 
 /** @brief Main key of each control, indexed by `Control`. */
-using ControlKeys = std::array<engine::Key, CONTROL_COUNT>;
+using ControlKeys = std::array<sq::engine::Key, CONTROL_COUNT>;
 
 /** @brief Every control, in the order of the controls screen. */
 inline constexpr std::array<Control, CONTROL_COUNT> CONTROLS = {
@@ -71,7 +71,7 @@ inline constexpr std::array<Control, CONTROL_COUNT> CONTROLS = {
  * @param control Control to rebind.
  * @param key New key.
  */
-void assignKey(ControlKeys& keys, Control control, engine::Key key) noexcept;
+void assignKey(ControlKeys& keys, Control control, sq::engine::Key key) noexcept;
 
 /**
  * @brief Configures the R-Type bindings with the given main keys.
@@ -82,7 +82,7 @@ void assignKey(ControlKeys& keys, Control control, engine::Key key) noexcept;
  * @param mapping Mapping to fill; it is cleared first.
  * @param keys Main key of each control.
  */
-void setupBindings(::input::ActionMapping& mapping, const ControlKeys& keys);
+void setupBindings(sq::input::ActionMapping& mapping, const ControlKeys& keys);
 
 /**
  * @brief Configures standard key and gamepad bindings for the R-Type game.
@@ -93,6 +93,6 @@ void setupBindings(::input::ActionMapping& mapping, const ControlKeys& keys);
  *
  * @param mapping Target action mapping instance to populate.
  */
-void setupDefaultBindings(::input::ActionMapping& mapping);
+void setupDefaultBindings(sq::input::ActionMapping& mapping);
 
 }  // namespace client::input

@@ -16,7 +16,7 @@
 namespace client {
 
 /** @brief List of rooms: join one, create one, refresh, or go back to the title (disconnects). */
-class LobbyScene final : public scene::IScene {
+class LobbyScene final : public sq::scene::IScene {
   public:
     /** @brief Rows shown at once. */
     static constexpr std::size_t VISIBLE_ROWS = 6;
@@ -31,7 +31,7 @@ class LobbyScene final : public scene::IScene {
      * @brief Spawns the list from the last rooms received, and asks for a fresh list.
      * @param context Scene context.
      */
-    void onEnter(scene::SceneContext& context) override;
+    void onEnter(sq::scene::SceneContext& context) override;
 
   private:
     /**
@@ -39,20 +39,20 @@ class LobbyScene final : public scene::IScene {
      * @param context Scene context.
      * @param list Rooms of the server.
      */
-    void showRooms(scene::SceneContext& context, const rtype::protocol::LobbyList& list);
+    void showRooms(sq::scene::SceneContext& context, const rtype::protocol::LobbyList& list);
 
     /** @brief Scroll list holding one row per room. */
-    ecs::Entity _list = ecs::NULL_ENTITY;
+    sq::ecs::Entity _list = sq::ecs::NULL_ENTITY;
     /** @brief Line shown when there is no room. */
-    ecs::Entity _empty = ecs::NULL_ENTITY;
+    sq::ecs::Entity _empty = sq::ecs::NULL_ENTITY;
     /** @brief "Create" button. */
-    ecs::Entity _create = ecs::NULL_ENTITY;
+    sq::ecs::Entity _create = sq::ecs::NULL_ENTITY;
     /** @brief Current rows. */
-    std::vector<ecs::Entity> _rows;
+    std::vector<sq::ecs::Entity> _rows;
 };
 
 /** @brief A room waiting for its players: who is ready, toggle ready, leave. Switches to the game at `GameStart`. */
-class RoomScene final : public scene::IScene {
+class RoomScene final : public sq::scene::IScene {
   public:
     /**
      * @brief Gets the scene name.
@@ -64,7 +64,7 @@ class RoomScene final : public scene::IScene {
      * @brief Spawns the room from the last update received.
      * @param context Scene context.
      */
-    void onEnter(scene::SceneContext& context) override;
+    void onEnter(sq::scene::SceneContext& context) override;
 
   private:
     /**
@@ -72,14 +72,14 @@ class RoomScene final : public scene::IScene {
      * @param context Scene context.
      * @param room The room.
      */
-    void showRoom(scene::SceneContext& context, const rtype::protocol::LobbyUpdate& room);
+    void showRoom(sq::scene::SceneContext& context, const rtype::protocol::LobbyUpdate& room);
 
     /** @brief Title line, with the room number. */
-    ecs::Entity _title = ecs::NULL_ENTITY;
+    sq::ecs::Entity _title = sq::ecs::NULL_ENTITY;
     /** @brief One line per player slot. */
-    std::vector<ecs::Entity> _slots;
+    std::vector<sq::ecs::Entity> _slots;
     /** @brief "Ready" button. */
-    ecs::Entity _readyButton = ecs::NULL_ENTITY;
+    sq::ecs::Entity _readyButton = sq::ecs::NULL_ENTITY;
     /** @brief Ready state last requested. */
     bool _ready = false;
 };

@@ -12,44 +12,44 @@
 #include "scene/SceneManager.hpp"
 #include "scene/SceneTypes.hpp"
 
-namespace scene {
+namespace sq::scene {
 
-engine::Engine& SceneContext::engine() const {
-    engine::Engine* host = _manager->engine();
+sq::engine::Engine& SceneContext::engine() const {
+    sq::engine::Engine* host = _manager->engine();
     if (host == nullptr) {
         throw std::logic_error("SceneContext: the scene manager is not attached to an engine");
     }
     return *host;
 }
 
-ecs::Registry& SceneContext::registry() const { return engine().registry(); }
+sq::ecs::Registry& SceneContext::registry() const { return engine().registry(); }
 
-ecs::EventBus& SceneContext::bus() const { return engine().eventBus(); }
+sq::events::EventBus& SceneContext::bus() const { return engine().eventBus(); }
 
 bool SceneContext::isRunning() const noexcept { return _manager->isRunning(_id); }
 
 bool SceneContext::isVisible() const noexcept { return _manager->isVisible(_id); }
 
-ecs::Entity SceneContext::spawn() {
-    ecs::Registry& reg = registry();
-    const ecs::Entity entity = reg.spawnEntity();
+sq::ecs::Entity SceneContext::spawn() {
+    sq::ecs::Registry& reg = registry();
+    const sq::ecs::Entity entity = reg.spawnEntity();
     reg.addComponent(entity, SceneMember{.id = _id});
     if (_manager->isActive(_id) && !isVisible()) {
-        ecs::hide(reg, entity, ecs::HiddenReason::Scene);
+        sq::ecs::hide(reg, entity, sq::ecs::HiddenReason::Scene);
     }
     return entity;
 }
 
-void SceneContext::adopt(ecs::Entity entity) {
-    ecs::Registry& reg = registry();
+void SceneContext::adopt(sq::ecs::Entity entity) {
+    sq::ecs::Registry& reg = registry();
     if (!reg.isAlive(entity)) {
         return;
     }
     reg.addComponent(entity, SceneMember{.id = _id});
     if (_manager->isActive(_id) && !isVisible()) {
-        ecs::hide(reg, entity, ecs::HiddenReason::Scene);
+        sq::ecs::hide(reg, entity, sq::ecs::HiddenReason::Scene);
     } else {
-        ecs::show(reg, entity, ecs::HiddenReason::Scene);
+        sq::ecs::show(reg, entity, sq::ecs::HiddenReason::Scene);
     }
 }
 
@@ -64,7 +64,7 @@ void SceneContext::addSystem(SceneStage stage, SceneSystem system) {
     _systems.at(static_cast<std::size_t>(stage)).push_back(std::move(system));
 }
 
-void SceneContext::runSystems(SceneStage stage, engine::Engine& engine, const ecs::time::Time& time) {
+void SceneContext::runSystems(SceneStage stage, sq::engine::Engine& engine, const sq::time::Time& time) {
     if (_runDepth == 0 && !_pending.empty()) {
         mergePending();
     }
@@ -83,7 +83,7 @@ void SceneContext::runSystems(SceneStage stage, engine::Engine& engine, const ec
 
 void SceneContext::release() {
     if (!_subscriptions.empty()) {
-        ecs::EventBus& eventBus = bus();
+        sq::events::EventBus& eventBus = bus();
         for (const Subscription& subscription : _subscriptions) {
             subscription.unsubscribe(eventBus, subscription.token);
         }
@@ -102,4 +102,4 @@ void SceneContext::mergePending() {
     _pending.clear();
 }
 
-}  // namespace scene
+}  // namespace sq::scene

@@ -18,14 +18,14 @@ namespace client {
  * @brief What the local player does in game: the replication leaves the inputs and the movement to the game.
  *
  * - From `GameStarted` until the game ends or is left (`GameEnded`, `RoomLeft`, `SessionClosed`), sends the state of
- * the `input::InputState` of player 0 as `ecs::net::LocalInput`, once per fixed step, unless `setPaused(true)` (a local
- * pause menu: the game goes on, the ship just receives no input).
- * - The ship of this player is `ecs::Predicted`, moved by `InputApplied` like on the server; the other replicated
- *   entities are `ecs::Interpolated`.
+ * the `sq::input::InputState` of player 0 as `sq::net::LocalInput`, once per fixed step, unless `setPaused(true)` (a
+ * local pause menu: the game goes on, the ship just receives no input).
+ * - The ship of this player is `sq::ecs::Predicted`, moved by `InputApplied` like on the server; the other replicated
+ *   entities are `sq::ecs::Interpolated`.
  *
  * It draws nothing and needs no window, so it runs in tests.
  */
-class PlayerControlPlugin final : public engine::IPlugin {
+class PlayerControlPlugin final : public sq::engine::IPlugin {
   public:
     /**
      * @brief Gets plugin name.
@@ -37,26 +37,26 @@ class PlayerControlPlugin final : public engine::IPlugin {
      * @brief Declares the dependencies on the session and on the replication.
      * @param builder Dependency builder.
      */
-    void build(engine::PluginBuilder& builder) override;
+    void build(sq::engine::PluginBuilder& builder) override;
 
     /**
      * @brief Subscribes to the session and replication events.
      * @param engine Host engine.
      */
-    void init(engine::Engine& engine) override;
+    void init(sq::engine::Engine& engine) override;
 
     /**
      * @brief Sends the input of this step, once the game has started.
      * @param engine Host engine.
      * @param time Time of this step.
      */
-    void fixedUpdate(engine::Engine& engine, const ecs::time::Time& time) override;
+    void fixedUpdate(sq::engine::Engine& engine, const sq::time::Time& time) override;
 
     /**
      * @brief Unsubscribes from the events.
      * @param engine Host engine.
      */
-    void shutdown(engine::Engine& engine) override;
+    void shutdown(sq::engine::Engine& engine) override;
 
     /**
      * @brief Stops or resumes sending the inputs, for a local pause.
@@ -87,22 +87,23 @@ class PlayerControlPlugin final : public engine::IPlugin {
 
   private:
     /**
-     * @brief The ship of this player becomes `ecs::Predicted`, every other replicated entity `ecs::Interpolated`.
+     * @brief The ship of this player becomes `sq::ecs::Predicted`, every other replicated entity
+     * `sq::ecs::Interpolated`.
      * @param engine Host engine.
      * @param event The new entity.
      */
-    void onEntitySpawned(engine::Engine& engine, const ecs::net::ReplicatedEntitySpawned& event) const;
+    void onEntitySpawned(sq::engine::Engine& engine, const sq::net::ReplicatedEntitySpawned& event) const;
 
     /** @brief Index of this player's ship, once the game has started. */
     std::optional<std::uint8_t> _playerIndex;
     /** @brief Sequence of the last input sent. */
     std::uint32_t _sequence = 0;
     /** @brief Subscription to `GameStarted`, while initialized. */
-    std::optional<ecs::EventBus::EventToken> _started;
+    std::optional<sq::events::EventBus::EventToken> _started;
     /** @brief Subscription to `ReplicatedEntitySpawned`, while initialized. */
-    std::optional<ecs::EventBus::EventToken> _spawned;
+    std::optional<sq::events::EventBus::EventToken> _spawned;
     /** @brief Subscription to `InputApplied`, while initialized. */
-    std::optional<ecs::EventBus::EventToken> _inputs;
+    std::optional<sq::events::EventBus::EventToken> _inputs;
     /** @brief Subscriptions to the end of a game (`GameEnded`, `RoomLeft`, `SessionClosed`), while initialized. */
     std::vector<std::function<void()>> _endings;
     /** @brief No input is sent while paused. */

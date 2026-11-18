@@ -15,7 +15,7 @@
 #include <utility>
 #include <vector>
 
-namespace ecs {
+namespace sq::ecs {
 
 /** @brief Most empty slots a `preferred` handle may add past the end of a store. */
 inline constexpr std::size_t MAX_SLOT_GAP = 4096;
@@ -68,4 +68,4 @@ void reserveSlots(std::vector<Slot>& slots, const Id last) {
     }
 }
 
-}  // namespace ecs
+}  // namespace sq::ecs

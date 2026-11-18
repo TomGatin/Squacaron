@@ -14,15 +14,15 @@
 #include "tools/cvars/CVarManager.hpp"
 #include "tools/scripting/WrenConsole.hpp"
 
-namespace tools {
+namespace sq::tools {
 
-void ConsoleScriptingPlugin::build(engine::PluginBuilder& builder) {
+void ConsoleScriptingPlugin::build(sq::engine::PluginBuilder& builder) {
     builder.require<ConsolePlugin>();
-    builder.require<scripting::ScriptPlugin>();
+    builder.require<sq::scripting::ScriptPlugin>();
 }
 
-void ConsoleScriptingPlugin::init(engine::Engine& engine) {
-    _wren = std::make_unique<WrenConsole>(engine.getPlugin<scripting::ScriptPlugin>().scriptSystem().getVm());
+void ConsoleScriptingPlugin::init(sq::engine::Engine& engine) {
+    _wren = std::make_unique<WrenConsole>(engine.getPlugin<sq::scripting::ScriptPlugin>().scriptSystem().getVm());
     auto& console = engine.service<Console>();
 
     console.addCommand(
@@ -45,7 +45,7 @@ void ConsoleScriptingPlugin::init(engine::Engine& engine) {
     });
 }
 
-void ConsoleScriptingPlugin::shutdown(engine::Engine& engine) {
+void ConsoleScriptingPlugin::shutdown(sq::engine::Engine& engine) {
     if (auto console = engine.mediator().getService<Console>(); console) {
         (void)console->get().removeCommand(COMMAND);
         (void)console->get().removeScriptRunner(EXTENSION);
@@ -53,4 +53,4 @@ void ConsoleScriptingPlugin::shutdown(engine::Engine& engine) {
     _wren.reset();
 }
 
-}  // namespace tools
+}  // namespace sq::tools

@@ -8,7 +8,7 @@
 
 #include "INetworkManager.hpp"
 
-namespace ecs::net {
+namespace sq::net {
 
 void PeerGroupConnection::addPeer(const PeerId peer) {
     const std::scoped_lock lock(_mutex);
@@ -63,4 +63,4 @@ void PeerGroupConnection::kick(const PeerId peer) {
     }
 }
 
-}  // namespace ecs::net
+}  // namespace sq::net

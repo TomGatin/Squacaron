@@ -14,7 +14,7 @@
 
 #include "assets/detail/Diagnostics.hpp"
 
-namespace assets::detail {
+namespace sq::assets::detail {
 
 /** @brief Owned by the `AssetManager`, referenced by each of its caches. */
 struct AssetContext {
@@ -37,4 +37,4 @@ struct AssetContext {
     }
 };
 
-}  // namespace assets::detail
+}  // namespace sq::assets::detail

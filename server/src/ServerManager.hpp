@@ -37,13 +37,13 @@ class ServerManager {
     /**
      * @brief Creates the server around a network implementation.
      *
-     * The network is injected: `main()` passes `ecs::net::createServer()`, a test can pass a mock.
+     * The network is injected: `main()` passes `sq::net::createServer()`, a test can pass a mock.
      *
      * @param network Network server, owned by the ServerManager.
      * @param handshakeTimeout Time a connected client has to send its `Hello` before being kicked.
      * @param level Level played by every room; `nullptr` plays no level.
      */
-    explicit ServerManager(std::unique_ptr<ecs::net::INetworkServer> network,
+    explicit ServerManager(std::unique_ptr<sq::net::INetworkServer> network,
                            std::chrono::milliseconds handshakeTimeout = HANDSHAKE_TIMEOUT,
                            std::shared_ptr<const level::Level> level = nullptr);
     /** @brief Default destructor. */
@@ -84,18 +84,18 @@ class ServerManager {
     /** @brief A client is gone. Can arrive without `onConnected()` (connection lost before being ready). */
     void onDisconnected(ClientId client);
     /** @brief A game payload: decodes it if it is reliable, or routes it to the client's room if it is unreliable. */
-    void onData(ClientId client, ecs::net::Channel channel, const ecs::net::Bytes& data);
+    void onData(ClientId client, sq::net::Channel channel, const sq::net::Bytes& data);
     /** @brief A message received over TCP: handshake, lobby, chat, leave. */
     void onReliableMessage(ClientId client, const protocol::Message& message);
     /** @brief A payload received over UDP: handed to the room of the client, which decodes it. */
-    void onUnreliableData(ClientId client, const ecs::net::Bytes& data);
+    void onUnreliableData(ClientId client, const sq::net::Bytes& data);
     /** @brief Kicks the connected clients that did not send their `Hello` within the handshake timeout. */
     void expireHandshakes();
     /** @brief Encodes a message and sends it to one client. */
-    void send(ClientId client, const protocol::Message& message, ecs::net::Channel channel) const;
+    void send(ClientId client, const protocol::Message& message, sq::net::Channel channel) const;
 
     /** @brief Network server, polled and sent to on the game thread only. */
-    std::unique_ptr<ecs::net::INetworkServer> _network;
+    std::unique_ptr<sq::net::INetworkServer> _network;
     /** @brief Port the server listens on (TCP and UDP), sent to clients in `Welcome`. */
     std::uint16_t _port = 0;
     /** @brief Clients past their `Hello` and rooms. Declared after `_network`, which it sends through. */
@@ -105,7 +105,7 @@ class ServerManager {
     /** @brief Time a connected client has to send its `Hello`. */
     std::chrono::milliseconds _handshakeTimeout;
     /** @brief Server loop, about every millisecond so the step jitter stays around 1 ms; ended by `stop()`. */
-    engine::FixedRateLoop _loop{SERVER_LOOP_RATE};
+    sq::engine::FixedRateLoop _loop{SERVER_LOOP_RATE};
 };
 
 }  // namespace rtype::server

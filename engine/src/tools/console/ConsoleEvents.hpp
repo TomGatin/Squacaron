@@ -7,7 +7,7 @@
 
 #include <string>
 
-namespace tools {
+namespace sq::tools {
 
 /**
  * @brief A CVar changed value (from the console, from code, or because cheats got disabled).
@@ -20,4 +20,4 @@ struct CVarChanged {
     std::string name;
 };
 
-}  // namespace tools
+}  // namespace sq::tools

@@ -14,12 +14,12 @@
 #include "core/IPlugin.hpp"
 #include "core/PluginBuilder.hpp"
 
-namespace settings {
+namespace sq::settings {
 
 /**
- * @brief Owns the `config::Settings` of the game.
+ * @brief Owns the `sq::config::Settings` of the game.
  *
- * - The settings are a Mediator service (`engine.service<config::Settings>()`); declare them through `settings()`
+ * - The settings are a Mediator service (`engine.service<sq::config::Settings>()`); declare them through `settings()`
  *   before or after `Engine::init`.
  * - `init` loads the file. Values that differ from the defaults are reported as changes, so the plugins reacting to
  *   `SettingChanged` apply the saved values on the first frame.
@@ -29,14 +29,14 @@ namespace settings {
  *
  * Load and save errors are kept in `lastError()` and never stop the game: it runs with the defaults.
  */
-class SettingsPlugin final : public engine::IPlugin {
+class SettingsPlugin final : public sq::engine::IPlugin {
   public:
     /** @brief Default quiet time before a save, in seconds. */
     static constexpr float DEFAULT_SAVE_DELAY = 1.0F;
 
     /**
      * @brief Creates the plugin.
-     * @param file Settings file (see `config::userConfigDirectory`); empty to keep the settings in memory only.
+     * @param file Settings file (see `sq::config::userConfigDirectory`); empty to keep the settings in memory only.
      * @param saveDelay Quiet time before a save, in seconds.
      */
     explicit SettingsPlugin(std::filesystem::path file, float saveDelay = DEFAULT_SAVE_DELAY);
@@ -51,32 +51,32 @@ class SettingsPlugin final : public engine::IPlugin {
      * @brief Declares the core plugin and the settings service.
      * @param builder Dependency builder.
      */
-    void build(engine::PluginBuilder& builder) override;
+    void build(sq::engine::PluginBuilder& builder) override;
 
     /**
      * @brief Loads the file and registers the settings in the Mediator.
      * @param engine Host engine.
      */
-    void init(engine::Engine& engine) override;
+    void init(sq::engine::Engine& engine) override;
 
     /**
      * @brief Publishes the changes and saves after the quiet time.
      * @param engine Host engine.
      * @param time Frame time.
      */
-    void update(engine::Engine& engine, const ecs::time::Time& time) override;
+    void update(sq::engine::Engine& engine, const sq::time::Time& time) override;
 
     /**
      * @brief Saves pending changes and removes the service.
      * @param engine Host engine.
      */
-    void shutdown(engine::Engine& engine) override;
+    void shutdown(sq::engine::Engine& engine) override;
 
     /**
      * @brief Gets the settings.
      * @return The settings, usable before `init` to declare keys.
      */
-    [[nodiscard]] config::Settings& settings() noexcept { return *_settings; }
+    [[nodiscard]] sq::config::Settings& settings() noexcept { return *_settings; }
 
     /**
      * @brief Gets the last load or save error.
@@ -89,7 +89,7 @@ class SettingsPlugin final : public engine::IPlugin {
     void save();
 
     /** @brief The settings, shared with the Mediator. */
-    std::shared_ptr<config::Settings> _settings;
+    std::shared_ptr<sq::config::Settings> _settings;
     /** @brief Quiet time before a save. */
     float _saveDelay;
     /** @brief Time since the last change, while a save is due. */
@@ -98,4 +98,4 @@ class SettingsPlugin final : public engine::IPlugin {
     std::string _lastError;
 };
 
-}  // namespace settings
+}  // namespace sq::settings

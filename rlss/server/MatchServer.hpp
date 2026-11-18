@@ -49,7 +49,7 @@ class MatchServer {
      * @param threaded True to run each match on its own thread; false to run them in `update()`.
      * @param scriptRoot Directory the matches read their Wren scripts from; empty for the working directory.
      */
-    explicit MatchServer(std::shared_ptr<ecs::net::INetworkServer> transport, bool threaded = true,
+    explicit MatchServer(std::shared_ptr<sq::net::INetworkServer> transport, bool threaded = true,
                          std::filesystem::path scriptRoot = {});
 
     /**
@@ -67,39 +67,39 @@ class MatchServer {
      * @param peer Peer.
      * @return Its match id, or nothing if the peer is in the menu (or unknown).
      */
-    [[nodiscard]] std::optional<std::uint16_t> matchOf(ecs::net::PeerId peer) const;
+    [[nodiscard]] std::optional<std::uint16_t> matchOf(sq::net::PeerId peer) const;
 
     /** @brief The list the players in the menu get: the matches not over yet, by id. */
     [[nodiscard]] protocol::MatchList matchList() const;
 
   private:
     /** @brief A peer finished the handshake: it is in the menu. */
-    void onConnected(ecs::net::PeerId peer);
+    void onConnected(sq::net::PeerId peer);
     /** @brief A peer is gone: it leaves its match, if any. */
-    void onDisconnected(ecs::net::PeerId peer);
+    void onDisconnected(sq::net::PeerId peer);
     /** @brief A peer sent a message: menu requests are handled here, the rest goes to its match. */
-    void onData(const ecs::net::NetworkEvent& event);
+    void onData(const sq::net::NetworkEvent& event);
 
     /** @brief Starts a new match and puts the peer in it. */
-    void create(ecs::net::PeerId peer);
+    void create(sq::net::PeerId peer);
     /** @brief Puts the peer in a match of the list. */
-    void join(ecs::net::PeerId peer, std::uint16_t matchId);
+    void join(sq::net::PeerId peer, std::uint16_t matchId);
     /** @brief Hands the peer's name, if it sent one, to the match it plays in, as if the peer had sent it there. */
-    void forwardName(ecs::net::PeerId peer);
+    void forwardName(sq::net::PeerId peer);
     /** @brief Takes the peer out of its match, back to the menu; destroys the match if it is now empty. */
-    void leave(ecs::net::PeerId peer);
+    void leave(sq::net::PeerId peer);
 
     /** @brief Answers a `CreateMatch` / `JoinMatch`. */
-    void sendResult(ecs::net::PeerId peer, protocol::JoinStatus status, std::uint16_t matchId = 0);
+    void sendResult(sq::net::PeerId peer, protocol::JoinStatus status, std::uint16_t matchId = 0);
     /** @brief Sends the current match list to one peer. */
-    void sendList(ecs::net::PeerId peer);
+    void sendList(sq::net::PeerId peer);
     /** @brief Sends the match list to every peer in the menu if it changed since the last time. */
     void broadcastList();
     /** @brief A match id not in use (never 0). */
     [[nodiscard]] std::uint16_t nextMatchId();
 
     /** @brief Shared transport. */
-    std::shared_ptr<ecs::net::INetworkServer> _transport;
+    std::shared_ptr<sq::net::INetworkServer> _transport;
     /** @brief True if each match runs on its own thread. */
     bool _threaded;
     /** @brief Directory the matches read their Wren scripts from. */
@@ -107,11 +107,11 @@ class MatchServer {
     /** @brief Matches, by id: the list is sorted by id. */
     std::map<std::uint16_t, std::unique_ptr<MatchRoom>> _rooms;
     /** @brief Match of each peer in a match. */
-    std::unordered_map<ecs::net::PeerId, std::uint16_t> _matchOf;
+    std::unordered_map<sq::net::PeerId, std::uint16_t> _matchOf;
     /** @brief Every connected peer. */
-    std::unordered_set<ecs::net::PeerId> _online;
+    std::unordered_set<sq::net::PeerId> _online;
     /** @brief Name of each peer that sent one (`protocol::isValidName`). */
-    std::unordered_map<ecs::net::PeerId, std::string> _names;
+    std::unordered_map<sq::net::PeerId, std::string> _names;
     /** @brief Id tried first for the next match. */
     std::uint16_t _nextId = 1;
     /** @brief When the match list was last sent to the menu. */

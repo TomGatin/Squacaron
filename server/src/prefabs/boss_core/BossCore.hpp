@@ -60,8 +60,8 @@ struct BossCore {
  *
  * The collider belongs to the `ENEMY` category: it hits the player and is hit by player shots.
  *
- * Parameters: the transform keys (see `makeTransform`), `speed` (horizontal velocity while flying in, in pixels per
- * second, `DEFAULT_BOSS_CORE_SPEED` by default), `stop_x` (`DEFAULT_BOSS_CORE_STOP_X` by default), `health`
+ * Parameters: the transform keys (see `sq::prefabs::makeTransform`), `speed` (horizontal velocity while flying in, in
+ * pixels per second, `DEFAULT_BOSS_CORE_SPEED` by default), `stop_x` (`DEFAULT_BOSS_CORE_STOP_X` by default), `health`
  * (hit points, clamped to 1–255, `DEFAULT_BOSS_CORE_HEALTH` by default), `variant` (clamped to 0–255, 0 by default),
  * and `width` and `height` (hitbox size in pixels, clamped to `MIN_BOSS_CORE_SIZE`–`MAX_BOSS_CORE_SIZE`,
  * `rtype::game::BOSS_CORE_WIDTH` and `rtype::game::BOSS_CORE_HEIGHT` by default).
@@ -70,6 +70,6 @@ struct BossCore {
  * @param registry Registry owning the entity.
  * @param params Spawn parameters.
  */
-void buildBossCore(ecs::Entity e, ecs::Registry& registry, PrefabParams const& params);
+void buildBossCore(sq::ecs::Entity e, sq::ecs::Registry& registry, sq::prefabs::PrefabParams const& params);
 
 }  // namespace prefabs

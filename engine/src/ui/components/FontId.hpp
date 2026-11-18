@@ -2,12 +2,12 @@
 
 #include "render/api/IScreenDrawService.hpp"
 
-namespace ui {
+namespace sq::ui {
 
-/** @brief Handle to a font loaded with `engine::IScreenDrawService::loadFont`. */
-using engine::FontId;
+/** @brief Handle to a font loaded with `sq::engine::IScreenDrawService::loadFont`. */
+using sq::engine::FontId;
 
 /** @brief Sentinel value meaning "no font / use the default font". */
-using engine::NO_FONT;
+using sq::engine::NO_FONT;
 
-}  // namespace ui
+}  // namespace sq::ui

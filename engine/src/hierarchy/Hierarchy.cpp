@@ -11,7 +11,7 @@
 #include "hierarchy/TransformMath.hpp"
 #include "hierarchy/detail/LinkEditScope.hpp"
 
-namespace hierarchy {
+namespace sq::hierarchy {
 
 namespace {
 
@@ -19,11 +19,11 @@ namespace {
  * @brief Reads the world transform of an entity, identity if it has none.
  * @param registry Registry owning the entity.
  * @param e Entity to read.
- * @return Its `ecs::Transform`, or a default one.
+ * @return Its `sq::ecs::Transform`, or a default one.
  */
-ecs::Transform worldOf(const ecs::Registry& registry, ecs::Entity e) {
-    return registry.hasComponent<ecs::Transform>(e) ? registry.getComponents<ecs::Transform>().get(e)
-                                                    : ecs::Transform{};
+sq::ecs::Transform worldOf(const sq::ecs::Registry& registry, sq::ecs::Entity e) {
+    return registry.hasComponent<sq::ecs::Transform>(e) ? registry.getComponents<sq::ecs::Transform>().get(e)
+                                                        : sq::ecs::Transform{};
 }
 
 /**
@@ -32,7 +32,7 @@ ecs::Transform worldOf(const ecs::Registry& registry, ecs::Entity e) {
  * @param parent Parent whose list is edited.
  * @param child Child to remove from the list.
  */
-void eraseFromChildren(ecs::Registry& registry, ecs::Entity parent, ecs::Entity child) {
+void eraseFromChildren(sq::ecs::Registry& registry, sq::ecs::Entity parent, sq::ecs::Entity child) {
     if (!registry.hasComponent<Children>(parent)) {
         return;
     }
@@ -45,7 +45,7 @@ void eraseFromChildren(ecs::Registry& registry, ecs::Entity parent, ecs::Entity 
 
 }  // namespace
 
-bool setParent(ecs::Registry& registry, ecs::Entity child, ecs::Entity parent) {
+bool setParent(sq::ecs::Registry& registry, sq::ecs::Entity child, sq::ecs::Entity parent) {
     if (!registry.isAlive(child) || !registry.isAlive(parent) || child == parent ||
         isAncestorOf(registry, child, parent)) {
         return false;
@@ -65,8 +65,8 @@ bool setParent(ecs::Registry& registry, ecs::Entity child, ecs::Entity parent) {
     return true;
 }
 
-void removeParent(ecs::Registry& registry, ecs::Entity child) {
-    const std::optional<ecs::Entity> parent = parentOf(registry, child);
+void removeParent(sq::ecs::Registry& registry, sq::ecs::Entity child) {
+    const std::optional<sq::ecs::Entity> parent = parentOf(registry, child);
     if (!parent.has_value()) {
         return;
     }
@@ -77,23 +77,23 @@ void removeParent(ecs::Registry& registry, ecs::Entity child) {
     registry.removeComponent<LocalTransform>(child);
 }
 
-std::optional<ecs::Entity> parentOf(const ecs::Registry& registry, ecs::Entity e) {
+std::optional<sq::ecs::Entity> parentOf(const sq::ecs::Registry& registry, sq::ecs::Entity e) {
     if (!registry.hasComponent<Parent>(e)) {
         return std::nullopt;
     }
     return registry.getComponents<Parent>().get(e).entity;
 }
 
-std::span<const ecs::Entity> childrenOf(const ecs::Registry& registry, ecs::Entity e) {
+std::span<const sq::ecs::Entity> childrenOf(const sq::ecs::Registry& registry, sq::ecs::Entity e) {
     if (!registry.hasComponent<Children>(e)) {
         return {};
     }
     return registry.getComponents<Children>().get(e).entities;
 }
 
-bool isAncestorOf(const ecs::Registry& registry, ecs::Entity ancestor, ecs::Entity e) {
+bool isAncestorOf(const sq::ecs::Registry& registry, sq::ecs::Entity ancestor, sq::ecs::Entity e) {
     // setParent rejects cycles, so the chain always ends; the bound only guards against hand-made links.
-    std::optional<ecs::Entity> current = parentOf(registry, e);
+    std::optional<sq::ecs::Entity> current = parentOf(registry, e);
     for (std::size_t depth = 0; current.has_value() && depth <= registry.getComponents<Parent>().getDense().size();
          ++depth) {
         if (*current == ancestor) {
@@ -104,9 +104,9 @@ bool isAncestorOf(const ecs::Registry& registry, ecs::Entity ancestor, ecs::Enti
     return false;
 }
 
-ecs::Entity rootOf(const ecs::Registry& registry, ecs::Entity e) {
-    ecs::Entity root = e;
-    std::optional<ecs::Entity> current = parentOf(registry, e);
+sq::ecs::Entity rootOf(const sq::ecs::Registry& registry, sq::ecs::Entity e) {
+    sq::ecs::Entity root = e;
+    std::optional<sq::ecs::Entity> current = parentOf(registry, e);
     for (std::size_t depth = 0; current.has_value() && depth <= registry.getComponents<Parent>().getDense().size();
          ++depth) {
         root = *current;
@@ -115,4 +115,4 @@ ecs::Entity rootOf(const ecs::Registry& registry, ecs::Entity e) {
     return root;
 }
 
-}  // namespace hierarchy
+}  // namespace sq::hierarchy

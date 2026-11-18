@@ -27,7 +27,7 @@
 #include "net/asio/TcpSession.hpp"
 #include "net/asio/Wire.hpp"
 
-namespace ecs::net::detail {
+namespace sq::net::detail {
 
 using wire::MessageKind;
 
@@ -61,7 +61,7 @@ bool NetworkServer::start(const std::uint16_t port) {
         _acceptor = asio::ip::tcp::acceptor(_io, {asio::ip::tcp::v4(), port});
         _udpSocket = asio::ip::udp::socket(_io, {asio::ip::udp::v4(), port});
     } catch (const asio::system_error& e) {
-        engine::log::error(LOG_TAG, "cannot start server on port ", port, ": ", e.what());
+        sq::engine::log::error(LOG_TAG, "cannot start server on port ", port, ": ", e.what());
         std::error_code ignored;
         std::ignore = _acceptor.close(ignored);
         std::ignore = _udpSocket.close(ignored);
@@ -114,18 +114,18 @@ void NetworkServer::accept() {
             return;
         }
         if (_acceptFailing) {
-            engine::log::info(LOG_TAG, "accepting connections again");
+            sq::engine::log::info(LOG_TAG, "accepting connections again");
             _acceptFailing = false;
         }
         if (_peers.size() >= _config.maxPeers) {
-            engine::log::warning(LOG_TAG, "server full (", _config.maxPeers, " peers): connection refused");
+            sq::engine::log::warning(LOG_TAG, "server full (", _config.maxPeers, " peers): connection refused");
             refuseConnection(std::move(socket));
         } else {
             const PeerId id = _nextId++;
             std::error_code endpointError;
             const auto remote = socket.remote_endpoint(endpointError);
             if (!endpointError) {
-                engine::log::debug(LOG_TAG, "TCP connection from ", remote, " accepted as peer ", id);
+                sq::engine::log::debug(LOG_TAG, "TCP connection from ", remote, " accepted as peer ", id);
             }
             const auto tcp = std::make_shared<TcpSession>(
                 std::move(socket), id,
@@ -155,8 +155,8 @@ void NetworkServer::accept() {
 void NetworkServer::onAcceptError(const std::error_code& ec) {
     _counters.onAcceptError();
     if (!_acceptFailing) {
-        engine::log::error(LOG_TAG, "cannot accept a connection: ", ec.message(), "; retrying every ",
-                           _config.acceptRetryDelay.count(), " ms");
+        sq::engine::log::error(LOG_TAG, "cannot accept a connection: ", ec.message(), "; retrying every ",
+                               _config.acceptRetryDelay.count(), " ms");
         _acceptFailing = true;
     }
     _acceptRetryTimer.expires_after(_config.acceptRetryDelay);
@@ -189,7 +189,7 @@ void NetworkServer::onTcpMessage(const PeerId peer, const MessageKind kind, Byte
         if (kind == MessageKind::Handshake) {
             onHandshake(info, payload);
         } else {
-            engine::log::warning(LOG_TAG, "peer ", peer, " sent a frame before its handshake: disconnected");
+            sq::engine::log::warning(LOG_TAG, "peer ", peer, " sent a frame before its handshake: disconnected");
             info.tcp->close();
         }
         return;
@@ -201,19 +201,19 @@ void NetworkServer::onTcpMessage(const PeerId peer, const MessageKind kind, Byte
                 {.type = EventType::Data, .peer = peer, .data = std::move(payload), .channel = Channel::Reliable});
             break;
         case MessageKind::UdpOpen:
-            engine::log::debug(LOG_TAG, "peer ", peer, " opens UDP");
+            sq::engine::log::debug(LOG_TAG, "peer ", peer, " opens UDP");
             info.udpOpen = true;
             info.udp.reset();
             info.lastSeen = std::chrono::steady_clock::now();
             break;
         case MessageKind::UdpClose:
-            engine::log::debug(LOG_TAG, "peer ", peer, " closes UDP");
+            sq::engine::log::debug(LOG_TAG, "peer ", peer, " closes UDP");
             info.udpOpen = false;
             info.udp.reset();
             break;
         default:
-            engine::log::warning(LOG_TAG, "peer ", peer, " sent an unexpected message kind (", static_cast<int>(kind),
-                                 "): disconnected");
+            sq::engine::log::warning(LOG_TAG, "peer ", peer, " sent an unexpected message kind (",
+                                     static_cast<int>(kind), "): disconnected");
             info.tcp->close();
             break;
     }
@@ -221,14 +221,14 @@ void NetworkServer::onTcpMessage(const PeerId peer, const MessageKind kind, Byte
 
 void NetworkServer::onHandshake(PeerInfo& info, const Bytes& payload) {
     if (payload.size() != wire::HANDSHAKE_SIZE) {
-        engine::log::warning(LOG_TAG, "peer ", info.id, " sent a malformed handshake: disconnected");
+        sq::engine::log::warning(LOG_TAG, "peer ", info.id, " sent a malformed handshake: disconnected");
         info.tcp->close();
         return;
     }
     const std::uint32_t protocolId = wire::readU32(std::span(payload).first<4>());
     if (protocolId != _config.protocolId) {
-        engine::log::warning(LOG_TAG, "peer ", info.id, " speaks protocol ", protocolId, " instead of ",
-                             _config.protocolId, ": disconnected");
+        sq::engine::log::warning(LOG_TAG, "peer ", info.id, " speaks protocol ", protocolId, " instead of ",
+                                 _config.protocolId, ": disconnected");
         closeWithReason(*info.tcp, DisconnectReason::ProtocolMismatch);
         return;
     }
@@ -283,7 +283,7 @@ void NetworkServer::receiveUdp() {
                 handleDatagram(size);
             } else if (ec != asio::error::connection_reset && ec != asio::error::connection_refused &&
                        ec != asio::error::message_size) {
-                engine::log::warning(LOG_TAG, "udp receive error: ", ec.message());
+                sq::engine::log::warning(LOG_TAG, "udp receive error: ", ec.message());
             }
             receiveUdp();
         });
@@ -291,7 +291,7 @@ void NetworkServer::receiveUdp() {
 
 void NetworkServer::handleDatagram(const std::size_t size) {
     if (size < DATAGRAM_HEADER_SIZE || size > MAX_DATAGRAM) {
-        engine::log::debug(LOG_TAG, "datagram of ", size, " bytes from ", _udpFrom, " dropped: invalid size");
+        sq::engine::log::debug(LOG_TAG, "datagram of ", size, " bytes from ", _udpFrom, " dropped: invalid size");
         return;
     }
     const std::span<const std::uint8_t> datagram(_udpBuffer.data(), size);
@@ -301,8 +301,8 @@ void NetworkServer::handleDatagram(const std::size_t size) {
     // `udpOpen` is only set after the handshake, so a handshaking peer cannot use UDP.
     const auto it = _peers.find(id);
     if (it == _peers.end() || it->second.token != token || !it->second.udpOpen) {
-        engine::log::debug(LOG_TAG, "datagram from ", _udpFrom, " dropped: unknown peer ", id,
-                           ", bad token or UDP not open");
+        sq::engine::log::debug(LOG_TAG, "datagram from ", _udpFrom, " dropped: unknown peer ", id,
+                               ", bad token or UDP not open");
         return;
     }
     PeerInfo& info = it->second;
@@ -310,7 +310,7 @@ void NetworkServer::handleDatagram(const std::size_t size) {
     info.udp = _udpFrom;
     info.lastSeen = std::chrono::steady_clock::now();
     if (firstBinding) {
-        engine::log::debug(LOG_TAG, "peer ", id, " UDP bound to ", _udpFrom);
+        sq::engine::log::debug(LOG_TAG, "peer ", id, " UDP bound to ", _udpFrom);
         sendDatagram(info, {});
     }
 
@@ -356,7 +356,7 @@ void NetworkServer::onUdpTick() {
     for (auto& info : _peers | std::views::values) {
         if (!info.handshaken) {
             if (now - info.acceptedAt > _config.handshakeTimeout) {
-                engine::log::warning(LOG_TAG, "peer ", info.id, " did not complete its handshake: disconnected");
+                sq::engine::log::warning(LOG_TAG, "peer ", info.id, " did not complete its handshake: disconnected");
                 info.tcp->close();
             }
             continue;
@@ -365,7 +365,7 @@ void NetworkServer::onUdpTick() {
             continue;
         }
         if (now - info.lastSeen > _config.udpTimeout) {
-            engine::log::warning(LOG_TAG, "peer ", info.id, " timed out on UDP: disconnected");
+            sq::engine::log::warning(LOG_TAG, "peer ", info.id, " timed out on UDP: disconnected");
             info.tcp->close();
         } else if (info.udp && now - info.lastSent >= _config.keepaliveInterval) {
             sendDatagram(info, {});
@@ -408,4 +408,4 @@ void NetworkServer::sendNow(const PeerId peer, const Bytes& data, const Channel 
     sendDatagram(info, data);
 }
 
-}  // namespace ecs::net::detail
+}  // namespace sq::net::detail

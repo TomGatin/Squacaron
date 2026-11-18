@@ -14,7 +14,7 @@
 
 #include "core/MediatorError.hpp"
 
-namespace engine {
+namespace sq::engine {
 
 /**
  * @brief Decoupled service locator/broker for plugin interoperability.
@@ -102,6 +102,6 @@ class Mediator {
     std::vector<std::type_index> _order;
 };
 
-}  // namespace engine
+}  // namespace sq::engine
 
 #include "core/Mediator.tpp"  // IWYU pragma: export

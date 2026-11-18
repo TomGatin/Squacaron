@@ -17,15 +17,19 @@
 #include "scene/scripting/ScriptScene.hpp"
 #include "scripting/ScriptSystem.hpp"
 
-namespace engine {
+namespace sq::engine {
+
 class Engine;
-}
 
-namespace ecs {
+}  // namespace sq::engine
+
+namespace sq::ecs {
+
 class Registry;
-}
 
-namespace scene {
+}  // namespace sq::ecs
+
+namespace sq::scene {
 
 class SceneManager;
 
@@ -49,7 +53,7 @@ struct SceneScriptBridge {
  * This module is the only one that depends on both `engine_scene` and `engine_scripting`: neither depends on the
  * other, and a game without scripting does not link it.
  */
-class SceneScriptingPlugin final : public engine::IPlugin, private scripting::IScriptExtension {
+class SceneScriptingPlugin final : public sq::engine::IPlugin, private sq::scripting::IScriptExtension {
   public:
     /** @brief Constructs the plugin. */
     SceneScriptingPlugin() = default;
@@ -79,19 +83,19 @@ class SceneScriptingPlugin final : public engine::IPlugin, private scripting::IS
      * @brief Declares the scene and script plugins as dependencies.
      * @param builder Dependency builder.
      */
-    void build(engine::PluginBuilder& builder) override;
+    void build(sq::engine::PluginBuilder& builder) override;
 
     /**
      * @brief Adds `core/Scene` and its bindings, the spawn ownership and the hot-reload hooks.
      * @param engine Host engine.
      */
-    void init(engine::Engine& engine) override;
+    void init(sq::engine::Engine& engine) override;
 
     /**
      * @brief Removes the hooks installed by `init`.
      * @param engine Host engine.
      */
-    void shutdown(engine::Engine& engine) override;
+    void shutdown(sq::engine::Engine& engine) override;
 
     /**
      * @brief Declares a scene driven by a Wren class.
@@ -104,30 +108,30 @@ class SceneScriptingPlugin final : public engine::IPlugin, private scripting::IS
      * @param options Mode and per-frame hooks.
      * @return Id of the scene.
      */
-    SceneId registerScriptScene(engine::Engine& engine, std::string name, std::string module, std::string className,
+    SceneId registerScriptScene(sq::engine::Engine& engine, std::string name, std::string module, std::string className,
                                 ScriptSceneOptions options = {});
 
   private:
     /** @brief The `core/Scene` module. @return One module. */
-    [[nodiscard]] std::vector<scripting::ModuleSource> modules() const override;
+    [[nodiscard]] std::vector<sq::scripting::ModuleSource> modules() const override;
     /** @brief Binds the foreign methods of `core/Scene`. @param vm VM to bind. */
-    void bind(scripting::WrenVM& vm) override;
+    void bind(sq::scripting::WrenVM& vm) override;
     /** @brief Releases the scripted scenes' handles before a reset, builds them again after. @param phase Phase. */
-    void onVmReset(scripting::VmResetPhase phase) override;
+    void onVmReset(sq::scripting::VmResetPhase phase) override;
     /**
      * @brief Gives an entity spawned from Wren to the scene of its owner.
      * @param registry Registry of the entity.
      * @param spawned The new entity.
      * @param owner Script owner that requested the spawn.
      */
-    void onScriptSpawn(ecs::Registry& registry, ecs::Entity spawned, scripting::ScriptOwner owner) override;
+    void onScriptSpawn(sq::ecs::Registry& registry, sq::ecs::Entity spawned, sq::scripting::ScriptOwner owner) override;
 
     /** @brief Scene manager, between `init` and `shutdown`. */
     SceneManager* _manager = nullptr;
     /** @brief Script system, between `init` and `shutdown`. */
-    scripting::ScriptSystem* _scripts = nullptr;
+    sq::scripting::ScriptSystem* _scripts = nullptr;
     /** @brief Scripted scenes, owned by the manager. */
     std::vector<ScriptScene*> _scriptScenes;
 };
 
-}  // namespace scene
+}  // namespace sq::scene

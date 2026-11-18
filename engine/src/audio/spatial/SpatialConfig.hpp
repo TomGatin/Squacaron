@@ -2,7 +2,7 @@
 
 #include "audio/types/AudioConstants.hpp"
 
-namespace audio {
+namespace sq::audio {
 
 /**
  * @brief How positioned sounds are panned and attenuated around the listener.
@@ -34,4 +34,4 @@ struct SpatialConfig {
     float mergeDistance = DEFAULT_MERGE_DISTANCE;
 };
 
-}  // namespace audio
+}  // namespace sq::audio

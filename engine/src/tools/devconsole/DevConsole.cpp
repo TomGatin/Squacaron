@@ -9,7 +9,7 @@
 #include "tools/console/ConsoleTypes.hpp"
 #include "tools/devconsole/DevConsoleTypes.hpp"
 
-namespace tools {
+namespace sq::tools {
 
 DevConsole::DevConsole(Console& console) : _console(&console), _input(MAX_LINE_LENGTH) {}
 
@@ -139,4 +139,4 @@ void DevConsole::browseHistory(bool older) {
     _input.assign(history.at(*_historyIndex));
 }
 
-}  // namespace tools
+}  // namespace sq::tools

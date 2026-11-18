@@ -11,7 +11,7 @@
 #include "render/api/components/Renderable.hpp"
 #include "ui/components/FontId.hpp"
 
-namespace ui {
+namespace sq::ui {
 
 /**
  * @brief Single-line text field, edited while it has the focus.
@@ -50,13 +50,13 @@ struct UiTextInput {
     /** @brief Font of the text. */
     FontId fontId = NO_FONT;
     /** @brief Background colour. */
-    ecs::Rgba background = {.r = 30, .g = 30, .b = 30, .a = 230};
+    sq::ecs::Rgba background = {.r = 30, .g = 30, .b = 30, .a = 230};
     /** @brief Border colour. */
-    ecs::Rgba border = {.r = 140, .g = 140, .b = 140, .a = 255};
+    sq::ecs::Rgba border = {.r = 140, .g = 140, .b = 140, .a = 255};
     /** @brief Text and cursor colour. */
-    ecs::Rgba textColor = {.r = 255, .g = 255, .b = 255, .a = 255};
+    sq::ecs::Rgba textColor = {.r = 255, .g = 255, .b = 255, .a = 255};
     /** @brief Placeholder colour. */
-    ecs::Rgba placeholderColor = {.r = 150, .g = 150, .b = 150, .a = 255};
+    sq::ecs::Rgba placeholderColor = {.r = 150, .g = 150, .b = 150, .a = 255};
 };
 
-}  // namespace ui
+}  // namespace sq::ui

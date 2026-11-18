@@ -17,12 +17,12 @@ inline constexpr std::string_view COMPONENTS_MODULE = "rlss/components";
 
 /**
  * @brief Defines the foreign classes `Transform` (x, y, rotation, scaleX, scaleY), `Controls` (playerIndex of the
- * entity's `input::InputState`), `ArenaShape`, `CarParts`, `CarStatus`, `CarCues`, `BallCues`, `BallPart`, `ShotGlow`,
- * `MatchState`, `Camera` (the engine's `ecs::CameraComponent`) and `CameraRig` in `COMPONENTS_MODULE`.
+ * entity's `sq::input::InputState`), `ArenaShape`, `CarParts`, `CarStatus`, `CarCues`, `BallCues`, `BallPart`,
+ * `ShotGlow`, `MatchState`, `Camera` (the engine's `sq::ecs::CameraComponent`) and `CameraRig` in `COMPONENTS_MODULE`.
  * @param vm VM to define them in.
  * @return False if Wren refused the generated code.
  */
-bool registerComponentClasses(scripting::WrenVM& vm);
+bool registerComponentClasses(sq::scripting::WrenVM& vm);
 
 /**
  * @brief Registers the component classes in the script system's VM, and again each time hot-reload recreates it.
@@ -30,6 +30,6 @@ bool registerComponentClasses(scripting::WrenVM& vm);
  * @param scripts Script system of the engine.
  * @return False if Wren refused the generated code.
  */
-bool installScriptBindings(scripting::ScriptSystem& scripts);
+bool installScriptBindings(sq::scripting::ScriptSystem& scripts);
 
 }  // namespace rlss::game

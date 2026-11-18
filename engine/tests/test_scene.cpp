@@ -24,11 +24,11 @@
 
 namespace {
 
-using scene::SceneContext;
-using scene::SceneId;
-using scene::SceneManager;
-using scene::SceneMode;
-using scene::SceneStage;
+using sq::scene::SceneContext;
+using sq::scene::SceneId;
+using sq::scene::SceneManager;
+using sq::scene::SceneMode;
+using sq::scene::SceneStage;
 
 /** @brief Event used to check scene subscriptions. */
 struct Ping {
@@ -36,7 +36,7 @@ struct Ping {
 };
 
 /** @brief Scene recording its hooks in a shared log, with a configurable mode. */
-class RecordingScene : public scene::IScene {
+class RecordingScene : public sq::scene::IScene {
   public:
     RecordingScene(std::string name, std::vector<std::string>& log, SceneMode mode = SceneMode::Exclusive,
                    bool pausesBelow = false)
@@ -93,8 +93,8 @@ class ModalScene final : public RecordingScene {
 class SceneTest : public ::testing::Test {
   protected:
     void SetUp() override {
-        engine.addPlugin<scene::ScenePlugin>();
-        engine.addPlugin<hierarchy::HierarchyPlugin>();
+        engine.addPlugin<sq::scene::ScenePlugin>();
+        engine.addPlugin<sq::hierarchy::HierarchyPlugin>();
         SceneManager& scenes = manager();
         menu = scenes.registerScene<MenuScene>(log);
         game = scenes.registerScene<GameScene>(log);
@@ -103,17 +103,17 @@ class SceneTest : public ::testing::Test {
         engine.init();
     }
 
-    SceneManager& manager() { return engine.getPlugin<scene::ScenePlugin>().manager(); }
+    SceneManager& manager() { return engine.getPlugin<sq::scene::ScenePlugin>().manager(); }
 
     void frame() { (void)engine.advance(); }
 
     // Declared first so it outlives the engine, whose shutdown still runs the hooks writing to it.
     std::vector<std::string> log;
-    engine::Engine engine;
-    SceneId menu = scene::INVALID_SCENE;
-    SceneId game = scene::INVALID_SCENE;
-    SceneId pause = scene::INVALID_SCENE;
-    SceneId modal = scene::INVALID_SCENE;
+    sq::engine::Engine engine;
+    SceneId menu = sq::scene::INVALID_SCENE;
+    SceneId game = sq::scene::INVALID_SCENE;
+    SceneId pause = sq::scene::INVALID_SCENE;
+    SceneId modal = sq::scene::INVALID_SCENE;
 };
 
 TEST_F(SceneTest, ScenesAreRegisteredWithDenseIdsAndFoundByNameOrType) {
@@ -132,7 +132,7 @@ TEST_F(SceneTest, ManagerIsAvailableInTheMediator) { EXPECT_EQ(&engine.service<S
 
 TEST_F(SceneTest, TransitionsWaitForTheNextFrame) {
     manager().switchTo(menu);
-    EXPECT_EQ(manager().top(), scene::INVALID_SCENE);
+    EXPECT_EQ(manager().top(), sq::scene::INVALID_SCENE);
     EXPECT_TRUE(manager().hasPendingTransitions());
 
     frame();
@@ -212,7 +212,7 @@ TEST_F(SceneTest, ReplaceSwapsOnlyTheTopScene) {
 TEST_F(SceneTest, PopOnAnEmptyStackDoesNothing) {
     manager().pop();
     EXPECT_NO_THROW(frame());
-    EXPECT_EQ(manager().top(), scene::INVALID_SCENE);
+    EXPECT_EQ(manager().top(), sq::scene::INVALID_SCENE);
 }
 
 TEST_F(SceneTest, PushingASceneAlreadyOnTheStackThrows) {
@@ -238,22 +238,22 @@ TEST_F(SceneTest, ScenesSwitchingEachOtherForeverAreStopped) {
 }
 
 TEST_F(SceneTest, ExitDestroysOwnedEntitiesAndTheirChildrenButNotOthers) {
-    ecs::Entity owned = ecs::NULL_ENTITY;
-    ecs::Entity adopted = ecs::NULL_ENTITY;
-    ecs::Entity child = ecs::NULL_ENTITY;
-    ecs::Registry& registry = engine.registry();
-    const ecs::Entity persistent = registry.spawnEntity();
+    sq::ecs::Entity owned = sq::ecs::NULL_ENTITY;
+    sq::ecs::Entity adopted = sq::ecs::NULL_ENTITY;
+    sq::ecs::Entity child = sq::ecs::NULL_ENTITY;
+    sq::ecs::Registry& registry = engine.registry();
+    const sq::ecs::Entity persistent = registry.spawnEntity();
     manager().get<GameScene>().onEnterHook = [&](SceneContext& context) {
         owned = context.spawn();
         adopted = registry.spawnEntity();
         context.adopt(adopted);
         child = registry.spawnEntity();
-        hierarchy::setParent(registry, child, owned);
+        sq::hierarchy::setParent(registry, child, owned);
     };
     manager().switchTo(game);
     frame();
     EXPECT_TRUE(registry.isAlive(owned));
-    EXPECT_EQ(registry.getComponents<scene::SceneMember>().get(owned).id, game);
+    EXPECT_EQ(registry.getComponents<sq::scene::SceneMember>().get(owned).id, game);
 
     manager().switchTo(menu);
     frame();
@@ -264,7 +264,7 @@ TEST_F(SceneTest, ExitDestroysOwnedEntitiesAndTheirChildrenButNotOthers) {
 }
 
 TEST_F(SceneTest, ExitKeepsTheEntitiesOfOtherScenes) {
-    ecs::Entity menuEntity = ecs::NULL_ENTITY;
+    sq::ecs::Entity menuEntity = sq::ecs::NULL_ENTITY;
     manager().get<MenuScene>().onEnterHook = [&](SceneContext& context) { menuEntity = context.spawn(); };
     manager().switchTo(menu);
     manager().push(pause);
@@ -275,39 +275,39 @@ TEST_F(SceneTest, ExitKeepsTheEntitiesOfOtherScenes) {
 }
 
 TEST_F(SceneTest, ScenesCoveredByAnExclusiveSceneHideTheirEntities) {
-    ecs::Entity menuEntity = ecs::NULL_ENTITY;
+    sq::ecs::Entity menuEntity = sq::ecs::NULL_ENTITY;
     manager().get<MenuScene>().onEnterHook = [&](SceneContext& context) { menuEntity = context.spawn(); };
     manager().switchTo(menu);
     frame();
-    EXPECT_FALSE(ecs::isHidden(engine.registry(), menuEntity));
+    EXPECT_FALSE(sq::ecs::isHidden(engine.registry(), menuEntity));
 
     manager().push(pause);
     frame();
-    EXPECT_FALSE(ecs::isHidden(engine.registry(), menuEntity));
+    EXPECT_FALSE(sq::ecs::isHidden(engine.registry(), menuEntity));
 
     manager().replace(game);
     frame();
-    EXPECT_TRUE(ecs::isHidden(engine.registry(), menuEntity));
-    const ecs::Entity spawnedWhileHidden = manager().context(menu).spawn();
-    EXPECT_TRUE(ecs::isHidden(engine.registry(), spawnedWhileHidden));
+    EXPECT_TRUE(sq::ecs::isHidden(engine.registry(), menuEntity));
+    const sq::ecs::Entity spawnedWhileHidden = manager().context(menu).spawn();
+    EXPECT_TRUE(sq::ecs::isHidden(engine.registry(), spawnedWhileHidden));
 
     manager().pop();
     frame();
-    EXPECT_FALSE(ecs::isHidden(engine.registry(), menuEntity));
-    EXPECT_FALSE(ecs::isHidden(engine.registry(), spawnedWhileHidden));
+    EXPECT_FALSE(sq::ecs::isHidden(engine.registry(), menuEntity));
+    EXPECT_FALSE(sq::ecs::isHidden(engine.registry(), spawnedWhileHidden));
 }
 
 TEST_F(SceneTest, SceneVisibilityKeepsManualHiding) {
-    ecs::Entity menuEntity = ecs::NULL_ENTITY;
+    sq::ecs::Entity menuEntity = sq::ecs::NULL_ENTITY;
     manager().get<MenuScene>().onEnterHook = [&](SceneContext& context) {
         menuEntity = context.spawn();
-        ecs::hide(context.registry(), menuEntity);
+        sq::ecs::hide(context.registry(), menuEntity);
     };
     manager().switchTo(menu);
     manager().push(game);
     manager().pop();
     frame();
-    EXPECT_TRUE(ecs::isHidden(engine.registry(), menuEntity));
+    EXPECT_TRUE(sq::ecs::isHidden(engine.registry(), menuEntity));
 }
 
 TEST_F(SceneTest, SubscriptionsAreCancelledOnExit) {
@@ -335,9 +335,10 @@ TEST_F(SceneTest, SystemsRunOnlyWhileTheirSceneRuns) {
     int updates = 0;
     int lateUpdates = 0;
     manager().get<MenuScene>().onEnterHook = [&](SceneContext& context) {
-        context.addSystem(SceneStage::Update, [&](engine::Engine& /*e*/, const ecs::time::Time& /*t*/) { ++updates; });
+        context.addSystem(SceneStage::Update,
+                          [&](sq::engine::Engine& /*e*/, const sq::time::Time& /*t*/) { ++updates; });
         context.addSystem(SceneStage::LateUpdate,
-                          [&](engine::Engine& /*e*/, const ecs::time::Time& /*t*/) { ++lateUpdates; });
+                          [&](sq::engine::Engine& /*e*/, const sq::time::Time& /*t*/) { ++lateUpdates; });
     };
     manager().switchTo(menu);
     frame();
@@ -363,11 +364,11 @@ TEST_F(SceneTest, SystemAddedWhileSystemsRunStartsAtTheNextRun) {
     int added = 0;
     bool once = false;
     manager().get<MenuScene>().onEnterHook = [&](SceneContext& context) {
-        context.addSystem(SceneStage::Update, [&](engine::Engine& /*e*/, const ecs::time::Time& /*t*/) {
+        context.addSystem(SceneStage::Update, [&](sq::engine::Engine& /*e*/, const sq::time::Time& /*t*/) {
             if (!once) {
                 once = true;
                 context.addSystem(SceneStage::Update,
-                                  [&](engine::Engine& /*e*/, const ecs::time::Time& /*t*/) { ++added; });
+                                  [&](sq::engine::Engine& /*e*/, const sq::time::Time& /*t*/) { ++added; });
             }
         });
     };
@@ -381,15 +382,15 @@ TEST_F(SceneTest, SystemAddedWhileSystemsRunStartsAtTheNextRun) {
 TEST_F(SceneTest, SceneEventsArePublished) {
     std::vector<std::string> events;
     auto& bus = engine.eventBus();
-    (void)bus.subscribe<scene::SceneEntered>(
-        [&](const scene::SceneEntered& e) { events.push_back("entered " + std::to_string(e.id)); });
-    (void)bus.subscribe<scene::SceneExited>(
-        [&](const scene::SceneExited& e) { events.push_back("exited " + std::to_string(e.id)); });
-    (void)bus.subscribe<scene::ScenePaused>(
-        [&](const scene::ScenePaused& e) { events.push_back("paused " + std::to_string(e.id)); });
-    (void)bus.subscribe<scene::SceneResumed>(
-        [&](const scene::SceneResumed& e) { events.push_back("resumed " + std::to_string(e.id)); });
-    (void)bus.subscribe<scene::SceneVisibilityChanged>([&](const scene::SceneVisibilityChanged& e) {
+    (void)bus.subscribe<sq::scene::SceneEntered>(
+        [&](const sq::scene::SceneEntered& e) { events.push_back("entered " + std::to_string(e.id)); });
+    (void)bus.subscribe<sq::scene::SceneExited>(
+        [&](const sq::scene::SceneExited& e) { events.push_back("exited " + std::to_string(e.id)); });
+    (void)bus.subscribe<sq::scene::ScenePaused>(
+        [&](const sq::scene::ScenePaused& e) { events.push_back("paused " + std::to_string(e.id)); });
+    (void)bus.subscribe<sq::scene::SceneResumed>(
+        [&](const sq::scene::SceneResumed& e) { events.push_back("resumed " + std::to_string(e.id)); });
+    (void)bus.subscribe<sq::scene::SceneVisibilityChanged>([&](const sq::scene::SceneVisibilityChanged& e) {
         events.push_back((e.visible ? "shown " : "hidden ") + std::to_string(e.id));
     });
 
@@ -404,7 +405,7 @@ TEST_F(SceneTest, SceneEventsArePublished) {
 }
 
 TEST_F(SceneTest, ShutdownExitsEveryScene) {
-    ecs::Entity owned = ecs::NULL_ENTITY;
+    sq::ecs::Entity owned = sq::ecs::NULL_ENTITY;
     manager().get<GameScene>().onEnterHook = [&](SceneContext& context) { owned = context.spawn(); };
     manager().switchTo(menu);
     manager().push(game);
@@ -418,7 +419,7 @@ TEST_F(SceneTest, ShutdownExitsEveryScene) {
 }
 
 TEST_F(SceneTest, FailedEntryIsRolledBack) {
-    ecs::Entity spawned = ecs::NULL_ENTITY;
+    sq::ecs::Entity spawned = sq::ecs::NULL_ENTITY;
     int pings = 0;
     manager().get<GameScene>().onEnterHook = [&](SceneContext& context) {
         spawned = context.spawn();
@@ -442,7 +443,7 @@ TEST_F(SceneTest, FailedEntryIsRolledBack) {
 }
 
 TEST_F(SceneTest, ThrowingExitHookStillRemovesTheScene) {
-    ecs::Entity owned = ecs::NULL_ENTITY;
+    sq::ecs::Entity owned = sq::ecs::NULL_ENTITY;
     manager().get<GameScene>().onEnterHook = [&](SceneContext& context) { owned = context.spawn(); };
     manager().get<GameScene>().onExitHook = [](SceneContext& /*context*/) { throw std::runtime_error("exit"); };
     manager().switchTo(menu);
@@ -459,17 +460,17 @@ TEST_F(SceneTest, ThrowingExitHookStillRemovesTheScene) {
 
 TEST_F(SceneTest, WhatDestroyListenersAddToAnExitingSceneIsReleasedToo) {
     SceneContext& context = manager().context(game);
-    ecs::Entity owned = ecs::NULL_ENTITY;
-    ecs::Entity late = ecs::NULL_ENTITY;
+    sq::ecs::Entity owned = sq::ecs::NULL_ENTITY;
+    sq::ecs::Entity late = sq::ecs::NULL_ENTITY;
     int pings = 0;
     int runs = 0;
     manager().get<GameScene>().onEnterHook = [&](SceneContext& ctx) { owned = ctx.spawn(); };
-    engine.registry().addDestroyListener([&](ecs::Entity entity) {
+    engine.registry().addDestroyListener([&](sq::ecs::Entity entity) {
         if (entity == owned) {
             late = context.spawn();
             context.subscribe<Ping>([&pings](const Ping& /*ping*/) { ++pings; });
             context.addSystem(SceneStage::Update,
-                              [&runs](engine::Engine& /*engine*/, const ecs::time::Time& /*time*/) { ++runs; });
+                              [&runs](sq::engine::Engine& /*engine*/, const sq::time::Time& /*time*/) { ++runs; });
         }
     });
     manager().switchTo(game);
@@ -492,9 +493,9 @@ TEST_F(SceneTest, ExitDestroysLongChainsOfEntitiesSpawnedDuringTheExit) {
     // Each destroyed member spawns the next one into the exiting scene, deeper than any fixed number of passes.
     constexpr int CHAIN = 20;
     SceneContext& context = manager().context(game);
-    std::vector<ecs::Entity> chain;
+    std::vector<sq::ecs::Entity> chain;
     manager().get<GameScene>().onEnterHook = [&](SceneContext& ctx) { chain.push_back(ctx.spawn()); };
-    engine.registry().addDestroyListener([&](ecs::Entity entity) {
+    engine.registry().addDestroyListener([&](sq::ecs::Entity entity) {
         if (!chain.empty() && entity == chain.back() && chain.size() < CHAIN) {
             chain.push_back(context.spawn());
         }
@@ -505,21 +506,21 @@ TEST_F(SceneTest, ExitDestroysLongChainsOfEntitiesSpawnedDuringTheExit) {
     manager().switchTo(menu);
     EXPECT_NO_THROW(manager().applyTransitions());
     ASSERT_EQ(chain.size(), static_cast<std::size_t>(CHAIN));
-    for (const ecs::Entity entity : chain) {
+    for (const sq::ecs::Entity entity : chain) {
         EXPECT_FALSE(engine.registry().isAlive(entity));
     }
 }
 
 TEST(SceneShutdown, ThrowingDestroyListenerStillDetachesTheManager) {
     std::vector<std::string> log;
-    engine::Engine engine;
-    engine.addPlugin<scene::ScenePlugin>();
-    SceneManager& manager = engine.getPlugin<scene::ScenePlugin>().manager();
+    sq::engine::Engine engine;
+    engine.addPlugin<sq::scene::ScenePlugin>();
+    SceneManager& manager = engine.getPlugin<sq::scene::ScenePlugin>().manager();
     const SceneId game = manager.registerScene<GameScene>(log);
-    ecs::Entity owned = ecs::NULL_ENTITY;
+    sq::ecs::Entity owned = sq::ecs::NULL_ENTITY;
     manager.get<GameScene>().onEnterHook = [&](SceneContext& context) { owned = context.spawn(); };
     engine.init();
-    engine.registry().addDestroyListener([&owned](ecs::Entity entity) {
+    engine.registry().addDestroyListener([&owned](sq::ecs::Entity entity) {
         if (entity == owned) {
             throw std::runtime_error("destroy");
         }
@@ -537,7 +538,7 @@ TEST(SceneShutdown, ThrowingDestroyListenerStillDetachesTheManager) {
 TEST_F(SceneTest, SceneSystemsCannotApplyOrClearTheStack) {
     bool cleared = false;
     manager().get<GameScene>().onEnterHook = [&](SceneContext& context) {
-        context.addSystem(SceneStage::Update, [&](engine::Engine& /*engine*/, const ecs::time::Time& /*time*/) {
+        context.addSystem(SceneStage::Update, [&](sq::engine::Engine& /*engine*/, const sq::time::Time& /*time*/) {
             manager().switchTo(menu);
             manager().applyTransitions();  // deferred: the system keeps running safely
             EXPECT_EQ(manager().top(), game);
@@ -562,22 +563,22 @@ TEST_F(SceneTest, ClearDropsTransitionsQueuedByExitHooks) {
     frame();
 
     manager().clear();
-    EXPECT_EQ(manager().top(), scene::INVALID_SCENE);
+    EXPECT_EQ(manager().top(), sq::scene::INVALID_SCENE);
     EXPECT_FALSE(manager().hasPendingTransitions());
 }
 
 TEST(SceneShutdown, ScenesExitBeforeTheHierarchyHooksGoEvenWhenAddedFirst) {
     std::vector<std::string> log;
-    engine::Engine engine;
-    engine.addPlugin<scene::ScenePlugin>();
-    engine.addPlugin<hierarchy::HierarchyPlugin>();
-    SceneManager& manager = engine.getPlugin<scene::ScenePlugin>().manager();
+    sq::engine::Engine engine;
+    engine.addPlugin<sq::scene::ScenePlugin>();
+    engine.addPlugin<sq::hierarchy::HierarchyPlugin>();
+    SceneManager& manager = engine.getPlugin<sq::scene::ScenePlugin>().manager();
     const SceneId game = manager.registerScene<GameScene>(log);
-    ecs::Entity child = ecs::NULL_ENTITY;
+    sq::ecs::Entity child = sq::ecs::NULL_ENTITY;
     manager.get<GameScene>().onEnterHook = [&](SceneContext& context) {
-        const ecs::Entity parent = context.spawn();
+        const sq::ecs::Entity parent = context.spawn();
         child = context.registry().spawnEntity();  // not owned: only the hierarchy cascade destroys it
-        hierarchy::setParent(context.registry(), child, parent);
+        sq::hierarchy::setParent(context.registry(), child, parent);
     };
     engine.init();
     manager.switchTo(game);
@@ -594,7 +595,7 @@ TEST(SceneManagerStandalone, TransitionsBeforeAttachWaitForTheEngine) {
     const SceneId menu = manager.registerScene<MenuScene>(log);
     manager.switchTo(menu);
     manager.applyTransitions();
-    EXPECT_EQ(manager.top(), scene::INVALID_SCENE);
+    EXPECT_EQ(manager.top(), sq::scene::INVALID_SCENE);
     EXPECT_TRUE(manager.hasPendingTransitions());
     EXPECT_THROW((void)manager.context(menu).engine(), std::logic_error);
 }

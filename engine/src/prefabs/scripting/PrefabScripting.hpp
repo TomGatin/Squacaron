@@ -12,11 +12,13 @@
 #include "prefabs/PrefabParams.hpp"
 #include "scripting/IScriptExtension.hpp"
 
-namespace scripting {
-class ScriptSystem;
-}
+namespace sq::scripting {
 
-namespace prefabs {
+class ScriptSystem;
+
+}  // namespace sq::scripting
+
+namespace sq::prefabs {
 
 class PrefabManager;
 
@@ -27,14 +29,14 @@ class PrefabManager;
  * parameters. Spawns go through the script system's command buffer, so they are applied at the end of its update,
  * and every extension (scenes) sees the new entity with the owner that asked for it.
  */
-class ScriptPrefabSpawner final : public scripting::IScriptExtension {
+class ScriptPrefabSpawner final : public sq::scripting::IScriptExtension {
   public:
     /**
      * @brief Creates a spawner; add it with `ScriptSystem::addExtension`.
      * @param scripts Script system whose code spawns; must outlive the spawner.
      * @param prefabs Prefabs to spawn from; must outlive the spawner.
      */
-    ScriptPrefabSpawner(scripting::ScriptSystem& scripts, const PrefabManager& prefabs) noexcept
+    ScriptPrefabSpawner(sq::scripting::ScriptSystem& scripts, const PrefabManager& prefabs) noexcept
         : _scripts(&scripts), _prefabs(&prefabs) {}
 
     /**
@@ -59,32 +61,32 @@ class ScriptPrefabSpawner final : public scripting::IScriptExtension {
      * @param scripts Script system.
      * @return Its spawner, or nullptr if none was added.
      */
-    [[nodiscard]] static ScriptPrefabSpawner* of(scripting::ScriptSystem& scripts) noexcept;
+    [[nodiscard]] static ScriptPrefabSpawner* of(sq::scripting::ScriptSystem& scripts) noexcept;
 
   private:
     /** @brief Script system whose code spawns. */
-    scripting::ScriptSystem* _scripts;
+    sq::scripting::ScriptSystem* _scripts;
     /** @brief Prefabs to spawn from. */
     const PrefabManager* _prefabs;
 };
 
 /** @brief Plugin form: a `ScriptPrefabSpawner` for the engine's script system and `PrefabPlugin` manager. */
-class PrefabScriptingPlugin final : public engine::IPlugin {
+class PrefabScriptingPlugin final : public sq::engine::IPlugin {
   public:
     /** @brief Gets the plugin name. @return "PrefabScriptingPlugin". */
     [[nodiscard]] std::string_view name() const noexcept override { return "PrefabScriptingPlugin"; }
     /** @brief Requires the `PrefabPlugin` and the `ScriptPlugin`. @param builder Dependency builder. */
-    void build(engine::PluginBuilder& builder) override;
+    void build(sq::engine::PluginBuilder& builder) override;
     /** @brief Adds the spawner to the script system. @param engine Host engine. */
-    void init(engine::Engine& engine) override;
+    void init(sq::engine::Engine& engine) override;
     /** @brief Removes it. @param engine Host engine. */
-    void shutdown(engine::Engine& engine) override;
+    void shutdown(sq::engine::Engine& engine) override;
 
   private:
     /** @brief Script system, between `init` and `shutdown`. */
-    scripting::ScriptSystem* _scripts = nullptr;
+    sq::scripting::ScriptSystem* _scripts = nullptr;
     /** @brief The spawner, between `init` and `shutdown`. */
     std::optional<ScriptPrefabSpawner> _spawner;
 };
 
-}  // namespace prefabs
+}  // namespace sq::prefabs

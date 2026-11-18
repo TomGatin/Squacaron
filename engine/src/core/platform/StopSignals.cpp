@@ -7,7 +7,7 @@
 #include <windows.h>
 #endif
 
-namespace engine::platform {
+namespace sq::engine::platform {
 
 namespace {
 
@@ -52,4 +52,4 @@ bool stopSignalReceived() noexcept { return g_stopRequested.load(std::memory_ord
 
 void clearStopSignal() noexcept { g_stopRequested.store(false, std::memory_order_relaxed); }
 
-}  // namespace engine::platform
+}  // namespace sq::engine::platform

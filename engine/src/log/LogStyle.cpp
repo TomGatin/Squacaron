@@ -6,7 +6,7 @@
 
 #include "log/LogLevel.hpp"
 
-namespace engine::log::style {
+namespace sq::engine::log::style {
 
 namespace {
 
@@ -60,4 +60,4 @@ std::string_view tag(const std::string_view tag) noexcept {
     return TAG_PALETTE.at(hash % TAG_PALETTE.size());
 }
 
-}  // namespace engine::log::style
+}  // namespace sq::engine::log::style

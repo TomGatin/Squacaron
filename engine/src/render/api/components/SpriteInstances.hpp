@@ -9,7 +9,7 @@
 
 #include <vector>
 
-namespace ecs {
+namespace sq::ecs {
 
 /**
  * @brief Renders one sprite at multiple world positions without spawning one entity per occurrence.
@@ -43,4 +43,4 @@ struct SpriteInstances {
     float rotation = 0.0F;
 };
 
-}  // namespace ecs
+}  // namespace sq::ecs

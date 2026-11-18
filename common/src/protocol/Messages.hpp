@@ -20,7 +20,7 @@ namespace rtype::protocol {
 inline constexpr std::uint32_t PROTOCOL_VERSION = 3;
 
 /**
- * @brief Value of `ecs::net::NetworkConfig::protocolId` for R-Type: the bytes `RTYP` on the wire (little-endian u32).
+ * @brief Value of `sq::net::NetworkConfig::protocolId` for R-Type: the bytes `RTYP` on the wire (little-endian u32).
  *
  * It identifies the game, not its version: a peer announcing another id is refused during the transport handshake,
  * before `Hello` is even sent. `PROTOCOL_VERSION` is what changes with the format of the messages.
@@ -54,8 +54,8 @@ inline constexpr std::size_t MAX_INPUT_BUTTONS = 16;
 inline constexpr std::size_t MAX_INPUT_AXES = 8;
 
 /**
- * @brief Id of an input action: the FNV-1a hash of its name, the same value as the engine's `input::ActionId`
- * (`input::makeActionId("shoot")`).
+ * @brief Id of an input action: the FNV-1a hash of its name, the same value as the engine's `sq::input::ActionId`
+ * (`sq::input::makeActionId("shoot")`).
  *
  * The protocol does not depend on the engine: it carries the ids without knowing what they mean, so any game can
  * send its own actions.
@@ -237,7 +237,7 @@ struct AxisValue {
 /**
  * @brief C -> S over UDP: state of the player's actions during one client tick.
  *
- * Built from the client's `input::InputState`. The actions are the game's own: the protocol only carries their ids.
+ * Built from the client's `sq::input::InputState`. The actions are the game's own: the protocol only carries their ids.
  */
 struct PlayerInput {
     /** @brief Increases with every input; late or duplicated inputs are dropped by the server. */
@@ -259,8 +259,8 @@ using EntityKind = std::uint32_t;
 /**
  * @brief Computes the kind of the entities spawned from a prefab: the 32-bit FNV-1a hash of its name.
  *
- * Same algorithm as the engine's `input::makeActionId()`, so that both sides compute the same value without sharing a
- * table. Usable at compile time: `constexpr auto MISSILE = makeEntityKind("missile");`.
+ * Same algorithm as the engine's `sq::input::makeActionId()`, so that both sides compute the same value without sharing
+ * a table. Usable at compile time: `constexpr auto MISSILE = makeEntityKind("missile");`.
  *
  * @param prefab Prefab name, e.g. "alien_scout".
  * @return Kind to put in `EntityState::kind`.

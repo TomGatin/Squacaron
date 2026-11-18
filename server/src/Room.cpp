@@ -60,31 +60,31 @@ namespace {
  * @param connection Peers of the room.
  * @param message Message to send.
  */
-void broadcastReliable(ecs::net::PeerGroupConnection& connection, const protocol::Message& message) {
-    connection.broadcast(protocol::encode(message), ecs::net::Channel::Reliable);
+void broadcastReliable(sq::net::PeerGroupConnection& connection, const protocol::Message& message) {
+    connection.broadcast(protocol::encode(message), sq::net::Channel::Reliable);
 }
 
 }  // namespace
 
-Room::Room(ecs::net::INetworkServer& network, const std::uint8_t maxPlayers, const float fixedDt,
-           ecs::time::Clock::TimeSource timeSource, const std::shared_ptr<const level::Level>& level)
+Room::Room(sq::net::INetworkServer& network, const std::uint8_t maxPlayers, const float fixedDt,
+           sq::time::Clock::TimeSource timeSource, const std::shared_ptr<const level::Level>& level)
     : _maxPlayers(maxPlayers),
-      _connection(std::make_shared<ecs::net::PeerGroupConnection>(network)),
+      _connection(std::make_shared<sq::net::PeerGroupConnection>(network)),
       _engine(std::move(timeSource)) {
     _engine.setFixedDeltaTime(fixedDt);
-    _engine.addPlugin<ecs::net::NetworkPlugin>(_connection, _connection);
-    _engine.addPlugin<ecs::net::ServerReplicationPlugin>(std::make_shared<game::ReplicationCodec>());
-    _engine.addPlugin<systems::PhysicsPlugin>();
+    _engine.addPlugin<sq::net::NetworkPlugin>(_connection, _connection);
+    _engine.addPlugin<sq::net::ServerReplicationPlugin>(std::make_shared<game::ReplicationCodec>());
+    _engine.addPlugin<sq::systems::PhysicsPlugin>();
     // Moves the parts of the bosses with them.
-    _engine.addPlugin<hierarchy::HierarchyPlugin>();
-    _engine.addPlugin<timeline::TimelinePlugin>();
+    _engine.addPlugin<sq::hierarchy::HierarchyPlugin>();
+    _engine.addPlugin<sq::timeline::TimelinePlugin>();
     gameplay::addGameplayPlugins(_engine, level);
-    _engine.addPlugin<prefabs::PrefabPlugin>();
+    _engine.addPlugin<sq::prefabs::PrefabPlugin>();
     // On fixed steps: the room loop advances the engine about every millisecond, scripts follow the 60 Hz simulation.
-    _engine.addPlugin<scripting::ScriptPlugin>(scripting::ScriptTick::FixedStep);
+    _engine.addPlugin<sq::scripting::ScriptPlugin>(sq::scripting::ScriptTick::FixedStep);
     // What a script spawns (a boss's missiles, its escort) comes from the PrefabPlugin's prefabs.
-    _engine.addPlugin<::prefabs::PrefabScriptingPlugin>();
-    ecs::EventBus& bus = _engine.eventBus();
+    _engine.addPlugin<sq::prefabs::PrefabScriptingPlugin>();
+    sq::events::EventBus& bus = _engine.eventBus();
     bus.subscribe<protocol::LevelStart>(
         [this](const protocol::LevelStart& message) { broadcastReliable(*_connection, message); });
     bus.subscribe<protocol::LevelComplete>(
@@ -95,20 +95,20 @@ Room::Room(ecs::net::INetworkServer& network, const std::uint8_t maxPlayers, con
         broadcastReliable(*_connection, message);
         _ended = true;
     });
-    _engine.eventBus().subscribe<ecs::net::InputApplied>([this](const ecs::net::InputApplied& event) {
-        ecs::Registry& registry = _engine.registry();
+    _engine.eventBus().subscribe<sq::net::InputApplied>([this](const sq::net::InputApplied& event) {
+        sq::ecs::Registry& registry = _engine.registry();
         // An eliminated ship stays parked out of the screen: its player only watches the others.
-        if (registry.hasComponent<ecs::Transform>(event.entity) &&
+        if (registry.hasComponent<sq::ecs::Transform>(event.entity) &&
             !registry.hasComponent<gameplay::Eliminated>(event.entity)) {
-            game::applyShipInput(registry.getComponents<ecs::Transform>().get(event.entity), event.input,
+            game::applyShipInput(registry.getComponents<sq::ecs::Transform>().get(event.entity), event.input,
                                  event.deltaTime);
         }
     });
     _engine.init();
     // What a script spawns (a boss's missiles, its escort) is replicated like the rest of the game.
-    ::prefabs::PrefabManager& scriptPrefabs = _engine.getPlugin<prefabs::PrefabPlugin>().manager();
+    sq::prefabs::PrefabManager& scriptPrefabs = _engine.getPlugin<sq::prefabs::PrefabPlugin>().manager();
     gameplay::registerScriptPrefabs(scriptPrefabs);
-    scripting::ScriptSystem& scripts = _engine.getPlugin<scripting::ScriptPlugin>().scriptSystem();
+    sq::scripting::ScriptSystem& scripts = _engine.getPlugin<sq::scripting::ScriptPlugin>().scriptSystem();
     // Boss scripts are named relative to the data directory, which they cannot leave.
     scripts.setScriptRoot(level != nullptr ? level->dataRoot : std::filesystem::path{});
     // Hot reload is a development tool: on the game server, editing a script mid-match would rebuild the VM of every
@@ -128,11 +128,11 @@ bool Room::addPlayer(const ClientId player) {
     if (_playing || isFull() || std::ranges::contains(_players, player, &RoomPlayer::client)) {
         return false;
     }
-    ecs::Registry& registry = _engine.registry();
-    const ecs::Entity entity = registry.spawnEntity();
-    ecs::net::replicate(registry, entity, game::KIND_PLAYER_SHIP);
-    registry.addComponent(entity, ecs::NetworkOwner{player});
-    registry.addComponent(entity, ecs::InputBuffer{.capacity = MAX_PENDING_INPUTS});
+    sq::ecs::Registry& registry = _engine.registry();
+    const sq::ecs::Entity entity = registry.spawnEntity();
+    sq::net::replicate(registry, entity, game::KIND_PLAYER_SHIP);
+    registry.addComponent(entity, sq::ecs::NetworkOwner{player});
+    registry.addComponent(entity, sq::ecs::InputBuffer{.capacity = MAX_PENDING_INPUTS});
     registry.addComponent(entity, game::EntityNetState{});
     // Its collider makes the physics report what touches it: enemies, enemy shots, terrain and power-ups.
     ::prefabs::buildPlayerShip(entity, registry, {});
@@ -164,20 +164,20 @@ void Room::setReady(const ClientId player, const bool ready) {
 
 bool Room::isEveryoneReady() const { return !_players.empty() && std::ranges::all_of(_players, &RoomPlayer::ready); }
 
-void Room::onPacket(const ClientId player, const ecs::net::Bytes& data) {
+void Room::onPacket(const ClientId player, const sq::net::Bytes& data) {
     if (!_playing) {
         return;
     }
     _connection->push(
-        {.type = ecs::net::EventType::Data, .peer = player, .data = data, .channel = ecs::net::Channel::Unreliable});
+        {.type = sq::net::EventType::Data, .peer = player, .data = data, .channel = sq::net::Channel::Unreliable});
 }
 
 void Room::start() {
-    ecs::Registry& registry = _engine.registry();
+    sq::ecs::Registry& registry = _engine.registry();
     std::uint8_t index = 0;
     for (const RoomPlayer& player : _players) {
         registry.getComponents<game::EntityNetState>().get(player.entity).subtype = index;
-        auto& transform = registry.getComponents<ecs::Transform>().get(player.entity);
+        auto& transform = registry.getComponents<sq::ecs::Transform>().get(player.entity);
         const gameplay::ShipSpawnPoint spawn = gameplay::shipSpawnPoint(index);
         transform.x = spawn.x;
         transform.y = spawn.y;
@@ -205,7 +205,7 @@ void Room::runInBackground() {
         try {
             _loop.run([this] { advance(); });
         } catch (const std::exception& error) {
-            engine::log::error(LOG_TAG, "room stopped by an error in its simulation: ", error.what());
+            sq::engine::log::error(LOG_TAG, "room stopped by an error in its simulation: ", error.what());
             broadcastReliable(*_connection, protocol::GameOver{.reason = protocol::GameOverReason::ServerShutdown});
             _ended = true;
         }
@@ -218,7 +218,7 @@ std::uint32_t Room::lastProcessedInput(const ClientId player) const {
         return 0;
     }
     const std::scoped_lock lock(_mutex);
-    return registry().getComponents<ecs::InputBuffer>().get(it->entity).lastProcessed;
+    return registry().getComponents<sq::ecs::InputBuffer>().get(it->entity).lastProcessed;
 }
 
 }  // namespace rtype::server

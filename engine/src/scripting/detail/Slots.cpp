@@ -9,7 +9,7 @@
 #include "scripting/detail/WrenApi.hpp"
 #include "scripting/detail/WrenFwd.hpp"
 
-namespace scripting::detail::slots {
+namespace sq::scripting::detail::slots {
 
 int count(NativeVm* vm) noexcept { return wrenGetSlotCount(vm); }
 
@@ -78,4 +78,4 @@ void* userData(NativeVm* vm) noexcept { return wrenGetUserData(vm); }
 
 void releaseHandle(NativeVm* vm, ScriptObject* object) noexcept { wrenReleaseHandle(vm, object); }
 
-}  // namespace scripting::detail::slots
+}  // namespace sq::scripting::detail::slots

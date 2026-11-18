@@ -22,7 +22,7 @@ inline constexpr std::uint8_t STARTING_LIVES = 3;
  */
 struct ShipIconSheet {
     /** @brief Texture of the sheet. */
-    ecs::TextureId texture = ecs::NO_TEXTURE;
+    sq::ecs::TextureId texture = sq::ecs::NO_TEXTURE;
     /** @brief Width of a frame, in texture pixels. */
     int frameWidth = 0;
     /** @brief Height of a frame (and of a row), in texture pixels. */
@@ -37,7 +37,7 @@ struct ShipIconSheet {
  * @param playerIndex Index of the player: the row of its color.
  * @return The middle frame of its row.
  */
-[[nodiscard]] ecs::TextureRect idleShipFrame(const ShipIconSheet& sheet, std::uint8_t playerIndex) noexcept;
+[[nodiscard]] sq::ecs::TextureRect idleShipFrame(const ShipIconSheet& sheet, std::uint8_t playerIndex) noexcept;
 
 /** @brief What the HUD shows of the local player. */
 struct OwnShipStatus {
@@ -53,6 +53,6 @@ struct OwnShipStatus {
  * @param playerIndex Index of the player: the `subtype` of its ship.
  * @return Its status; `STARTING_LIVES` while its ship has not arrived yet.
  */
-[[nodiscard]] OwnShipStatus ownShipStatus(const ecs::Registry& registry, std::uint8_t playerIndex);
+[[nodiscard]] OwnShipStatus ownShipStatus(const sq::ecs::Registry& registry, std::uint8_t playerIndex);
 
 }  // namespace client::gameplay

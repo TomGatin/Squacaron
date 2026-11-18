@@ -15,9 +15,7 @@
 #include "scripting/detail/WrenFwd.hpp"
 #include "scripting/detail/WrenTypes.hpp"
 
-namespace scripting {
-
-namespace detail {
+namespace sq::scripting::detail {
 
 std::string makeMethodSignature(std::string_view name, std::size_t arity) {
     std::string sig(name);
@@ -32,7 +30,9 @@ std::string makeMethodSignature(std::string_view name, std::size_t arity) {
     return sig;
 }
 
-}  // namespace detail
+}  // namespace sq::scripting::detail
+
+namespace sq::scripting {
 
 WrenVM::WrenVM() { createVm(); }
 
@@ -192,4 +192,4 @@ void WrenVM::collectGarbage() {
 
 void WrenVM::ensureSlots(int numSlots) { wrenEnsureSlots(_vm, numSlots); }
 
-}  // namespace scripting
+}  // namespace sq::scripting

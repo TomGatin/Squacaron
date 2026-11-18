@@ -54,7 +54,7 @@ namespace client {
 
 namespace {
 
-namespace log = engine::log;
+namespace log = sq::engine::log;
 
 /** @brief Tag of the messages of this plugin in the log. */
 constexpr const char* LOG_TAG = "client";
@@ -73,12 +73,12 @@ constexpr int BULLET_FRAME_COUNT = 4;
 constexpr float BULLET_SCALE = 1.5F;
 constexpr float BULLET_FRAME_DURATION = 0.015F;
 constexpr float DEFAULT_FRAME_DURATION = 0.12F;
-constexpr ecs::Rgba COLOR_WHITE = {.r = 255, .g = 255, .b = 255, .a = 255};
+constexpr sq::ecs::Rgba COLOR_WHITE = {.r = 255, .g = 255, .b = 255, .a = 255};
 /** @brief Side of the square the renderer draws for an untextured `Renderable`, before the `Transform` scale. */
 constexpr float PLACEHOLDER_PIXELS = 32.0F;
 /** @brief Height of an obstacle whose subtype carries none (spawned by a script): the default 64 px block. */
 constexpr float DEFAULT_OBSTACLE_HEIGHT = 64.0F;
-constexpr ecs::Rgba COLOR_BOSS = {.r = 170, .g = 60, .b = 200, .a = 255};
+constexpr sq::ecs::Rgba COLOR_BOSS = {.r = 170, .g = 60, .b = 200, .a = 255};
 /** @brief Side of the box drawn for a boss part until boss looks are configured, in pixels. */
 constexpr float BOSS_PART_PLACEHOLDER_SIZE = 48.0F;
 /** @brief Side of the box drawn for an alien gunner until its look is configured, in pixels. */
@@ -86,34 +86,35 @@ constexpr float GUNNER_PLACEHOLDER_SIZE = 40.0F;
 /** @brief Side of the box drawn for an alien scout restyled without a sprite, in pixels: its hitbox. */
 constexpr float SCOUT_BOX_SIZE = 32.0F;
 /** @brief Color of an alien gunner drawn as a box. */
-constexpr ecs::Rgba COLOR_GUNNER = {.r = 90, .g = 200, .b = 230, .a = 255};
+constexpr sq::ecs::Rgba COLOR_GUNNER = {.r = 90, .g = 200, .b = 230, .a = 255};
 /** @brief Side of the box drawn for an alien elite until its look is configured, in pixels. */
 constexpr float ELITE_PLACEHOLDER_SIZE = 56.0F;
 /** @brief Color of an alien elite drawn as a box. */
-constexpr ecs::Rgba COLOR_ELITE = {.r = 240, .g = 170, .b = 40, .a = 255};
+constexpr sq::ecs::Rgba COLOR_ELITE = {.r = 240, .g = 170, .b = 40, .a = 255};
 /** @brief Color of an explosion burst drawn as a box. */
-constexpr ecs::Rgba COLOR_EXPLOSION = {.r = 255, .g = 190, .b = 70, .a = 255};
+constexpr sq::ecs::Rgba COLOR_EXPLOSION = {.r = 255, .g = 190, .b = 70, .a = 255};
 /** @brief Draw layer of the explosions, in front of the bosses. */
 constexpr int EXPLOSION_LAYER = 4;
-constexpr ecs::Rgba COLOR_BOSS_PART = {.r = 230, .g = 120, .b = 240, .a = 255};
-constexpr ecs::Rgba COLOR_MISSILE = {.r = 255, .g = 90, .b = 60, .a = 255};
-constexpr ecs::Rgba COLOR_POWER_UP = {.r = 80, .g = 220, .b = 120, .a = 255};
-constexpr ecs::Rgba COLOR_TERRAIN = {.r = 110, .g = 90, .b = 70, .a = 255};
-constexpr ecs::Rgba COLOR_STAR_SMALL = {.r = 200, .g = 200, .b = 220, .a = 80};
-constexpr ecs::Rgba COLOR_STAR_MEDIUM = {.r = 220, .g = 220, .b = 255, .a = 150};
-constexpr ecs::Rgba COLOR_STAR_LARGE = {.r = 255, .g = 255, .b = 255, .a = 220};
+constexpr sq::ecs::Rgba COLOR_BOSS_PART = {.r = 230, .g = 120, .b = 240, .a = 255};
+constexpr sq::ecs::Rgba COLOR_MISSILE = {.r = 255, .g = 90, .b = 60, .a = 255};
+constexpr sq::ecs::Rgba COLOR_POWER_UP = {.r = 80, .g = 220, .b = 120, .a = 255};
+constexpr sq::ecs::Rgba COLOR_TERRAIN = {.r = 110, .g = 90, .b = 70, .a = 255};
+constexpr sq::ecs::Rgba COLOR_STAR_SMALL = {.r = 200, .g = 200, .b = 220, .a = 80};
+constexpr sq::ecs::Rgba COLOR_STAR_MEDIUM = {.r = 220, .g = 220, .b = 255, .a = 150};
+constexpr sq::ecs::Rgba COLOR_STAR_LARGE = {.r = 255, .g = 255, .b = 255, .a = 220};
 
-using ::input::InputState;
+using sq::input::InputState;
 
 struct StarLayer {
     int count = 0;
     float speed = 0.0F;
-    ecs::Rgba color{};
+    sq::ecs::Rgba color{};
     int layer = 0;
-    ecs::TextureId texId = ecs::NO_TEXTURE;
+    sq::ecs::TextureId texId = sq::ecs::NO_TEXTURE;
 };
 
-void spawnStarfield(ecs::Registry& registry, ecs::TextureId smallId, ecs::TextureId mediumId, ecs::TextureId largeId) {
+void spawnStarfield(sq::ecs::Registry& registry, sq::ecs::TextureId smallId, sq::ecs::TextureId mediumId,
+                    sq::ecs::TextureId largeId) {
     const std::array<StarLayer, 3> layers{
         {
             {.count = 80, .speed = 25.0F, .color = COLOR_STAR_SMALL, .layer = -3, .texId = smallId},
@@ -124,7 +125,7 @@ void spawnStarfield(ecs::Registry& registry, ecs::TextureId smallId, ecs::Textur
 
     int seed = 0;
     for (const auto& def : layers) {
-        ecs::SpriteInstances pool;
+        sq::ecs::SpriteInstances pool;
         pool.instances.reserve(static_cast<std::size_t>(def.count));
         for (int i = 0; i < def.count; ++i) {
             const auto x = static_cast<float>(((seed * 137) + 43) % static_cast<int>(SCENE_WIDTH));
@@ -132,21 +133,21 @@ void spawnStarfield(ecs::Registry& registry, ecs::TextureId smallId, ecs::Textur
             ++seed;
             pool.instances.push_back({.x = x, .y = y});
         }
-        const ecs::Entity star = registry.spawnEntity();
-        registry.addComponent<ecs::SpriteInstances>(star, std::move(pool));
-        registry.addComponent<ecs::Renderable>(
-            star, ecs::Renderable{.textureId = def.texId, .tint = def.color, .layer = def.layer});
-        registry.addComponent<ecs::ParallaxLayer>(star, ecs::ParallaxLayer{
-                                                            .scrollSpeedX = -def.speed,
-                                                            .wrapMinX = -8.0F,
-                                                            .wrapMaxX = SCENE_WIDTH,
-                                                        });
+        const sq::ecs::Entity star = registry.spawnEntity();
+        registry.addComponent<sq::ecs::SpriteInstances>(star, std::move(pool));
+        registry.addComponent<sq::ecs::Renderable>(
+            star, sq::ecs::Renderable{.textureId = def.texId, .tint = def.color, .layer = def.layer});
+        registry.addComponent<sq::ecs::ParallaxLayer>(star, sq::ecs::ParallaxLayer{
+                                                                .scrollSpeedX = -def.speed,
+                                                                .wrapMinX = -8.0F,
+                                                                .wrapMaxX = SCENE_WIDTH,
+                                                            });
     }
 }
 
 /** @brief Sprite of a replicated entity: one frame strip of a spritesheet. */
 struct EntitySprite {
-    ecs::TextureId texture = ecs::NO_TEXTURE;
+    sq::ecs::TextureId texture = sq::ecs::NO_TEXTURE;
     int frameWidth = 0;
     int frameHeight = 0;
     int frameCount = 1;
@@ -168,7 +169,7 @@ struct DefaultBox {
     /** @brief Height, in pixels. */
     float height = 0.0F;
     /** @brief Fill color. */
-    ecs::Rgba color;
+    sq::ecs::Rgba color;
 };
 
 /**
@@ -190,32 +191,32 @@ DefaultBox defaultBox(const std::uint32_t kind) {
 }
 
 /** @brief Gives a replicated entity its sprite and its size on screen. */
-void applySprite(ecs::Registry& registry, const ecs::Entity entity, const EntitySprite& sprite) {
-    auto& transform = registry.getComponents<ecs::Transform>().get(entity);
+void applySprite(sq::ecs::Registry& registry, const sq::ecs::Entity entity, const EntitySprite& sprite) {
+    auto& transform = registry.getComponents<sq::ecs::Transform>().get(entity);
     // A negative scale mirrors the sprite.
     transform.scaleX = sprite.flipX ? -sprite.scale : sprite.scale;
     transform.scaleY = sprite.scale;
     const int firstWidth = sprite.frameWidths.empty() ? sprite.frameWidth : sprite.frameWidths.front();
-    registry.addComponent<ecs::Renderable>(
+    registry.addComponent<sq::ecs::Renderable>(
         entity,
-        ecs::Renderable{
+        sq::ecs::Renderable{
             .textureId = sprite.texture,
             .sourceRect = {.x = sprite.startX, .y = sprite.startY, .width = firstWidth, .height = sprite.frameHeight},
             .origin = {.x = 0.5F, .y = 0.5F},
             .tint = COLOR_WHITE,
             .layer = sprite.layer,
         });
-    registry.addComponent<ecs::AnimationComponent>(entity, ecs::AnimationComponent{
-                                                               .frameWidth = sprite.frameWidth,
-                                                               .frameHeight = sprite.frameHeight,
-                                                               .frameCount = sprite.frameCount,
-                                                               .startX = sprite.startX,
-                                                               .frameStride = sprite.frameStride,
-                                                               .frameWidths = sprite.frameWidths,
-                                                               .startY = sprite.startY,
-                                                               .frameDuration = sprite.frameDuration,
-                                                               .loop = sprite.loop,
-                                                           });
+    registry.addComponent<sq::ecs::AnimationComponent>(entity, sq::ecs::AnimationComponent{
+                                                                   .frameWidth = sprite.frameWidth,
+                                                                   .frameHeight = sprite.frameHeight,
+                                                                   .frameCount = sprite.frameCount,
+                                                                   .startX = sprite.startX,
+                                                                   .frameStride = sprite.frameStride,
+                                                                   .frameWidths = sprite.frameWidths,
+                                                                   .startY = sprite.startY,
+                                                                   .frameDuration = sprite.frameDuration,
+                                                                   .loop = sprite.loop,
+                                                               });
 }
 
 /**
@@ -227,45 +228,45 @@ void applySprite(ecs::Registry& registry, const ecs::Entity entity, const Entity
  * @param color Fill color.
  * @param layer Draw layer.
  */
-void applyBox(ecs::Registry& registry, const ecs::Entity entity, const float width, const float height,
-              const ecs::Rgba color, const int layer) {
-    auto& transform = registry.getComponents<ecs::Transform>().get(entity);
+void applyBox(sq::ecs::Registry& registry, const sq::ecs::Entity entity, const float width, const float height,
+              const sq::ecs::Rgba color, const int layer) {
+    auto& transform = registry.getComponents<sq::ecs::Transform>().get(entity);
     transform.scaleX = width / PLACEHOLDER_PIXELS;
     transform.scaleY = height / PLACEHOLDER_PIXELS;
-    registry.addComponent<ecs::Renderable>(entity, ecs::Renderable{
-                                                       .origin = {.x = 0.5F, .y = 0.5F},
-                                                       .tint = color,
-                                                       .layer = layer,
-                                                   });
+    registry.addComponent<sq::ecs::Renderable>(entity, sq::ecs::Renderable{
+                                                           .origin = {.x = 0.5F, .y = 0.5F},
+                                                           .tint = color,
+                                                           .layer = layer,
+                                                       });
 }
 
 }  // namespace
 
-void RTypeGamePlugin::build(engine::PluginBuilder& builder) {
-    builder.require<render::RenderPlugin>();
+void RTypeGamePlugin::build(sq::engine::PluginBuilder& builder) {
+    builder.require<sq::render::RenderPlugin>();
     // Runs scripts/rtype/Assets.wren, which declares the textures resolved in init.
-    builder.require<assets::AssetScriptingPlugin>();
+    builder.require<sq::assets::AssetScriptingPlugin>();
     // Plugs the texture loader into the manager, so that the global group really loads in init.
-    builder.require<assets::RenderAssetsPlugin>();
-    builder.require<::input::InputPlugin>();
-    builder.require<systems::AnimationPlugin>();
-    builder.require<ui::UiPlugin>();
+    builder.require<sq::assets::RenderAssetsPlugin>();
+    builder.require<sq::input::InputPlugin>();
+    builder.require<sq::systems::AnimationPlugin>();
+    builder.require<sq::ui::UiPlugin>();
 }
 
-void RTypeGamePlugin::init(engine::Engine& engine) {
-    auto& manager = engine.registry().getResource<assets::AssetManager>();
-    manager.loadGroup(assets::AssetManager::GLOBAL_GROUP);
+void RTypeGamePlugin::init(sq::engine::Engine& engine) {
+    auto& manager = engine.registry().getResource<sq::assets::AssetManager>();
+    manager.loadGroup(sq::assets::AssetManager::GLOBAL_GROUP);
     // Fail fast, as before the asset manager: a sprite missing from the start is a broken install, not something to
     // play through with checkerboards.
     const auto texture = [&manager](const std::string_view alias) {
-        switch (manager.status<assets::Texture>(alias)) {
-            case assets::AssetStatus::Loaded:
-                return manager.get<assets::Texture>(alias);
-            case assets::AssetStatus::Failed:
+        switch (manager.status<sq::assets::Texture>(alias)) {
+            case sq::assets::AssetStatus::Loaded:
+                return manager.get<sq::assets::Texture>(alias);
+            case sq::assets::AssetStatus::Failed:
                 throw std::runtime_error("cannot load texture '" + std::string(alias) +
                                          "' — is assets/ next to the executable?");
-            case assets::AssetStatus::Declared:
-            case assets::AssetStatus::Unknown:
+            case sq::assets::AssetStatus::Declared:
+            case sq::assets::AssetStatus::Unknown:
                 break;
         }
         throw std::runtime_error("texture '" + std::string(alias) +
@@ -290,21 +291,21 @@ void RTypeGamePlugin::init(engine::Engine& engine) {
     loadLooks(manager);
 
     // The key bindings come from the settings: `ClientScenesPlugin` sets them up.
-    ecs::Registry& registry = engine.registry();
+    sq::ecs::Registry& registry = engine.registry();
     spawnStarfield(registry, _starSmallId, _starMediumId, _starLargeId);
-    registry.addComponent<ecs::CameraComponent>(registry.spawnEntity(), ecs::CameraComponent{});
+    registry.addComponent<sq::ecs::CameraComponent>(registry.spawnEntity(), sq::ecs::CameraComponent{});
     // The local player's actions, sent to the server by the network plugins. Nothing of the game is spawned here:
     // ships, enemies and bullets come from the snapshots of the server.
     registry.addComponent<InputState>(registry.spawnEntity(), InputState{.playerIndex = 0, .actions = {}});
 
-    _spawned = engine.eventBus().subscribe<ecs::net::ReplicatedEntitySpawned>(
-        [this, &engine](const ecs::net::ReplicatedEntitySpawned& event) { onEntitySpawned(engine, event); });
-    _despawned = engine.eventBus().subscribe<ecs::net::ReplicatedEntityDespawned>(
-        [this, &engine](const ecs::net::ReplicatedEntityDespawned& event) { onEntityDespawned(engine, event); });
+    _spawned = engine.eventBus().subscribe<sq::net::ReplicatedEntitySpawned>(
+        [this, &engine](const sq::net::ReplicatedEntitySpawned& event) { onEntitySpawned(engine, event); });
+    _despawned = engine.eventBus().subscribe<sq::net::ReplicatedEntityDespawned>(
+        [this, &engine](const sq::net::ReplicatedEntityDespawned& event) { onEntityDespawned(engine, event); });
 }
 
-void RTypeGamePlugin::onEntitySpawned(engine::Engine& engine, const ecs::net::ReplicatedEntitySpawned& event) const {
-    ecs::Registry& registry = engine.registry();
+void RTypeGamePlugin::onEntitySpawned(sq::engine::Engine& engine, const sq::net::ReplicatedEntitySpawned& event) const {
+    sq::ecs::Registry& registry = engine.registry();
     const std::uint8_t subtype = registry.hasComponent<rtype::game::EntityNetState>(event.entity)
                                      ? registry.getComponents<rtype::game::EntityNetState>().get(event.entity).subtype
                                      : 0;
@@ -346,7 +347,7 @@ void RTypeGamePlugin::onEntitySpawned(engine::Engine& engine, const ecs::net::Re
             event.entity,
             gameplay::HitFlash{.spawnHealth = health,
                                .lastHealth = health,
-                               .baseTint = registry.getComponents<ecs::Renderable>().get(event.entity).tint});
+                               .baseTint = registry.getComponents<sq::ecs::Renderable>().get(event.entity).tint});
     } else if (event.kind == rtype::game::KIND_BOSS_CORE || event.kind == rtype::game::KIND_BOSS_PART) {
         applyBossLook(registry, event.entity, event.kind == rtype::game::KIND_BOSS_PART);
     } else if (event.kind == rtype::game::KIND_OBSTACLE) {
@@ -375,7 +376,7 @@ void RTypeGamePlugin::onEntitySpawned(engine::Engine& engine, const ecs::net::Re
     }
 }
 
-void RTypeGamePlugin::applyBossLook(ecs::Registry& registry, const ecs::Entity entity, const bool part) const {
+void RTypeGamePlugin::applyBossLook(sq::ecs::Registry& registry, const sq::ecs::Entity entity, const bool part) const {
     // The subtype picks the look: the variant of a boss, the look of a part.
     const std::uint8_t id = registry.getComponents<rtype::game::EntityNetState>().get(entity).subtype;
     const auto& configured = part ? _looks.parts : _looks.bosses;
@@ -397,20 +398,21 @@ void RTypeGamePlugin::applyBossLook(ecs::Registry& registry, const ecs::Entity e
         registry.addComponent(
             entity, gameplay::HitFlash{.spawnHealth = health,
                                        .lastHealth = health,
-                                       .baseTint = registry.getComponents<ecs::Renderable>().get(entity).tint});
+                                       .baseTint = registry.getComponents<sq::ecs::Renderable>().get(entity).tint});
     }
 }
 
-void RTypeGamePlugin::onEntityDespawned(engine::Engine& engine,
-                                        const ecs::net::ReplicatedEntityDespawned& event) const {
-    ecs::Registry& registry = engine.registry();
+void RTypeGamePlugin::onEntityDespawned(sq::engine::Engine& engine,
+                                        const sq::net::ReplicatedEntityDespawned& event) const {
+    sq::ecs::Registry& registry = engine.registry();
     if (!registry.hasComponent<gameplay::HitFlash>(event.entity) ||
         !gameplay::diedInCombat(registry.getComponents<gameplay::HitFlash>().get(event.entity)) ||
-        !registry.hasComponent<ecs::Transform>(event.entity) || !registry.hasComponent<ecs::Renderable>(event.entity)) {
+        !registry.hasComponent<sq::ecs::Transform>(event.entity) ||
+        !registry.hasComponent<sq::ecs::Renderable>(event.entity)) {
         return;
     }
-    const auto& transform = registry.getComponents<ecs::Transform>().get(event.entity);
-    const auto& source = registry.getComponents<ecs::Renderable>().get(event.entity).sourceRect;
+    const auto& transform = registry.getComponents<sq::ecs::Transform>().get(event.entity);
+    const auto& source = registry.getComponents<sq::ecs::Renderable>().get(event.entity).sourceRect;
     // A box is the placeholder texture scaled up; a sprite is its frame scaled up.
     // A mirrored sprite has a negative scale: only its size matters here.
     const float width =
@@ -424,15 +426,16 @@ void RTypeGamePlugin::onEntityDespawned(engine::Engine& engine,
     }
 }
 
-void RTypeGamePlugin::spawnExplosion(ecs::Registry& registry, const std::vector<gameplay::BurstSpec>& bursts) const {
+void RTypeGamePlugin::spawnExplosion(sq::ecs::Registry& registry,
+                                     const std::vector<gameplay::BurstSpec>& bursts) const {
     const looks::SpriteLook* look = _looks.explosion.has_value() ? &*_looks.explosion : nullptr;
     const auto texture = look != nullptr ? _lookTextures.find(look->texture) : _lookTextures.end();
-    if (texture == _lookTextures.end() || texture->second == ecs::NO_TEXTURE) {
+    if (texture == _lookTextures.end() || texture->second == sq::ecs::NO_TEXTURE) {
         look = nullptr;
     }
     for (const gameplay::BurstSpec& spec : bursts) {
-        const ecs::Entity burst = registry.spawnEntity();
-        registry.addComponent(burst, ecs::Transform{.x = spec.x, .y = spec.y});
+        const sq::ecs::Entity burst = registry.spawnEntity();
+        registry.addComponent(burst, sq::ecs::Transform{.x = spec.x, .y = spec.y});
         gameplay::ExplosionBurst state{.delay = spec.delay};
         if (look != nullptr) {
             applySprite(registry, burst,
@@ -462,7 +465,7 @@ void RTypeGamePlugin::spawnExplosion(ecs::Registry& registry, const std::vector<
     }
 }
 
-void RTypeGamePlugin::loadLooks(assets::AssetManager& manager) {
+void RTypeGamePlugin::loadLooks(sq::assets::AssetManager& manager) {
     // Relative to the content root, like the assets: the client runs from any directory.
     const std::filesystem::path path = manager.root() / looks::LOOKS_PATH;
     if (!std::filesystem::exists(path)) {
@@ -470,7 +473,7 @@ void RTypeGamePlugin::loadLooks(assets::AssetManager& manager) {
         return;
     }
     std::vector<std::string> warnings;
-    _looks = looks::readLooks(config::ConfigFile::load(path), warnings);
+    _looks = looks::readLooks(sq::config::ConfigFile::load(path), warnings);
     for (const std::string& warning : warnings) {
         log::warning(LOG_TAG, looks::LOOKS_PATH, ": ", warning);
     }
@@ -479,10 +482,10 @@ void RTypeGamePlugin::loadLooks(assets::AssetManager& manager) {
             return;
         }
         // Through the asset manager, which caches the files; a file that does not load leaves a box.
-        ecs::TextureId texture = manager.load<assets::Texture>(look.sprite->texture);
-        if (manager.status<assets::Texture>(look.sprite->texture) != assets::AssetStatus::Loaded) {
+        sq::ecs::TextureId texture = manager.load<sq::assets::Texture>(look.sprite->texture);
+        if (manager.status<sq::assets::Texture>(look.sprite->texture) != sq::assets::AssetStatus::Loaded) {
             log::warning(LOG_TAG, "cannot load ", look.sprite->texture, ": that look is drawn as a box");
-            texture = ecs::NO_TEXTURE;
+            texture = sq::ecs::NO_TEXTURE;
         }
         _lookTextures.emplace(look.sprite->texture, texture);
     };
@@ -509,12 +512,12 @@ const looks::Look* RTypeGamePlugin::entityLook(const std::uint32_t kind, const s
     return found != _entityLooks.end() ? found->second : nullptr;
 }
 
-void RTypeGamePlugin::applyLook(ecs::Registry& registry, const ecs::Entity entity, const looks::Look* look,
-                                const std::pair<float, float> box, const ecs::Rgba color, const int layer) const {
+void RTypeGamePlugin::applyLook(sq::ecs::Registry& registry, const sq::ecs::Entity entity, const looks::Look* look,
+                                const std::pair<float, float> box, const sq::ecs::Rgba color, const int layer) const {
     if (look != nullptr && look->sprite.has_value()) {
         const looks::SpriteLook& sprite = *look->sprite;
         const auto texture = _lookTextures.find(sprite.texture);
-        if (texture != _lookTextures.end() && texture->second != ecs::NO_TEXTURE) {
+        if (texture != _lookTextures.end() && texture->second != sq::ecs::NO_TEXTURE) {
             applySprite(registry, entity,
                         {
                             .texture = texture->second,
@@ -538,7 +541,7 @@ void RTypeGamePlugin::applyLook(ecs::Registry& registry, const ecs::Entity entit
             }
             if (sprite.directional) {
                 // Its frames are directions, not an animation: the one facing the ships is picked every frame.
-                registry.removeComponent<ecs::AnimationComponent>(entity);
+                registry.removeComponent<sq::ecs::AnimationComponent>(entity);
                 registry.addComponent(entity, gameplay::AimedSprite{.startX = sprite.x,
                                                                     .startY = sprite.y,
                                                                     .frameWidth = sprite.frameWidth,
@@ -555,12 +558,12 @@ void RTypeGamePlugin::applyLook(ecs::Registry& registry, const ecs::Entity entit
     applyBox(registry, entity, width, height, color, layer);
 }
 
-void RTypeGamePlugin::updateLookStages(ecs::Registry& registry) const {
+void RTypeGamePlugin::updateLookStages(sq::ecs::Registry& registry) const {
     // Collected first: switching a look replaces components of the entity, which must not happen mid-iteration.
-    std::vector<std::pair<ecs::Entity, int>> changes;
+    std::vector<std::pair<sq::ecs::Entity, int>> changes;
     registry.runSystem<gameplay::LookStage, gameplay::HitFlash, rtype::game::EntityNetState>(
-        [this, &changes](const ecs::Entity entity, const gameplay::LookStage& stage, const gameplay::HitFlash& flash,
-                         const rtype::game::EntityNetState& state) {
+        [this, &changes](const sq::ecs::Entity entity, const gameplay::LookStage& stage,
+                         const gameplay::HitFlash& flash, const rtype::game::EntityNetState& state) {
             const auto& table = stage.part ? _looks.partStages : _looks.bossStages;
             const auto found = table.find(stage.id);
             if (found == table.end()) {
@@ -599,11 +602,11 @@ void RTypeGamePlugin::updateLookStages(ecs::Registry& registry) const {
         }
         // The flash goes back to the tint of the new look.
         registry.getComponents<gameplay::HitFlash>().get(entity).baseTint =
-            registry.getComponents<ecs::Renderable>().get(entity).tint;
+            registry.getComponents<sq::ecs::Renderable>().get(entity).tint;
     }
 }
 
-void RTypeGamePlugin::update(engine::Engine& engine, const ecs::time::Time& time) {
+void RTypeGamePlugin::update(sq::engine::Engine& engine, const sq::time::Time& time) {
     _elapsed += time.deltaTime;
     updateLookStages(engine.registry());
     gameplay::blinkInvulnerableShips(engine.registry(), _elapsed);
@@ -612,18 +615,18 @@ void RTypeGamePlugin::update(engine::Engine& engine, const ecs::time::Time& time
     gameplay::aimSprites(engine.registry());
 }
 
-void RTypeGamePlugin::lateUpdate(engine::Engine& engine, const ecs::time::Time& /*time*/) {
+void RTypeGamePlugin::lateUpdate(sq::engine::Engine& engine, const sq::time::Time& /*time*/) {
     // After the interpolation of the update stage, which writes the positions and the rotations.
     gameplay::faceMotion(engine.registry());
 }
 
-void RTypeGamePlugin::shutdown(engine::Engine& engine) {
+void RTypeGamePlugin::shutdown(sq::engine::Engine& engine) {
     if (_spawned) {
-        engine.eventBus().unsubscribe<ecs::net::ReplicatedEntitySpawned>(*_spawned);
+        engine.eventBus().unsubscribe<sq::net::ReplicatedEntitySpawned>(*_spawned);
         _spawned.reset();
     }
     if (_despawned) {
-        engine.eventBus().unsubscribe<ecs::net::ReplicatedEntityDespawned>(*_despawned);
+        engine.eventBus().unsubscribe<sq::net::ReplicatedEntityDespawned>(*_despawned);
         _despawned.reset();
     }
 }

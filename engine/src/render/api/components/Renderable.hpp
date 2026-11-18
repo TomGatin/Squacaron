@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace ecs {
+namespace sq::ecs {
 
 using TextureId = std::uint32_t;
 inline constexpr TextureId NO_TEXTURE = 0;
@@ -79,4 +79,4 @@ struct Renderable {
     int layer = 0;
 };
 
-}  // namespace ecs
+}  // namespace sq::ecs

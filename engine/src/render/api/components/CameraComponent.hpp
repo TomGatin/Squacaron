@@ -1,6 +1,6 @@
 #pragma once
 
-namespace ecs {
+namespace sq::ecs {
 
 /**
  * @brief Plain camera state consumed by the rendering system.
@@ -30,4 +30,4 @@ struct CameraComponent {
     bool active = true;
 };
 
-}  // namespace ecs
+}  // namespace sq::ecs

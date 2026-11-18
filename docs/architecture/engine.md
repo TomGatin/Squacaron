@@ -10,7 +10,7 @@ The engine is built around its own Entity-Component-System (ECS), a data-oriente
 
 ### 2.1 Entities
 
-An **Entity** is not an object containing behaviors. It is a lightweight **generational handle** (`ecs::Entity`, a `std::uint64_t`) used to associate components together. It packs two fields:
+An **Entity** is not an object containing behaviors. It is a lightweight **generational handle** (`sq::ecs::Entity`, a `std::uint64_t`) used to associate components together. It packs two fields:
 
 | Bits  | Field      | Meaning                                                                  |
 |-------|------------|--------------------------------------------------------------------------|
@@ -18,7 +18,7 @@ An **Entity** is not an object containing behaviors. It is a lightweight **gener
 | 32-51 | generation | Bumped each time an entity in that slot is killed; wraps after 2^20.     |
 | 52-63 | (zero)     | Unused, so every handle is exact as a `double` (Wren numbers).           |
 
-Use `ecs::entityIndex(e)`, `ecs::entityGeneration(e)` and `ecs::makeEntity(index, generation)` to work with the fields; `ecs::NULL_ENTITY` is never alive.
+Use `sq::ecs::entityIndex(e)`, `sq::ecs::entityGeneration(e)` and `sq::ecs::makeEntity(index, generation)` to work with the fields; `sq::ecs::NULL_ENTITY` is never alive.
 
 Slots of killed entities are recycled, but with a new generation. A handle kept after its entity died (in a script, in a component referencing another entity, ...) is therefore **stale**: `isAlive` returns false, `hasComponent`/`contains`/`get` do not see the new occupant's components, `killEntity` and `removeComponent` are no-ops, and `addComponent`/`emplaceComponent` throw `std::invalid_argument` instead of overwriting the new entity's data. They also throw for a killed entity whose slot is not reused yet, which would otherwise leave an orphan component visited by `runSystem`. At the lower level, `SparseArray::insertAt` throws if the slot already holds the component of another handle with the same index.
 
@@ -69,11 +69,11 @@ graph TD
 
 ## 3. Engine Subsystems & Plugin Architecture
 
-The engine is orchestrated by the central `engine::Engine` class and partitioned into modular plugins:
+The engine is orchestrated by the central `sq::engine::Engine` class and partitioned into modular plugins:
 
-- **Engine Core & Plugins (`engine::Engine`, `engine::IPlugin`):** Manages the central `Registry`, `EventBus`, `Mediator`, dependency DAG resolution (`PluginGraph`), simulation `Clock`, and the continuous game loop. See [Plugins & Mediator](plugins.md) for complete details.
+- **Engine Core & Plugins (`sq::engine::Engine`, `sq::engine::IPlugin`):** Manages the central `Registry`, `EventBus`, `Mediator`, dependency DAG resolution (`PluginGraph`), simulation `Clock`, and the continuous game loop. See [Plugins & Mediator](plugins.md) for complete details.
 - **ECS Core (`Registry`, `SparseArray`):** High-throughput data-oriented entity storage with $O(1)$ lookups, swap-and-pop removals, and auto-registration.
-- **Mediator (`engine::Mediator`):** Typed service registry providing abstract interfaces (`IWindowService`, `IRenderService`, `IInputService`, `IPhysicsService`) to prevent direct concrete coupling between subsystems.
+- **Mediator (`sq::engine::Mediator`):** Typed service registry providing abstract interfaces (`IWindowService`, `IRenderService`, `IInputService`, `IPhysicsService`) to prevent direct concrete coupling between subsystems.
 - **Rendering Subsystem (`RenderPlugin`, Raylib):** 2D sprite rendering, sorted layer drawing, texture stores, and camera management.
 - **Input Subsystem (`InputPlugin`):** Hardware controller and keyboard mapping with spatial cluster key support.
 - **Physics Subsystem (`PhysicsPlugin`, Box2D):** Rigid body simulation, kinematic synchronization with ECS Transforms, and collider components.
@@ -113,9 +113,9 @@ Use the `Registry` to spawn entities and attach components using designated init
 Storage is **automatically registered on first access** via sequential Type IDs, eliminating manual registration boilerplate:
 
 ```cpp
-ecs::Registry registry;
+sq::ecs::Registry registry;
 
-ecs::Entity player = registry.spawnEntity();
+sq::ecs::Entity player = registry.spawnEntity();
 
 // Direct in-place emplacement:
 registry.emplaceComponent<Transform>(player, Transform{.x = 100.0F, .y = 100.0F});
@@ -134,8 +134,8 @@ Systems are logic blocks (often lambda functions) passed to `runSystem`. All com
 
 ```cpp
 // MovementSystem: Applies velocity to transform
-void updateMovement(ecs::Registry& registry, float dt) {
-    registry.runSystem<Transform, Velocity>([dt]([[maybe_unused]] ecs::Entity e, Transform& pos, Velocity const& vel) {
+void updateMovement(sq::ecs::Registry& registry, float dt) {
+    registry.runSystem<Transform, Velocity>([dt]([[maybe_unused]] sq::ecs::Entity e, Transform& pos, Velocity const& vel) {
         pos.x += vel.dx * dt;
         pos.y += vel.dy * dt;
     });
@@ -148,11 +148,11 @@ To decouple systems, use the `EventBus`. Define an event struct, subscribe to it
 
 ```cpp
 struct PlayerDamagedEvent {
-    ecs::Entity player;
+    sq::ecs::Entity player;
     int damage;
 };
 
-ecs::EventBus bus;
+sq::events::EventBus bus;
 
 // Subscribing (e.g., in an AudioSystem)
 auto token = bus.subscribe<PlayerDamagedEvent>([](const PlayerDamagedEvent& event) {

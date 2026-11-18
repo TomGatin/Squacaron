@@ -18,7 +18,7 @@
 #include "ecs/components/Tag.hpp"
 #include "ecs/components/Transform.hpp"
 
-namespace ecs {
+namespace sq::ecs {
 
 namespace {
 
@@ -88,4 +88,4 @@ void entitiesInRadius(Registry const& registry, float x, float y, float radius, 
     }
 }
 
-}  // namespace ecs
+}  // namespace sq::ecs

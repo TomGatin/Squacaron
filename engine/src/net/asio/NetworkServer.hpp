@@ -26,7 +26,7 @@
 #include "net/asio/TransportCounters.hpp"
 #include "net/asio/Wire.hpp"
 
-namespace ecs::net::detail {
+namespace sq::net::detail {
 
 /** @brief Transport state of one connection, owned by the network thread. */
 struct PeerInfo {
@@ -188,4 +188,4 @@ class NetworkServer : public INetworkServer {
     std::atomic<State> _state{State::Idle};
 };
 
-}  // namespace ecs::net::detail
+}  // namespace sq::net::detail

@@ -20,7 +20,7 @@
 #include "net/ReplicationSystems.hpp"
 #include "net/SnapshotApplier.hpp"
 
-namespace ecs::net {
+namespace sq::net {
 
 namespace {
 
@@ -34,9 +34,9 @@ constexpr double MILLISECONDS_PER_SECOND = 1000.0;
 
 ClientReplicationPlugin::ClientReplicationPlugin(std::shared_ptr<IReplicationCodec> codec) : _codec(std::move(codec)) {}
 
-void ClientReplicationPlugin::build(engine::PluginBuilder& builder) { builder.require<NetworkPlugin>(); }
+void ClientReplicationPlugin::build(sq::engine::PluginBuilder& builder) { builder.require<NetworkPlugin>(); }
 
-void ClientReplicationPlugin::init(engine::Engine& engine) {
+void ClientReplicationPlugin::init(sq::engine::Engine& engine) {
     auto& registry = engine.registry();
     if (!registry.hasResource<SnapshotState>()) {
         registry.emplaceResource<SnapshotState>();
@@ -50,7 +50,7 @@ void ClientReplicationPlugin::init(engine::Engine& engine) {
         [this, &engine](const LocalInput& local) { onLocalInput(engine, local); });
 }
 
-void ClientReplicationPlugin::onLocalInput(engine::Engine& engine, const LocalInput& local) {
+void ClientReplicationPlugin::onLocalInput(sq::engine::Engine& engine, const LocalInput& local) {
     auto& service = engine.service<INetworkService>();
     const std::uint32_t acknowledged = engine.registry().getResource<SnapshotState>().lastProcessedInput;
     for (const SentInput& sent : _sentInputs) {
@@ -72,7 +72,7 @@ void ClientReplicationPlugin::onLocalInput(engine::Engine& engine, const LocalIn
     predict(engine.registry(), engine.eventBus(), local.input, engine.fixedDeltaTime());
 }
 
-void ClientReplicationPlugin::measureInputRtt(engine::Engine& engine, const std::uint32_t acknowledged) {
+void ClientReplicationPlugin::measureInputRtt(sq::engine::Engine& engine, const std::uint32_t acknowledged) {
     std::optional<double> sentAt;
     while (!_pendingInputs.empty() && _pendingInputs.front().sequence <= acknowledged) {
         if (_pendingInputs.front().sequence == acknowledged) {
@@ -88,7 +88,7 @@ void ClientReplicationPlugin::measureInputRtt(engine::Engine& engine, const std:
     stats.inputRttMs = stats.inputRttMs ? *stats.inputRttMs + (RTT_SMOOTHING * (sample - *stats.inputRttMs)) : sample;
 }
 
-void ClientReplicationPlugin::onPacket(engine::Engine& engine, const PacketReceived& packet) {
+void ClientReplicationPlugin::onPacket(sq::engine::Engine& engine, const PacketReceived& packet) {
     const auto header = _codec->decodeSnapshot(packet.data);
     if (!header || header->partCount == 0 || header->partCount > MAX_SNAPSHOT_PARTS ||
         header->partIndex >= header->partCount) {
@@ -133,11 +133,11 @@ void ClientReplicationPlugin::onPacket(engine::Engine& engine, const PacketRecei
     reconcile(registry, engine.eventBus(), applier, header->lastProcessedInput, engine.fixedDeltaTime());
 }
 
-void ClientReplicationPlugin::update(engine::Engine& engine, const ecs::time::Time& time) {
+void ClientReplicationPlugin::update(sq::engine::Engine& engine, const sq::time::Time& time) {
     interpolate(engine.registry(), time.deltaTime);
 }
 
-void ClientReplicationPlugin::shutdown(engine::Engine& engine) {
+void ClientReplicationPlugin::shutdown(sq::engine::Engine& engine) {
     if (_packets) {
         engine.eventBus().unsubscribe<PacketReceived>(*_packets);
         _packets.reset();
@@ -148,8 +148,8 @@ void ClientReplicationPlugin::shutdown(engine::Engine& engine) {
     }
 }
 
-void ClientReplicationPlugin::reset(engine::Engine& engine) {
-    ecs::Registry& registry = engine.registry();
+void ClientReplicationPlugin::reset(sq::engine::Engine& engine) {
+    sq::ecs::Registry& registry = engine.registry();
     despawnMissing(registry, engine.eventBus(), {});
     if (registry.hasResource<SnapshotState>()) {
         registry.getResource<SnapshotState>() = SnapshotState{};
@@ -160,4 +160,4 @@ void ClientReplicationPlugin::reset(engine::Engine& engine) {
     _snapshotEntities.clear();
 }
 
-}  // namespace ecs::net
+}  // namespace sq::net

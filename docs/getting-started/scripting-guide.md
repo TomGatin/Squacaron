@@ -110,7 +110,7 @@ Instead of checking states every frame, implement convention-based event methods
 
 ### Collisions: `onCollision(other)`
 
-`systems::PhysicsScriptingPlugin` (module `engine_physics_scripting`, added next to `ScriptPlugin`) forwards every `events::CollisionBeginEvent` from the physics module to the scripts of **both** entities of the contact. A script receives it only if it opts in, like `update(dt)`:
+`sq::systems::PhysicsScriptingPlugin` (module `engine_physics_scripting`, added next to `ScriptPlugin`) forwards every `sq::events::CollisionBeginEvent` from the physics module to the scripts of **both** entities of the contact. A script receives it only if it opts in, like `update(dt)`:
 
 ```cpp
 registry.addComponent<ScriptComponent>(entity, ScriptComponent{
@@ -125,7 +125,7 @@ Wren cannot check whether a class defines a method, so the flag is required. Wit
 * `other` is the `Entity` that was hit. `other.destroy()` is deferred through the command buffer and applied at the end of the script update. It is never applied during the collision callback.
 * A contact is skipped for a script when either entity is already dead, for example killed by a C++ rule that handled the same contact first.
 * An entity queued for destruction is ignored until it is actually destroyed. Once the first script destroys `other`, `other`'s own `onCollision` is not called, and neither are its later contacts in the same frame. This means a projectile can't hit twice.
-* Only the start of a contact is forwarded. Subscribe to `events::CollisionEndEvent` in C++ if you need the end.
+* Only the start of a contact is forwarded. Subscribe to `sq::events::CollisionEndEvent` in C++ if you need the end.
 * **Known limitation:** a script is instantiated during `ScriptSystem::update`, while physics runs in the fixed update. An entity that is spawned already overlapping another collider can start its contact before its script exists, and that first `onCollision` is lost. It is not replayed later. Spawn such entities away from what they should hit, or handle the case in C++.
 
 ### Example: Reactive Defense Drone with Lifecycle Hooks
@@ -288,11 +288,11 @@ class HomingMissile {
 | `World.getNearestWithTag(x, y, tag)` | Closest tagged `Entity` that has a `Transform`, or `null` |
 | `World.getEntitiesInRadius(x, y, radius)` | `List` of `Entity` whose `Transform` is within `radius` (boundary included) |
 
-* Entities are labelled from C++ with the generic `ecs::Tag` component (`registry.addComponent<ecs::Tag>(e, {.name = "enemy"})`);
+* Entities are labelled from C++ with the generic `sq::ecs::Tag` component (`registry.addComponent<sq::ecs::Tag>(e, {.name = "enemy"})`);
   the engine gives no meaning to the strings, each game picks its own.
 * Coordinates and radius are in `Transform` world units. The queries scan the ECS directly, so they work on the
   headless server and do not need a physics body.
-* `radius` is clamped to `ecs::MAX_QUERY_RADIUS`; a negative radius returns an empty list.
+* `radius` is clamped to `sq::ecs::MAX_QUERY_RADIUS`; a negative radius returns an empty list.
 * No match returns an empty list or `null`, never a VM error. Entities destroyed by a script during the current
   frame are skipped. Wrong argument types abort the calling fiber.
 * The same queries are available in C++ in `ecs/SpatialQueries.hpp`.
@@ -319,7 +319,7 @@ Engine.spawnPrefab("Missile", _pos.x + 20.0, _pos.y)
 
 Both calls are queued in the engine's `CommandBuffer` and resolved safely at the end of the frame, avoiding invalid memory operations or iterator corruption in active system loops.
 
-`Engine.spawnPrefab` needs `prefabs::PrefabScriptingPlugin` (module `engine_prefabs_scripting`), which spawns from the `PrefabPlugin` prefabs. In the same way, `import "core/Input"` needs `input::InputScriptingPlugin` (module `engine_input_scripting`), or `input::addInputScripting(scripts)` for a `ScriptSystem` used without an engine. `engine_scripting` itself only knows the ECS, the events and the log.
+`Engine.spawnPrefab` needs `sq::prefabs::PrefabScriptingPlugin` (module `engine_prefabs_scripting`), which spawns from the `PrefabPlugin` prefabs. In the same way, `import "core/Input"` needs `sq::input::InputScriptingPlugin` (module `engine_input_scripting`), or `sq::input::addInputScripting(scripts)` for a `ScriptSystem` used without an engine. `engine_scripting` itself only knows the ECS, the events and the log.
 
 ---
 
@@ -378,7 +378,7 @@ WARN  [script] entity 42: update(_) failed: Runtime Error: Null does not impleme
 
 ## 11. Scenes from Wren
 
-With `scene::SceneScriptingPlugin` loaded, scripts can change the scene stack and whole scenes can be written in
+With `sq::scene::SceneScriptingPlugin` loaded, scripts can change the scene stack and whole scenes can be written in
 Wren. See [Scenes](../architecture/scene.md#scenes-in-wren) for the details.
 
 ```wren

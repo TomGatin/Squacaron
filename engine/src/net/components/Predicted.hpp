@@ -5,7 +5,7 @@
 
 #include "net/components/InputBuffer.hpp"
 
-namespace ecs {
+namespace sq::ecs {
 
 /** @brief Default maximum number of inputs kept in a `Predicted` history (one second at 60 Hz). */
 inline constexpr std::size_t DEFAULT_MAX_PREDICTED_INPUTS = 64;
@@ -19,9 +19,9 @@ inline constexpr std::size_t DEFAULT_MAX_PREDICTED_INPUTS = 64;
  */
 struct Predicted {
     /** @brief Inputs sent but not yet acknowledged by the server, oldest first. */
-    std::deque<NetInput> history;
+    std::deque<ecs::NetInput> history;
     /** @brief Maximum size of `history`; when exceeded, the oldest input is dropped. */
-    std::size_t capacity = DEFAULT_MAX_PREDICTED_INPUTS;
+    std::size_t capacity = ecs::DEFAULT_MAX_PREDICTED_INPUTS;
 };
 
-}  // namespace ecs
+}  // namespace sq::ecs

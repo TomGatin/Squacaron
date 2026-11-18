@@ -12,7 +12,7 @@
 #include "render/detail/RaylibStores.hpp"
 #include "render/font/FontStore.hpp"
 
-namespace render {
+namespace sq::render {
 
 namespace {
 
@@ -21,7 +21,7 @@ namespace {
  * @param color Engine color.
  * @return Same color as a raylib `Color`.
  */
-Color toRaylib(const ecs::Rgba& color) noexcept {
+Color toRaylib(const sq::ecs::Rgba& color) noexcept {
     return Color{.r = color.r, .g = color.g, .b = color.b, .a = color.a};
 }
 
@@ -30,43 +30,43 @@ Color toRaylib(const ecs::Rgba& color) noexcept {
  * @param rect Engine rectangle.
  * @return Same rectangle as a raylib `Rectangle`.
  */
-Rectangle toRaylib(const engine::ScreenRect& rect) noexcept {
+Rectangle toRaylib(const sq::engine::ScreenRect& rect) noexcept {
     return Rectangle{.x = rect.x, .y = rect.y, .width = rect.width, .height = rect.height};
 }
 
 /**
  * @brief Gets the font to draw or measure with.
  * @param fonts Loaded fonts.
- * @param font Font identifier; `engine::NO_FONT` or an unknown id selects raylib's default font.
+ * @param font Font identifier; `sq::engine::NO_FONT` or an unknown id selects raylib's default font.
  * @return The font.
  */
-Font resolveFont(const FontStore& fonts, engine::FontId font) {
+Font resolveFont(const FontStore& fonts, sq::engine::FontId font) {
     const Font* stored = fonts.impl().get(font);
     return stored != nullptr ? *stored : GetFontDefault();
 }
 
 }  // namespace
 
-engine::FontId ScreenDrawService::loadFont(const std::string& path) { return _fonts.load(path); }
+sq::engine::FontId ScreenDrawService::loadFont(const std::string& path) { return _fonts.load(path); }
 
-engine::TextSize ScreenDrawService::measureText(std::string_view text, float fontSize, float spacing,
-                                                engine::FontId font) const {
+sq::engine::TextSize ScreenDrawService::measureText(std::string_view text, float fontSize, float spacing,
+                                                    sq::engine::FontId font) const {
     // MeasureTextEx needs a null-terminated string, which a string_view does not guarantee.
     const std::string terminated(text);
     const Vector2 size = MeasureTextEx(resolveFont(_fonts, font), terminated.c_str(), fontSize, spacing);
     return {.width = size.x, .height = size.y};
 }
 
-void ScreenDrawService::fillRect(const engine::ScreenRect& rect, const ecs::Rgba& color) {
+void ScreenDrawService::fillRect(const sq::engine::ScreenRect& rect, const sq::ecs::Rgba& color) {
     _commands.emplace_back(FillCommand{.rect = rect, .color = color});
 }
 
-void ScreenDrawService::strokeRect(const engine::ScreenRect& rect, float thickness, const ecs::Rgba& color) {
+void ScreenDrawService::strokeRect(const sq::engine::ScreenRect& rect, float thickness, const sq::ecs::Rgba& color) {
     _commands.emplace_back(StrokeCommand{.rect = rect, .thickness = thickness, .color = color});
 }
 
 void ScreenDrawService::drawText(std::string_view text, float x, float y, float fontSize, float spacing,
-                                 const ecs::Rgba& color, engine::FontId font) {
+                                 const sq::ecs::Rgba& color, sq::engine::FontId font) {
     _commands.emplace_back(TextCommand{
         .text = std::string(text),
         .x = x,
@@ -78,8 +78,9 @@ void ScreenDrawService::drawText(std::string_view text, float x, float y, float 
     });
 }
 
-void ScreenDrawService::drawTexture(const ecs::TextureId texture, const ecs::TextureRect& source,
-                                    const engine::ScreenRect& dest, const float rotation, const ecs::Rgba& tint) {
+void ScreenDrawService::drawTexture(const sq::ecs::TextureId texture, const sq::ecs::TextureRect& source,
+                                    const sq::engine::ScreenRect& dest, const float rotation,
+                                    const sq::ecs::Rgba& tint) {
     _commands.emplace_back(
         TextureCommand{.texture = texture, .source = source, .dest = dest, .rotation = rotation, .tint = tint});
 }
@@ -130,4 +131,4 @@ void ScreenDrawService::flush() {
     _commands.clear();
 }
 
-}  // namespace render
+}  // namespace sq::render

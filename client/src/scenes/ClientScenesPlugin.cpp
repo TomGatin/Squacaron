@@ -56,21 +56,22 @@ constexpr const char* LEVEL_TRANSITION_MODULE = "scripts/scenes/LevelTransition"
  * @param entity Entity to build (it becomes the panel).
  * @param registry Registry of the entity.
  */
-void buildLevelBanner(ecs::Entity entity, ecs::Registry& registry, const prefabs::PrefabParams& /*params*/) {
+void buildLevelBanner(sq::ecs::Entity entity, sq::ecs::Registry& registry,
+                      const sq::prefabs::PrefabParams& /*params*/) {
     const LevelBanner banner =
         registry.hasResource<LevelBanner>() ? registry.getResource<LevelBanner>() : LevelBanner{};
-    registry.addComponent(entity, ui::UiAnchor{.anchorX = 0.5F, .anchorY = 0.4F, .pivotX = 0.5F, .pivotY = 0.5F});
-    registry.addComponent(entity, ui::UiRect{.width = 520.0F,
-                                             .height = 130.0F,
-                                             .fillColor = menu::PANEL,
-                                             .borderColor = menu::GOLD,
-                                             .borderThickness = 2.0F});
-    const auto line = [&](std::string text, float y, float size, ecs::Rgba color) {
-        const ecs::Entity child = registry.spawnEntity();
-        registry.addComponent(child, ui::UiAnchor{.anchorX = 0.5F, .offsetY = y, .pivotX = 0.5F});
-        registry.addComponent(child, ui::UiText{.text = std::move(text), .fontSize = size, .color = color});
+    registry.addComponent(entity, sq::ui::UiAnchor{.anchorX = 0.5F, .anchorY = 0.4F, .pivotX = 0.5F, .pivotY = 0.5F});
+    registry.addComponent(entity, sq::ui::UiRect{.width = 520.0F,
+                                                 .height = 130.0F,
+                                                 .fillColor = menu::PANEL,
+                                                 .borderColor = menu::GOLD,
+                                                 .borderThickness = 2.0F});
+    const auto line = [&](std::string text, float y, float size, sq::ecs::Rgba color) {
+        const sq::ecs::Entity child = registry.spawnEntity();
+        registry.addComponent(child, sq::ui::UiAnchor{.anchorX = 0.5F, .offsetY = y, .pivotX = 0.5F});
+        registry.addComponent(child, sq::ui::UiText{.text = std::move(text), .fontSize = size, .color = color});
         // Destroyed with the banner when the overlay exits.
-        hierarchy::setParent(registry, child, entity);
+        sq::hierarchy::setParent(registry, child, entity);
     };
     line(banner.title, 22.0F, 46.0F, menu::GOLD);
     line(banner.subtitle, 80.0F, 24.0F, menu::TEXT);
@@ -81,15 +82,16 @@ void buildLevelBanner(ecs::Entity entity, ecs::Registry& registry, const prefabs
  * @param engine Host engine.
  * @param settings Client settings.
  */
-void applyVolumes(engine::Engine& engine, const config::Settings& settings) {
-    auto audio = engine.mediator().getService<engine::IAudioService>();
+void applyVolumes(sq::engine::Engine& engine, const sq::config::Settings& settings) {
+    auto audio = engine.mediator().getService<sq::engine::IAudioService>();
     if (!audio) {
         return;
     }
-    audio->get().setVolume(audio::AudioBus::Master,
+    audio->get().setVolume(sq::audio::AudioBus::Master,
                            static_cast<float>(settings.getNumber(settings_keys::MASTER_VOLUME)));
-    audio->get().setVolume(audio::AudioBus::Music, static_cast<float>(settings.getNumber(settings_keys::MUSIC_VOLUME)));
-    audio->get().setVolume(audio::AudioBus::Sfx, static_cast<float>(settings.getNumber(settings_keys::SFX_VOLUME)));
+    audio->get().setVolume(sq::audio::AudioBus::Music,
+                           static_cast<float>(settings.getNumber(settings_keys::MUSIC_VOLUME)));
+    audio->get().setVolume(sq::audio::AudioBus::Sfx, static_cast<float>(settings.getNumber(settings_keys::SFX_VOLUME)));
 }
 
 /**
@@ -97,9 +99,9 @@ void applyVolumes(engine::Engine& engine, const config::Settings& settings) {
  * @param engine Host engine.
  * @param settings Settings.
  */
-void applyMetrics(engine::Engine& engine, const config::Settings& settings) {
-    if (engine.hasPlugin<metrics::MetricsOverlayPlugin>()) {
-        engine.getPlugin<metrics::MetricsOverlayPlugin>().setVisible(settings.getBool(settings_keys::SHOW_METRICS));
+void applyMetrics(sq::engine::Engine& engine, const sq::config::Settings& settings) {
+    if (engine.hasPlugin<sq::metrics::MetricsOverlayPlugin>()) {
+        engine.getPlugin<sq::metrics::MetricsOverlayPlugin>().setVisible(settings.getBool(settings_keys::SHOW_METRICS));
     }
 }
 
@@ -108,10 +110,10 @@ void applyMetrics(engine::Engine& engine, const config::Settings& settings) {
  * @param settings Settings.
  * @return The keys.
  */
-input::ControlKeys readControlKeys(const config::Settings& settings) {
+input::ControlKeys readControlKeys(const sq::config::Settings& settings) {
     input::ControlKeys keys = input::defaultControlKeys();
     for (const input::Control control : input::CONTROLS) {
-        if (const auto key = ::input::keyFromId(settings.getString(settings_keys::controlKey(control)))) {
+        if (const auto key = sq::input::keyFromId(settings.getString(settings_keys::controlKey(control)))) {
             keys.at(static_cast<std::size_t>(control)) = *key;
         }
     }
@@ -123,8 +125,8 @@ input::ControlKeys readControlKeys(const config::Settings& settings) {
  * @param engine Host engine.
  * @param settings Settings.
  */
-void applyBindings(engine::Engine& engine, const config::Settings& settings) {
-    if (auto inputService = engine.mediator().getService<engine::IInputService>()) {
+void applyBindings(sq::engine::Engine& engine, const sq::config::Settings& settings) {
+    if (auto inputService = engine.mediator().getService<sq::engine::IInputService>()) {
         input::setupBindings(inputService->get().mapping(), readControlKeys(settings));
     }
 }
@@ -134,7 +136,7 @@ void applyBindings(engine::Engine& engine, const config::Settings& settings) {
  * @param engine Host engine.
  * @param settings Settings.
  */
-void applyUiScale(engine::Engine& engine, const config::Settings& settings) {
+void applyUiScale(sq::engine::Engine& engine, const sq::config::Settings& settings) {
     menu::setScale(engine.registry(), static_cast<float>(settings.getNumber(settings_keys::UI_SCALE)));
 }
 
@@ -143,7 +145,7 @@ void applyUiScale(engine::Engine& engine, const config::Settings& settings) {
  * @param engine Host engine.
  * @param settings Settings.
  */
-void applyAutoFire(engine::Engine& engine, const config::Settings& settings) {
+void applyAutoFire(sq::engine::Engine& engine, const sq::config::Settings& settings) {
     engine.getPlugin<PlayerControlPlugin>().setAutoFire(settings.getBool(settings_keys::AUTO_FIRE));
 }
 
@@ -152,19 +154,19 @@ void applyAutoFire(engine::Engine& engine, const config::Settings& settings) {
 ClientScenesPlugin::ClientScenesPlugin(std::string host, std::uint16_t port, bool fromCommandLine)
     : _host(std::move(host)), _port(port), _fromCommandLine(fromCommandLine) {}
 
-void ClientScenesPlugin::build(engine::PluginBuilder& builder) {
-    builder.require<scene::ScenePlugin>();
-    builder.require<scene::SceneScriptingPlugin>();
-    builder.require<scripting::ScriptPlugin>();
-    builder.require<prefabs::PrefabPlugin>();
-    builder.require<settings::SettingsPlugin>();
-    builder.require<ui::UiPlugin>();
+void ClientScenesPlugin::build(sq::engine::PluginBuilder& builder) {
+    builder.require<sq::scene::ScenePlugin>();
+    builder.require<sq::scene::SceneScriptingPlugin>();
+    builder.require<sq::scripting::ScriptPlugin>();
+    builder.require<sq::prefabs::PrefabPlugin>();
+    builder.require<sq::settings::SettingsPlugin>();
+    builder.require<sq::ui::UiPlugin>();
     builder.require<RTypeNetworkPlugin>();
     builder.require<PlayerControlPlugin>();
 }
 
-void ClientScenesPlugin::init(engine::Engine& engine) {
-    config::Settings& settings = engine.getPlugin<settings::SettingsPlugin>().settings();
+void ClientScenesPlugin::init(sq::engine::Engine& engine) {
+    sq::config::Settings& settings = engine.getPlugin<sq::settings::SettingsPlugin>().settings();
     settings.define(std::string(settings_keys::MASTER_VOLUME), 1.0);
     settings.define(std::string(settings_keys::MUSIC_VOLUME), 0.8);
     settings.define(std::string(settings_keys::SFX_VOLUME), 1.0);
@@ -174,7 +176,7 @@ void ClientScenesPlugin::init(engine::Engine& engine) {
     const input::ControlKeys defaults = input::defaultControlKeys();
     for (const input::Control control : input::CONTROLS) {
         settings.define(settings_keys::controlKey(control),
-                        std::string(::input::keyId(defaults.at(static_cast<std::size_t>(control)))));
+                        std::string(sq::input::keyId(defaults.at(static_cast<std::size_t>(control)))));
     }
     settings.define(std::string(settings_keys::LAST_HOST), std::string{});
     settings.define(std::string(settings_keys::LAST_PORT), std::int64_t{_port});
@@ -183,24 +185,25 @@ void ClientScenesPlugin::init(engine::Engine& engine) {
     applyAutoFire(engine, settings);
     applyUiScale(engine, settings);
     applyBindings(engine, settings);
-    engine.eventBus().subscribe<settings::SettingChanged>([&engine, &settings](const settings::SettingChanged& event) {
-        if (event.key.starts_with("audio.")) {
-            applyVolumes(engine, settings);
-        } else if (event.key == settings_keys::SHOW_METRICS) {
-            applyMetrics(engine, settings);
-        } else if (event.key == settings_keys::AUTO_FIRE) {
-            applyAutoFire(engine, settings);
-        } else if (event.key == settings_keys::UI_SCALE) {
-            applyUiScale(engine, settings);
-        } else if (event.key.starts_with(settings_keys::CONTROLS_PREFIX)) {
-            applyBindings(engine, settings);
-        }
-    });
+    engine.eventBus().subscribe<sq::settings::SettingChanged>(
+        [&engine, &settings](const sq::settings::SettingChanged& event) {
+            if (event.key.starts_with("audio.")) {
+                applyVolumes(engine, settings);
+            } else if (event.key == settings_keys::SHOW_METRICS) {
+                applyMetrics(engine, settings);
+            } else if (event.key == settings_keys::AUTO_FIRE) {
+                applyAutoFire(engine, settings);
+            } else if (event.key == settings_keys::UI_SCALE) {
+                applyUiScale(engine, settings);
+            } else if (event.key.starts_with(settings_keys::CONTROLS_PREFIX)) {
+                applyBindings(engine, settings);
+            }
+        });
 
-    prefabs::PrefabManager& prefabs = engine.getPlugin<prefabs::PrefabPlugin>().manager();
+    sq::prefabs::PrefabManager& prefabs = engine.getPlugin<sq::prefabs::PrefabPlugin>().manager();
     prefabs.registerPrefab("level_banner", &buildLevelBanner);
 
-    scene::SceneManager& scenes = engine.getPlugin<scene::ScenePlugin>().manager();
+    sq::scene::SceneManager& scenes = engine.getPlugin<sq::scene::ScenePlugin>().manager();
     scenes.registerScene<TitleScene>();
     scenes.registerScene<ConnectScene>(_host, _port, _fromCommandLine);
     scenes.registerScene<SettingsScene>();
@@ -210,20 +213,20 @@ void ClientScenesPlugin::init(engine::Engine& engine) {
     scenes.registerScene<GameScene>();
     scenes.registerScene<PauseScene>();
     scenes.registerScene<GameOverScene>();
-    engine.getPlugin<scene::SceneScriptingPlugin>().registerScriptScene(
+    engine.getPlugin<sq::scene::SceneScriptingPlugin>().registerScriptScene(
         engine, std::string(LEVEL_TRANSITION_SCENE), LEVEL_TRANSITION_MODULE, "LevelTransition",
-        scene::ScriptSceneOptions{.mode = scene::SceneMode::Overlay});
+        sq::scene::ScriptSceneOptions{.mode = sq::scene::SceneMode::Overlay});
     scenes.switchTo<TitleScene>();
 }
 
-void ClientScenesPlugin::update(engine::Engine& engine, const ecs::time::Time& /*time*/) {
-    auto window = engine.mediator().getService<engine::IWindowService>();
+void ClientScenesPlugin::update(sq::engine::Engine& engine, const sq::time::Time& /*time*/) {
+    auto window = engine.mediator().getService<sq::engine::IWindowService>();
     if (!window) {
         return;
     }
-    const bool held = window->get().isKeyDown(engine::Key::F3);
+    const bool held = window->get().isKeyDown(sq::engine::Key::F3);
     if (held && !_metricsKeyHeld) {
-        config::Settings& settings = engine.getPlugin<settings::SettingsPlugin>().settings();
+        sq::config::Settings& settings = engine.getPlugin<sq::settings::SettingsPlugin>().settings();
         settings.set(settings_keys::SHOW_METRICS, !settings.getBool(settings_keys::SHOW_METRICS));
     }
     _metricsKeyHeld = held;

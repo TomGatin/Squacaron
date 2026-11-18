@@ -12,12 +12,12 @@
 #include "core/PluginBuilder.hpp"
 #include "prefabs/PrefabManager.hpp"
 
-namespace prefabs {
+namespace sq::prefabs {
 
 /**
  * @brief Plugin responsible for registering entity prefabs and exposing PrefabManager via Mediator.
  */
-class PrefabPlugin final : public engine::IPlugin {
+class PrefabPlugin final : public sq::engine::IPlugin {
   public:
     /** @brief Constructs PrefabPlugin. */
     PrefabPlugin();
@@ -47,19 +47,19 @@ class PrefabPlugin final : public engine::IPlugin {
      * @brief Declares plugin dependencies.
      * @param builder Dependency builder.
      */
-    void build(engine::PluginBuilder& builder) override;
+    void build(sq::engine::PluginBuilder& builder) override;
 
     /**
      * @brief Registers PrefabManager in the engine Mediator.
      * @param engine Reference to host Engine.
      */
-    void init(engine::Engine& engine) override;
+    void init(sq::engine::Engine& engine) override;
 
     /**
      * @brief Unregisters PrefabManager from Mediator.
      * @param engine Reference to host Engine.
      */
-    void shutdown(engine::Engine& engine) override;
+    void shutdown(sq::engine::Engine& engine) override;
 
     /** @brief Gets mutable reference to internal PrefabManager. */
     [[nodiscard]] PrefabManager& manager() noexcept { return *_manager; }
@@ -72,4 +72,4 @@ class PrefabPlugin final : public engine::IPlugin {
     std::shared_ptr<PrefabManager> _manager;
 };
 
-}  // namespace prefabs
+}  // namespace sq::prefabs

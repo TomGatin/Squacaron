@@ -12,7 +12,7 @@
 #include "scripting/ScriptOwner.hpp"
 #include "scripting/detail/WrenTypes.hpp"
 
-namespace scripting {
+namespace sq::scripting {
 
 /** @brief A suspended Wren fiber waiting for its delay (`Engine.wait`). */
 struct SleepingFiber {
@@ -69,4 +69,4 @@ class FiberScheduler {
     std::vector<SleepingFiber> _ready;
 };
 
-}  // namespace scripting
+}  // namespace sq::scripting

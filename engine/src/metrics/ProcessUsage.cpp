@@ -22,7 +22,7 @@
 #include <fstream>
 #endif
 
-namespace metrics {
+namespace sq::metrics {
 
 #ifdef _WIN32
 
@@ -91,4 +91,4 @@ std::optional<ProcessSample> sampleProcess() {
 
 #endif
 
-}  // namespace metrics
+}  // namespace sq::metrics

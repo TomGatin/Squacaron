@@ -10,9 +10,7 @@
 #include "ResourceType.hpp"
 #include "ecs/Registry.hpp"
 
-namespace ecs {
-
-namespace detail {
+namespace sq::ecs::detail {
 
 template <std::size_t DriverIdx, class TargetComponent, class... Components>
 // NOLINTNEXTLINE(misc-use-internal-linkage)
@@ -50,7 +48,9 @@ void runSystemWithDriver(std::tuple<SparseArray<Components>&...>& arrays, Func& 
     }
 }
 
-}  // namespace detail
+}  // namespace sq::ecs::detail
+
+namespace sq::ecs {
 
 template <class Component>
 void Registry::registerComponent() {
@@ -226,4 +226,4 @@ void Registry::runSystem(Func func) {
     }
 }
 
-}  // namespace ecs
+}  // namespace sq::ecs

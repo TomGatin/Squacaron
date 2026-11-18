@@ -41,7 +41,7 @@ renderer resolves it in O(1). The manager changes nothing per frame. It fixes wh
 | `GroupProgress`        | `assets/AssetKinds.hpp`                    | Loaded / failed / waiting counts of a group.                |
 | `AssetPlugin`          | `assets/AssetPlugin.hpp`                   | Adds the manager to the registry, releases it at shutdown.  |
 
-Handles are the engine's existing types (`ecs::TextureId`, `engine::FontId`, `audio::SoundId`, `audio::MusicId`, the
+Handles are the engine's existing types (`sq::ecs::TextureId`, `sq::engine::FontId`, `sq::audio::SoundId`, `sq::audio::MusicId`, the
 last two in `core/AudioHandles.hpp`): components, the render system and the audio system are unchanged.
 
 ### Kinds are open
@@ -89,7 +89,7 @@ AssetPlugin::shutdown       unloadAll, then the resource is removed
 
 The declaration script and the loaders may come in either order: requests made before a loader exists are served as
 soon as it is installed. A game plugin that resolves handles in its `init` requires the bridge
-(`builder.require<assets::RenderAssetsPlugin>()`) so the loader is there.
+(`builder.require<sq::assets::RenderAssetsPlugin>()`) so the loader is there.
 
 With a muted audio backend (no device, `NullAudioBackend`), `AudioAssetsPlugin` installs no loader: sounds stay
 `Declared` instead of failing one by one.
@@ -143,7 +143,7 @@ followed: the declaration scripts are trusted game data, not downloaded content.
 ## Content root
 
 Relative paths are resolved against the **content root**, given to `AssetPlugin` (and to `ScriptPlugin` for the
-script files), so a game runs from any working directory. The games pass `engine::contentRoot()`
+script files), so a game runs from any working directory. The games pass `sq::engine::contentRoot()`
 (`core/ContentRoot.hpp`):
 
 1. the `ENGINE_CONTENT_ROOT` environment variable, if it names a directory (content installed apart from the binary);
@@ -156,14 +156,14 @@ absolute path is used as is. Tests and tools that pass no root keep reading from
 ## Using assets from C++
 
 ```cpp
-auto& manager = registry.getResource<assets::AssetManager>();
-manager.loadGroup(assets::AssetManager::GLOBAL_GROUP);
-const ecs::TextureId ship = manager.get<assets::Texture>("player_ship");
-if (manager.status<assets::Texture>("player_ship") == assets::AssetStatus::Failed) { /* missing file */ }
+auto& manager = registry.getResource<sq::assets::AssetManager>();
+manager.loadGroup(sq::assets::AssetManager::GLOBAL_GROUP);
+const sq::ecs::TextureId ship = manager.get<sq::assets::Texture>("player_ship");
+if (manager.status<sq::assets::Texture>("player_ship") == sq::assets::AssetStatus::Failed) { /* missing file */ }
 
 // A game without Wren declares in C++ instead:
-manager.declare<assets::Sound>("jump", "sounds/jump.wav", "level1");
-manager.load<assets::Texture>("sprites/boss.png", "level1");   // a path works as well as an alias
+manager.declare<sq::assets::Sound>("jump", "sounds/jump.wav", "level1");
+manager.load<sq::assets::Texture>("sprites/boss.png", "level1");   // a path works as well as an alias
 ```
 
 `load` declares the asset in the group too, so it comes back when the group is loaded again.
@@ -173,9 +173,9 @@ alias that is not loaded is reported once and drawn as the checkerboard.
 
 ## Groups and scenes
 
-With `assets::SceneAssetsPlugin`, a scene's group is the group **named like the scene**: it is loaded on
-`scene::SceneEntering`, before the scene's `onEnter` (so the scene finds its handles), and unloaded on
-`scene::SceneExited`, or on `scene::SceneEnterAborted` when `onEnter` throws. A scene called `"global"` changes
+With `sq::assets::SceneAssetsPlugin`, a scene's group is the group **named like the scene**: it is loaded on
+`sq::scene::SceneEntering`, before the scene's `onEnter` (so the scene finds its handles), and unloaded on
+`sq::scene::SceneExited`, or on `sq::scene::SceneEnterAborted` when `onEnter` throws. A scene called `"global"` changes
 nothing, and a scene whose group declares nothing costs nothing.
 
 ```wren

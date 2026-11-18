@@ -79,14 +79,14 @@ std::string scaleLabel(float scale) {
  * @param key Key.
  * @return `false` for the keys the menus already use.
  */
-bool isBindable(engine::Key key) noexcept { return key != engine::Key::Escape && key != engine::Key::F3; }
+bool isBindable(sq::engine::Key key) noexcept { return key != sq::engine::Key::Escape && key != sq::engine::Key::F3; }
 
 /**
  * @brief Gets the layout of the player's keyboard, detected once.
  * @return The layout.
  */
-::input::KeyboardLayout layout() {
-    static const ::input::KeyboardLayout detected = ::input::detectKeyboardLayout();
+sq::input::KeyboardLayout layout() {
+    static const sq::input::KeyboardLayout detected = sq::input::detectKeyboardLayout();
     return detected;
 }
 
@@ -95,8 +95,8 @@ bool isBindable(engine::Key key) noexcept { return key != engine::Key::Escape &&
  * @param context Scene context.
  * @return The settings, or null.
  */
-config::Settings* settingsOf(scene::SceneContext& context) {
-    auto service = context.engine().mediator().getService<config::Settings>();
+sq::config::Settings* settingsOf(sq::scene::SceneContext& context) {
+    auto service = context.engine().mediator().getService<sq::config::Settings>();
     return service ? &service->get() : nullptr;
 }
 
@@ -119,8 +119,8 @@ std::uint16_t parsePort(std::string_view text) {
 
 // --- Title -----------------------------------------------------------------------------------------------------------
 
-void TitleScene::onEnter(scene::SceneContext& context) {
-    const ecs::Entity box = menu::panel(context, 460.0F, 380.0F);
+void TitleScene::onEnter(sq::scene::SceneContext& context) {
+    const sq::ecs::Entity box = menu::panel(context, 460.0F, 380.0F);
     (void)menu::label(context, box, "R-TYPE", 36.0F, 64.0F, menu::GOLD);
     (void)menu::label(context, box, "SQUACARON ENGINE", 112.0F, 18.0F, menu::MUTED);
     _play = menu::button(context, box, "PLAY", "title.play", 170.0F, 0);
@@ -139,24 +139,24 @@ void TitleScene::onEnter(scene::SceneContext& context) {
     });
 }
 
-void TitleScene::onResume(scene::SceneContext& context) { menu::focus(context.registry(), _play); }
+void TitleScene::onResume(sq::scene::SceneContext& context) { menu::focus(context.registry(), _play); }
 
 // --- Connect ---------------------------------------------------------------------------------------------------------
 
 ConnectScene::ConnectScene(std::string host, std::uint16_t port, bool preferDefaults)
     : _host(std::move(host)), _port(port), _preferDefaults(preferDefaults) {}
 
-void ConnectScene::onEnter(scene::SceneContext& context) {
+void ConnectScene::onEnter(sq::scene::SceneContext& context) {
     std::string host = _host;
     std::uint16_t port = _port;
-    if (const config::Settings* settings = settingsOf(context); settings != nullptr && !_preferDefaults) {
+    if (const sq::config::Settings* settings = settingsOf(context); settings != nullptr && !_preferDefaults) {
         if (!settings->getString(settings_keys::LAST_HOST).empty()) {
             host = settings->getString(settings_keys::LAST_HOST);
             port = static_cast<std::uint16_t>(settings->getInteger(settings_keys::LAST_PORT));
         }
     }
 
-    const ecs::Entity box = menu::panel(context, 460.0F, 420.0F);
+    const sq::ecs::Entity box = menu::panel(context, 460.0F, 420.0F);
     (void)menu::label(context, box, "CONNECT TO A SERVER", 28.0F, 30.0F, menu::GOLD);
     _hostField =
         menu::textInput(context, box, "HOST", host, "connect.submit", std::string(HOST_CHARACTERS), 64, 120.0F, 0);
@@ -182,17 +182,17 @@ void ConnectScene::onEnter(scene::SceneContext& context) {
             back();
         }
     });
-    context.subscribe<ui::UiTextSubmittedEvent>([this, &context](const ui::UiTextSubmittedEvent& event) {
+    context.subscribe<sq::ui::UiTextSubmittedEvent>([this, &context](const sq::ui::UiTextSubmittedEvent& event) {
         if (event.action == "connect.submit" && context.manager().top() == context.id()) {
             connect(context);
         }
     });
     context.subscribe<SessionConnected>([this, &context](const SessionConnected& /*event*/) {
-        ecs::Registry& registry = context.registry();
-        if (config::Settings* settings = settingsOf(context); settings != nullptr) {
-            settings->set(settings_keys::LAST_HOST, registry.getComponents<ui::UiTextInput>().get(_hostField).text);
+        sq::ecs::Registry& registry = context.registry();
+        if (sq::config::Settings* settings = settingsOf(context); settings != nullptr) {
+            settings->set(settings_keys::LAST_HOST, registry.getComponents<sq::ui::UiTextInput>().get(_hostField).text);
             settings->set(settings_keys::LAST_PORT,
-                          std::int64_t{parsePort(registry.getComponents<ui::UiTextInput>().get(_portField).text)});
+                          std::int64_t{parsePort(registry.getComponents<sq::ui::UiTextInput>().get(_portField).text)});
         }
         context.manager().switchTo<LobbyScene>();
     });
@@ -203,13 +203,13 @@ void ConnectScene::onEnter(scene::SceneContext& context) {
     });
 }
 
-void ConnectScene::connect(scene::SceneContext& context) const {
+void ConnectScene::connect(sq::scene::SceneContext& context) const {
     if (context.engine().getPlugin<RTypeNetworkPlugin>().state() != SessionState::Offline) {
         return;
     }
-    ecs::Registry& registry = context.registry();
-    const std::string& host = registry.getComponents<ui::UiTextInput>().get(_hostField).text;
-    const std::uint16_t port = parsePort(registry.getComponents<ui::UiTextInput>().get(_portField).text);
+    sq::ecs::Registry& registry = context.registry();
+    const std::string& host = registry.getComponents<sq::ui::UiTextInput>().get(_hostField).text;
+    const std::uint16_t port = parsePort(registry.getComponents<sq::ui::UiTextInput>().get(_portField).text);
     if (host.empty() || port == 0) {
         menu::setText(registry, _status, "ERROR: enter a host and a port between 1 and 65535");
         menu::setColor(registry, _status, menu::ERROR);
@@ -223,22 +223,22 @@ void ConnectScene::connect(scene::SceneContext& context) const {
 
 // --- Settings --------------------------------------------------------------------------------------------------------
 
-void SettingsScene::onEnter(scene::SceneContext& context) {
-    config::Settings* settings = settingsOf(context);
+void SettingsScene::onEnter(sq::scene::SceneContext& context) {
+    sq::config::Settings* settings = settingsOf(context);
     const auto number = [settings](std::string_view key) {
         return settings != nullptr ? static_cast<float>(settings->getNumber(key)) : 1.0F;
     };
     const auto flag = [settings](std::string_view key) { return settings != nullptr && settings->getBool(key); };
     const float scale = menu::scale(context.registry());
-    const ecs::Entity box = menu::panel(context, 500.0F, 500.0F);
+    const sq::ecs::Entity box = menu::panel(context, 500.0F, 500.0F);
     (void)menu::label(context, box, "SETTINGS", 28.0F, 34.0F, menu::GOLD);
-    const ecs::Entity first =
+    const sq::ecs::Entity first =
         menu::slider(context, box, "MASTER", number(settings_keys::MASTER_VOLUME), "settings.master", 95.0F, 0);
     (void)menu::slider(context, box, "MUSIC", number(settings_keys::MUSIC_VOLUME), "settings.music", 140.0F, 1);
     (void)menu::slider(context, box, "EFFECTS", number(settings_keys::SFX_VOLUME), "settings.sfx", 185.0F, 2);
     (void)menu::toggle(context, box, "METRICS (F3)", flag(settings_keys::SHOW_METRICS), "settings.metrics", 228.0F, 3);
     (void)menu::toggle(context, box, "AUTO-FIRE", flag(settings_keys::AUTO_FIRE), "settings.autofire", 270.0F, 4);
-    const ecs::Entity scaleButton =
+    const sq::ecs::Entity scaleButton =
         menu::button(context, box, scaleLabel(scale), "settings.scale", 322.0F, 5, SETTINGS_BUTTON_WIDTH);
     (void)menu::button(context, box, "CONTROLS", "settings.controls", 377.0F, 6, SETTINGS_BUTTON_WIDTH);
     (void)menu::button(context, box, "BACK", "settings.back", 432.0F, 7, SETTINGS_BUTTON_WIDTH);
@@ -261,7 +261,7 @@ void SettingsScene::onEnter(scene::SceneContext& context) {
             context.manager().replace<SettingsScene>();
         }
     });
-    context.subscribe<ui::UiValueChangedEvent>([settings](const ui::UiValueChangedEvent& event) {
+    context.subscribe<sq::ui::UiValueChangedEvent>([settings](const sq::ui::UiValueChangedEvent& event) {
         if (settings == nullptr) {
             return;
         }
@@ -274,7 +274,7 @@ void SettingsScene::onEnter(scene::SceneContext& context) {
             settings->set(settings_keys::SFX_VOLUME, value);
         }
     });
-    context.subscribe<ui::UiToggleChangedEvent>([settings](const ui::UiToggleChangedEvent& event) {
+    context.subscribe<sq::ui::UiToggleChangedEvent>([settings](const sq::ui::UiToggleChangedEvent& event) {
         if (settings == nullptr) {
             return;
         }
@@ -288,12 +288,12 @@ void SettingsScene::onEnter(scene::SceneContext& context) {
 
 // --- Controls --------------------------------------------------------------------------------------------------------
 
-void ControlsScene::onEnter(scene::SceneContext& context) {
+void ControlsScene::onEnter(sq::scene::SceneContext& context) {
     _waiting.reset();
     _wasDown.fill(true);  // A key held when the scene opens (Enter on "CONTROLS") is not a new press.
-    _justBound = engine::Key::Unknown;
+    _justBound = sq::engine::Key::Unknown;
 
-    const ecs::Entity box = menu::panel(context, 520.0F, 520.0F);
+    const sq::ecs::Entity box = menu::panel(context, 520.0F, 520.0F);
     (void)menu::label(context, box, "CONTROLS", 28.0F, 34.0F, menu::GOLD);
     int order = 0;
     float y = 90.0F;
@@ -318,14 +318,14 @@ void ControlsScene::onEnter(scene::SceneContext& context) {
         }
     });
     menu::onClick(context, [this, &context](std::string_view action) {
-        if (_waiting || _justBound != engine::Key::Unknown) {
+        if (_waiting || _justBound != sq::engine::Key::Unknown) {
             return;
         }
         if (action == "controls.back") {
             context.manager().pop();
             return;
         }
-        config::Settings* settings = settingsOf(context);
+        sq::config::Settings* settings = settingsOf(context);
         if (action == "controls.reset" && settings != nullptr) {
             for (const input::Control control : input::CONTROLS) {
                 (void)settings->reset(settings_keys::controlKey(control));
@@ -344,31 +344,31 @@ void ControlsScene::onEnter(scene::SceneContext& context) {
             }
         }
     });
-    context.addSystem(scene::SceneStage::Update,
-                      [this, &context](engine::Engine& /*engine*/, const ecs::time::Time&) { pollKeys(context); });
+    context.addSystem(sq::scene::SceneStage::Update,
+                      [this, &context](sq::engine::Engine& /*engine*/, const sq::time::Time&) { pollKeys(context); });
 }
 
-void ControlsScene::refreshLabels(scene::SceneContext& context) const {
-    const config::Settings* settings = settingsOf(context);
+void ControlsScene::refreshLabels(sq::scene::SceneContext& context) const {
+    const sq::config::Settings* settings = settingsOf(context);
     const input::ControlKeys defaults = input::defaultControlKeys();
     for (const input::Control control : input::CONTROLS) {
         const auto index = static_cast<std::size_t>(control);
-        engine::Key key = defaults.at(index);
+        sq::engine::Key key = defaults.at(index);
         if (settings != nullptr) {
-            key = ::input::keyFromId(settings->getString(settings_keys::controlKey(control))).value_or(key);
+            key = sq::input::keyFromId(settings->getString(settings_keys::controlKey(control))).value_or(key);
         }
         menu::setText(context.registry(), _buttons.at(index),
-                      std::string(input::controlLabel(control)) + ": " + ::input::keyLabel(key, layout()));
+                      std::string(input::controlLabel(control)) + ": " + sq::input::keyLabel(key, layout()));
     }
 }
 
-void ControlsScene::pollKeys(scene::SceneContext& context) {
-    auto window = context.engine().mediator().getService<engine::IWindowService>();
+void ControlsScene::pollKeys(sq::scene::SceneContext& context) {
+    auto window = context.engine().mediator().getService<sq::engine::IWindowService>();
     if (!window) {
         return;
     }
-    std::optional<engine::Key> pressed;
-    for (const ::input::KeyName& name : ::input::keyNames()) {
+    std::optional<sq::engine::Key> pressed;
+    for (const sq::input::KeyName& name : sq::input::keyNames()) {
         const bool down = window->get().isKeyDown(name.key);
         bool& wasDown = _wasDown.at(static_cast<std::size_t>(name.key));
         if (down && !wasDown && !pressed && isBindable(name.key)) {
@@ -376,24 +376,24 @@ void ControlsScene::pollKeys(scene::SceneContext& context) {
         }
         wasDown = down;
     }
-    if (_justBound != engine::Key::Unknown && !window->get().isKeyDown(_justBound)) {
-        _justBound = engine::Key::Unknown;
+    if (_justBound != sq::engine::Key::Unknown && !window->get().isKeyDown(_justBound)) {
+        _justBound = sq::engine::Key::Unknown;
     }
     if (!_waiting || !pressed) {
         return;
     }
-    config::Settings* settings = settingsOf(context);
+    sq::config::Settings* settings = settingsOf(context);
     if (settings != nullptr) {
         input::ControlKeys keys = input::defaultControlKeys();
         for (const input::Control control : input::CONTROLS) {
             const auto index = static_cast<std::size_t>(control);
             keys.at(index) =
-                ::input::keyFromId(settings->getString(settings_keys::controlKey(control))).value_or(keys.at(index));
+                sq::input::keyFromId(settings->getString(settings_keys::controlKey(control))).value_or(keys.at(index));
         }
         input::assignKey(keys, *_waiting, *pressed);
         for (const input::Control control : input::CONTROLS) {
             (void)settings->set(settings_keys::controlKey(control),
-                                std::string(::input::keyId(keys.at(static_cast<std::size_t>(control)))));
+                                std::string(sq::input::keyId(keys.at(static_cast<std::size_t>(control)))));
         }
     }
     // The arrows also move the focus: give it back to the control that was rebound.

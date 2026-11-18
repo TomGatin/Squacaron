@@ -13,11 +13,13 @@
 #include "ecs/Entity.hpp"
 #include "scripting/ScriptOwner.hpp"
 
-namespace ecs {
-class Registry;
-}
+namespace sq::ecs {
 
-namespace scripting {
+class Registry;
+
+}  // namespace sq::ecs
+
+namespace sq::scripting {
 
 class WrenVM;
 
@@ -77,7 +79,7 @@ class IScriptExtension {
      * @param spawned The new entity.
      * @param owner Owner that was running when the spawn was requested.
      */
-    virtual void onScriptSpawn(ecs::Registry& registry, ecs::Entity spawned, ScriptOwner owner) {
+    virtual void onScriptSpawn(sq::ecs::Registry& registry, sq::ecs::Entity spawned, ScriptOwner owner) {
         (void)registry;
         (void)spawned;
         (void)owner;
@@ -110,4 +112,4 @@ class IScriptExtension {
     IScriptExtension& operator=(IScriptExtension&&) = default;
 };
 
-}  // namespace scripting
+}  // namespace sq::scripting

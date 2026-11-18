@@ -17,14 +17,14 @@
 #include "render/api/components/Renderable.hpp"
 #include "tools/cvars/CVarRef.hpp"
 
-namespace ecs::time {
+namespace sq::ecs::time {
 struct Time;
 }
 
 namespace rlss::client {
 
 /**
- * @brief Keeps the state of the joined match and draws the HUD on screen, through `engine::IScreenDrawService`.
+ * @brief Keeps the state of the joined match and draws the HUD on screen, through `sq::engine::IScreenDrawService`.
  *
  * Each `MatchStatus` of the joined match is written into the `game::MatchState` of a HUD entity, where other plugins
  * read it (the sounds). Every frame, while in a match, it draws:
@@ -36,7 +36,7 @@ namespace rlss::client {
  * Nothing is drawn in the menus nor once the match is over (the end screen shows the score). Sizes follow the window
  * height (designed for 1080 pixels).
  */
-class HudPlugin final : public engine::IPlugin {
+class HudPlugin final : public sq::engine::IPlugin {
   public:
     /**
      * @brief Gets plugin name.
@@ -48,26 +48,26 @@ class HudPlugin final : public engine::IPlugin {
      * @brief Declares the dependencies: assets, camera (local car), network.
      * @param builder Dependency builder.
      */
-    void build(engine::PluginBuilder& builder) override;
+    void build(sq::engine::PluginBuilder& builder) override;
 
     /**
      * @brief Spawns the HUD entity and subscribes to the match status and to `MatchJoined` / `MatchLeft`.
      * @param engine Host engine.
      */
-    void init(engine::Engine& engine) override;
+    void init(sq::engine::Engine& engine) override;
 
     /**
      * @brief Draws the HUD of the frame.
      * @param engine Host engine.
      * @param time Frame time (animations).
      */
-    void lateUpdate(engine::Engine& engine, const ecs::time::Time& time) override;
+    void lateUpdate(sq::engine::Engine& engine, const sq::time::Time& time) override;
 
     /**
      * @brief Unsubscribes from the events.
      * @param engine Host engine.
      */
-    void shutdown(engine::Engine& engine) override;
+    void shutdown(sq::engine::Engine& engine) override;
 
   private:
     /**
@@ -75,17 +75,17 @@ class HudPlugin final : public engine::IPlugin {
      * @param engine Host engine.
      * @param state New state.
      */
-    void setState(engine::Engine& engine, const game::MatchState& state);
+    void setState(sq::engine::Engine& engine, const game::MatchState& state);
 
     /** @brief Draws the score and the clock at the top. */
     void drawScore(float width, float scale) const;
     /** @brief Draws the kickoff countdown, "GO!" and the goal banner. */
     void drawAnnouncements(float width, float height, float scale) const;
     /** @brief Draws the boost meter of the local car. */
-    void drawBoost(engine::Engine& engine, float width, float height, float scale, float dt);
+    void drawBoost(sq::engine::Engine& engine, float width, float height, float scale, float dt);
 
     /** @brief Entity carrying the `game::MatchState`. */
-    ecs::Entity _hud = 0;
+    sq::ecs::Entity _hud = 0;
     /** @brief State shown (`NO_MATCH` in the menus). */
     game::MatchState _state{.phase = game::NO_MATCH};
     /** @brief True between `MatchJoined` and `MatchLeft`. */
@@ -103,23 +103,23 @@ class HudPlugin final : public engine::IPlugin {
     /** @brief Font and drawing service. */
     Typeface _typeface;
     /** @brief `cl_hud`: whether the HUD is drawn; unset without a console. */
-    tools::CVarRef<bool> _visible;
+    sq::tools::CVarRef<bool> _visible;
     /** @brief Textures of the HUD. */
-    ecs::TextureId _disc = ecs::NO_TEXTURE;
+    sq::ecs::TextureId _disc = sq::ecs::NO_TEXTURE;
     /** @brief One tick of the boost ring. */
-    ecs::TextureId _tick = ecs::NO_TEXTURE;
+    sq::ecs::TextureId _tick = sq::ecs::NO_TEXTURE;
     /** @brief Score panel slanted on the left. */
-    ecs::TextureId _slantLeft = ecs::NO_TEXTURE;
+    sq::ecs::TextureId _slantLeft = sq::ecs::NO_TEXTURE;
     /** @brief Score panel slanted on the right. */
-    ecs::TextureId _slantRight = ecs::NO_TEXTURE;
+    sq::ecs::TextureId _slantRight = sq::ecs::NO_TEXTURE;
     /** @brief Soft band behind the banners. */
-    ecs::TextureId _band = ecs::NO_TEXTURE;
+    sq::ecs::TextureId _band = sq::ecs::NO_TEXTURE;
     /** @brief Subscription to `PacketReceived`, while initialized. */
-    std::optional<ecs::EventBus::EventToken> _packets;
+    std::optional<sq::events::EventBus::EventToken> _packets;
     /** @brief Subscription to `MatchJoined`, while initialized. */
-    std::optional<ecs::EventBus::EventToken> _joined;
+    std::optional<sq::events::EventBus::EventToken> _joined;
     /** @brief Subscription to `MatchLeft`, while initialized. */
-    std::optional<ecs::EventBus::EventToken> _left;
+    std::optional<sq::events::EventBus::EventToken> _left;
 };
 
 }  // namespace rlss::client

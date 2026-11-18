@@ -9,13 +9,13 @@
 #include <optional>
 #include <vector>
 
-#include "components/InputBuffer.hpp"
-#include "components/Replicated.hpp"
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
 #include "net/INetworkManager.hpp"
 #include "net/IReplicationCodec.hpp"
 #include "net/SnapshotApplier.hpp"
+#include "net/components/InputBuffer.hpp"
+#include "net/components/Replicated.hpp"
 #include "protocol/Protocol.hpp"
 
 namespace rlss::game {

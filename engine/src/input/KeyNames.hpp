@@ -10,8 +10,8 @@
 #include <string>
 #include <string_view>
 
-#include "core/services/InputCodes.hpp"
 #include "input/KeyboardLayout.hpp"
+#include "render/api/InputCodes.hpp"
 
 namespace input {
 

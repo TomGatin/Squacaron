@@ -8,7 +8,7 @@
 #include <cstddef>
 #include <string>
 
-#include "components/Renderable.hpp"
+#include "render/api/components/Renderable.hpp"
 #include "ui/components/FontId.hpp"
 
 namespace ui {

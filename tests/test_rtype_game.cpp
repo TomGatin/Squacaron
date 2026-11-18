@@ -8,18 +8,18 @@
 #include <variant>
 #include <vector>
 
-#include "components/InputBuffer.hpp"
-#include "components/Interpolated.hpp"
-#include "components/Replicated.hpp"
-#include "components/Transform.hpp"
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
+#include "ecs/components/Transform.hpp"
 #include "game/ReplicationCodec.hpp"
 #include "game/ShipMovement.hpp"
 #include "net/INetworkManager.hpp"
 #include "net/NetworkConfig.hpp"
 #include "net/NetworkEntityMap.hpp"
 #include "net/SnapshotApplier.hpp"
+#include "net/components/InputBuffer.hpp"
+#include "net/components/Interpolated.hpp"
+#include "net/components/Replicated.hpp"
 #include "protocol/Messages.hpp"
 #include "protocol/Protocol.hpp"
 

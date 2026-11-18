@@ -3,8 +3,8 @@
 #include <algorithm>
 #include <cmath>
 
-#include "components/InputBuffer.hpp"
-#include "components/Transform.hpp"
+#include "net/components/InputBuffer.hpp"
+#include "ecs/components/Transform.hpp"
 
 namespace rtype::game {
 

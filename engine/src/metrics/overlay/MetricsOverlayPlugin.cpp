@@ -3,7 +3,6 @@
 #include <cstddef>
 #include <format>
 
-#include "components/Renderable.hpp"
 #include "core/Engine.hpp"
 #include "core/PluginBuilder.hpp"
 #include "ecs/Entity.hpp"
@@ -14,6 +13,7 @@
 #include "metrics/MetricsBoard.hpp"
 #include "metrics/MetricsPlugin.hpp"
 #include "metrics/RollingStats.hpp"
+#include "render/api/components/Renderable.hpp"
 #include "ui/UiPlugin.hpp"
 #include "ui/components/UiAnchor.hpp"
 #include "ui/components/UiProgressBar.hpp"

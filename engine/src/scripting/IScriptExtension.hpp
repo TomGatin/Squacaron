@@ -7,6 +7,7 @@
 
 #include <cstdint>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include "ecs/Entity.hpp"
@@ -80,6 +81,20 @@ class IScriptExtension {
         (void)registry;
         (void)spawned;
         (void)owner;
+    }
+
+    /**
+     * @brief Asked by `Engine.spawnPrefab(name, x, y)`: spawn the prefab if this extension knows how.
+     * @param name Prefab name.
+     * @param x Horizontal position.
+     * @param y Vertical position.
+     * @return True if it spawned (or queued) it; the next extensions are not asked.
+     */
+    virtual bool spawnPrefab(std::string_view name, double x, double y) {
+        (void)name;
+        (void)x;
+        (void)y;
+        return false;
     }
 
   protected:

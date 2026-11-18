@@ -143,11 +143,11 @@ if (windowService && !windowService->get().shouldClose()) {
 
 | Interface         | Header                              | Purpose                                             | Provided By     |
 |-------------------|-------------------------------------|-----------------------------------------------------|-----------------|
-| `IWindowService`  | `core/services/IWindowService.hpp`  | Window state, frame bracketing, close queries      , keyboard, gamepad and mouse sampling through engine input codes | `RenderPlugin`  |
-| `IInputCaptureService` | `core/services/IInputCaptureService.hpp` | Hides the input from `IWindowService` for one owner (developer console), which reads the real state | `RenderPlugin` |
-| `IRenderService`  | `core/services/IRenderService.hpp`  | 2D entity draw collection and presentation          | `RenderPlugin`  |
-| `IInputService`   | `core/services/IInputService.hpp`   | Action mapping configuration and controller indices | `InputPlugin`   |
-| `IPhysicsService` | `core/services/IPhysicsService.hpp` | Physics simulation stepping and body stats          | `PhysicsPlugin` |
+| `IWindowService`  | `render/api/IWindowService.hpp`  | Window state, frame bracketing, close queries      , keyboard, gamepad and mouse sampling through engine input codes | `RenderPlugin`  |
+| `IInputCaptureService` | `render/api/IInputCaptureService.hpp` | Hides the input from `IWindowService` for one owner (developer console), which reads the real state | `RenderPlugin` |
+| `IRenderService`  | `render/api/IRenderService.hpp`  | 2D entity draw collection and presentation          | `RenderPlugin`  |
+| `IInputService`   | `input/IInputService.hpp`   | Action mapping configuration and controller indices | `InputPlugin`   |
+| `IPhysicsService` | `systems/physics/IPhysicsService.hpp` | Physics simulation stepping and body stats          | `PhysicsPlugin` |
 | `PrefabManager`   | `prefabs/PrefabManager.hpp`         | Entity template registry and spawning factory       | `PrefabPlugin`  |
 
 ---
@@ -173,7 +173,7 @@ Creating a new engine or game plugin is straightforward:
 ```cpp
 #include "core/IPlugin.hpp"
 #include "core/Engine.hpp"
-#include "core/services/IInputService.hpp"
+#include "input/IInputService.hpp"
 
 class MyCustomPlugin final : public engine::IPlugin {
   public:

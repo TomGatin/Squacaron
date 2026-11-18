@@ -5,13 +5,13 @@
 #include <limits>
 #include <optional>
 
-#include "components/Replicated.hpp"
-#include "components/Transform.hpp"
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
+#include "ecs/components/Transform.hpp"
 #include "game/ReplicationCodec.hpp"
 #include "gameplay/GameplayComponents.hpp"
 #include "net/ReplicationSystems.hpp"
+#include "net/components/Replicated.hpp"
 #include "prefabs/missile/Missile.hpp"
 
 namespace rtype::server::gameplay {

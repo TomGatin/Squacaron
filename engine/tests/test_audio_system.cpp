@@ -6,20 +6,20 @@
 #include <string>
 #include <vector>
 
+#include "audio/AudioEvents.hpp"
 #include "audio/IAudioBackend.hpp"
 #include "audio/NullAudioBackend.hpp"
+#include "audio/components/AudioEmitter.hpp"
+#include "audio/components/AudioListener.hpp"
 #include "audio/settings/AudioSettings.hpp"
 #include "audio/spatial/AudioSpatial.hpp"
 #include "audio/spatial/SpatialConfig.hpp"
 #include "audio/types/AudioConstants.hpp"
 #include "audio/types/AudioTypes.hpp"
 #include "audio/types/SoundParams.hpp"
-#include "components/AudioEmitter.hpp"
-#include "components/AudioListener.hpp"
-#include "components/Transform.hpp"
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
-#include "events/AudioEvents.hpp"
+#include "ecs/components/Transform.hpp"
 #include "events/EventBus.hpp"
 #include "systems/audio/AudioSystem.hpp"
 

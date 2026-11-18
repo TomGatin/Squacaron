@@ -2,10 +2,11 @@
 
 #include <string>
 
-#include "components/CameraComponent.hpp"
-#include "components/Transform.hpp"
+#include "ecs/components/Transform.hpp"
 #include "game/Components.hpp"
 #include "input/InputState.hpp"
+#include "input/scripting/InputScripting.hpp"
+#include "render/api/components/CameraComponent.hpp"
 #include "scripting/ComponentBinder.hpp"
 #include "scripting/ScriptSystem.hpp"
 #include "scripting/WrenVM.hpp"
@@ -129,6 +130,8 @@ bool registerComponentClasses(scripting::WrenVM& vm) {
 }
 
 bool installScriptBindings(scripting::ScriptSystem& scripts) {
+    // The car scripts read the controls through `core/Input`.
+    input::addInputScripting(scripts);
     const bool ok = registerComponentClasses(scripts.getVm());
     scripts.addBinderReplay([](scripting::WrenVM& vm) { (void)registerComponentClasses(vm); });
     return ok;

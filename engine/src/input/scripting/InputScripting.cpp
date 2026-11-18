@@ -1,20 +1,55 @@
 /**
- * @file InputBindings.cpp
- * @brief Foreign methods of the `core/Input` module: actions, axes and mouse of a player.
+ * @file InputScripting.cpp
+ * @brief The `core/Input` Wren module: actions, axes and mouse of a player.
  */
 
-#include <string_view>
+#include "input/scripting/InputScripting.hpp"
 
+#include <string>
+#include <string_view>
+#include <vector>
+
+#include "core/Engine.hpp"
+#include "core/PluginBuilder.hpp"
 #include "ecs/Registry.hpp"
 #include "input/InputState.hpp"
 #include "scripting/ForeignCall.hpp"
+#include "scripting/ScriptPlugin.hpp"
 #include "scripting/ScriptSystem.hpp"
 #include "scripting/WrenVM.hpp"
-#include "scripting/detail/Bindings.hpp"
 
-namespace scripting::detail {
+namespace input {
 
 namespace {
+
+using scripting::ForeignCall;
+using scripting::ScriptSystem;
+
+/**
+ * @brief Core Wren script source code for the `core/Input` module.
+ *
+ * Exposes static query methods for action buttons and continuous axes (`isDown`, `isJustPressed`, `isJustReleased`,
+ * `getAxis`), and for the mouse (`mouseX`, `mouseY`, `mouseWheel`).
+ */
+constexpr std::string_view CORE_INPUT_SOURCE = R"wren(
+class Input {
+    foreign static isDown(playerIndex, action)
+    foreign static isJustPressed(playerIndex, action)
+    foreign static isJustReleased(playerIndex, action)
+    foreign static getAxis(playerIndex, action)
+    foreign static mouseX(playerIndex)
+    foreign static mouseY(playerIndex)
+    foreign static mouseWheel(playerIndex)
+
+    static isDown(action) { isDown(0, action) }
+    static isJustPressed(action) { isJustPressed(0, action) }
+    static isJustReleased(action) { isJustReleased(0, action) }
+    static getAxis(action) { getAxis(0, action) }
+    static mouseX { mouseX(0) }
+    static mouseY { mouseY(0) }
+    static mouseWheel { mouseWheel(0) }
+}
+)wren";
 
 /**
  * @brief Resolves the InputState component matching playerIndex.
@@ -22,11 +57,11 @@ namespace {
  * @param playerIndex Logical player identifier.
  * @return Pointer to InputState or nullptr if missing.
  */
-const input::InputState* resolvePlayerInputState(ecs::Registry* registry, int playerIndex) {
+const InputState* resolvePlayerInputState(ecs::Registry* registry, int playerIndex) {
     if (registry == nullptr) {
         return nullptr;
     }
-    const auto& denseStates = registry->getComponents<input::InputState>().getDense();
+    const auto& denseStates = registry->getComponents<InputState>().getDense();
     for (const auto& state : denseStates) {
         if (state.playerIndex == playerIndex) {
             return &state;
@@ -120,7 +155,7 @@ void inputGetAxis(ForeignCall& call) {
  * @tparam Field MouseState field to return.
  * @param call ForeignCall execution context.
  */
-template <float input::MouseState::* Field>
+template <float MouseState::* Field>
 void inputMouseField(ForeignCall& call) {
     auto* scriptSystem = call.userData<ScriptSystem>();
     if (scriptSystem == nullptr) {
@@ -138,14 +173,38 @@ void inputMouseField(ForeignCall& call) {
 
 }  // namespace
 
-void registerInputBindings(WrenVM& vm) {
+std::vector<scripting::ModuleSource> InputScriptExtension::modules() const {
+    return {{.name = "core/Input", .source = std::string(CORE_INPUT_SOURCE)}};
+}
+
+void InputScriptExtension::bind(scripting::WrenVM& vm) {
     vm.registerForeignMethod<&inputIsDown>("core/Input", "Input", true, "isDown(_,_)");
     vm.registerForeignMethod<&inputIsJustPressed>("core/Input", "Input", true, "isJustPressed(_,_)");
     vm.registerForeignMethod<&inputIsJustReleased>("core/Input", "Input", true, "isJustReleased(_,_)");
     vm.registerForeignMethod<&inputGetAxis>("core/Input", "Input", true, "getAxis(_,_)");
-    vm.registerForeignMethod<&inputMouseField<&input::MouseState::x>>("core/Input", "Input", true, "mouseX(_)");
-    vm.registerForeignMethod<&inputMouseField<&input::MouseState::y>>("core/Input", "Input", true, "mouseY(_)");
-    vm.registerForeignMethod<&inputMouseField<&input::MouseState::wheel>>("core/Input", "Input", true, "mouseWheel(_)");
+    vm.registerForeignMethod<&inputMouseField<&MouseState::x>>("core/Input", "Input", true, "mouseX(_)");
+    vm.registerForeignMethod<&inputMouseField<&MouseState::y>>("core/Input", "Input", true, "mouseY(_)");
+    vm.registerForeignMethod<&inputMouseField<&MouseState::wheel>>("core/Input", "Input", true, "mouseWheel(_)");
 }
 
-}  // namespace scripting::detail
+void addInputScripting(scripting::ScriptSystem& scripts) {
+    // Stateless: one instance serves every script system.
+    static InputScriptExtension extension;
+    scripts.addExtension(extension);
+}
+
+void InputScriptingPlugin::build(engine::PluginBuilder& builder) { builder.require<scripting::ScriptPlugin>(); }
+
+void InputScriptingPlugin::init(engine::Engine& engine) {
+    _scripts = &engine.getPlugin<scripting::ScriptPlugin>().scriptSystem();
+    addInputScripting(*_scripts);
+}
+
+void InputScriptingPlugin::shutdown(engine::Engine& /*engine*/) {
+    if (auto* extension = _scripts != nullptr ? _scripts->findExtension<InputScriptExtension>() : nullptr) {
+        _scripts->removeExtension(*extension);
+    }
+    _scripts = nullptr;
+}
+
+}  // namespace input

@@ -4,8 +4,8 @@
 #include <optional>
 #include <vector>
 
-#include "components/InputBuffer.hpp"
-#include "components/Replicated.hpp"
+#include "net/components/InputBuffer.hpp"
+#include "net/components/Replicated.hpp"
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
 #include "net/INetworkManager.hpp"

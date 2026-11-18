@@ -72,6 +72,11 @@ jobs:
       - name: Run tests
         run: xmake test "test_*/*"
 
+      # A module may only include the headers of its own module and of its add_deps (see the script).
+      - name: Check the module boundaries
+        if: runner.os == 'Linux'
+        run: python3 scripts/check_module_boundaries.py --strict
+
   # ECS core under AddressSanitizer, UndefinedBehaviorSanitizer and Valgrind, plus a short benchmark run (issue #40).
   # Only runs on pushes to main, not on every pull request.
   ecs-memory:

@@ -2,7 +2,7 @@
 
 #include <cmath>
 
-#include "components/Transform.hpp"
+#include "ecs/components/Transform.hpp"
 #include "hierarchy/HierarchyComponents.hpp"
 
 namespace hierarchy {

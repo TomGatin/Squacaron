@@ -14,6 +14,7 @@
 #include "assets/AssetPath.hpp"
 #include "assets/detail/AssetCache.hpp"
 #include "core/ContentRoot.hpp"
+#include "utils/Paths.hpp"
 
 namespace assets::detail {
 
@@ -59,7 +60,7 @@ inline std::string entryKey(const std::string& path, const LoadOptions& options)
  */
 template <AssetKind Kind>
 [[nodiscard]] bool hasExtensionOf(const std::filesystem::path& file) {
-    std::string extension = toUtf8(file.extension());
+    std::string extension = utils::toUtf8(file.extension());
     std::ranges::transform(extension, extension.begin(), [](const unsigned char c) {
         return (c >= 'A' && c <= 'Z') ? static_cast<char>(c - 'A' + 'a') : static_cast<char>(c);
     });
@@ -71,16 +72,16 @@ template <AssetKind Kind>
 template <AssetKind Kind>
 std::optional<std::size_t> AssetCache<Kind>::declare(const std::string_view alias, const std::string_view path,
                                                      const std::string_view group, const LoadOptions& options) {
-    const std::optional<std::string> normalized = normalizeAssetPath(path);
+    const std::optional<std::string> normalized = utils::normalizePath(path);
     if (!normalized) {
-        _context->diagnostics.warn(std::string(Kind::NAME) + " " + quoteForLog(alias) + ": invalid path " +
-                                   quoteForLog(path));
+        _context->diagnostics.warn(std::string(Kind::NAME) + " " + utils::quoteForLog(alias) + ": invalid path " +
+                                   utils::quoteForLog(path));
         return std::nullopt;
     }
     if ((!alias.empty() && !isValidAssetAlias(alias)) || !isValidAssetName(group)) {
-        _context->diagnostics.warn(std::string(Kind::NAME) + " " + quoteForLog(*normalized, MAX_PATH_LENGTH) +
-                                   ": invalid alias " + quoteForLog(alias) + " or group " + quoteForLog(group) +
-                                   " (an alias holds no '/', '\\' or '.')");
+        _context->diagnostics.warn(std::string(Kind::NAME) + " " + utils::quoteForLog(*normalized, MAX_PATH_LENGTH) +
+                                   ": invalid alias " + utils::quoteForLog(alias) + " or group " +
+                                   utils::quoteForLog(group) + " (an alias holds no '/', '\\' or '.')");
         return std::nullopt;
     }
     const std::size_t index = entryFor(*normalized, options);
@@ -89,7 +90,7 @@ std::optional<std::size_t> AssetCache<Kind>::declare(const std::string_view alia
             _byAlias.emplace(std::string(alias), index);
         } else if (it->second != index) {
             const std::size_t previous = it->second;
-            _context->diagnostics.warn(std::string(Kind::NAME) + " alias " + quoteForLog(alias) + " now names " +
+            _context->diagnostics.warn(std::string(Kind::NAME) + " alias " + utils::quoteForLog(alias) + " now names " +
                                        *normalized + " instead of " + _entries[previous].path);
             it->second = index;
             moveAlias(previous, index, alias);
@@ -106,8 +107,8 @@ template <AssetKind Kind>
 AssetCache<Kind>::Id AssetCache<Kind>::load(const std::string_view aliasOrPath, const std::string_view group,
                                             const LoadOptions& options) {
     if (!isValidAssetName(group)) {
-        _context->diagnostics.warn(std::string(Kind::NAME) + " " + quoteForLog(aliasOrPath) + ": invalid group " +
-                                   quoteForLog(group));
+        _context->diagnostics.warn(std::string(Kind::NAME) + " " + utils::quoteForLog(aliasOrPath) +
+                                   ": invalid group " + utils::quoteForLog(group));
         return Kind::NONE;
     }
     std::optional<std::size_t> index;
@@ -121,7 +122,7 @@ AssetCache<Kind>::Id AssetCache<Kind>::load(const std::string_view aliasOrPath, 
         // Not a path (no '/', '\' or '.'): a typo in an alias, never a file to look for on the disk.
         _context->diagnostics.warnOnce(
             std::string(Kind::NAME) + ':' + std::string(aliasOrPath),
-            std::string(Kind::NAME) + " alias " + quoteForLog(aliasOrPath) + " is not declared");
+            std::string(Kind::NAME) + " alias " + utils::quoteForLog(aliasOrPath) + " is not declared");
         return Kind::NONE;
     }
     if (!index) {
@@ -173,12 +174,12 @@ bool AssetCache<Kind>::undeclare(const std::string_view alias) {
 template <AssetKind Kind>
 std::size_t AssetCache<Kind>::preloadAny(const std::filesystem::path& directory, const std::string_view group,
                                          const LoadOptions& options) {
-    const std::string shown = toUtf8(directory);
+    const std::string shown = utils::toUtf8(directory);
     const std::filesystem::path scanned = engine::resolveContentPath(_context->root, directory);
     std::error_code error;
     if (!std::filesystem::is_directory(scanned, error)) {
-        _context->diagnostics.warn(std::string(Kind::NAME) + " directory " + quoteForLog(shown, MAX_PATH_LENGTH) +
-                                   " not found");
+        _context->diagnostics.warn(std::string(Kind::NAME) + " directory " +
+                                   utils::quoteForLog(shown, MAX_PATH_LENGTH) + " not found");
         return 0;
     }
     std::vector<std::filesystem::path> files;
@@ -191,8 +192,9 @@ std::size_t AssetCache<Kind>::preloadAny(const std::filesystem::path& directory,
         }
     }
     if (error) {
-        _context->diagnostics.warn(std::string(Kind::NAME) + " directory " + quoteForLog(shown, MAX_PATH_LENGTH) +
-                                   ": listing stopped early (" + error.message() + ")");
+        _context->diagnostics.warn(std::string(Kind::NAME) + " directory " +
+                                   utils::quoteForLog(shown, MAX_PATH_LENGTH) + ": listing stopped early (" +
+                                   error.message() + ")");
     }
     std::ranges::sort(files);
     if (files.size() > MAX_DIRECTORY_FILES) {
@@ -202,15 +204,15 @@ std::size_t AssetCache<Kind>::preloadAny(const std::filesystem::path& directory,
     }
     std::size_t taken = 0;
     for (const std::filesystem::path& file : files) {
-        const std::string alias = toUtf8(file.stem());
-        const std::string path = toUtf8(file);
+        const std::string alias = utils::toUtf8(file.stem());
+        const std::string path = utils::toUtf8(file);
         if (const std::optional<std::size_t> owner = liveAliasOwner(alias)) {
-            const std::optional<std::string> normalized = normalizeAssetPath(path);
+            const std::optional<std::string> normalized = utils::normalizePath(path);
             if (normalized && _entries[*owner].key != cache_detail::entryKey(*normalized, options)) {
                 // "ship.jpg" next to "ship.png", or an alias another declaration uses: never steal it.
-                _context->diagnostics.warn(std::string(Kind::NAME) + " " + quoteForLog(path, MAX_PATH_LENGTH) +
-                                           ": alias " + quoteForLog(alias) + " already names " + _entries[*owner].path +
-                                           ", file skipped");
+                _context->diagnostics.warn(std::string(Kind::NAME) + " " + utils::quoteForLog(path, MAX_PATH_LENGTH) +
+                                           ": alias " + utils::quoteForLog(alias) + " already names " +
+                                           _entries[*owner].path + ", file skipped");
                 continue;
             }
         }
@@ -379,7 +381,7 @@ std::optional<std::size_t> AssetCache<Kind>::find(const std::string_view aliasOr
         const auto it = _byAlias.find(aliasOrPath);
         return it != _byAlias.end() ? std::optional<std::size_t>(it->second) : std::nullopt;
     }
-    const std::optional<std::string> normalized = normalizeAssetPath(aliasOrPath);
+    const std::optional<std::string> normalized = utils::normalizePath(aliasOrPath);
     if (!normalized) {
         return std::nullopt;
     }
@@ -541,13 +543,13 @@ void AssetCache<Kind>::ensureLoaded(Entry& entry) {
     if (entry.holders.empty() || entry.id != Kind::NONE || entry.failed || !_loader || !_loader->load) {
         return;
     }
-    entry.id = _loader->load(toUtf8(engine::resolveContentPath(_context->root, fromUtf8(entry.path))), entry.options,
-                             entry.lastId);
+    entry.id = _loader->load(utils::toUtf8(engine::resolveContentPath(_context->root, utils::fromUtf8(entry.path))),
+                             entry.options, entry.lastId);
     if (entry.id == Kind::NONE) {
         entry.failed = true;
         fallback();
         _context->diagnostics.warn("cannot load " + std::string(Kind::NAME) + " " +
-                                   quoteForLog(entry.path, MAX_PATH_LENGTH) +
+                                   utils::quoteForLog(entry.path, MAX_PATH_LENGTH) +
                                    (_fallback.value_or(Kind::NONE) != Kind::NONE ? ": drawn as the fallback" : ""));
         return;
     }

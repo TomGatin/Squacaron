@@ -3,13 +3,10 @@
 #include <algorithm>
 #include <utility>
 
-#include "components/InputBuffer.hpp"
-#include "components/Interpolated.hpp"
-#include "components/Predicted.hpp"
-#include "components/Transform.hpp"
 #include "core/Engine.hpp"
 #include "core/PluginBuilder.hpp"
 #include "ecs/Registry.hpp"
+#include "ecs/components/Transform.hpp"
 #include "ecs/time/Time.hpp"
 #include "game/ReplicationCodec.hpp"
 #include "game/ShipMovement.hpp"
@@ -20,6 +17,9 @@
 #include "net/RTypeNetworkPlugin.hpp"
 #include "net/ReplicationEvents.hpp"
 #include "net/SessionEvents.hpp"
+#include "net/components/InputBuffer.hpp"
+#include "net/components/Interpolated.hpp"
+#include "net/components/Predicted.hpp"
 #include "protocol/Messages.hpp"
 
 namespace client {

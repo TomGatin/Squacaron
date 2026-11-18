@@ -19,12 +19,10 @@
 #include <variant>
 
 #include "ServerManager.hpp"
-#include "components/Predicted.hpp"
-#include "components/Replicated.hpp"
-#include "components/Transform.hpp"
 #include "core/Engine.hpp"
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
+#include "ecs/components/Transform.hpp"
 #include "game/ReplicationCodec.hpp"
 #include "game/ShipMovement.hpp"
 #include "input/InputState.hpp"
@@ -44,6 +42,8 @@
 #include "net/RTypeNetworkPlugin.hpp"
 #include "net/ReplicationEvents.hpp"
 #include "net/SessionEvents.hpp"
+#include "net/components/Predicted.hpp"
+#include "net/components/Replicated.hpp"
 #include "net/metrics/NetworkMetricsPlugin.hpp"
 #include "protocol/Messages.hpp"
 #include "protocol/Protocol.hpp"

@@ -13,8 +13,8 @@
 #include "core/MediatorError.hpp"
 #include "core/PluginBuilder.hpp"
 #include "core/plugins/CorePlugin.hpp"
-#include "core/services/IPhysicsService.hpp"
 #include "ecs/time/Time.hpp"
+#include "systems/physics/IPhysicsService.hpp"
 #include "systems/physics/PhysicsSystem.hpp"
 
 namespace systems {

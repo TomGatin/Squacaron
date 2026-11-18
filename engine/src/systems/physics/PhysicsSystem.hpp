@@ -13,7 +13,7 @@ namespace systems {
  *
  * Entities with a `Transform` and a `RigidBody2D` get a physics body; a `Collider2D` gives that body a shape.
  * Contacts found during a step are published on the EventBus as `events::CollisionBeginEvent` and
- * `events::CollisionEndEvent` once the step is over (see `events/PhysicsEvents.hpp`).
+ * `events::CollisionEndEvent` once the step is over (see `systems/physics/PhysicsEvents.hpp`).
  *
  * The physics backend (Box2D) is a private implementation detail: this header exposes engine types only.
  * The registry and the event bus passed to the constructor must outlive this system.

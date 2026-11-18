@@ -5,19 +5,16 @@
 #include <string>
 #include <utility>
 
+#include "audio/IAudioService.hpp"
 #include "audio/types/AudioTypes.hpp"
-#include "components/Renderable.hpp"
 #include "config/Settings.hpp"
 #include "core/Engine.hpp"
 #include "core/PluginBuilder.hpp"
-#include "core/services/IAudioService.hpp"
-#include "core/services/IInputService.hpp"
-#include "core/services/IWindowService.hpp"
-#include "core/services/InputCodes.hpp"
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
 #include "ecs/time/Time.hpp"
 #include "hierarchy/Hierarchy.hpp"
+#include "input/IInputService.hpp"
 #include "input/KeyNames.hpp"
 #include "input/RTypeBindings.hpp"
 #include "metrics/overlay/MetricsOverlayPlugin.hpp"
@@ -26,6 +23,9 @@
 #include "prefabs/PrefabManager.hpp"
 #include "prefabs/PrefabParams.hpp"
 #include "prefabs/PrefabPlugin.hpp"
+#include "render/api/IWindowService.hpp"
+#include "render/api/InputCodes.hpp"
+#include "render/api/components/Renderable.hpp"
 #include "scene/SceneManager.hpp"
 #include "scene/ScenePlugin.hpp"
 #include "scene/SceneTypes.hpp"
@@ -199,7 +199,6 @@ void ClientScenesPlugin::init(engine::Engine& engine) {
 
     prefabs::PrefabManager& prefabs = engine.getPlugin<prefabs::PrefabPlugin>().manager();
     prefabs.registerPrefab("level_banner", &buildLevelBanner);
-    engine.getPlugin<scripting::ScriptPlugin>().scriptSystem().setPrefabManager(&prefabs);
 
     scene::SceneManager& scenes = engine.getPlugin<scene::ScenePlugin>().manager();
     scenes.registerScene<TitleScene>();

@@ -2,15 +2,15 @@
 
 #include <utility>
 
-#include "core/services/IWindowService.hpp"
-#include "core/services/InputCodes.hpp"
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
 #include "events/EventBus.hpp"
-#include "events/InputActionEvent.hpp"
 #include "input/ActionId.hpp"
 #include "input/ActionMapping.hpp"
+#include "input/InputActionEvent.hpp"
 #include "input/InputState.hpp"
+#include "render/api/IWindowService.hpp"
+#include "render/api/InputCodes.hpp"
 
 namespace systems {
 

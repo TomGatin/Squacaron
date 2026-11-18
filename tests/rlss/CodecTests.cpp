@@ -4,16 +4,16 @@
 #include <unordered_set>
 #include <vector>
 
-#include "components/InputBuffer.hpp"
-#include "components/Interpolated.hpp"
-#include "components/Replicated.hpp"
-#include "components/Transform.hpp"
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
+#include "ecs/components/Transform.hpp"
 #include "game/Components.hpp"
 #include "game/ReplicationCodec.hpp"
 #include "net/NetworkEntityMap.hpp"
 #include "net/SnapshotApplier.hpp"
+#include "net/components/InputBuffer.hpp"
+#include "net/components/Interpolated.hpp"
+#include "net/components/Replicated.hpp"
 #include "protocol/Protocol.hpp"
 
 namespace game = rlss::game;

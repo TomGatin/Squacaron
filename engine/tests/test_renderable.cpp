@@ -1,8 +1,8 @@
 #include <gtest/gtest.h>
 
-#include "components/Renderable.hpp"
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
+#include "render/api/components/Renderable.hpp"
 
 TEST(Renderable, DefaultValues) {
     const ecs::Renderable renderable;

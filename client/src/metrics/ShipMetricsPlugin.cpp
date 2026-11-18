@@ -2,15 +2,15 @@
 
 #include <format>
 
-#include "components/Predicted.hpp"
-#include "components/Transform.hpp"
 #include "core/Engine.hpp"
 #include "core/PluginBuilder.hpp"
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
+#include "ecs/components/Transform.hpp"
 #include "ecs/time/Time.hpp"
 #include "metrics/MetricsBoard.hpp"
 #include "metrics/MetricsPlugin.hpp"
+#include "net/components/Predicted.hpp"
 
 namespace client {
 

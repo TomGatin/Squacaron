@@ -2,12 +2,12 @@
 
 #include <cstdint>
 
-#include "components/Replicated.hpp"
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
 #include "game/ReplicationCodec.hpp"
 #include "gameplay/PlayerLives.hpp"
 #include "gameplay/ShipBlink.hpp"
+#include "net/components/Replicated.hpp"
 
 namespace {
 

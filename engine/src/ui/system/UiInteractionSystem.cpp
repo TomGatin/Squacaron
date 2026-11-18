@@ -9,14 +9,14 @@
 #include <string>
 #include <vector>
 
-#include "components/Hidden.hpp"
-#include "core/services/IWindowService.hpp"
-#include "core/services/InputCodes.hpp"
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
 #include "events/EventBus.hpp"
-#include "events/UiEvents.hpp"
 #include "hierarchy/Hierarchy.hpp"
+#include "render/api/IWindowService.hpp"
+#include "render/api/InputCodes.hpp"
+#include "render/api/components/Hidden.hpp"
+#include "ui/UiEvents.hpp"
 #include "ui/components/UiButton.hpp"
 #include "ui/components/UiFocusable.hpp"
 #include "ui/components/UiNavigation.hpp"

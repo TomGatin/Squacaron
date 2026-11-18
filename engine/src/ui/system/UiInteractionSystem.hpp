@@ -8,11 +8,11 @@
 #include <span>
 #include <vector>
 
-#include "core/services/IWindowService.hpp"
-#include "core/services/InputCodes.hpp"
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
 #include "events/EventBus.hpp"
+#include "render/api/IWindowService.hpp"
+#include "render/api/InputCodes.hpp"
 #include "ui/components/UiNavigation.hpp"
 #include "ui/system/UiLayout.hpp"
 

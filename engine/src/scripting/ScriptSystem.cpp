@@ -14,13 +14,13 @@
 #include "ecs/Registry.hpp"
 #include "events/EventBus.hpp"
 #include "log/Logger.hpp"
-#include "prefabs/PrefabManager.hpp"
-#include "prefabs/PrefabParams.hpp"
 #include "scripting/FiberScheduler.hpp"
 #include "scripting/ScriptComponent.hpp"
 #include "scripting/WrenVM.hpp"
 #include "scripting/detail/Bindings.hpp"
 #include "scripting/detail/LogTag.hpp"
+#include "utils/MoveOnlyFunction.hpp"
+#include "utils/Paths.hpp"
 
 namespace scripting {
 
@@ -154,21 +154,24 @@ void ScriptSystem::notifyVmReset(VmResetPhase phase) {
     }
 }
 
-bool ScriptSystem::spawnPrefab(std::string_view name, prefabs::PrefabParams const& params) {
-    if (_prefabs == nullptr) {
-        engine::log::warning(detail::LOG_TAG, "cannot spawn prefab ", name, ": no PrefabManager set");
-        return false;
+bool ScriptSystem::requestPrefabSpawn(std::string_view name, double x, double y) {
+    for (IScriptExtension* extension : _extensions) {
+        if (extension->spawnPrefab(name, x, y)) {
+            return true;
+        }
     }
-    if (_extensions.empty()) {
-        return _prefabs->spawn(name, _commandBuffer, params);
-    }
-    // The system is not movable and owns the buffer: `this` is valid when the buffer runs the callback.
-    return _prefabs->spawn(name, _commandBuffer, params,
-                           [this, owner = _currentOwner](ecs::Entity spawned, ecs::Registry& registry) {
-                               for (IScriptExtension* extension : _extensions) {
-                                   extension->onScriptSpawn(registry, spawned, owner);
-                               }
-                           });
+    engine::log::warning(detail::LOG_TAG, "Engine.spawnPrefab(", utils::quoteForLog(name),
+                         "): no extension spawns prefabs (add prefabs::PrefabScriptingPlugin)");
+    return false;
+}
+
+ecs::MoveOnlyFunction<void(ecs::Entity, ecs::Registry&)> ScriptSystem::spawnObserver() {
+    // The system is not movable and owns the command buffer the spawns usually go through: `this` stays valid.
+    return [this, owner = _currentOwner](ecs::Entity spawned, ecs::Registry& registry) {
+        for (IScriptExtension* extension : _extensions) {
+            extension->onScriptSpawn(registry, spawned, owner);
+        }
+    };
 }
 
 }  // namespace scripting

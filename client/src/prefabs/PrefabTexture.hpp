@@ -12,9 +12,10 @@
 #include "assets/AssetKinds.hpp"
 #include "assets/AssetManager.hpp"
 #include "assets/AssetPath.hpp"
-#include "components/Renderable.hpp"
 #include "ecs/Registry.hpp"
 #include "prefabs/PrefabParams.hpp"
+#include "render/api/components/Renderable.hpp"
+#include "utils/Paths.hpp"
 
 namespace client::prefabs {
 
@@ -40,7 +41,7 @@ namespace client::prefabs {
         return id;
     }
     manager.warnOnce("prefab-texture:" + *alias,
-                     "prefab texture " + assets::quoteForLog(*alias) +
+                     "prefab texture " + utils::quoteForLog(*alias) +
                          " is not loaded: drawn as the fallback (is it declared, and its group loaded?)");
     return manager.fallback<assets::Texture>();
 }

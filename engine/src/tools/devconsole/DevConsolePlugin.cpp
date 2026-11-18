@@ -7,10 +7,10 @@
 
 #include "core/Engine.hpp"
 #include "core/PluginBuilder.hpp"
-#include "core/services/IInputCaptureService.hpp"
-#include "core/services/IScreenDrawService.hpp"
-#include "core/services/IWindowService.hpp"
 #include "ecs/time/Time.hpp"
+#include "render/api/IInputCaptureService.hpp"
+#include "render/api/IScreenDrawService.hpp"
+#include "render/api/IWindowService.hpp"
 #include "tools/console/Console.hpp"
 #include "tools/console/ConsolePlugin.hpp"
 #include "tools/devconsole/DevConsole.hpp"

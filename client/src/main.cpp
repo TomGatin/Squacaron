@@ -29,6 +29,7 @@
 #include "metrics/overlay/MetricsOverlayPlugin.hpp"
 #include "net/ClientNetwork.hpp"
 #include "prefabs/PrefabPlugin.hpp"
+#include "prefabs/scripting/PrefabScripting.hpp"
 #include "render/RenderPlugin.hpp"
 #include "render/window/WindowConfig.hpp"
 #include "scene/ScenePlugin.hpp"
@@ -69,6 +70,7 @@ int main(int ac, char** av) {
             .addPlugin<systems::AnimationPlugin>()
             .addPlugin<prefabs::PrefabPlugin>()
             .addPlugin<scripting::ScriptPlugin>(scripting::ScriptTick::EveryFrame, root)
+            .addPlugin<prefabs::PrefabScriptingPlugin>()
             .addPlugin<assets::AssetPlugin>(root)
             .addPlugin<assets::AssetScriptingPlugin>("scripts/rtype/Assets")
             .addPlugin<assets::RenderAssetsPlugin>()

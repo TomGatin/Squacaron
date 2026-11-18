@@ -25,8 +25,13 @@ block. R-Type consumes it as a library, and a **second, different sample game** 
 ## Layout
 
 - `engine/src/` — the engine, split into link-time modules (one static lib each):
-  `engine_core` (ecs/), `engine_time` (ecs/time/), `engine_events` (events/, header-only),
-  `engine_scripting` (scripting/), `engine_physics` (systems/physics/),
+  `engine_utils` (utils/: move-only callables, stable slots, portable paths),
+  `engine_core` (ecs/, core/; `Transform` and `Tag` in ecs/components/), `engine_time` (ecs/time/),
+  `engine_events` (events/: the `EventBus`, header-only), `engine_scripting` (scripting/: core, events and log only),
+  `engine_render_api` (render/api/, header-only and headless: render data components, window, input codes,
+  render and screen-draw service interfaces), `engine_physics` (systems/physics/, with its components and events),
+  scripting bridges `engine_input_scripting` (input/scripting/: `core/Input`), `engine_prefabs_scripting`
+  (prefabs/scripting/: `Engine.spawnPrefab`), `engine_physics_scripting` (systems/physics/scripting/: `onCollision`),
   `engine_network` (net/: transport interfaces, `NetworkConfig`, `NetworkPlugin`, replication plugins — no asio),
   `engine_network_asio` (net/asio/: asio transport behind `net/NetworkFactory.hpp`),
   `engine_metrics` (metrics/), `engine_metrics_overlay` (metrics/overlay/), `engine_network_metrics` (net/metrics/),
@@ -57,7 +62,9 @@ block. R-Type consumes it as a library, and a **second, different sample game** 
 - **The engine knows nothing about R-Type.** No game rules, entity kinds, assets, or protocol packets in `engine/`.
   Game-specific code lives in `server/`, `client/` or a game module. If a feature needs game knowledge, expose a
   generic hook (component, event, script, config) instead.
-- Keep modules independent: a module only depends on what it declares in its `xmake.lua` (`add_deps`).
+- Keep modules independent: a module only depends on what it declares in its `xmake.lua` (`add_deps`);
+  `python3 scripts/check_module_boundaries.py --strict` (CI) checks every `#include`. Components, events and service
+  interfaces live next to their module; a feature joining two modules goes in a bridge module (`x/scripting/`).
   Never make `engine_core` depend on render/physics/scripting/network. Graphics-dependent code must stay behind
   the `graphics` option so the server builds headless.
 - ECS first: data in components (plain structs), logic in systems, cross-system communication through

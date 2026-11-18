@@ -112,7 +112,7 @@ flowchart LR
 
 ## Contact Events
 
-The system publishes two events, declared in `events/PhysicsEvents.hpp`, on the `ecs::EventBus` given to its constructor (`Engine::eventBus()` when it runs through `PhysicsPlugin`):
+The system publishes two events, declared in `systems/physics/PhysicsEvents.hpp`, on the `ecs::EventBus` given to its constructor (`Engine::eventBus()` when it runs through `PhysicsPlugin`):
 
 | Event | Published when |
 |-------|----------------|
@@ -146,9 +146,9 @@ Guarantees:
 ## Creating a Physical Entity
 
 ```cpp
-#include "components/Collider2D.hpp"
-#include "components/RigidBody2D.hpp"
-#include "components/Transform.hpp"
+#include "systems/physics/components/Collider2D.hpp"
+#include "systems/physics/components/RigidBody2D.hpp"
+#include "ecs/components/Transform.hpp"
 
 const ecs::Entity player = registry.spawnEntity();
 

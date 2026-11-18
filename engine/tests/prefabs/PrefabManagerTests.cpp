@@ -3,17 +3,17 @@
 #include <memory>
 #include <string>
 
-#include "components/RigidBody2D.hpp"
-#include "components/Transform.hpp"
 #include "core/Engine.hpp"
 #include "core/Mediator.hpp"
 #include "core/MediatorError.hpp"
 #include "ecs/CommandBuffer.hpp"
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
+#include "ecs/components/Transform.hpp"
 #include "prefabs/PrefabManager.hpp"
 #include "prefabs/PrefabParams.hpp"
 #include "prefabs/PrefabPlugin.hpp"
+#include "systems/physics/components/RigidBody2D.hpp"
 
 namespace {
 

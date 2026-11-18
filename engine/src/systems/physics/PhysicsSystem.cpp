@@ -15,15 +15,15 @@
 #include <unordered_map>
 #include <vector>
 
-#include "components/Collider2D.hpp"
-#include "components/RigidBody2D.hpp"
-#include "components/Transform.hpp"
 #include "ecs/ComponentType.hpp"
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
+#include "ecs/components/Transform.hpp"
 #include "events/EventBus.hpp"
-#include "events/PhysicsEvents.hpp"
 #include "systems/physics/PhysicsConstants.hpp"
+#include "systems/physics/PhysicsEvents.hpp"
+#include "systems/physics/components/Collider2D.hpp"
+#include "systems/physics/components/RigidBody2D.hpp"
 #include "systems/physics/detail/Box2DContactListener.hpp"
 
 namespace systems {

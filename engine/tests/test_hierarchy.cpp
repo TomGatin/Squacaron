@@ -5,11 +5,11 @@
 #include <string_view>
 #include <vector>
 
-#include "components/Transform.hpp"
 #include "core/Engine.hpp"
 #include "core/IPlugin.hpp"
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
+#include "ecs/components/Transform.hpp"
 #include "ecs/time/Time.hpp"
 #include "hierarchy/Hierarchy.hpp"
 #include "hierarchy/HierarchyComponents.hpp"

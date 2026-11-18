@@ -5,7 +5,6 @@
 
 #include <utility>
 
-#include "assets/AssetPath.hpp"
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
 #include "log/Logger.hpp"
@@ -14,6 +13,7 @@
 #include "scripting/WrenVM.hpp"
 #include "scripting/detail/LogTag.hpp"
 #include "scripting/detail/ScriptSupport.hpp"
+#include "utils/Paths.hpp"
 
 namespace scripting {
 
@@ -27,8 +27,8 @@ ScriptObject* ScriptSystem::getScriptInstance(ecs::Entity e) const noexcept {
 detail::UniqueWrenHandle ScriptSystem::createScriptInstance(ecs::Entity e, const ScriptComponent& script) {
     if (!_vm.hasVariable(script.moduleName, script.className)) {
         if (_errors.reportOnce(script.moduleName + ':' + script.className)) {
-            engine::log::warning(LOG_TAG, "class ", assets::quoteForLog(script.className),
-                                 " not found in script module ", assets::quoteForLog(script.moduleName));
+            engine::log::warning(LOG_TAG, "class ", utils::quoteForLog(script.className),
+                                 " not found in script module ", utils::quoteForLog(script.moduleName));
         }
         return {};
     }

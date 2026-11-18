@@ -6,9 +6,9 @@
 #include <string_view>
 #include <unordered_map>
 
-#include "core/services/InputCodes.hpp"
 #include "input/ActionId.hpp"
 #include "input/InputConstants.hpp"
+#include "render/api/InputCodes.hpp"
 
 namespace engine {
 class IWindowService;

@@ -8,19 +8,21 @@
 #include <string>
 #include <utility>
 
-#include "components/Transform.hpp"
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
+#include "ecs/components/Transform.hpp"
 #include "events/EventBus.hpp"
-#include "events/PhysicsEvents.hpp"
 #include "input/InputState.hpp"
+#include "input/scripting/InputScripting.hpp"
 #include "prefabs/PrefabManager.hpp"
 #include "prefabs/PrefabParams.hpp"
+#include "prefabs/scripting/PrefabScripting.hpp"
 #include "scripting/ComponentBinder.hpp"
 #include "scripting/ForeignCall.hpp"
 #include "scripting/ScriptComponent.hpp"
 #include "scripting/ScriptSystem.hpp"
 #include "scripting/WrenVM.hpp"
+#include "systems/physics/PhysicsEvents.hpp"
 
 struct Position {
     float x = 0.0F;
@@ -751,6 +753,7 @@ TEST(Scripting, InputModuleBindings) {
     std::string const wrenPositionClass = binder.generateWrenClass();
     EXPECT_TRUE(scriptSystem.getVm().interpret("core/Position", wrenPositionClass));
 
+    input::addInputScripting(scriptSystem);
     const char* scriptCode =
         "import \"core/Entity\" for Entity\n"
         "import \"core/Position\" for Position\n"
@@ -824,6 +827,7 @@ TEST(Scripting, InputExposesMouseState) {
 
     scripting::ScriptSystem scriptSystem;
     scriptSystem.init(registry, bus);
+    input::addInputScripting(scriptSystem);
 
     input::InputState state{.playerIndex = 0, .actions = {}};
     state.mouse = input::MouseState{.x = 12.0F, .y = 34.0F, .wheel = -1.0F};
@@ -861,6 +865,7 @@ TEST(Scripting, RobustnessForeignCallTypeValidation) {
 
     scripting::ScriptSystem scriptSystem;
     scriptSystem.init(registry, bus);
+    input::addInputScripting(scriptSystem);
 
     scripting::ComponentBinder<Position> binder(scriptSystem.getVm(), "core/Position", "Position");
     binder.property<&Position::x>("x");
@@ -1036,7 +1041,7 @@ struct CollisionFixture {
     CollisionFixture() {
         registry.registerComponent<scripting::ScriptComponent>();
         scriptSystem.init(registry, bus);
-        scriptSystem.forwardCollisions(bus);
+        scriptSystem.forwardCollisions<events::CollisionBeginEvent>(bus);
         EXPECT_TRUE(scriptSystem.getVm().interpret("collisions", COLLISION_SCRIPTS));
     }
 };
@@ -1127,7 +1132,7 @@ TEST(Scripting, CollisionForwardingStopsWithTheSystem) {
         scripting::ScriptSystem scriptSystem;
         registry.registerComponent<scripting::ScriptComponent>();
         scriptSystem.init(registry, bus);
-        scriptSystem.forwardCollisions(bus);
+        scriptSystem.forwardCollisions<events::CollisionBeginEvent>(bus);
     }
     // The destroyed system unsubscribed: publishing must not reach a dangling `this`.
     EXPECT_NO_FATAL_FAILURE(bus.publish(events::CollisionBeginEvent{.entityA = 0, .entityB = 1}));
@@ -1175,7 +1180,8 @@ TEST(Scripting, SpawnPrefabInstantiatesRegisteredPrefab) {
 
     scripting::ScriptSystem scriptSystem;
     scriptSystem.init(registry, bus);
-    scriptSystem.setPrefabManager(&manager);
+    prefabs::ScriptPrefabSpawner spawner(scriptSystem, manager);
+    scriptSystem.addExtension(spawner);
 
     EXPECT_EQ(callSpawnPrefab(scriptSystem, "probe"), scripting::CallResult::Success);
     EXPECT_FALSE(scriptSystem.getCommandBuffer().empty());
@@ -1197,7 +1203,8 @@ TEST(Scripting, SpawnPrefabUnknownNameQueuesNothing) {
     prefabs::PrefabManager const manager;
     scripting::ScriptSystem scriptSystem;
     scriptSystem.init(registry, bus);
-    scriptSystem.setPrefabManager(&manager);
+    prefabs::ScriptPrefabSpawner spawner(scriptSystem, manager);
+    scriptSystem.addExtension(spawner);
 
     EXPECT_EQ(callSpawnPrefab(scriptSystem, "does_not_exist"), scripting::CallResult::Success);
     EXPECT_TRUE(scriptSystem.getCommandBuffer().empty());

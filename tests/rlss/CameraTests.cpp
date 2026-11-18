@@ -9,13 +9,13 @@
 #include <string>
 
 #include "Arena.hpp"
-#include "components/CameraComponent.hpp"
-#include "components/Transform.hpp"
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
+#include "ecs/components/Transform.hpp"
 #include "events/EventBus.hpp"
 #include "game/Components.hpp"
 #include "game/ScriptBindings.hpp"
+#include "render/api/components/CameraComponent.hpp"
 #include "scripting/ScriptComponent.hpp"
 #include "scripting/ScriptSystem.hpp"
 

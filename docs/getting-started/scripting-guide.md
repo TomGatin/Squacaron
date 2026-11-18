@@ -110,7 +110,7 @@ Instead of checking states every frame, implement convention-based event methods
 
 ### Collisions: `onCollision(other)`
 
-`ScriptPlugin` forwards every `events::CollisionBeginEvent` from the physics module to the scripts of **both** entities of the contact. A script receives it only if it opts in, like `update(dt)`:
+`systems::PhysicsScriptingPlugin` (module `engine_physics_scripting`, added next to `ScriptPlugin`) forwards every `events::CollisionBeginEvent` from the physics module to the scripts of **both** entities of the contact. A script receives it only if it opts in, like `update(dt)`:
 
 ```cpp
 registry.addComponent<ScriptComponent>(entity, ScriptComponent{
@@ -318,6 +318,8 @@ Engine.spawnPrefab("Missile", _pos.x + 20.0, _pos.y)
 ```
 
 Both calls are queued in the engine's `CommandBuffer` and resolved safely at the end of the frame, avoiding invalid memory operations or iterator corruption in active system loops.
+
+`Engine.spawnPrefab` needs `prefabs::PrefabScriptingPlugin` (module `engine_prefabs_scripting`), which spawns from the `PrefabPlugin` prefabs. In the same way, `import "core/Input"` needs `input::InputScriptingPlugin` (module `engine_input_scripting`), or `input::addInputScripting(scripts)` for a `ScriptSystem` used without an engine. `engine_scripting` itself only knows the ECS, the events and the log.
 
 ---
 

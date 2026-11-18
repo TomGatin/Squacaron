@@ -9,15 +9,9 @@
 #include <unordered_set>
 #include <vector>
 
-#include "components/InputBuffer.hpp"
-#include "components/Interpolated.hpp"
-#include "components/NetworkId.hpp"
-#include "components/NetworkOwner.hpp"
-#include "components/Predicted.hpp"
-#include "components/Replicated.hpp"
-#include "components/Transform.hpp"
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
+#include "ecs/components/Transform.hpp"
 #include "events/EventBus.hpp"
 #include "net/INetworkManager.hpp"
 #include "net/INetworkService.hpp"
@@ -27,6 +21,12 @@
 #include "net/NetworkEntityMap.hpp"
 #include "net/ReplicationEvents.hpp"
 #include "net/SnapshotApplier.hpp"
+#include "net/components/InputBuffer.hpp"
+#include "net/components/Interpolated.hpp"
+#include "net/components/NetworkId.hpp"
+#include "net/components/NetworkOwner.hpp"
+#include "net/components/Predicted.hpp"
+#include "net/components/Replicated.hpp"
 
 namespace ecs::net {
 

@@ -6,6 +6,7 @@
 #include <variant>
 #include <vector>
 
+#include "audio/AudioEvents.hpp"
 #include "audio/IAudioBackend.hpp"
 #include "audio/settings/AudioSettings.hpp"
 #include "audio/spatial/SpatialConfig.hpp"
@@ -14,7 +15,6 @@
 #include "audio/types/SoundParams.hpp"
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
-#include "events/AudioEvents.hpp"
 #include "events/EventBus.hpp"
 #include "utils/MoveOnlyFunction.hpp"
 

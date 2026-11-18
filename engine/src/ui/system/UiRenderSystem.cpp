@@ -3,10 +3,10 @@
 #include <algorithm>
 #include <cstddef>
 
-#include "components/Renderable.hpp"
-#include "core/services/IScreenDrawService.hpp"
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
+#include "render/api/IScreenDrawService.hpp"
+#include "render/api/components/Renderable.hpp"
 #include "ui/components/FontId.hpp"
 #include "ui/components/UiButton.hpp"
 #include "ui/components/UiImage.hpp"

@@ -13,10 +13,10 @@
 #include <utility>
 
 #include "Arena.hpp"
-#include "components/Tag.hpp"
-#include "components/Transform.hpp"
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
+#include "ecs/components/Tag.hpp"
+#include "ecs/components/Transform.hpp"
 #include "events/EventBus.hpp"
 #include "game/Components.hpp"
 #include "game/ScriptBindings.hpp"

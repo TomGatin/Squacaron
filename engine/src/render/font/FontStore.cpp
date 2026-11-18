@@ -6,7 +6,7 @@
 #include <memory>
 #include <string>
 
-#include "core/services/IScreenDrawService.hpp"
+#include "render/api/IScreenDrawService.hpp"
 #include "render/detail/RaylibStores.hpp"
 #include "utils/StableSlots.hpp"
 

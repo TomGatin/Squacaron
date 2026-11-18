@@ -9,7 +9,6 @@
 #include <thread>
 #include <vector>
 
-#include "components/InputBuffer.hpp"
 #include "core/Engine.hpp"
 #include "core/FixedRateLoop.hpp"
 #include "ecs/Entity.hpp"
@@ -20,6 +19,7 @@
 #include "net/INetworkManager.hpp"
 #include "net/INetworkServer.hpp"
 #include "net/PeerGroupConnection.hpp"
+#include "net/components/InputBuffer.hpp"
 
 namespace rtype::server {
 

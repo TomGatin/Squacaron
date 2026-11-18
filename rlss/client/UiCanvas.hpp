@@ -12,8 +12,8 @@
 #include <variant>
 #include <vector>
 
-#include "components/Renderable.hpp"
-#include "core/services/IScreenDrawService.hpp"
+#include "render/api/IScreenDrawService.hpp"
+#include "render/api/components/Renderable.hpp"
 
 namespace rlss::client {
 

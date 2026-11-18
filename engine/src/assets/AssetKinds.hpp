@@ -16,9 +16,9 @@
 #include <string>
 #include <string_view>
 
-#include "components/Renderable.hpp"
 #include "core/AudioHandles.hpp"
-#include "core/services/IScreenDrawService.hpp"
+#include "render/api/IScreenDrawService.hpp"
+#include "render/api/components/Renderable.hpp"
 #include "utils/MoveOnlyFunction.hpp"
 
 namespace assets {

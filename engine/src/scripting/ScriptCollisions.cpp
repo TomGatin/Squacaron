@@ -4,11 +4,11 @@
  */
 
 #include <algorithm>
+#include <functional>
 #include <string>
+#include <utility>
 
 #include "ecs/Entity.hpp"
-#include "events/EventBus.hpp"
-#include "events/PhysicsEvents.hpp"
 #include "scripting/ScriptComponent.hpp"
 #include "scripting/ScriptSystem.hpp"
 #include "scripting/detail/WrenTypes.hpp"
@@ -58,23 +58,16 @@ void ScriptSystem::forwardCollision(ecs::Entity target, ecs::Entity other) {
     invokeEntityMethod(target, ON_COLLISION_SIGNATURE, static_cast<double>(other));
 }
 
-void ScriptSystem::forwardCollisions(ecs::EventBus& bus) {
-    stopForwardingCollisions();
+void ScriptSystem::prepareCollisionForwarding() {
     if (!_cachedMethodHandles.contains(ON_COLLISION_SIGNATURE)) {
         _cachedMethodHandles[ON_COLLISION_SIGNATURE] = _vm.makeCallHandle(ON_COLLISION_SIGNATURE);
     }
-    // The system is not movable: the subscription can capture `this`; the destructor unsubscribes.
-    _collisionToken = bus.subscribe<events::CollisionBeginEvent>([this](const events::CollisionBeginEvent& event) {
-        forwardCollision(event.entityA, event.entityB);
-        forwardCollision(event.entityB, event.entityA);
-    });
-    _collisionBus = &bus;
 }
 
 void ScriptSystem::stopForwardingCollisions() {
-    if (_collisionBus != nullptr) {
-        _collisionBus->unsubscribe<events::CollisionBeginEvent>(_collisionToken);
-        _collisionBus = nullptr;
+    if (_stopCollisions) {
+        const std::function<void()> stop = std::exchange(_stopCollisions, {});
+        stop();
     }
 }
 

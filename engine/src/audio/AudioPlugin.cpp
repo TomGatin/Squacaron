@@ -11,6 +11,7 @@
 #include <utility>
 
 #include "audio/IAudioBackend.hpp"
+#include "audio/IAudioService.hpp"
 #include "audio/NullAudioBackend.hpp"
 #include "audio/factory/AudioBackendFactory.hpp"
 #include "audio/settings/AudioSettings.hpp"
@@ -21,7 +22,6 @@
 #include "core/MediatorError.hpp"
 #include "core/PluginBuilder.hpp"
 #include "core/plugins/CorePlugin.hpp"
-#include "core/services/IAudioService.hpp"
 #include "systems/audio/AudioSystem.hpp"
 
 namespace audio {

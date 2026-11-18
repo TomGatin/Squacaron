@@ -10,9 +10,9 @@
 #include <string>
 #include <string_view>
 
-#include "components/Renderable.hpp"
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
+#include "render/api/components/Renderable.hpp"
 #include "scene/SceneContext.hpp"
 
 namespace client::menu {

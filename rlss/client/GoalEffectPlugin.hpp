@@ -10,10 +10,10 @@
 #include <string_view>
 
 #include "UiCanvas.hpp"
-#include "components/Renderable.hpp"
 #include "core/IPlugin.hpp"
 #include "core/PluginBuilder.hpp"
 #include "game/Components.hpp"
+#include "render/api/components/Renderable.hpp"
 
 namespace ecs::time {
 struct Time;

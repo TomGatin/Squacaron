@@ -3,9 +3,9 @@
 #include <cmath>
 #include <numbers>
 
-#include "components/Transform.hpp"
 #include "core/Engine.hpp"
 #include "ecs/Entity.hpp"
+#include "ecs/components/Transform.hpp"
 #include "ecs/time/Time.hpp"
 #include "prefabs/EnemyMotion.hpp"
 

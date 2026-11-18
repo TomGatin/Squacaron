@@ -8,13 +8,12 @@
 #include <string>
 
 #include "Arena.hpp"
-#include "components/InputBuffer.hpp"
-#include "components/Tag.hpp"
-#include "components/Transform.hpp"
 #include "core/Engine.hpp"
 #include "core/PluginBuilder.hpp"
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
+#include "ecs/components/Tag.hpp"
+#include "ecs/components/Transform.hpp"
 #include "game/Components.hpp"
 #include "game/ScriptBindings.hpp"
 #include "input/ActionId.hpp"
@@ -25,6 +24,7 @@
 #include "net/ReplicationEvents.hpp"
 #include "net/ReplicationSystems.hpp"
 #include "net/ServerReplicationPlugin.hpp"
+#include "net/components/InputBuffer.hpp"
 #include "protocol/Protocol.hpp"
 #include "scripting/ScriptComponent.hpp"
 #include "scripting/ScriptPlugin.hpp"

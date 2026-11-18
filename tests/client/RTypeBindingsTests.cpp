@@ -2,9 +2,9 @@
 
 #include <cstddef>
 
-#include "core/services/InputCodes.hpp"
 #include "input/ActionMapping.hpp"
 #include "input/RTypeBindings.hpp"
+#include "render/api/InputCodes.hpp"
 
 TEST(RTypeBindings, SetupDefaultBindings) {
     input::ActionMapping mapping;

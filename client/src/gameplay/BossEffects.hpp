@@ -10,8 +10,8 @@
 #include <span>
 #include <vector>
 
-#include "components/Renderable.hpp"
 #include "ecs/Registry.hpp"
+#include "render/api/components/Renderable.hpp"
 
 namespace client::gameplay {
 

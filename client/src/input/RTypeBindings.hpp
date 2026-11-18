@@ -5,9 +5,9 @@
 #include <cstdint>
 #include <string_view>
 
-#include "core/services/InputCodes.hpp"
 #include "input/ActionId.hpp"
 #include "input/ActionMapping.hpp"
+#include "render/api/InputCodes.hpp"
 
 namespace client::input {
 

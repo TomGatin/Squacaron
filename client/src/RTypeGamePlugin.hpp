@@ -15,7 +15,6 @@
 #include <vector>
 
 #include "assets/AssetManager.hpp"
-#include "components/Renderable.hpp"
 #include "core/IPlugin.hpp"
 #include "core/PluginBuilder.hpp"
 #include "ecs/Entity.hpp"
@@ -25,6 +24,7 @@
 #include "gameplay/BossEffects.hpp"
 #include "looks/Looks.hpp"
 #include "net/ReplicationEvents.hpp"
+#include "render/api/components/Renderable.hpp"
 
 namespace client {
 

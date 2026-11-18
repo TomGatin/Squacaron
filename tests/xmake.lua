@@ -161,7 +161,7 @@ target("test_client_metrics")
 target("test_client_scenes")
     set_kind("binary")
     add_rules("rlss.project_dir")
-    add_deps("engine_log", "common", "engine_core", "engine_time", "engine_events", "engine_network", "engine_input",
+    add_deps("engine_prefabs_scripting", "engine_log", "common", "engine_core", "engine_time", "engine_events", "engine_network", "engine_input",
              "engine_hierarchy", "engine_ui", "engine_scene", "engine_scripting", "engine_scene_scripting",
              "engine_prefabs", "engine_config", "engine_settings", "engine_metrics", "engine_metrics_overlay",
              "rtype_game")

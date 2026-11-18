@@ -2,8 +2,8 @@
 
 #include <cstdint>
 
-#include "components/InputBuffer.hpp"
 #include "ecs/Entity.hpp"
+#include "net/components/InputBuffer.hpp"
 
 // Events published on the engine EventBus by the replication plugins.
 namespace ecs::net {

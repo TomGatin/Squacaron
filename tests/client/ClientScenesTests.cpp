@@ -12,20 +12,15 @@
 #include <variant>
 #include <vector>
 
-#include "components/Hidden.hpp"
-#include "components/Replicated.hpp"
 #include "config/Settings.hpp"
 #include "core/Engine.hpp"
 #include "core/IPlugin.hpp"
 #include "core/PluginBuilder.hpp"
-#include "core/services/IInputService.hpp"
-#include "core/services/IScreenDrawService.hpp"
-#include "core/services/IWindowService.hpp"
 #include "ecs/Registry.hpp"
-#include "events/UiEvents.hpp"
 #include "game/ReplicationCodec.hpp"
 #include "gameplay/BossEffects.hpp"
 #include "hierarchy/HierarchyPlugin.hpp"
+#include "input/IInputService.hpp"
 #include "input/InputPlugin.hpp"
 #include "input/RTypeBindings.hpp"
 #include "net/ClientConnection.hpp"
@@ -34,9 +29,14 @@
 #include "net/NetworkPlugin.hpp"
 #include "net/PlayerControlPlugin.hpp"
 #include "net/RTypeNetworkPlugin.hpp"
+#include "net/components/Replicated.hpp"
 #include "prefabs/PrefabPlugin.hpp"
+#include "prefabs/scripting/PrefabScripting.hpp"
 #include "protocol/Messages.hpp"
 #include "protocol/Protocol.hpp"
+#include "render/api/IScreenDrawService.hpp"
+#include "render/api/IWindowService.hpp"
+#include "render/api/components/Hidden.hpp"
 #include "scene/ScenePlugin.hpp"
 #include "scene/scripting/SceneScriptingPlugin.hpp"
 #include "scenes/ClientScenesPlugin.hpp"
@@ -45,6 +45,7 @@
 #include "scenes/MenuKit.hpp"
 #include "scripting/ScriptPlugin.hpp"
 #include "settings/SettingsPlugin.hpp"
+#include "ui/UiEvents.hpp"
 #include "ui/UiPlugin.hpp"
 #include "ui/components/UiImage.hpp"
 #include "ui/components/UiProgressBar.hpp"
@@ -170,6 +171,7 @@ class ClientScenesTest : public ::testing::Test {
             .addPlugin<scripting::ScriptPlugin>()
             .addPlugin<scene::SceneScriptingPlugin>()
             .addPlugin<prefabs::PrefabPlugin>()
+            .addPlugin<prefabs::PrefabScriptingPlugin>()
             .addPlugin<settings::SettingsPlugin>(std::filesystem::path{})
             .addPlugin<ecs::net::NetworkPlugin>(connection, connection)
             .addPlugin<ecs::net::ClientReplicationPlugin>(std::make_shared<rtype::game::ReplicationCodec>())

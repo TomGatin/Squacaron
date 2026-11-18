@@ -18,8 +18,6 @@
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
 #include "events/EventBus.hpp"
-#include "prefabs/PrefabManager.hpp"
-#include "prefabs/PrefabParams.hpp"
 #include "scripting/FiberScheduler.hpp"
 #include "scripting/IScriptExtension.hpp"  // IWYU pragma: export
 #include "scripting/OwnerScope.hpp"        // IWYU pragma: export
@@ -29,6 +27,7 @@
 #include "scripting/ScriptOwner.hpp"       // IWYU pragma: export
 #include "scripting/WrenVM.hpp"            // IWYU pragma: export
 #include "scripting/detail/WrenTypes.hpp"  // IWYU pragma: export
+#include "utils/MoveOnlyFunction.hpp"
 
 namespace scripting {
 
@@ -114,12 +113,15 @@ class ScriptSystem {
     void registerEventForwarding(ecs::EventBus& bus, std::string const& methodName, ArgExtractor&& extractor);
 
     /**
-     * @brief Forwards `events::CollisionBeginEvent` to `onCollision(other)` of the scripts that set `hasCollision`.
+     * @brief Forwards a contact event (with `entityA` and `entityB`) to `onCollision(other)` of the scripts that set
+     * `hasCollision`. `engine_physics_scripting` does it for the physics contacts.
      *
      * A side is skipped when either entity is dead or queued for destruction this frame, so a script never hits an
-     * entity another system just destroyed. Calling it again moves the subscription to `bus`.
-     * @param bus Bus receiving the physics contact events.
+     * entity another system just destroyed. Calling it again moves the subscription.
+     * @tparam ContactEvent Event type, e.g. `events::CollisionBeginEvent`.
+     * @param bus Bus receiving the contact events.
      */
+    template <typename ContactEvent>
     void forwardCollisions(ecs::EventBus& bus);
 
     /** @brief Unsubscribes the collision forwarding, if any. Safe to call twice. */
@@ -133,21 +135,29 @@ class ScriptSystem {
     [[nodiscard]] ecs::Registry* getRegistry() noexcept { return _registry; }
 
     /**
-     * @brief Sets the prefab registry used by `Engine.spawnPrefab(name, x, y)` and `spawnPrefab()`.
-     * @param manager Non-owning; must outlive this system (nullptr to detach: spawns are then refused).
+     * @brief Spawns a prefab for `Engine.spawnPrefab(name, x, y)`: the first extension whose `spawnPrefab` accepts it
+     * does (`engine_prefabs_scripting` provides one). Logs a warning if none does.
+     * @param name Prefab name.
+     * @param x Horizontal position.
+     * @param y Vertical position.
+     * @return True if an extension spawned it.
      */
-    void setPrefabManager(prefabs::PrefabManager const* manager) noexcept { _prefabs = manager; }
-    /** @brief Gets the prefab registry, or nullptr if none is set. */
-    [[nodiscard]] prefabs::PrefabManager const* getPrefabManager() const noexcept { return _prefabs; }
+    bool requestPrefabSpawn(std::string_view name, double x, double y);
 
     /**
-     * @brief Spawns a prefab for the Wren code running now, through the command buffer; each extension then sees the
-     * new entity in `onScriptSpawn()` with the current owner. For the foreign methods of a game that spawn.
-     * @param name Prefab name.
-     * @param params Spawn parameters.
-     * @return False if no prefab manager is set or the prefab is unknown.
+     * @brief Callback to run on each entity spawned for the Wren code running now: tells every extension
+     * (`onScriptSpawn`) with the current owner. Pass it to the spawner, e.g. `PrefabManager::spawn`.
+     * @return The callback.
      */
-    bool spawnPrefab(std::string_view name, prefabs::PrefabParams const& params);
+    [[nodiscard]] ecs::MoveOnlyFunction<void(ecs::Entity, ecs::Registry&)> spawnObserver();
+
+    /**
+     * @brief Finds an added extension by type.
+     * @tparam Extension A class publicly derived from `IScriptExtension`.
+     * @return The first extension of that type, or nullptr.
+     */
+    template <typename Extension>
+    [[nodiscard]] Extension* findExtension() const noexcept;
 
     /** @brief Gets the scratch buffer reused by the `World` query bindings. */
     [[nodiscard]] std::vector<ecs::Entity>& getQueryBuffer() noexcept { return _queryBuffer; }
@@ -232,6 +242,7 @@ class ScriptSystem {
 
     void invokeEntityMethod(ecs::Entity target, std::string const& signature, double arg);
     void forwardCollision(ecs::Entity target, ecs::Entity other);
+    void prepareCollisionForwarding();
     void recordResult(ScriptOwner owner, CallResult result, std::string_view hook);
     void prepareVm(WrenVM& vm);
     void installModuleLoader();
@@ -250,8 +261,6 @@ class ScriptSystem {
     std::optional<std::size_t> _destroyListenerId;
     /** @brief Bus given to `init()`. */
     ecs::EventBus* _bus = nullptr;
-    /** @brief Prefab registry of `spawnPrefab`. */
-    prefabs::PrefabManager const* _prefabs = nullptr;
     /** @brief Mutations made by scripts, flushed at the end of `update()`. */
     ecs::CommandBuffer _commandBuffer;
     /** @brief The Wren VM. */
@@ -274,10 +283,8 @@ class ScriptSystem {
     detail::UniqueWrenHandle _newHandle, _updateHandle, _fiberCallHandle;
     /** @brief Call handles of the forwarded event methods, by signature. */
     std::unordered_map<std::string, detail::UniqueWrenHandle> _cachedMethodHandles;
-    /** @brief Bus the collision forwarding is subscribed to, or nullptr. */
-    ecs::EventBus* _collisionBus = nullptr;
-    /** @brief Subscription token of the collision forwarding. */
-    ecs::EventBus::EventToken _collisionToken = 0;
+    /** @brief Unsubscribes the collision forwarding; empty when there is none. */
+    std::function<void()> _stopCollisions;
     /** @brief Bindings registered again on every new VM. */
     std::vector<std::function<void(WrenVM&)>> _binderReplays;
     /** @brief Extensions, in the order they were added. */

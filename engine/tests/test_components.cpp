@@ -1,10 +1,10 @@
 #include <gtest/gtest.h>
 
-#include "components/Collider2D.hpp"
-#include "components/RigidBody2D.hpp"
-#include "components/Transform.hpp"
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
+#include "ecs/components/Transform.hpp"
+#include "systems/physics/components/Collider2D.hpp"
+#include "systems/physics/components/RigidBody2D.hpp"
 
 TEST(Transform, DefaultValues) {
     const ecs::Transform transform;

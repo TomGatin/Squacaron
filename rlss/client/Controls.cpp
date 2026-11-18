@@ -6,11 +6,11 @@
 #include <string_view>
 
 #include "config/Settings.hpp"
-#include "core/services/InputCodes.hpp"
 #include "game/Components.hpp"
 #include "input/ActionId.hpp"
 #include "input/ActionMapping.hpp"
 #include "input/KeyNames.hpp"
+#include "render/api/InputCodes.hpp"
 
 namespace rlss::client {
 

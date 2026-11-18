@@ -3,13 +3,13 @@
 #include <stdexcept>
 #include <vector>
 
-#include "components/AnimationComponent.hpp"
-#include "components/CameraComponent.hpp"
-#include "components/Hidden.hpp"
-#include "components/Renderable.hpp"
-#include "components/Transform.hpp"
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
+#include "ecs/components/Transform.hpp"
+#include "render/api/components/AnimationComponent.hpp"
+#include "render/api/components/CameraComponent.hpp"
+#include "render/api/components/Hidden.hpp"
+#include "render/api/components/Renderable.hpp"
 #include "render/texture/TextureStore.hpp"
 #include "render/window/Window.hpp"
 #include "systems/render/AnimationSystem.hpp"

@@ -10,7 +10,7 @@
 
 #include "collision/GameCollisionEvents.hpp"
 #include "events/EventBus.hpp"
-#include "events/PhysicsEvents.hpp"
+#include "systems/physics/PhysicsEvents.hpp"
 
 namespace rtype::server::collision {
 

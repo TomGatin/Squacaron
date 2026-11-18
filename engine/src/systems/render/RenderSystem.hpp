@@ -2,10 +2,10 @@
 
 #include <vector>
 
-#include "components/Renderable.hpp"
-#include "components/Transform.hpp"
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
+#include "ecs/components/Transform.hpp"
+#include "render/api/components/Renderable.hpp"
 #include "render/texture/TextureStore.hpp"
 
 namespace render {

@@ -7,7 +7,7 @@
 #include <memory>
 #include <string>
 
-#include "components/Renderable.hpp"
+#include "render/api/components/Renderable.hpp"
 #include "render/detail/RaylibStores.hpp"
 #include "utils/StableSlots.hpp"
 

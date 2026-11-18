@@ -2,9 +2,9 @@
 
 #include <cmath>
 
-#include "components/Transform.hpp"
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
+#include "ecs/components/Transform.hpp"
 
 namespace client::gameplay {
 

@@ -9,9 +9,9 @@
 #include <variant>
 #include <vector>
 
-#include "components/InputBuffer.hpp"
-#include "components/Replicated.hpp"
-#include "components/Transform.hpp"
+#include "net/components/InputBuffer.hpp"
+#include "net/components/Replicated.hpp"
+#include "ecs/components/Transform.hpp"
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
 #include "log/Logger.hpp"

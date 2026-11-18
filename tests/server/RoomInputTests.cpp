@@ -14,17 +14,17 @@
 #include <vector>
 
 #include "Room.hpp"
-#include "components/InputBuffer.hpp"
-#include "components/NetworkId.hpp"
-#include "components/NetworkOwner.hpp"
-#include "components/Transform.hpp"
 #include "ecs/Entity.hpp"
+#include "ecs/components/Transform.hpp"
 #include "ecs/time/Time.hpp"
 #include "game/ReplicationCodec.hpp"
 #include "game/ShipMovement.hpp"
 #include "net/INetworkManager.hpp"
 #include "net/INetworkServer.hpp"
 #include "net/NetworkEntityMap.hpp"
+#include "net/components/InputBuffer.hpp"
+#include "net/components/NetworkId.hpp"
+#include "net/components/NetworkOwner.hpp"
 #include "protocol/Messages.hpp"
 #include "protocol/Protocol.hpp"
 

@@ -11,34 +11,18 @@
 #include <string>
 #include <string_view>
 
+#include "utils/Paths.hpp"
+
 namespace assets {
 
 /** @brief Longest accepted asset path, in bytes. */
-inline constexpr std::size_t MAX_PATH_LENGTH = 1024;
+inline constexpr std::size_t MAX_PATH_LENGTH = utils::MAX_PATH_LENGTH;
 
 /** @brief Longest accepted alias or group name, in bytes. */
 inline constexpr std::size_t MAX_NAME_LENGTH = 128;
 
 /** @brief Most files `AssetManager::preloadDirectory` takes from one directory. */
 inline constexpr std::size_t MAX_DIRECTORY_FILES = 1024;
-
-/**
- * @brief Turns a path into the key the manager stores it under.
- *
- * Both `/` and `\` are separators, `.` and `..` are folded (`a/../a/x.png` is `a/x.png`) and the result uses `/`, so
- * the same file gets the same key on Linux and Windows. The path is not resolved against the disk.
- *
- * @param path Path given by the game or a script.
- * @return The key, or nothing for an empty, too long or NUL-holding path.
- */
-[[nodiscard]] std::optional<std::string> normalizeAssetPath(std::string_view path);
-
-/**
- * @brief Tells whether a normalised path stays inside the working directory.
- * @param normalized Result of `normalizeAssetPath`.
- * @return False for an absolute path (`/x`, `C:/x`, `//server/x`) or one that climbs out of it (`../x`).
- */
-[[nodiscard]] bool isConfinedAssetPath(std::string_view normalized) noexcept;
 
 /**
  * @brief Tells whether a string can be used as a group name.
@@ -63,29 +47,5 @@ inline constexpr std::size_t MAX_DIRECTORY_FILES = 1024;
  * @return True if it holds a `/`, a `\` or a `.`; aliases never do.
  */
 [[nodiscard]] bool looksLikeAssetPath(std::string_view aliasOrPath) noexcept;
-
-/**
- * @brief Converts a path to UTF-8 with `/` separators, whatever the platform's native encoding.
- *
- * `std::filesystem::path::string()` throws or mangles non-ANSI names on Windows; this does not.
- * @param path Path.
- * @return UTF-8 text.
- */
-[[nodiscard]] std::string toUtf8(const std::filesystem::path& path);
-
-/**
- * @brief Builds a path from UTF-8 text, whatever the platform's native encoding.
- * @param text UTF-8 path.
- * @return Path.
- */
-[[nodiscard]] std::filesystem::path fromUtf8(std::string_view text);
-
-/**
- * @brief Cuts a name or path for a log line, so that a script cannot fill the logs with huge strings.
- * @param text Text to show.
- * @param limit Longest part kept, in bytes.
- * @return The text between quotes, ending with `...` when it was cut.
- */
-[[nodiscard]] std::string quoteForLog(std::string_view text, std::size_t limit = MAX_NAME_LENGTH);
 
 }  // namespace assets

@@ -3,14 +3,14 @@
 #include <cstdint>
 #include <optional>
 
-#include "components/Interpolated.hpp"
-#include "components/NetworkId.hpp"
-#include "components/Predicted.hpp"
-#include "components/Replicated.hpp"
-#include "components/Transform.hpp"
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
+#include "ecs/components/Transform.hpp"
 #include "net/NetworkEntityMap.hpp"
+#include "net/components/Interpolated.hpp"
+#include "net/components/NetworkId.hpp"
+#include "net/components/Predicted.hpp"
+#include "net/components/Replicated.hpp"
 
 namespace ecs::net {
 

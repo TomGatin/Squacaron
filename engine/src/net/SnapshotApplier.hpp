@@ -5,9 +5,9 @@
 #include <unordered_set>
 #include <vector>
 
-#include "components/Transform.hpp"
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
+#include "ecs/components/Transform.hpp"
 #include "net/NetworkEntityMap.hpp"
 
 namespace ecs::net {

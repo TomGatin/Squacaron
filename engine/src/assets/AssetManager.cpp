@@ -15,6 +15,7 @@
 #include "assets/AssetKinds.hpp"
 #include "assets/AssetPath.hpp"
 #include "assets/detail/IAssetCache.hpp"
+#include "utils/Paths.hpp"
 
 namespace assets {
 
@@ -73,7 +74,7 @@ bool AssetManager::loadGroup(const std::string_view group) {
 GroupProgress AssetManager::loadGroupStep(const std::string_view group, const std::size_t maxLoads) {
     checkThread();
     if (!isValidAssetName(group)) {
-        _context.diagnostics.warn("invalid group name " + quoteForLog(group));
+        _context.diagnostics.warn("invalid group name " + utils::quoteForLog(group));
         return {};
     }
     if (!isGroupLoaded(group)) {
@@ -160,7 +161,7 @@ detail::IAssetCache* AssetManager::findCache(const std::string_view kind) const 
 detail::IAssetCache* AssetManager::cacheOrWarn(const std::string_view kind) {
     checkThread();
     if (!hasKind(kind)) {
-        _context.diagnostics.warnOnce("kind:" + std::string(kind), "unknown asset kind " + quoteForLog(kind));
+        _context.diagnostics.warnOnce("kind:" + std::string(kind), "unknown asset kind " + utils::quoteForLog(kind));
         return nullptr;
     }
     return findCache(kind);

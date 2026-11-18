@@ -4,11 +4,11 @@
 #include <stdexcept>
 #include <utility>
 
-#include "components/Hidden.hpp"
 #include "core/Engine.hpp"
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
 #include "events/EventBus.hpp"
+#include "render/api/components/Hidden.hpp"
 #include "scene/SceneManager.hpp"
 #include "scene/SceneTypes.hpp"
 

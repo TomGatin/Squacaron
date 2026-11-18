@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <deque>
 
-#include "components/InputBuffer.hpp"
+#include "net/components/InputBuffer.hpp"
 
 namespace ecs {
 

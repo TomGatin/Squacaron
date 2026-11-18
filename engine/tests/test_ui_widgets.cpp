@@ -6,17 +6,17 @@
 #include <string_view>
 #include <vector>
 
-#include "components/Hidden.hpp"
-#include "components/Renderable.hpp"
-#include "core/services/IScreenDrawService.hpp"
-#include "core/services/IWindowService.hpp"
-#include "core/services/InputCodes.hpp"
 #include "ecs/Entity.hpp"
 #include "ecs/Registry.hpp"
 #include "events/EventBus.hpp"
-#include "events/UiEvents.hpp"
 #include "hierarchy/Hierarchy.hpp"
 #include "hierarchy/HierarchyHooks.hpp"
+#include "render/api/IScreenDrawService.hpp"
+#include "render/api/IWindowService.hpp"
+#include "render/api/InputCodes.hpp"
+#include "render/api/components/Hidden.hpp"
+#include "render/api/components/Renderable.hpp"
+#include "ui/UiEvents.hpp"
 #include "ui/components/UiAnchor.hpp"
 #include "ui/components/UiButton.hpp"
 #include "ui/components/UiFocusable.hpp"

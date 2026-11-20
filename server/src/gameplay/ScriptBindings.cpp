@@ -18,8 +18,8 @@
 #include "prefabs/missile/Missile.hpp"
 #include "scripting/ComponentBinder.hpp"
 #include "scripting/ForeignCall.hpp"
+#include "scripting/ScriptSystem.hpp"
 #include "scripting/WrenVM.hpp"
-#include "systems/script/ScriptSystem.hpp"
 
 namespace rtype::server::gameplay {
 
@@ -59,7 +59,7 @@ class Combat {
  * @return The registry, or null outside of a room VM.
  */
 ecs::Registry* registryOf(const scripting::ForeignCall& call) {
-    auto* scripts = call.userData<systems::ScriptSystem>();
+    auto* scripts = call.userData<scripting::ScriptSystem>();
     return scripts != nullptr ? scripts->getRegistry() : nullptr;
 }
 
@@ -163,7 +163,7 @@ void combatFireAt(scripting::ForeignCall& call) {
     const auto speed = call.arg<double>(5);
     // `fireAt(x, y, targetX, targetY, speed, look)`: the look of the missile, its subtype, within a byte.
     const std::optional<double> look = call.slotCount() > 6 ? call.arg<double>(6) : std::optional<double>{0.0};
-    auto* scripts = call.userData<systems::ScriptSystem>();
+    auto* scripts = call.userData<scripting::ScriptSystem>();
     if (!x || !y || !targetX || !targetY || !speed || !look || scripts == nullptr ||
         scripts->getPrefabManager() == nullptr) {
         return;
@@ -177,15 +177,7 @@ void combatFireAt(scripting::ForeignCall& call) {
                                          {"speed", velocity.x},
                                          {"speed_y", velocity.y},
                                          {"subtype", static_cast<std::int64_t>(std::clamp(*look, 0.0, 255.0))}};
-    const systems::ScriptSystem::SpawnDecorator decorator = scripts->spawnDecorator();
-    if (decorator == nullptr) {
-        (void)scripts->getPrefabManager()->spawn(::prefabs::MISSILE_PREFAB, scripts->getCommandBuffer(), params);
-        return;
-    }
-    (void)scripts->getPrefabManager()->spawn(
-        ::prefabs::MISSILE_PREFAB, scripts->getCommandBuffer(), params,
-        [decorator, context = scripts->spawnDecoratorContext(), owner = scripts->currentOwner()](
-            const ecs::Entity entity, ecs::Registry& registry) { decorator(context, registry, entity, owner); });
+    (void)scripts->spawnPrefab(::prefabs::MISSILE_PREFAB, params);
 }
 
 /**
@@ -221,7 +213,7 @@ bool bindAll(scripting::WrenVM& vm) {
 
 }  // namespace
 
-bool bindScriptComponents(systems::ScriptSystem& scripts) {
+bool bindScriptComponents(scripting::ScriptSystem& scripts) {
     scripts.addBinderReplay([](scripting::WrenVM& vm) { (void)bindAll(vm); });
     return bindAll(scripts.getVm());
 }

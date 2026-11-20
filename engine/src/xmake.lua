@@ -76,7 +76,7 @@ target("engine_metrics")
 
 target("engine_scripting")
     set_kind("static")
-    add_files("scripting/**.cpp", "systems/script/**.cpp")
+    add_files("scripting/**.cpp")
     add_includedirs(".", {public = true})
     add_deps("engine_core", "engine_events", "engine_input", "engine_prefabs", "engine_assets", "engine_log")
     add_packages("wren", {public = true})

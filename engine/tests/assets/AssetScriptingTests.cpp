@@ -18,8 +18,8 @@
 #include "core/Engine.hpp"
 #include "ecs/Registry.hpp"
 #include "scripting/ScriptPlugin.hpp"
+#include "scripting/ScriptSystem.hpp"
 #include "scripting/WrenVM.hpp"
-#include "systems/script/ScriptSystem.hpp"
 
 namespace {
 
@@ -108,7 +108,7 @@ class AssetScriptingTest : public ::testing::Test {
     void TearDown() override { engine.shutdown(); }
 
     assets::AssetManager& manager() { return engine.registry().getResource<assets::AssetManager>(); }
-    systems::ScriptSystem& scripts() { return engine.getPlugin<scripting::ScriptPlugin>().scriptSystem(); }
+    scripting::ScriptSystem& scripts() { return engine.getPlugin<scripting::ScriptPlugin>().scriptSystem(); }
 
     /** @brief Runs Wren code in a fresh module; false if it failed (aborted fiber included). */
     bool run(std::string_view source) {

@@ -6,6 +6,7 @@
 #include <string>
 #include <string_view>
 #include <utility>
+#include <vector>
 
 #include "core/Engine.hpp"
 #include "core/PluginBuilder.hpp"
@@ -18,8 +19,8 @@
 #include "scene/scripting/ScriptScene.hpp"
 #include "scripting/ForeignCall.hpp"
 #include "scripting/ScriptPlugin.hpp"
+#include "scripting/ScriptSystem.hpp"
 #include "scripting/WrenVM.hpp"
-#include "systems/script/ScriptSystem.hpp"
 
 namespace scene {
 
@@ -34,7 +35,7 @@ constexpr std::string_view SCENE_CLASS = "Scene";
  * @return The manager, or null outside a running bridge.
  */
 SceneManager* managerOf(scripting::ForeignCall& call) {
-    auto* scripts = call.userData<systems::ScriptSystem>();
+    auto* scripts = call.userData<scripting::ScriptSystem>();
     if (scripts == nullptr || scripts->getRegistry() == nullptr ||
         !scripts->getRegistry()->hasResource<SceneScriptBridge>()) {
         return nullptr;
@@ -137,31 +138,29 @@ void SceneScriptingPlugin::init(engine::Engine& engine) {
     _scripts = &engine.getPlugin<scripting::ScriptPlugin>().scriptSystem();
     engine.registry().emplaceResource<SceneScriptBridge>(SceneScriptBridge{.manager = _manager});
 
-    _scripts->addModuleSource(std::string(SCENE_MODULE_NAME), std::string(SCENE_MODULE_SOURCE));
-    bindSceneModule(_scripts->getVm());
-    _scripts->addBinderReplay(&bindSceneModule);
-    _scripts->setSpawnDecorator(&SceneScriptingPlugin::adoptSpawn, this);
-    _resetListener = _scripts->addVmResetListener([this](systems::VmResetPhase phase) {
-        for (ScriptScene* scriptScene : _scriptScenes) {
-            if (phase == systems::VmResetPhase::Before) {
-                scriptScene->releaseHandles();
-            } else {
-                scriptScene->rebuildAfterReload();
-            }
+    _scripts->addExtension(*this);
+}
+
+std::vector<scripting::ModuleSource> SceneScriptingPlugin::modules() const {
+    return {{.name = std::string(SCENE_MODULE_NAME), .source = std::string(SCENE_MODULE_SOURCE)}};
+}
+
+void SceneScriptingPlugin::bind(scripting::WrenVM& vm) { bindSceneModule(vm); }
+
+void SceneScriptingPlugin::onVmReset(const scripting::VmResetPhase phase) {
+    for (ScriptScene* scriptScene : _scriptScenes) {
+        if (phase == scripting::VmResetPhase::Before) {
+            scriptScene->releaseHandles();
+        } else {
+            scriptScene->rebuildAfterReload();
         }
-    });
+    }
 }
 
 void SceneScriptingPlugin::shutdown(engine::Engine& /*engine*/) {
     if (_scripts != nullptr) {
-        if (_resetListener) {
-            _scripts->removeVmResetListener(*_resetListener);
-        }
-        if (_scripts->spawnDecoratorContext() == this) {
-            _scripts->setSpawnDecorator(nullptr, nullptr);
-        }
+        _scripts->removeExtension(*this);
     }
-    _resetListener.reset();
     // The manager stays readable until the scenes exit (ScenePlugin shuts down after this plugin).
 }
 
@@ -175,16 +174,14 @@ SceneId SceneScriptingPlugin::registerScriptScene(engine::Engine& engine, std::s
     return id;
 }
 
-void SceneScriptingPlugin::adoptSpawn(void* context, ecs::Registry& registry, ecs::Entity spawned,
-                                      systems::ScriptOwner owner) {
-    const auto* self = static_cast<const SceneScriptingPlugin*>(context);
-    if (self == nullptr || self->_manager == nullptr) {
+void SceneScriptingPlugin::onScriptSpawn(ecs::Registry& registry, ecs::Entity spawned, scripting::ScriptOwner owner) {
+    if (_manager == nullptr) {
         return;
     }
-    const SceneManager& manager = *self->_manager;
+    const SceneManager& manager = *_manager;
 
     std::optional<SceneId> scene = sceneOfOwner(owner);
-    if (!scene && (owner & systems::ScriptSystem::EXTENSION_OWNER_BIT) == 0) {
+    if (!scene && scripting::isEntityOwner(owner)) {
         const auto entity = static_cast<ecs::Entity>(owner);
         if (const auto* members = static_cast<const ecs::Registry&>(registry).findComponents<SceneMember>();
             members != nullptr && members->contains(entity)) {

@@ -11,7 +11,6 @@
 #include "CarSimulationPlugin.hpp"
 #include "components/InputBuffer.hpp"
 #include "components/NetworkOwner.hpp"
-#include "components/ScriptComponent.hpp"
 #include "components/Transform.hpp"
 #include "core/Engine.hpp"
 #include "core/PluginBuilder.hpp"
@@ -26,6 +25,7 @@
 #include "net/NetworkPlugin.hpp"
 #include "net/ReplicationSystems.hpp"
 #include "protocol/Protocol.hpp"
+#include "scripting/ScriptComponent.hpp"
 #include "scripting/ScriptPlugin.hpp"
 
 namespace rlss::server {
@@ -140,7 +140,7 @@ bool RosterPlugin::join(engine::Engine& engine, const ecs::net::PeerId peer) {
     registry.addComponent(car, game::CarStatus{.boost = 0.0F, .boosting = false, .placeAtKickoff = true});
     registry.addComponent(car, game::CarCues{});
     // Stepped by the `Match` script, not by its own update.
-    registry.addComponent(car, ecs::ScriptComponent{
+    registry.addComponent(car, scripting::ScriptComponent{
                                    .moduleName = std::string(game::CAR_SCRIPT_MODULE),
                                    .className = "Car",
                                });

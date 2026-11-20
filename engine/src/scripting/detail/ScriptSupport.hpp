@@ -5,7 +5,7 @@
 #include <string>
 #include <string_view>
 
-namespace systems::detail {
+namespace scripting::detail {
 
 /**
  * @brief Turns a Wren error (`WrenVM::lastError()` or an `interpret` error) into one log line.
@@ -34,4 +34,4 @@ namespace systems::detail {
  */
 void logRefusedScriptModule(std::string_view moduleName);
 
-}  // namespace systems::detail
+}  // namespace scripting::detail

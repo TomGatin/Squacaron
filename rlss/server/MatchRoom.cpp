@@ -1,7 +1,6 @@
 #include "MatchRoom.hpp"
 
 #include <algorithm>
-#include <chrono>
 #include <cstdint>
 #include <exception>
 #include <filesystem>
@@ -26,8 +25,6 @@ namespace rlss::server {
 namespace {
 
 constexpr const char* LOG_TAG = "match";
-/** @brief Pause between two frames of a match, so that a match does not spin a core. */
-constexpr auto FRAME_SLEEP = std::chrono::milliseconds(1);
 
 }  // namespace
 
@@ -43,7 +40,7 @@ MatchRoom::MatchRoom(ecs::net::INetworkServer& transport, const std::uint16_t id
 }
 
 MatchRoom::~MatchRoom() {
-    _stopping = true;
+    _loop.stop();
     if (_thread.joinable()) {
         _thread.join();
     }
@@ -93,10 +90,7 @@ void MatchRoom::advance() {
 void MatchRoom::runInBackground() {
     _thread = std::thread([this] {
         try {
-            while (!_stopping.load()) {
-                advance();
-                std::this_thread::sleep_for(FRAME_SLEEP);
-            }
+            _loop.run([this] { advance(); });
         } catch (const std::exception& error) {
             engine::log::error(LOG_TAG, "match ", _id, " stopped by an error in its simulation: ", error.what());
             fail();

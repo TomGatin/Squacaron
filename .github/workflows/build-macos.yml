@@ -10,6 +10,9 @@ on:
 permissions:
   contents: read
 
+env:
+  XMAKE_VERSION: '3.1.2'
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -27,21 +30,45 @@ jobs:
       - name: Setup xmake
         uses: xmake-io/github-action-setup-xmake@v1
         with:
-          xmake-version: latest
+          xmake-version: ${{ env.XMAKE_VERSION }}
+          actions-cache-folder: .xmake-cache
 
       - name: Restore xmake packages cache
-        uses: actions/cache@v5
+        id: packages-cache
+        uses: actions/cache/restore@v5
         with:
           path: ~/.xmake/packages
           key: xmake-pkgs-v2-${{ runner.os }}-${{ hashFiles('xmake.lua') }}
           restore-keys: |
             xmake-pkgs-v2-${{ runner.os }}-
 
+      - name: Restore build cache
+        uses: actions/cache/restore@v5
+        with:
+          path: build/.build_cache
+          key: xmake-build-v1-macos-release-${{ github.sha }}
+          restore-keys: |
+            xmake-build-v1-macos-release-
+
       - name: Configure
-        run: xmake f -m release -y
+        run: xmake f -m release --policies=build.ccache:y -y
 
       - name: Build
         run: xmake build -v -y
 
       - name: Run tests
         run: xmake test "test_*/*"
+
+      - name: Save xmake packages cache
+        if: ${{ github.ref == 'refs/heads/main' && steps.packages-cache.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@v5
+        with:
+          path: ~/.xmake/packages
+          key: ${{ steps.packages-cache.outputs.cache-primary-key }}
+
+      - name: Save build cache
+        if: ${{ github.ref == 'refs/heads/main' }}
+        uses: actions/cache/save@v5
+        with:
+          path: build/.build_cache
+          key: xmake-build-v1-macos-release-${{ github.sha }}

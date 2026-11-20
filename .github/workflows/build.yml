@@ -10,6 +10,9 @@ on:
 permissions:
   contents: read
 
+env:
+  XMAKE_VERSION: '3.1.2'
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -22,25 +25,20 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [windows-latest]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
 
-      - name: Install Linux dependencies
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends \
-            libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxext-dev libgl1-mesa-dev
-
       - name: Setup xmake
         uses: xmake-io/github-action-setup-xmake@v1
         with:
-          xmake-version: latest
+          xmake-version: ${{ env.XMAKE_VERSION }}
+          actions-cache-folder: .xmake-cache
 
       - name: Restore xmake packages cache
-        uses: actions/cache@v5
+        id: packages-cache
+        uses: actions/cache/restore@v5
         with:
           path: |
             ~/.xmake/packages
@@ -49,8 +47,16 @@ jobs:
           restore-keys: |
             xmake-pkgs-v2-${{ runner.os }}-
 
+      - name: Restore build cache
+        uses: actions/cache/restore@v5
+        with:
+          path: build/.build_cache
+          key: xmake-build-v1-windows-release-${{ github.sha }}
+          restore-keys: |
+            xmake-build-v1-windows-release-
+
       - name: Configure
-        run: xmake f -m release -y
+        run: xmake f -m release --policies=build.ccache:y -y
 
       - name: Dump xmake package logs
         if: failure()
@@ -71,6 +77,22 @@ jobs:
 
       - name: Run tests
         run: xmake test "test_*/*"
+
+      - name: Save xmake packages cache
+        if: ${{ github.ref == 'refs/heads/main' && steps.packages-cache.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@v5
+        with:
+          path: |
+            ~/.xmake/packages
+            ~\AppData\Local\.xmake\packages
+          key: ${{ steps.packages-cache.outputs.cache-primary-key }}
+
+      - name: Save build cache
+        if: ${{ github.ref == 'refs/heads/main' }}
+        uses: actions/cache/save@v5
+        with:
+          path: build/.build_cache
+          key: xmake-build-v1-windows-release-${{ github.sha }}
 
   # ECS core under AddressSanitizer, UndefinedBehaviorSanitizer and Valgrind, plus a short benchmark run (issue #40).
   # Only runs on pushes to main, not on every pull request.
@@ -94,7 +116,8 @@ jobs:
       - name: Setup xmake
         uses: xmake-io/github-action-setup-xmake@v1
         with:
-          xmake-version: latest
+          xmake-version: ${{ env.XMAKE_VERSION }}
+          actions-cache-folder: .xmake-cache
 
       - name: Restore xmake packages cache
         uses: actions/cache@v5
@@ -126,48 +149,3 @@ jobs:
           xmake f -m release --graphics=n --benchmarks=y -y
           xmake build -y bench_ecs
           xmake run bench_ecs --benchmark_min_time=0.01s
-
-  engine-package:
-    name: Standalone engine + games on the package (ubuntu-latest)
-    if: ${{ github.repository == 'TomGatin/Squacaron' }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v7
-
-      - name: Install Linux dependencies
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends \
-            libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxext-dev libgl1-mesa-dev
-
-      - name: Setup xmake
-        uses: xmake-io/github-action-setup-xmake@v1
-        with:
-          xmake-version: latest
-
-      - name: Restore xmake packages cache
-        uses: actions/cache@v5
-        with:
-          path: ~/.xmake/packages
-          key: xmake-pkgs-v2-${{ runner.os }}-${{ hashFiles('xmake.lua', 'engine/xmake.lua') }}
-          restore-keys: |
-            xmake-pkgs-v2-${{ runner.os }}-
-
-      # The engine on its own, as its own project: proves it needs nothing from the games.
-      - name: Build and test the engine alone
-        working-directory: engine
-        run: |
-          xmake f -P . -m release --tests=y -y
-          xmake build -P . -y
-          xmake test -P .
-
-      # The games on the installed squacaron package instead of the in-tree engine.
-      - name: Build the games on the squacaron package
-        run: |
-          xmake f -m release --engine_package=y -y
-          xmake require --force -y squacaron
-          xmake build -y
-
-      - name: Run the game tests
-        run: xmake test "test_*/*"

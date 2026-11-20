@@ -84,4 +84,5 @@ xmake build
 ```
 
 xmake does not rebuild a local package when its sources change. Run `xmake require --force squacaron` after every
-engine change in this mode. The `engine-package` job of the CI does it on each pull request.
+engine change in this mode. The `Engine package` workflow (`.github/workflows/engine-package.yml`) does it on each
+push to `main` that changes the engine or the build scripts.

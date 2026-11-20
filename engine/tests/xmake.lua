@@ -214,3 +214,100 @@ target("test_replication")
     add_packages("gtest")
     add_files("test_replication.cpp")
     add_tests("test_replication")
+
+target("test_ecs_stress")
+    set_kind("binary")
+    add_deps("engine_core")
+    add_packages("gtest")
+    add_files("ecs/main.cpp", "ecs/CommandBufferStressTest.cpp", "ecs/EntityRecycleTest.cpp")
+    add_tests("test_ecs_stress")
+
+-- Not a test: it measures, and asserts nothing. Run it in release, see docs/comparative-study/ecs-benchmark.md.
+if has_config("benchmarks") then
+    target("bench_ecs")
+        set_kind("binary")
+        add_deps("engine_core")
+        add_packages("benchmark")
+        add_files("ecs/SparseArrayBenchmark.cpp")
+end
+
+target("test_content_root")
+    set_kind("binary")
+    add_deps("engine_core")
+    add_packages("gtest")
+    add_files("core/ContentRootTests.cpp")
+    add_tests("test_content_root")
+
+target("test_input")
+    set_kind("binary")
+    add_deps("engine_core", "engine_events", "engine_input")
+    add_packages("gtest")
+    add_files("input/InputTests.cpp")
+    add_tests("test_input")
+
+target("test_prefabs")
+    set_kind("binary")
+    add_deps("engine_core", "engine_prefabs")
+    add_packages("gtest")
+    add_files("prefabs/PrefabManagerTests.cpp")
+    add_tests("test_prefabs")
+
+target("test_assets")
+    set_kind("binary")
+    add_deps("engine_core", "engine_assets")
+    add_packages("gtest")
+    add_files("assets/AssetManagerTests.cpp")
+    add_tests("test_assets")
+
+target("test_assets_scripting")
+    set_kind("binary")
+    add_deps("engine_core", "engine_events", "engine_scripting", "engine_input", "engine_prefabs", "engine_assets",
+             "engine_assets_scripting")
+    add_packages("gtest", "wren")
+    add_files("assets/AssetScriptingTests.cpp")
+    add_tests("test_assets_scripting")
+
+target("test_assets_scene")
+    set_kind("binary")
+    add_deps("engine_core", "engine_time", "engine_events", "engine_scene", "engine_hierarchy", "engine_assets",
+             "engine_assets_scene")
+    add_packages("gtest")
+    add_files("assets/SceneAssetsTests.cpp")
+    add_tests("test_assets_scene")
+
+if has_config("graphics") then
+    target("test_assets_audio")
+        set_kind("binary")
+        add_deps("engine_audio", "engine_assets", "engine_assets_audio")
+        add_packages("gtest")
+        add_files("assets/AudioAssetsTests.cpp")
+        add_tests("test_assets_audio")
+end
+
+target("test_cvars")
+    set_kind("binary")
+    add_deps("engine_tools")
+    add_packages("gtest")
+    add_files("tools/CVarManagerTests.cpp")
+    add_tests("test_cvars")
+
+target("test_console")
+    set_kind("binary")
+    add_deps("engine_tools")
+    add_packages("gtest")
+    add_files("tools/ConsoleTests.cpp")
+    add_tests("test_console")
+
+target("test_console_scripting")
+    set_kind("binary")
+    add_deps("engine_tools_scripting")
+    add_packages("gtest", "wren")
+    add_files("tools/ConsoleScriptingTests.cpp")
+    add_tests("test_console_scripting")
+
+target("test_devconsole")
+    set_kind("binary")
+    add_deps("engine_devconsole")
+    add_packages("gtest")
+    add_files("tools/DevConsoleTests.cpp")
+    add_tests("test_devconsole")

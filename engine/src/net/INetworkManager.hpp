@@ -81,6 +81,10 @@ struct TransportStats {
     std::uint64_t packetsSent = 0;
     /** @brief Packets received. */
     std::uint64_t packetsReceived = 0;
+    /** @brief Received messages dropped because their peer had `NetworkConfig::maxQueuedMessages` waiting. */
+    std::uint64_t eventsDropped = 0;
+    /** @brief Server only: failed accepts of a TCP connection (out of file descriptors, ...), each retried later. */
+    std::uint64_t acceptErrors = 0;
 };
 
 /** @brief Special peer id of the server, used by the client. */
